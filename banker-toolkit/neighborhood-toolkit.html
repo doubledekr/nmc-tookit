@@ -745,7 +745,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.1.18";
+const TOOLKIT_VERSION = "1.1.19";
 const DEMO = false; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -2010,7 +2010,7 @@ function programMatrix(c,snaps,recId){
   ${row("Rate \u00b7 term",x=>pct(x.r.a.anRate)+" \u00b7 "+x.r.a.anTerm+" yrs")}
   ${row("New loan payment (minimum)",x=>money(x.r.newPay)+"/mo"+(x.r.second?" on the second":""))}
   ${comps.some(x=>x.r.second)?row("All mortgage payments (principal &amp; interest)",x=>x.r.second?money(x.r.curPay)+" current mortgage (unchanged) + "+money(x.r.newPay)+" new second = "+money(x.r.curPay+x.r.newPay):money(x.r.newPay)+"/mo"):""}
-  ${anyDebts?row("Debts paid off at closing",x=>(x.r.roll||x.r.second)&&x.r.dBal>0?money(x.r.dBal)+" \u2014 "+money(x.r.dPay)+"/mo gone":"\u2014 debts stay as they are"):""}
+  ${anyDebts?row("Debts paid off at closing",x=>(x.r.roll||x.r.second)&&x.r.dBal>0?money(x.r.dBal)+" \u2014 "+money(x.r.dPay)+"/mo gone":x.r.streamline?"":"\u2014 debts stay as they are"):""}
   ${row("What goes out each month today (mortgage + debts)",x=>money(x.h.today))}
   ${row("What goes out each month with this option",x=>money(x.h.now)+"/mo",x=>x.h.now===bestPay)}
   ${row("Monthly savings",x=>(x.h.save>=0?"":"\u2212")+money(Math.abs(x.h.save))+"/mo",x=>x.h.save===bestSave&&bestSave>0)}
@@ -2018,7 +2018,7 @@ function programMatrix(c,snaps,recId){
   ${row("Total interest if you stay where you are",x=>money(x.h.todayInt))}
   ${row("Total interest with this option (minimum payments)",x=>money(x.h.newInt),x=>x.h.newInt===bestInt)}
   ${row("Mortgage paid off in",x=>x.r.second?yrsMo(x.r.curMonths)+" (first) \u00b7 "+yrsMo(x.r.newSched.months)+" (second)":yrsMo(x.r.newSched.months))}
-  ${anyDebts?row("Other debts paid off",x=>(x.r.roll||x.r.second)?"at closing":x.r.dMonths===Infinity?"never at today\u2019s minimums":x.r.dMonthsUnknown?"depends on the payments you make":x.r.dMonths>0?(x.r.dMonthsEst?"about ":"")+yrsMo(x.r.dMonths)+" if you keep paying today\u2019s minimums":"\u2014"):""}
+  ${anyDebts?row("Other debts paid off",x=>(x.r.roll||x.r.second)?"at closing":x.r.streamline?"":x.r.dMonths===Infinity?"never at today\u2019s minimums":x.r.dMonthsUnknown?"depends on the payments you make":x.r.dMonths>0?(x.r.dMonthsEst?"about ":"")+yrsMo(x.r.dMonths)+" if you keep paying today\u2019s minimums":"\u2014"):""}
   ${anyPw?`<tr><td colspan="${comps.length+1}" style="background:var(--cream-soft,#F4EFE6);font-weight:700;padding:6px 8px">If you keep paying what you pay today (${money(comps[0].h.today)}/month) and put the difference toward the loan</td></tr>`:""}
   ${anyPw?row("Extra toward the loan each month",x=>x.p?money(x.p.extra):"\u2014"):""}
   ${anyPw?row(comps.some(x=>x.r.second)?"New loan paid off in":"Mortgage paid off in",x=>x.p?yrsMo(x.p.months)+(x.p.cut>0?" ("+yrsMo(x.p.cut)+" sooner)":""):"\u2014",x=>x.p&&x.p.months===bestPwMo):""}
