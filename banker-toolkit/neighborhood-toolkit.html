@@ -179,6 +179,7 @@ table.data td{padding:10px;vertical-align:middle}
 .hint{line-height:1.5}
 .tag-good,.tag-warn,.tag-flat{vertical-align:middle;line-height:1.7}
 nav button{min-height:42px;cursor:pointer;font-family:inherit}
+nav button.soon{opacity:.42;cursor:not-allowed}nav button.soon small{font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.9;margin-left:4px}
 .stat{padding:16px 18px}
 .empty{padding:18px 16px;text-align:left;background:var(--cream-soft);border-radius:10px}
 
@@ -265,8 +266,8 @@ table.data tr.rec td{background:var(--cream)}
       <button data-s="analysis">Savings analysis</button>
       <button data-s="proposal">Client proposal</button>
       <button data-s="tools">Tools</button>
-      <button data-s="pricing">Lender pricing</button>
-      <button data-s="blocks">Call blocks</button>
+      <button data-s="pricing" class="soon" title="Coming soon">Lender pricing <small>soon</small></button>
+      <button data-s="blocks" class="soon" title="Coming soon">Call blocks <small>soon</small></button>
       <button data-s="tmpl">Scripts &amp; templates</button>
       <button data-s="desk">My desk</button>
       <button data-s="settings">Settings &amp; data</button>
@@ -321,11 +322,12 @@ table.data tr.rec td{background:var(--cream)}
             <div class="field"><label>Email</label><input type="email" data-f="email"></div>
             <div class="field" style="grid-column:1/-1"><label>Property address</label><input type="text" data-f="address"></div>
             <div class="field"><label>Current loan balance ($)</label><input type="number" data-f="balance" step="1000"></div>
+            <div class="field"><label>Original loan amount ($) <span class="hint" style="display:inline">(lets the app work out P&amp;I and months remaining)</span></label><input type="number" data-f="origAmount" step="1000"></div>
             <div class="field"><label>Current rate (%)</label><input type="number" data-f="rate" step="0.125"></div>
             <div class="field"><label>Total monthly payment (PITI)</label><input type="number" data-f="paymentTotal" step="10" placeholder="what they actually pay"></div>
             <div class="field"><label>P&amp;I <span class="hint" style="display:inline">(auto from balance, rate, months — or from the total)</span></label><input type="number" data-f="payment" step="10" placeholder="auto"></div>
             <div class="field"><label>Escrow — taxes &amp; insurance <span class="hint" style="display:inline">(auto = total minus P&amp;I; type it if the total is P&amp;I only)</span></label><input type="number" data-f="escrow" step="10"></div>
-            <div class="field"><label>Months remaining <span class="hint" style="display:inline">(auto from balance, rate &amp; P&amp;I when you type the P&amp;I; from the Salesforce close date on paste)</span></label><input type="number" data-f="monthsLeft"></div>
+            <div class="field"><label>Months remaining <span class="hint" style="display:inline">(auto from the original amount, or from P&amp;I if you type it, or the Salesforce close date)</span></label><input type="number" data-f="monthsLeft"></div>
             <div class="field"><label>Est. home value ($)</label>
               <div class="chiprow"><input type="number" data-f="value" step="5000" style="flex:1;min-width:120px">
                 <button class="chip" onclick="fetchAVM()" title="Ask the hub's AVM provider for this address">Estimate value</button>
@@ -754,7 +756,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.1.8";
+const TOOLKIT_VERSION = "1.1.9";
 const DEMO = false; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -789,7 +791,7 @@ const DEFAULT_SFMAP = {
   servicer:["servicer","current lender","current servicer","lender"],
   loanType:["loan type","product","loan product","program"]
 };
-const FIELD_LABELS = {name:"Name",phone:"Phone",email:"Email",address:"Address",balance:"Balance",rate:"Rate",payment:"Payment",monthsLeft:"Months left",value:"Home value",fico:"FICO",servicer:"Servicer",loanType:"Loan type",notes:"Notes",paymentTotal:"Total payment (PITI)",escrow:"Escrow",targetRate:"Rate alert",tz:"Time zone"};
+const FIELD_LABELS = {name:"Name",phone:"Phone",email:"Email",address:"Address",balance:"Balance",origAmount:"Original loan amount",rate:"Rate",payment:"Payment",monthsLeft:"Months left",value:"Home value",fico:"FICO",servicer:"Servicer",loanType:"Loan type",notes:"Notes",paymentTotal:"Total payment (PITI)",escrow:"Escrow",targetRate:"Rate alert",tz:"Time zone"};
 
 let state = {
   clients: [], currentId: null, blocks: [], live: null, rateHistory: [], teamCache: null, templates:{mine:[],company:null,shared:[]}, tools:{}, inbox:[], schema: 4,
@@ -872,7 +874,7 @@ function debtInterest(bal, apr, pay){ const m=debtMonths(bal,apr,pay); return is
 function cur(){ return state.clients.find(c=>c.id===state.currentId) || null; }
 function blankClient(){ return {id:"c"+Date.now()+Math.floor(Math.random()*999), name:"New client", status:"New lead", quick:false,
   phone:"",email:"",address:"",balance:null,rate:null,payment:null,monthsLeft:null,value:null,fico:null,
-  servicer:"",loanType:"Conventional",followUp:"",notes:"",paymentTotal:null,escrow:null,targetRate:null,tz:"",debts:[],options:[],scenarios:[],library:[],prop:{included:[],rec:"",why:""},cmp:{pwypn:false,rec:"",why:"",include:false},
+  servicer:"",loanType:"Conventional",followUp:"",notes:"",paymentTotal:null,escrow:null,origAmount:null,targetRate:null,tz:"",debts:[],options:[],scenarios:[],library:[],prop:{included:[],rec:"",why:""},cmp:{pwypn:false,rec:"",why:"",include:false},
   analysis:{anRate:null,anTerm:30,anCosts:0,anCashOut:0,anSkip:1,anRoll:"yes",anLien:"refi"}}; }
 function newClient(){ const c=blankClient(); state.clients.unshift(c); state.currentId=c.id; save(); refreshAll(); go("client"); toast("New client added"); }
 function newQuickQuote(){ const c=blankClient(); c.quick=true;
@@ -926,10 +928,17 @@ function renderClientBar(){ const bar=$("clientBar"); if(!bar) return; const c=c
 }
 /* P&I vs escrow: bankers usually know the total payment; we split it automatically from balance/rate/term */
 function piCalc(c){ return (c.balance>0&&c.rate>0)? pmt(c.balance,c.rate,c.monthsLeft||360) : null; }
-function normalizePayment(c,changed){ const pi=piCalc(c);
+/* original amount + current balance + rate ⇒ how far into a 30-year schedule they are ⇒ P&I and months remaining */
+function monthsFromOrig(c){ if(!(c.origAmount>0&&c.balance>0&&c.rate>0&&c.origAmount>c.balance)) return null;
+  const i=c.rate/1200, P=pmt(c.origAmount,c.rate,360); const num=P-c.balance*i, den=P-c.origAmount*i; if(!(num>0&&den>0)) return null;
+  const k=Math.log(num/den)/Math.log(1+i); if(!isFinite(k)||k<0||k>359) return null; return {monthsLeft:Math.max(1,360-Math.round(k)), pi:P}; }
+function normalizePayment(c,changed){
+  if(["origAmount","balance","rate","paymentTotal"].includes(changed) && (!c.monthsLeft||c.monthsLeftAuto)){ const m=monthsFromOrig(c);
+    if(m){ c.monthsLeft=m.monthsLeft; c.monthsLeftAuto=true; if(!c.payment||c.paymentAuto){ c.payment=Math.round(m.pi); c.paymentAuto=true; } } }
+  const pi=piCalc(c);
   if(["paymentTotal","balance","rate","monthsLeft"].includes(changed)){
-    if(c.paymentTotal>0){ if(pi&&c.paymentTotal>pi+1){ c.payment=Math.round(pi); c.escrow=Math.round(c.paymentTotal-pi); }   /* anything above P&I is taxes & insurance */
-      else { c.payment=c.paymentTotal; c.escrow=0; } c.paymentAuto=false; }
+    if(c.paymentTotal>0){ if(pi&&c.paymentTotal>pi+1){ c.payment=Math.round(pi); c.escrow=Math.round(c.paymentTotal-pi); c.paymentAuto=true; }   /* anything above P&I is taxes & insurance */
+      else { c.payment=c.paymentTotal; c.escrow=0; c.paymentAuto=false; } }
     else if(pi && (!c.payment || c.paymentAuto)){ c.payment=Math.round(pi); c.paymentAuto=true; } /* auto P&I from the numbers we have */
   }
   else if(changed==="payment"){ c.paymentAuto=false; }
@@ -966,7 +975,7 @@ function bindClientFields(){
       if(f==="status") applyDispo(c);
       normalizePayment(c,f);
       if(f==="value") c.valueSrc={type:"manual",when:todayStr()};
-      ["payment","escrow","paymentTotal","monthsLeft"].forEach(k=>{ if(k!==f){ const o=document.querySelector(`#s-client [data-f="${k}"]`); if(o) o.value=c[k]==null?"":c[k]; } });
+      ["payment","escrow","paymentTotal","monthsLeft","origAmount"].forEach(k=>{ if(k!==f){ const o=document.querySelector(`#s-client [data-f="${k}"]`); if(o) o.value=c[k]==null?"":c[k]; } });
       save(); if(f==="name") renderPickers(); renderPipeline(); ltvHint(); renderClientBar(); });
   });
 }
@@ -1092,6 +1101,7 @@ function parseSFText(text){
   const ph=(raw.phone||"").match(/(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/)||safe.match(/(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/); if(ph) found.phone=ph[0].trim();
   const n=v=>v==null||v===""?null:num(v);
   found.balance = n(raw.balance) ?? n(raw.balanceAlt) ?? n(raw.balanceAlt2);
+  if(n(raw.balanceAlt2)>0 && found.balance>0 && n(raw.balanceAlt2)>found.balance) found.origAmount=n(raw.balanceAlt2);
   found.rate=n(raw.rate); if(found.rate!=null && found.rate>25) found.rate=null;
   found.payment=n(raw.payment); found.paymentTotal=n(raw.paymentTotal); found.value=n(raw.value); found.fico=n(raw.fico);
   if(raw.servicer) found.servicer=raw.servicer; if(raw.address) found.address=raw.address;
@@ -1128,7 +1138,7 @@ function applySF(asNew){
   if(!lastSF) return; let c=cur();
   if(asNew||!c){ c=blankClient(); state.clients.unshift(c); state.currentId=c.id; }
   const F=lastSF.fields||lastSF;
-  document.querySelectorAll("#sfPreview [data-sfk]").forEach(cb=>{ if(!cb.checked) return; const k=cb.dataset.sfk;
+  document.querySelectorAll("#sfPreview [data-sfk]").forEach(cb=>{ if(!cb.checked&&!asNew) return; const k=cb.dataset.sfk;   /* a brand-new client takes every recognized field */
     if(k==="notes") c.notes = c.notes? (c.notes.includes(F.notes)? c.notes : c.notes+"\n"+F.notes) : F.notes; else c[k]=F[k]; });
   document.querySelectorAll("#sfPreview [data-sfd]").forEach(cb=>{ if(!cb.checked) return; const d=lastSF.debts[+cb.dataset.sfd]; if(!d) return;
     const ex=c.debts.find(x=>x.name===d.name); if(ex){ ex.balance=d.balance; if(d.pay!=null) ex.pay=d.pay; } else c.debts.push(Object.assign({},d)); });
@@ -2674,7 +2684,7 @@ function go(s){ document.querySelectorAll(".screen").forEach(x=>x.classList.remo
 }
 function refreshAll(){ renderPickers(); fillClientForm(); renderPipeline(); renderSavedOptions();
   fillAnalysisInputs(); renderDebts(); runAnalysis(); renderProposalPreview(); renderBlocks(); renderCompare(); renderDesk(); }
-document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>go(b.dataset.s)));
+document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>{ if(b.classList.contains("soon")){ toast("Coming soon \u2014 not part of this rollout yet"); return; } go(b.dataset.s); }));
 load(); migrate();
 if(state.settings.brand==="#0E3A5D"||state.settings.brand==="#7E2318") state.settings.brand="#A53222";
 if(state.settings.accent==="#D98E2B") state.settings.accent="#DDE4F4";
