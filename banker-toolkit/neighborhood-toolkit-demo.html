@@ -261,13 +261,13 @@ table.data tr.rec td{background:var(--cream)}
     <nav id="nav">
       <button data-s="pipeline" class="active">Pipeline</button>
       <button data-s="client">Client workspace</button>
-      <button data-s="pricing">Lender pricing</button>
       <button data-s="analysis">Savings analysis</button>
-      <button data-s="compare">Compare options</button>
       <button data-s="proposal">Client proposal</button>
-      <button data-s="tmpl">Scripts &amp; templates</button>
+      <button data-s="compare">Compare options</button>
       <button data-s="tools">Tools</button>
+      <button data-s="pricing">Lender pricing</button>
       <button data-s="blocks">Call blocks</button>
+      <button data-s="tmpl">Scripts &amp; templates</button>
       <button data-s="desk">My desk</button>
       <button data-s="settings">Settings &amp; data</button>
     </nav>
@@ -484,7 +484,7 @@ Discover 6,100 190 24.9"></textarea>
         <div class="hint">Heads up: this is a savings proposal, not a Loan Estimate. The official LE is a regulated disclosure that comes from the lender after application.</div>
       </div>
       <div class="panel"><h2>Preview</h2><div class="hint" id="propRateSrc" style="margin-bottom:8px"></div><div id="propPreview" style="border:1px solid var(--line);padding:20px;background:#fff"></div></div>
-      <div class="panel"><h2>This client\u2019s proposal library</h2><div id="propLibrary"></div></div>
+      <div class="panel"><h2 id="propLibTitle">Proposal library</h2><div id="propLibrary"></div></div>
     </section>
 
     <!-- ================= CALL BLOCKS ================= -->
@@ -723,12 +723,6 @@ Discover 6,100 190 24.9"></textarea>
           <div class="btnrow"><button class="btn" onclick="saveSettingsFromUI(true)">Save</button></div>
         </div>
       </div>
-      <div class="panel">
-        <h2>Salesforce label map (parser tuning)</h2>
-        <p class="hint" style="margin-bottom:8px">When Salesforce labels a field differently than expected, add the label here (comma-separated, case-insensitive) so the parser catches it.</p>
-        <div id="sfMapEditor" class="grid3"></div>
-        <div class="btnrow" style="margin-top:8px"><button class="btn" onclick="saveSfMap()">Save label map</button></div>
-      </div>
     </section>
   </main>
 </div>
@@ -756,7 +750,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.1.5";
+const TOOLKIT_VERSION = "1.1.6";
 const DEMO = true; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -1109,7 +1103,7 @@ function parseSFText(text){
   const fmt=(k,v)=> ["balance","payment","paymentTotal","escrow","value"].includes(k)? money(v) : k==="rate"||k==="targetRate"? pct(v) : esc(v);
   const mlNote = raw.monthsSince && raw.monthsLeft==null ? `<div class="hint">Months left assumes a 30-year term from \u201cMonths Since Close Date\u201d \u2014 adjust in the details if it was a 15 or 20.</div>` : "";
   const hdr = cc ? `<div class="hint" style="margin-bottom:6px">Applying to <b>${esc(cc.name)}</b>: changed fields show current \u2192 new and are checked; unchanged ones are unchecked. Uncheck anything you\u2019d rather keep.</div>` : "";
-  $("sfPreview").innerHTML = !keys.length && !debts.length ? `<div class="empty">Nothing recognized \u2014 add the labels this record uses to the map in Settings, then re-parse.</div>` :
+  $("sfPreview").innerHTML = !keys.length && !debts.length ? `<div class="empty">Nothing recognized \u2014 make sure the lead page was in front when you clicked the bookmarklet, then try again. If it keeps happening, send the page to your admin.</div>` :
    hdr+(keys.length? `<table class="data"><thead><tr><th></th><th>Field</th><th>Value</th></tr></thead><tbody>`+
    keys.map(k=>{ const cv=cc?cc[k]:null; const has=cv!=null&&cv!==""; const same=has&&String(cv)===String(found[k]);
      return `<tr${same?' style="opacity:.55"':''}><td><input type="checkbox" ${same?"":"checked"} data-sfk="${k}"></td><td>${FIELD_LABELS[k]||k}</td><td>${has&&!same?`<span class="hint" style="text-decoration:line-through">${fmt(k,cv)}</span> \u2192 `:""}${fmt(k,found[k])}${same?' <span class="hint">(same)</span>':''}</td></tr>`; }).join("")+`</tbody></table>`+mlNote : "")+
@@ -1600,6 +1594,7 @@ function libraryDel(id){ const c=cur(); if(!c) return; c.library=c.library.filte
 function libraryView(id){ const c=cur(); const e=c&&c.library.find(x=>x.id===id); if(!e) return; const el=$("propPreview"); if(el) el.innerHTML=e.html; $("propRateSrc").textContent="Viewing a saved proposal from "+e.when+" \u2014 the live preview comes back when you change anything."; try{ window.scrollTo({top:$("propPreview").offsetTop-80,behavior:"smooth"}); }catch(e){} }
 function libSnap(id){ const c=cur(); return c&&c.library.find(x=>x.id===id); }
 function renderLibrary(){ const el=$("propLibrary"); if(!el) return; const c=cur(); const L=(c&&c.library)||[];
+  const th=$("propLibTitle"); if(th) th.textContent = c ? c.name+"\u2019s proposal library" : "Proposal library";
   el.innerHTML = !L.length ? `<div class="empty">Nothing saved yet. Every proposal you copy, email, print, or save is kept here for this client automatically \u2014 or click Save to library.</div>` :
   `<table class="data"><thead><tr><th>Saved</th><th>Proposal</th><th></th></tr></thead><tbody>`+L.map(e=>`<tr><td class="hint" style="white-space:nowrap">${esc(e.when)}</td><td><b>${esc(e.title)}</b> <span class="hint">\u00b7 ${e.kind==="compare"?"comparison":"proposal"} \u00b7 v${esc(e.version||"")}</span></td>
    <td><div class="btnrow" style="gap:6px;flex-wrap:nowrap"><button class="btn ghost small" onclick="libraryView('${e.id}')">View</button><button class="btn small" onclick="copyImage('${e.kind}','${e.id}')">Copy</button><button class="btn ghost small" onclick="exportImage('${e.kind}','${e.id}')">Save image</button><button class="btn ghost small" onclick="emailImage('${e.kind}','${e.id}')">Email</button><button class="btn ghost small" onclick="exportSnapPDF('${e.id}')">PDF</button><button class="btn ghost small" title="Remove" onclick="libraryDel('${e.id}')">\u2715</button></div></td></tr>`).join("")+`</tbody></table>`; }
@@ -1817,7 +1812,7 @@ function fillSettingsUI(){ const s=state.settings;
   $("setLoPhone").value=s.loPhone; $("setLoEmail").value=s.loEmail; $("setFeed").value=s.feedUrl; $("setPoll").checked=!!s.poll;
   $("setReport").value=s.reportUrl||""; $("setGoal").value=s.folderGoal||15; $("setTeam").value=s.teamUrl||"";
   if($("setHub")) $("setHub").value=s.hub||""; if($("setHubKey")) $("setHubKey").value=s.hubKey||""; updateHubStatus(); updateMirrorStatus();
-  const ed=$("sfMapEditor"); ed.innerHTML=Object.keys(DEFAULT_SFMAP).map(f=>
+  const ed=$("sfMapEditor"); if(ed) ed.innerHTML=Object.keys(DEFAULT_SFMAP).map(f=>
    `<div class="field"><label>${FIELD_LABELS[f]}</label><input type="text" data-map="${f}" value="${esc((s.sfMap[f]||[]).join(", "))}"></div>`).join("");
 }
 function saveSettingsFromUI(announce){ const s=state.settings;
