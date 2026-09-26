@@ -1,0 +1,20 @@
+# dependencies / build output
+node_modules/
+nmc-toolkit-desktop/dist/
+nmc-toolkit-desktop/app/neighborhood-toolkit.html   # copied in by `npm run sync`
+
+# hub runtime data: rates, blocks, presence, SAVE MIRRORS (client data), inbox — never commit
+central-server/data/
+*.log
+
+# secrets / signing
+.env
+*.p12
+*.pfx
+*.cer
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

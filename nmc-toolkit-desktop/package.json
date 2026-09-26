@@ -1,0 +1,58 @@
+{
+  "name": "nmc-toolkit",
+  "productName": "NMC Toolkit",
+  "version": "1.0.0",
+  "description": "Neighborhood Mortgage Company banker toolkit",
+  "author": "Neighborhood Mortgage Company",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "sync": "node scripts/sync-html.js",
+    "start": "npm run sync && electron .",
+    "build": "npm run sync && electron-builder --win --mac",
+    "build:win": "npm run sync && electron-builder --win",
+    "build:mac": "npm run sync && electron-builder --mac",
+    "build:portable": "npm run sync && electron-builder --win portable"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "dependencies": {
+    "electron-updater": "^6.3.9"
+  },
+  "build": {
+    "appId": "com.neighborhoodmc.toolkit",
+    "productName": "NMC Toolkit",
+    "copyright": "© Neighborhood Mortgage Company",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["main.js", "preload.js", "app/**/*", "package.json"],
+    "win": {
+      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "icon": "build/icon.png",
+      "artifactName": "NMC-Toolkit-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "NMC Toolkit"
+    },
+    "portable": { "artifactName": "NMC-Toolkit-Portable-${version}.${ext}" },
+    "mac": {
+      "target": [{ "target": "dmg", "arch": ["universal"] }],
+      "icon": "build/icon.png",
+      "category": "public.app-category.finance",
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "artifactName": "NMC-Toolkit-${version}.${ext}"
+    },
+    "dmg": { "artifactName": "NMC-Toolkit-${version}.${ext}" },
+    "publish": { "provider": "generic", "url": "http://HUB:8787/updates/" }
+  }
+}

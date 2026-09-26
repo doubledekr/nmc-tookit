@@ -1,0 +1,559 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DEMO — NMC Management Console</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Lora:ital@0;1&family=Montserrat:wght@400;500;600;700&display=swap');
+:root{
+  --brand:#A53222; --brand-deep:#7C2519; --ink:#343740; --muted:#5C616E;
+  --cream:#EDE3D2; --cream-soft:#F7F1E6; --paper:#FBF8F2; --panel:#FFFFFF;
+  --line:#E5DFD2; --accent:#DDE4F4; --accent-soft:#EDF1FA;
+  --good:#2E6B4F; --good-soft:#E4EFE8; --warn:#8F3223; --warn-soft:#F6E4DF;
+  --radius:14px;
+  --serif:"Lora",Georgia,"Times New Roman",serif;
+  --sans:"Montserrat","Segoe UI","Helvetica Neue",Arial,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);font-size:15px;line-height:1.5}
+#app{display:flex;min-height:100vh}
+aside{width:232px;flex:0 0 232px;background:var(--cream-soft);border-right:1px solid var(--line);display:flex;flex-direction:column;padding:22px 0}
+.wordmark{padding:0 20px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
+.wordmark img{max-height:36px;display:block}
+.wordmark .tag{font-size:11.5px;color:var(--muted);margin-top:6px}
+nav button{display:block;width:100%;text-align:left;background:none;border:none;color:var(--ink);padding:11px 20px 11px 36px;font-size:14.5px;position:relative;cursor:pointer;font-family:inherit}
+nav button::before{content:"\276F";position:absolute;left:19px;top:13px;color:var(--brand);opacity:0;font-size:11px}
+nav button:hover{background:#fff}
+nav button.active{color:var(--brand);font-weight:700;background:#fff}
+nav button.active::before{opacity:1}
+.side-foot{margin-top:auto;padding:14px 20px 0;font-size:11px;color:var(--muted);border-top:1px solid var(--line)}
+.conn{margin:14px 16px 0;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:10px 12px;font-size:12px;color:var(--muted)}
+.conn b{display:block;color:var(--ink)}
+main{flex:1;padding:28px 32px;max-width:1150px}
+.eyebrow{color:var(--brand);font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.eyebrow::before{content:"\276F ";font-size:10px}
+.screen{display:none}.screen.active{display:block}
+.screen>h1{font-family:var(--serif);font-size:28px;font-weight:400;margin:2px 0 18px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-bottom:16px}
+.panel h2{font-family:var(--serif);font-size:17px;font-weight:400;margin-bottom:10px}
+.hint{font-size:12.5px;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:12px}
+.stat{padding:14px 16px;border-radius:var(--radius);background:var(--accent-soft)}
+.stat .v{font-family:var(--serif);font-size:23px;font-weight:400}
+.stat .l{font-size:12px;color:var(--muted)}
+.field{margin-bottom:10px}
+.field label{display:block;font-size:12.5px;color:var(--muted);margin-bottom:4px;font-weight:500}
+input,select,textarea{font:inherit;color:var(--ink);width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:#fff}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);border-color:var(--accent)}
+input.num{text-align:right}
+.btn{background:var(--brand);color:#fff;border:none;border-radius:9px;padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn:hover{background:var(--brand-deep)}
+.btn.ghost{background:#fff;color:var(--brand);border:1.5px solid var(--brand)}
+.btn.ghost:hover{background:var(--cream-soft)}
+.btn.small{padding:6px 12px;font-size:12.5px}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+table.data{width:100%;border-collapse:collapse;font-size:13.5px}
+table.data th{text-align:left;color:var(--muted);font-size:12px;font-weight:700;border-bottom:2px solid var(--ink);padding:6px 8px}
+table.data td{border-bottom:1px solid var(--line);padding:8px;vertical-align:top}
+table.data th.num,table.data td.num{text-align:right}
+.empty{color:var(--muted);font-size:13.5px;background:var(--cream-soft);border-radius:10px;padding:14px}
+.dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:baseline}
+.dot.on{background:var(--good)} .dot.off{background:#C9C2B4}
+.tag-good{background:var(--good-soft);color:var(--good);border-radius:20px;padding:2px 10px;font-size:12px;font-weight:600;display:inline-block}
+.tag-flat{background:var(--cream-soft);border:1px solid var(--line);color:var(--muted);border-radius:20px;padding:2px 10px;font-size:12px;display:inline-block}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:10px;padding:10px 18px;font-size:13.5px;display:none;z-index:99}
+code{background:var(--cream-soft);border-radius:6px;padding:1px 6px;font-size:12.5px}
+
+/* ---- control system: one height scale so buttons, fields, and chips line up everywhere ---- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:40px;padding:0 16px;line-height:1.2;border-radius:9px;cursor:pointer;white-space:nowrap;font-family:inherit;transition:background .12s,border-color .12s}
+.btn.small{min-height:32px;padding:0 12px;font-size:12.5px;border-radius:8px}
+.btn.ghost{background:#fff;color:var(--ink);border:1.5px solid #C9C2B4}
+.btn.ghost:hover{background:var(--cream-soft);border-color:var(--ink)}
+.btn.danger{background:#fff;color:var(--warn);border:1.5px solid var(--warn)}
+.btn.danger:hover{background:var(--warn-soft)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn:focus-visible,nav button:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=hidden]),select{min-height:40px;padding:0 11px;border-radius:9px;border:1px solid var(--line);background:#fff;width:100%;font:inherit;color:var(--ink)}
+select{padding-right:28px}
+table.data td input,table.data td select{min-height:32px;padding:0 8px;border-radius:7px;font-size:13px}
+input[type=checkbox],input[type=radio]{width:16px;height:16px;accent-color:var(--brand);margin:0;vertical-align:middle}
+.btnrow{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center}
+.btnrow>label{margin:0;display:inline-flex;align-items:center;gap:7px;min-height:40px;color:var(--ink);font-size:13.5px}
+.field{margin-bottom:12px}
+label{margin-bottom:5px;font-weight:500}
+.panel{padding:22px}
+.panel h2{margin-bottom:14px}
+.row{gap:16px}
+.grid2,.grid3,.grid4{gap:12px 14px}
+table.data th{padding:9px 10px}
+table.data td{padding:10px;vertical-align:middle}
+.hint{line-height:1.5}
+.tag-good,.tag-warn,.tag-flat{vertical-align:middle;line-height:1.7}
+nav button{min-height:42px;cursor:pointer;font-family:inherit}
+.stat{padding:16px 18px}
+.empty{padding:18px 16px;text-align:left;background:var(--cream-soft);border-radius:10px}
+
+@media (max-width:900px){
+  #app{flex-direction:column}
+  aside{width:100%;flex:none;flex-direction:row;flex-wrap:wrap;align-items:center;gap:2px;padding:8px 10px;border-right:none;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50}
+  .wordmark{border:none;padding:4px 10px;margin:0}
+  .wordmark img{max-height:28px}
+  .wordmark .tag,.conn,.side-foot{display:none}
+  nav{display:flex;flex-wrap:nowrap;overflow-x:auto;width:100%}
+  nav button{width:auto;white-space:nowrap;padding:9px 12px 9px 24px}
+  nav button::before{left:9px;top:11px}
+  main{padding:16px;max-width:100%}
+  .panel{overflow-x:auto}
+  .grid2{grid-template-columns:1fr}.grid4{grid-template-columns:1fr 1fr}
+}
+@media (max-width:640px){
+  main{padding:12px}.panel{padding:14px}.screen>h1{font-size:23px}
+  input,select,textarea{font-size:16px}.btn,input:not([type=checkbox]):not([type=radio]),select{min-height:44px}
+  table.data{min-width:560px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <aside>
+    <div class="wordmark"><img id="logo" alt="Neighborhood Mortgage Company"><div class="tag">Management console</div></div>
+    <nav id="nav">
+      <button data-s="dash" class="active">Team dashboard</button>
+      <button data-s="rates">Rate desk</button>
+      <button data-s="tmpl">Template library</button>
+      <button data-s="admin">Presence &amp; IT admin</button>
+      <button data-s="setup">Connection</button>
+    </nav>
+    <div class="conn" id="connBox"><b>Not connected</b>Pick a mode on the Connection screen.</div>
+    <div class="side-foot">NMC management node &middot; leaders &amp; IT only</div>
+  </aside>
+
+  <main>
+    <div id="demoBanner" style="display:none;background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:13px"><b>Demo mode.</b> A fictional five-banker floor with three months of history, rates, presence, templates, and mirrored saves. Publishing only updates this screen. Nothing here is real, and it never touches a real console\u2019s settings.</div>
+    <!-- ============ DASHBOARD ============ -->
+    <section class="screen active" id="s-dash">
+      <div class="eyebrow">The whole floor at a glance</div><h1>Team dashboard</h1>
+      <div class="panel">
+        <div class="btnrow" style="margin-bottom:12px">
+          <select id="dashMonth" style="width:auto" onchange="renderDash()"></select>
+          <span style="flex:1"></span>
+          <span class="hint" id="dashUpdated"></span>
+          <button class="btn ghost small" onclick="loadAll(true)">Refresh</button>
+        </div>
+        <div id="dashStats"></div>
+      </div>
+      <div class="panel"><h2>Rates on the feed</h2><div id="dashRates" class="hint">&mdash;</div></div>
+    </section>
+
+    <!-- ============ RATE DESK ============ -->
+    <section class="screen" id="s-rates">
+      <div class="eyebrow">Push it once, every banker sees it</div><h1>Rate desk</h1>
+      <div class="panel">
+        <h2>Publish today's rates</h2>
+        <div class="hint" style="margin-bottom:10px">These land on every banker toolkit within minutes (server poll or shared-folder sync) and automatically light up streamline-eligible clients in their pipelines. The 10-yr Treasury block is preserved automatically.</div>
+        <div id="rateRows"></div>
+        <div class="btnrow" style="margin-top:8px">
+          <button class="btn ghost small" onclick="addRateRow('','' )">+ Add product</button>
+          <span style="flex:1"></span>
+          <button class="btn" onclick="publishRates()">Publish rates</button>
+        </div>
+        <div class="hint" id="rateStatus" style="margin-top:8px"></div>
+      </div>
+      <div class="panel" id="apiPullPanel" style="display:none">
+        <h2>Pull from the pricing API</h2>
+        <div class="hint" style="margin-bottom:8px">IT has connected a pricing feed. One click prefills the desk from it &mdash; you still review and Publish.</div>
+        <button class="btn ghost" onclick="pullExternal()">Pull latest from pricing API</button>
+      </div>
+    </section>
+
+    <!-- ============ TEMPLATES ============ -->
+    <section class="screen" id="s-tmpl">
+      <div class="eyebrow">Put the best words in everyone's hands</div><h1>Template library</h1>
+      <div class="panel">
+        <h2>Company library <span class="tag-flat" id="tmplDirty" style="display:none">unpublished changes</span></h2>
+        <div class="hint" style="margin-bottom:10px">Strong intros, texts, and emails pushed to every banker's toolkit. Tokens auto-fill on their end: <code>{client_first}</code> <code>{client}</code> <code>{banker}</code> <code>{banker_phone}</code> <code>{banker_email}</code> <code>{banker_nmls}</code> <code>{rate}</code></div>
+        <div class="btnrow" style="margin-bottom:10px">
+          <button class="btn ghost small" onclick="addCompanyTmpl('intro')">+ Intro script</button>
+          <button class="btn ghost small" onclick="addCompanyTmpl('text')">+ Text</button>
+          <button class="btn ghost small" onclick="addCompanyTmpl('email')">+ Email</button>
+          <span style="flex:1"></span>
+          <button class="btn" onclick="publishTemplates()">Publish library</button>
+        </div>
+        <div id="companyList"></div>
+        <div class="hint" id="tmplStatus" style="margin-top:8px"></div>
+      </div>
+      <div class="panel">
+        <h2>Shared by bankers</h2>
+        <div class="hint" style="margin-bottom:8px">What the team has volunteered to the pool. Promote the good ones into the company library.</div>
+        <div id="sharedList"></div>
+      </div>
+    </section>
+
+    <!-- ============ ADMIN ============ -->
+    <section class="screen" id="s-admin">
+      <div class="eyebrow">IT's corner</div><h1>Presence &amp; IT admin</h1>
+      <div class="panel">
+        <h2>Who has the toolkit open right now</h2>
+        <div class="hint" style="margin-bottom:8px">Toolkits heartbeat once a minute while open (name + timestamp only, nothing else). Green = seen in the last 3 minutes.</div>
+        <div id="presenceList"></div>
+      </div>
+      <div class="panel">
+        <h2>Mirrored banker save files</h2>
+        <div class="hint" style="margin-bottom:8px">Each banker's toolkit mirrors its full save to the hub whenever it can reach it &mdash; separate from their local file, which always works offline. These carry client data, so the admin token is required and the list shows metadata only until you open one.</div>
+        <div id="savesList"></div>
+      </div>
+      <div class="panel">
+        <h2>Pricing API (optional plug-in)</h2>
+        <div class="hint" style="margin-bottom:8px">Wire a pricing-engine or aggregator endpoint that returns <code>{"rates":{"Conventional":6.125,...}}</code>. Once saved, the Rate desk shows leadership a one-click "Pull" &mdash; they review, then Publish. Leave blank to keep rates fully manual.</div>
+        <div class="btnrow"><input type="url" id="extApi" placeholder="https://pricing.example.com/nmc-rates.json" style="flex:1;min-width:220px" onchange="saveCfg(); renderRateDesk()">
+        <button class="btn ghost small" onclick="testExternal()">Test</button></div>
+        <div class="hint" id="extApiOut" style="margin-top:6px"></div>
+      </div>
+      <div class="panel">
+        <h2>Hub health</h2>
+        <div class="btnrow"><button class="btn ghost small" onclick="pingHub()">Ping hub</button><span class="hint" id="pingOut"></span></div>
+      </div>
+      <div class="panel">
+        <h2>Endpoints &amp; exports</h2>
+        <div class="hint" style="line-height:2" id="endpoints"></div>
+        <div class="hint" style="margin-top:8px">The <code>/api/snapshot</code> endpoint is the AI hook: one self-describing JSON of rates, history, team rollups, presence, and templates &mdash; point a future analytics layer at it and nothing else has to change.</div>
+      </div>
+    </section>
+
+    <!-- ============ SETUP ============ -->
+    <section class="screen" id="s-setup">
+      <div class="eyebrow">Point this console at your hub</div><h1>Connection</h1>
+      <div class="panel">
+        <h2>Mode</h2>
+        <div class="btnrow" style="margin-bottom:12px">
+          <label style="display:flex;align-items:center;gap:6px"><input type="radio" name="mode" value="server" style="width:auto" onchange="setMode('server')"> Central server (HTTP)</label>
+          <label style="display:flex;align-items:center;gap:6px"><input type="radio" name="mode" value="drive" style="width:auto" onchange="setMode('drive')"> Shared folder (air-gapped)</label>
+        </div>
+        <div id="setupServer">
+          <div class="grid2">
+            <div class="field"><label>Server base URL</label><input type="url" id="baseUrl" placeholder="http://SERVER:8787" onchange="saveCfg()"></div>
+            <div class="field"><label>Admin token (for publishing &mdash; stored only in this browser)</label><input type="password" id="token" onchange="saveCfg()"></div>
+          </div>
+        </div>
+        <div id="setupDrive" style="display:none">
+          <div class="btnrow"><button class="btn ghost" onclick="pickFolder()">Choose the shared folder&hellip;</button><span class="hint" id="folderName"></span></div>
+          <div class="hint" style="margin-top:6px">Same Z:\ folder the bankers use. Publishing writes rates.json / templates.json straight into it; merge-drive (or the bankers' own sync) carries everything from there. Chrome or Edge required.</div>
+        </div>
+        <div class="btnrow" style="margin-top:12px"><button class="btn" onclick="testConn()">Test connection &amp; load</button><span class="hint" id="setupStatus"></span></div>
+      </div>
+      <div class="panel">
+        <h2>Who uses what</h2>
+        <div class="hint" style="line-height:1.9">
+          <b>Leaders:</b> Team dashboard + Rate desk + Template library.<br>
+          <b>IT:</b> Presence &amp; admin + this Connection screen. The admin token is what protects publishing &mdash; set <code>NMC_ADMIN_TOKEN</code> on the server and share it only with rate-desk owners.
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+const DEMO=true; /* build flag: the demo console is this same file with DEMO=true */
+const NMC_LOGO="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTY1IiBoZWlnaHQ9IjQwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxnIGNsaXAtcGF0aD0idXJsKCNhKSI+PHBhdGggZD0iTTE2Mi42MDEgMTkuOGMwIDEuNDE2IDEuNTUxIDEuMDEyIDEuNTUxIDEuOTMzIDAgLjU0LS41NjIuODA5LTIuMjY5IDEuMzctMS4zOTMuNDk1LTEuNzMuNTYyLTEuOTU1LjU2Mi0uNjI5IDAtLjY5Ni0uNjUxLS42OTYtMS4xVjIxLjUzYy0uODMyIDEuMjM1LTIuMjI1IDIuMjAxLTQuMTM0IDIuMjAxLTIuODA5IDAtNS4xLTIuMTM0LTUuMS01Ljc3MyAwLTMuNTk1IDIuNTgzLTYuMTc5IDUuOTc2LTYuMTc5IDEuMzcgMCAyLjQ3MS40MjcgMy4yNTggMS4xMDF2LTIuNjk2YzAtMS40MzgtMS43My0uNzQxLTEuNzMtMS43OTcgMC0uNDk0LjU2MS0uNzg2IDIuMzE0LTEuNTA1IDEuNTA1LS42MDcgMS44NjQtLjY1MiAyLjA4OS0uNjUyLjU2MiAwIC42OTYuNDk0LjY5NiAxLjA3OVYxOS44Wm0tNS45NTMgMS41NzNjMS4zOTMgMCAyLjU4NC0xLjIxMyAyLjU4NC0zLjE0NXYtLjc4NmMwLTIuMjctMS40MzgtMy45NTQtMy4wNTYtMy45NTQtMS41NzMgMC0yLjYwNiAxLjMyNS0yLjYwNiAzLjUwNSAwIDIuNjk2IDEuNTI4IDQuMzggMy4wNzggNC4zOFptLTE0LjcwNSAyLjQ0OWMtMy45OTkgMC02LjQyNS0yLjU2LTYuNDI1LTUuOTA4IDAtMy41NzMgMi44NTMtNi4yMjQgNi44NTItNi4yMjRzNi40MjUgMi41NjIgNi40MjUgNS45MzJjMCAzLjY0LTIuOTQzIDYuMi02Ljg1MiA2LjJabS42MjktMS43MDdjMS42NjMgMCAyLjU4NC0xLjMyNiAyLjU4NC0zLjU3MiAwLTIuMjctMS4zMDMtNS4xNDUtMy40MTUtNS4xNDUtMS42NCAwLTIuNTg0IDEuMzI1LTIuNTg0IDMuNTk1IDAgMi4yNDYgMS4yODEgNS4xMjIgMy40MTUgNS4xMjJabS0xNS4wODcgMS43MDdjLTMuOTk5IDAtNi40MjUtMi41Ni02LjQyNS01LjkwOCAwLTMuNTczIDIuODUzLTYuMjI0IDYuODUyLTYuMjI0czYuNDI1IDIuNTYyIDYuNDI1IDUuOTMyYzAgMy42NC0yLjk0MyA2LjItNi44NTIgNi4yWm0uNjI5LTEuNzA3YzEuNjYzIDAgMi41ODQtMS4zMjYgMi41ODQtMy41NzIgMC0yLjI3LTEuMzAzLTUuMTQ1LTMuNDE1LTUuMTQ1LTEuNjQgMC0yLjU4NCAxLjMyNS0yLjU4NCAzLjU5NSAwIDIuMjQ2IDEuMjgxIDUuMTIyIDMuNDE1IDUuMTIyWm0tOS4wNjItMS42NGMuMjY5IDIgMS41MDUgMS4zOTMgMS41MDUgMi4zNTkgMCAuMzYtLjMxNS41ODQtLjgwOS41ODQtLjU4NCAwLTEuMDU2LS4wNjctMi4yMjQtLjA2Ny0xLjIxMyAwLTEuNjYzLjA2Ny0yLjI2OS4wNjctLjU4NCAwLS44MzEtLjI3LS44MzEtLjYzIDAtLjgzIDEuMzAzLS41MTYgMS4zMDMtMS41OTQgMC0uMzM3LS4wNDUtLjU0LS4wNjgtLjc0MmwtLjQ3Mi0zLjMyNWMtLjIwMi0xLjUyNy0uNzQxLTIuNjczLTEuOTk5LTIuNjczLS45ODkgMC0yLjExMi43NjQtMi4xMTIgMy4wMXYzLjI4YzAgMS42NjMgMS4zNDggMS4xNjkgMS4zNDggMi4wNjcgMCAuMjkyLS4yMjUuNjMtLjc2NC42My0uNTE3IDAtMS4xMjMtLjA2OC0yLjI2OS0uMDY4LTEuMTIzIDAtMS42ODUuMDY3LTIuMjI0LjA2Ny0uNTM5IDAtLjc2NC0uMzE0LS43NjQtLjYyOSAwLS44OTggMS4zMDMtLjQwNCAxLjMwMy0yLjA2N1YxMC4yNTNjMC0xLjQxNi0xLjQ4My0uNzg3LTEuNDgzLTEuNzk4IDAtLjQ5NC41ODQtLjc4NiAyLjE1Ny0xLjUwNSAxLjQ4My0uNjUxIDEuNzc1LS43MTkgMi4wNDUtLjcxOS41MTYgMCAuNjUxLjQyNy42NTEuOTg5djYuODk3Yy42OTctMS4xOSAxLjk3Ny0yLjIyNCAzLjc1Mi0yLjIyNCAyLjMxNCAwIDMuMzcgMS45NzcgMy42ODQgNC40MDNsLjU0IDQuMTc5Wm0tMTUuMjk0LTguNjA1YzEuMjU4IDAgMi4wOS43MiAyLjA5IDEuNTI4IDAgLjYyOS0uMjkyIDEuNDYtLjc2NCAyLjU4NC0uMTguNDQ5LS40MjcuNzE5LS44MDkuNzE5LS4zNTkgMC0uNTg0LS4yOTMtLjc2NC0uNjUyLS40MDQtLjgwOS0uNzg2LTEuMjgtMS4zOTMtMS4yOC0uODc2IDAtMi4yNDYgMS4xOS0yLjI0NiAzLjkwOHYyLjA2N2MwIDEuNjYzIDEuNjE3IDEuMDc5IDEuNjE3IDIuMDY3IDAgLjI5Mi0uMjI0LjYzLS43NjQuNjMtLjU4NCAwLTEuMjgtLjA2OC0yLjUzOC0uMDY4LTEuMTI0IDAtMS43MDguMDY3LTIuMjQ3LjA2Ny0uNTQgMC0uNzY0LS4zMTQtLjc2NC0uNjI5IDAtLjg5OCAxLjMyNi0uNDA0IDEuMzI2LTIuMDY3di00Ljc0YzAtMS40MzgtMS40ODMtLjgwOS0xLjQ4My0xLjc5NyAwLS40OTUuNTYyLS44MSAyLjE1Ny0xLjUwNiAxLjQ4My0uNjc0IDEuNzUyLS43NCAyLS43NC41MzggMCAuNjk2LjQ0OC42OTYgMS4wNzh2MS44NDJjLjY3NC0xLjcwOCAyLjI2OS0zLjAxIDMuODg2LTMuMDFaTTg2Ljk2NCAyMy44MjJjLTMuOTk5IDAtNi40MjUtMi41Ni02LjQyNS01LjkwOCAwLTMuNTczIDIuODUzLTYuMjI0IDYuODUyLTYuMjI0czYuNDI1IDIuNTYyIDYuNDI1IDUuOTMyYzAgMy42NC0yLjk0MyA2LjItNi44NTIgNi4yWm0uNjMtMS43MDdjMS42NjIgMCAyLjU4My0xLjMyNiAyLjU4My0zLjU3MiAwLTIuMjctMS4zMDMtNS4xNDUtMy40MTUtNS4xNDUtMS42NCAwLTIuNTg0IDEuMzI1LTIuNTg0IDMuNTk1IDAgMi4yNDYgMS4yOCA1LjEyMiAzLjQxNSA1LjEyMlpNNzQuMjIzIDExLjc4YzIuOTIgMCA1LjEgMi4xOCA1LjEgNS43OTcgMCAzLjYxNy0yLjcxOSA2LjE1NS02LjA4OSA2LjE1NS0yLjQ0OSAwLTMuMTktLjg5OC0zLjkwOS0uODk4LS42OTYgMC0xLjQ2Ljc0MS0yLjA0NC43NDEtLjQ3MiAwLS43Mi0uMzE0LS43Mi0uODU0VjEwLjI1M2MwLTEuNDE2LTEuNjYyLS43ODctMS42NjItMS43OTggMC0uNDk0LjU4NC0uNzg2IDIuMjAyLTEuNTA1IDEuMzkzLS41ODQgMS44NjUtLjcxOSAyLjEzNC0uNzE5LjU2MiAwIC42OTcuNTE3LjY5Ny45ODl2Ni44M2MuODc2LTEuMjU5IDIuMjkxLTIuMjcgNC4yOS0yLjI3Wk03My4wMSAyMi4wNDhjMS41MjcgMCAyLjc0LTEuMTQ2IDIuNzQtMy41MDUgMC0yLjU2MS0xLjM3LTQuNDA0LTMuMS00LjQwNC0xLjQ4MyAwLTIuNzE4IDEuMjgtMi43MTggMy4yMzZ2Ljg3NmMwIDIuMTExIDEuMjEzIDMuNzk2IDMuMDc4IDMuNzk2Wm0tOS4zNzYtMS41NzNjLjI3IDIgMS41MDUgMS4zOTMgMS41MDUgMi4zNTkgMCAuMzYtLjMxNC41ODQtLjgwOS41ODQtLjU4NCAwLTEuMDU1LS4wNjctMi4yMjQtLjA2Ny0xLjIxMyAwLTEuNjYyLjA2Ny0yLjI2OS4wNjctLjU4NCAwLS44MzEtLjI3LS44MzEtLjYzIDAtLjgzIDEuMzAzLS41MTYgMS4zMDMtMS41OTQgMC0uMzM3LS4wNDUtLjU0LS4wNjctLjc0MmwtLjQ3Mi0zLjMyNWMtLjIwMy0xLjUyNy0uNzQyLTIuNjczLTItMi42NzMtLjk4OCAwLTIuMTEyLjc2NC0yLjExMiAzLjAxdjMuMjhjMCAxLjY2MyAxLjM0OCAxLjE2OSAxLjM0OCAyLjA2NyAwIC4yOTItLjIyNC42My0uNzY0LjYzLS41MTYgMC0xLjEyMy0uMDY4LTIuMjY5LS4wNjgtMS4xMjMgMC0xLjY4NS4wNjctMi4yMjQuMDY3LS41MzkgMC0uNzY0LS4zMTQtLjc2NC0uNjI5IDAtLjg5OCAxLjMwMy0uNDA0IDEuMzAzLTIuMDY3VjEwLjI1M2MwLTEuNDE2LTEuNDgyLS43ODctMS40ODItMS43OTggMC0uNDk0LjU4NC0uNzg2IDIuMTU2LTEuNTA1IDEuNDgzLS42NTEgMS43NzUtLjcxOSAyLjA0NS0uNzE5LjUxNyAwIC42NTEuNDI3LjY1MS45ODl2Ni44OTdjLjY5Ny0xLjE5IDEuOTc3LTIuMjI0IDMuNzUyLTIuMjI0IDIuMzE0IDAgMy4zNyAxLjk3NyAzLjY4NSA0LjQwM2wuNTM5IDQuMTc5Wm0tMTYuNjc5LjIyNWMyLjA2Ny4xOCAzLjY2MiAxLjE2OCAzLjY2MiAzLjEgMCAyLjMxNC0yLjU4NCAzLjkwOS02Ljc0IDMuOTA5LTQuMjI0IDAtNi42NzItMS4xNDYtNi42NzItMi44MDggMC0uODc3LjY1MS0xLjU5NSAxLjc3NS0yLjA0NS0uNzQyLS4zODItMS4yMzYtLjk4OC0xLjIzNi0xLjg2NCAwLS45Ljc0MS0xLjg0MyAxLjcwNy0yLjQ5NC0xLjE5LS42MDctMS44NjQtMS41NS0xLjg2NC0yLjc2NCAwLTIuMTM0IDIuMTExLTQuMDIxIDYuMTMzLTQuMDIxLjMxNCAwIC42MDYuMDIyLjg5OC4wNDUuMjQ4LTIuMTggMS43MDgtMy41NSAyLjYyOS0zLjU1LjYwNyAwIDEuMjEzLjI3IDIuMDY3Ljk2Ni4zMzcuMjQ3LjU4NC41NjIuNTg0Ljg5OSAwIC4zNi0uMjI1LjY1Mi0uNzQxLjY1Mi0xLjUwNi4wNDQtMi44NzYuMjAyLTMuMTY4IDEuMjM1IDIuMTEyLjUxNyAzLjI4IDEuNzUyIDMuMjggMy4zNDggMCAyLjA4OS0yLjA0NCAzLjkzMS02LjExIDMuOTMxLS44NTUgMC0xLjYxOC0uMDktMi4zMTUtLjI0Ny0uMjcuMjQ3LS40OTQuNDcyLS40OTQuNjk3IDAgLjM4MS40NS41MzkgMS40MzguNjI5IDIuMDY3LjE1NyAzLjgxOS4yOTIgNS4xNjcuMzgxWm0tMy42MTctNy41NzJjLTEuNDM4IDAtMi40MjYuOTIxLTIuNDI2IDIuMjQ3IDAgMS41NzMgMS4yMTMgMi40NDkgMi41ODMgMi40NDkgMS40MzggMCAyLjQyNy0uODk5IDIuNDI3LTIuMjI0IDAtMS41NzMtMS4yMTQtMi40NzItMi41ODQtMi40NzJabS41NjIgMTMuMTY2YzIuMzgxIDAgMy41MDQtLjY1MiAzLjUwNC0xLjM0OCAwLS41NjItLjUxNi0uOTQ0LTEuNjg1LTEuMDc5LTEuNTcyLS4yMDItMy4zMjUtLjM2LTUuMDc3LS41ODQtLjQ1LjM2LS43NDEuODk5LS43NDEgMS4zNyAwIDEuMTY5IDEuNjE3IDEuNjQgMy45OTkgMS42NFpNMzIuNTI3IDEwLjM4N2MtLjk4OCAwLTEuNjYyLS41NjEtMS42NjItMS40MTUgMC0xLjEyMyAxLjE5LTIuMzM2IDIuNzQtMi4zMzYuOTQ0IDAgMS43NTMuNjA2IDEuNzUzIDEuNTA1IDAgMS4xLTEuMzAzIDIuMjQ2LTIuODMgMi4yNDZabS0xLjQ2IDEzLjA1M2MtLjU0IDAtLjc2NC0uMzE0LS43NjQtLjYyOSAwLS44OTggMS4zMjYtLjQwNCAxLjMyNi0yLjA2N3YtNC43NGMwLTEuNDM4LTEuNDgzLS44MDktMS40ODMtMS43OTcgMC0uNDk1LjU2MS0uODEgMi4xNTctMS41MDYgMS40ODItLjY3NCAxLjc1Mi0uNzQgMi0uNzQuNTM4IDAgLjY5Ni40NDguNjk2IDEuMDc4djcuNzA1YzAgMS42NjMgMS4zMjUgMS4xNjkgMS4zMjUgMi4wNjcgMCAuMjkyLS4yMjUuNjMtLjc0MS42My0uNTQgMC0xLjE0Ni0uMDY4LTIuMjctLjA2OC0xLjEyMyAwLTEuNzA3LjA2Ny0yLjI0Ni4wNjdabS0yLjUtMy4zNDdjLjMzNyAwIC41MzkuMzM3LjUzOS41ODQgMCAuMTgtLjA2OC4zNi0uMjAyLjU4NC0uNzQyIDEuMTY4LTIuODA5IDIuNTYxLTUuNTUgMi41NjEtMy40NiAwLTYuMDQzLTIuMzM2LTYuMDQzLTUuOTc2IDAtMy43MyAyLjg5OC02LjE1NSA2LjItNi4xNTUgMy4yMTMgMCA1LjE0NiAyLjI5MSA1LjE0NiA0LjQ5MyAwIC42NTEtLjIwMy43NjQtLjYwNy44OThsLTYuNzQgMi4wNjdjLjY5NyAxLjQxNiAxLjk3NyAyLjQ1IDMuNjE3IDIuNDUgMS4xMjMgMCAyLjA0NS0uNDI4IDIuODc2LTEuMTI0LjM2LS4yNy41MzktLjM4Mi43NjQtLjM4MlptLTUuNTI3LTYuNjk1Yy0xLjM0OCAwLTIuMzE0IDEuMjEzLTIuMzE0IDMuMTkgMCAuMzYuMDIyLjcyLjA5IDEuMDU2bDMuODY0LTEuMjU4Yy4zNi0uMTEyLjU0LS4yOTIuNTQtLjY5NiAwLTEuMDM0LS45LTIuMjkyLTIuMTgtMi4yOTJaTTE1LjY4IDcuMzFjLjU4NCAwIC44My4yOTIuODMuNjI5IDAgLjk2Ni0xLjQ2LjQ5NC0xLjQ2IDIuMDY2djEyLjY1YzAgLjY1LS40NDkuOTQzLS45Mi45NDMtLjY1MiAwLS45NjctLjMzNy0xLjM0OS0uNzg3bC04Ljg5Ni0xMC45NHY4Ljg3M2MwIDEuNTI4IDEuODIuOTQ0IDEuODIgMi4wNDUgMCAuNDA0LS4zMTUuNjUxLS45LjY1MS0uNjI4IDAtMS4zMDItLjA2Ny0xLjg4Ni0uMDY3LS41NCAwLTEuMTkxLjA2Ny0xLjc3NS4wNjctLjU2MiAwLS44MzEtLjMxNC0uODMxLS42NTEgMC0uOTQ0IDEuNDgyLS40NzIgMS40ODItMi4wNDVWMTAuMDA1YzAtMS41NzItMS40ODItMS4xLTEuNDgyLTIuMDQ0IDAtLjM4Mi4zMTQtLjY1MS45Mi0uNjUxLjQ5NSAwIDEuMDEyLjA0NSAxLjU1LjA0NS41ODUgMCAuOTY3LS4wNDUgMS4zOTQtLjA0NS40NDkgMCAuODA4LjE1NyAxLjIxMy42MjlsNy41NDkgOS4zNDZ2LTcuMjhjMC0xLjU1LTEuNzk4LS45NjYtMS43OTgtMi4wNjYgMC0uMzM3LjMzNy0uNjMuODk5LS42My42MjkgMCAxLjIxMy4wNjggMS44ODcuMDY4LjU4NCAwIDEuMTktLjA2NyAxLjc1Mi0uMDY3WiIgZmlsbD0iIzM0Mzc0MCIvPjxwYXRoIGQ9Ik0xMjEuOTk1IDkuNjM0aC03LjU3NWMtLjQ1NyAwLS41ODYtLjYyNi0uMTY2LS44MDdMMTM0LjY2MS4wMzRhLjQyMi40MjIgMCAwIDEgLjM0LjAwM0wxNTQuNDggOC44M2MuNDEzLjE4Ny4yOC44MDQtLjE3My44MDRoLTYuNjM5YS40MjQuNDI0IDAgMCAxLS4xNTYtLjAzbC0xMi41MjUtNC45OTlhLjQxOC40MTggMCAwIDAtLjMxMSAwbC0xMi41MjUgNWEuNDI0LjQyNCAwIDAgMS0uMTU2LjAzWiIgZmlsbD0iI0E1MzIyMiIvPjxwYXRoIGQ9Im0xNjIuNTIxIDMxLjEzMi0zLjUxMiA4LjE4MWgtLjk5bDEuMTU5LTIuNy0yLjIzOS01LjQ4MWgxLjA0NmwxLjA5MiAyLjg5Mi42MDggMS41ODcuNTk2LTEuNTc2IDEuMjI3LTIuOTAzaDEuMDEzWm0tMTEuNjE1LS4wMTJoLjg0NGwuMDQ1Ljg5Yy40NzMtLjY0MiAxLjEwMy0uOTY4IDEuOTAyLS45NjguNzIxIDAgMS4zMDYuMjM2IDEuNzU2LjY5Ny40NS40NjIuNjg3IDEuMDkyLjY4NyAxLjg4djMuMDcyaC0uOTIzdi0zLjA2YzAtLjU0MS0uMTU4LS45NTgtLjQ1MS0xLjI3My0uMzAzLS4zMDMtLjcyLS40NjEtMS4yMzctLjQ2MS0uNTA3LjAxMS0uOTIzLjE5MS0xLjIzOC41MjktLjMxNi4zNDktLjQ3My43NzYtLjQ3MyAxLjI4M3YyLjk4MmgtLjkxMnYtNS41N1ptLTIuNTUxIDUuNTcxLS4wMjMuMDIzLS4wMjItMS4wMTNhMi4xMTcgMi4xMTcgMCAwIDEtLjg3OC44NDQgMi41NiAyLjU2IDAgMCAxLTEuMTcxLjI4MWMtLjgyMSAwLTEuNDk2LS4yNTktMi4wMzctLjc4OC0uNTQtLjUyOC0uODEtMS4yMzctLjgxLTIuMTI3IDAtLjg3Ny4yNy0xLjU3NS44MS0yLjA5My41NDEtLjUxOCAxLjIyNy0uNzc2IDIuMDQ5LS43NzYuNDI3IDAgLjgyMS4xIDEuMjA0LjI5Mi4zNzEuMTkyLjY1My40NjIuODU1LjgxbC4wMTEtMS4wMTJoLjkwMXY1LjU2aC0uODg5Wm0tMi4wMzctNC43ODMtLjAxMi4wMTFjLS41NjIgMC0xLjAzNS4xOTItMS40MTguNTYzLS4zODIuMzcxLS41NzQuODU1LS41NzQgMS40NjMgMCAuNjA4LjE5MiAxLjEwMy41NzQgMS40NzQuMzgzLjM4My44NTYuNTYzIDEuNDE4LjU2My4zNjEgMCAuNjg3LS4wNjcuOTgtLjIyNWExLjYxIDEuNjEgMCAwIDAgLjY2NC0uNTg1IDIuNiAyLjYgMCAwIDAgLjMyNi0uNzg4IDEuODkzIDEuODkzIDAgMCAwIDAtLjg2NyAyLjc5OSAyLjc5OSAwIDAgMC0uMzI2LS43OTkgMS44NDUgMS44NDUgMCAwIDAtLjY1My0uNTg1IDIuMTYzIDIuMTYzIDAgMCAwLS45NzktLjIyNVptLTkuNjk4IDcuNDA1di04LjE1OWguODc3bC4wNDUgMS4wN2EyLjI4IDIuMjggMCAwIDEgLjkwMS0uODU2IDIuNTkzIDIuNTkzIDAgMCAxIDEuMjM4LS4zMTVjLjgxLjAyMiAxLjQ3NC4yOTIgMS45OTIuODEuNTE4LjUzLjc3NiAxLjIxNi43NzYgMi4wNiAwIC44NzctLjI3IDEuNTc1LS43ODcgMi4xMDQtLjUxOC41My0xLjIwNS43ODgtMi4wMzcuNzg4YTIuNjggMi42OCAwIDAgMS0xLjIxNi0uMjgxIDEuOSAxLjkgMCAwIDEtLjg4OS0uODQ0djMuNjIzaC0uOVptMi45NDgtMy4zNjRjLjU2MyAwIDEuMDM2LS4xOCAxLjQwNy0uNTQuMzYtLjM2LjU1Mi0uODQ1LjU1Mi0xLjQ2NCAwLS42MDgtLjE5Mi0xLjA5Mi0uNTUyLTEuNDUyLS4zNi0uMzYtLjgzMy0uNTQtMS40MDctLjU0LS41ODUgMC0xLjA0Ni4xOTItMS40MDcuNTYzLS4zNi4zODMtLjU0Ljg1NS0uNTQgMS40MyAwIC41NzMuMTggMS4wNDYuNTUyIDEuNDI4LjM2LjM4My44MzMuNTc1IDEuMzk1LjU3NVptLTEzLjI3OS00LjgxNy4wMTEuMDFoLjg1NmwuMDU2LjgxMWExLjU5IDEuNTkgMCAwIDEgLjY3NS0uNjg2IDIuMTUgMi4xNSAwIDAgMSAuOTY4LS4yMjVjLjQxNiAwIC43OTkuMSAxLjEzNy4yOTIuMzM3LjIwMy41NzQuNTA3LjczMS45MjNhMi4wMiAyLjAyIDAgMCAxIC44MTEtLjkxMiAyLjE5IDIuMTkgMCAwIDEgMS4xNDgtLjMwM2MuNzIgMCAxLjI5NC4yMjUgMS43MS42NjQuNDE3LjQ1LjYzIDEuMDQ2LjYzIDEuODExdjMuMTc0aC0uOTIydi0zLjE3NGMwLS40Ni0uMTM1LS44NDQtLjM5NC0xLjE0Ny0uMjU5LS4zMDQtLjYwOC0uNDYyLTEuMDQ3LS40NjItLjQ1IDAtLjgyMi4xNTgtMS4xMDMuNDczLS4yODEuMzE1LS40MTYuNjk4LS40MTYgMS4xNTl2My4xNTFoLS45MjNWMzMuNTRjMC0uNDYxLS4xNDYtLjg0NC0uNDE3LTEuMTYtLjI3LS4zMTQtLjYzLS40NzItMS4wOC0uNDcyLS40NSAwLS44MjIuMTU4LTEuMDkyLjQ3My0uMjgxLjMxNS0uNDE2LjY5OC0uNDE2IDEuMTU5djMuMTUxaC0uOTIzdi01LjU2Wm0tNy4wNzUgMi43OTFjMC0uODU2LjI3LTEuNTUzLjgxMS0yLjA5NC41NC0uNTQgMS4yMzgtLjgyMSAyLjA3LS44MjEuODQ0IDAgMS41NDIuMjcgMi4wODIuODEuNTQxLjU0LjgxMSAxLjI1LjgxMSAyLjEwNSAwIC44NDQtLjI4MiAxLjUzLS44MjIgMi4wNy0uNTQuNTQtMS4yMzguOC0yLjA3MS44LS44MzIgMC0xLjUzLS4yNi0yLjA3LS44LS41NDEtLjU0LS44MTEtMS4yMjYtLjgxMS0yLjA3Wm00Ljg2MiAwYzAtLjYwOC0uMTkxLTEuMTAzLS41NjMtMS40ODZhMS45MSAxLjkxIDAgMCAwLTEuNDA2LS41ODVjLS41NzQgMC0xLjA0Ny4xOTEtMS40MTguNTc0LS4zNzIuMzgzLS41NTIuODg5LS41NTIgMS40OTcgMCAuNTg1LjE4IDEuMDY5LjU1MiAxLjQ0LjM2LjM4My44MzIuNTYzIDEuNDA2LjU2My41NjMgMCAxLjAzNi0uMTggMS40MDctLjU2My4zNzItLjM3MS41NjMtLjg1NS41NzQtMS40NFptLTUuNTc0IDEuNzIyYy0uNzg3Ljc4Ny0xLjc2NiAxLjE3LTIuOTI2IDEuMTctMS4zMTYgMC0yLjMyOS0uMzgzLTMuMDM4LTEuMTYtLjcwOS0uNzc2LTEuMDY5LTEuNzMyLTEuMDY5LTIuODU4YTQuMzcxIDQuMzcxIDAgMCAxIC40MjctMS45OTJjLjI5My0uNjA3Ljc1NC0xLjEwMyAxLjM5Ni0xLjUwOC42My0uNDA1IDEuMzk1LS42MDggMi4yODQtLjYwOCAxLjExNSAwIDIuMDcxLjM5NCAyLjg4MSAxLjE4MmwtLjY3NS42M2MtLjU5Ni0uNTg1LTEuMzI4LS44NzgtMi4yMDYtLjg3OC0xLjAxMyAwLTEuNzg5LjMxNi0yLjMyOS45MjMtLjU0LjYyLS44MTEgMS4zNjItLjc5OSAyLjI0LjAxMS44NzguMjgxIDEuNjEuODIxIDIuMjA2LjUyOS41OTYgMS4yOTQuODg5IDIuMzA3Ljg4OS44NzggMCAxLjYzMi0uMzA0IDIuMjQtLjkxMmwuNjg2LjY3NlptLTExLjIwNy4xNTdoLS4wMTFjLS4yNy4zMjctLjYzLjU3NC0xLjA1OC43NDNhMy43MSAzLjcxIDAgMCAxLTEuMzM5LjI0N2MtLjg3OCAwLTEuNTc2LS4yNTgtMi4xMTYtLjc4Ny0uNTQtLjUzLS44MS0xLjIzOC0uODEtMi4xMTYgMC0uODMzLjI3LTEuNTMuODEtMi4wNy41NC0uNTQxIDEuMjI3LS44MTEgMi4wNzEtLjgxMS45IDAgMS42MDkuMjgxIDIuMTM4Ljg0NC41MjkuNTYzLjc0MyAxLjM2Mi42NDIgMi40MmgtNC43MjdjLjA0NS41MDYuMjU5LjkxMS42NDIgMS4yMTUuMzcxLjMwNC44MzIuNDUgMS4zNzMuNDUuMzI2IDAgLjY1Mi0uMDU2Ljk5LS4xOC4zMzgtLjEyNC41OTYtLjI5Mi43NzctLjUxOGwuNjE4LjU2M1ptLS41NTEtMi4zMDd2LjAxMWMtLjAyMi0uNTI5LS4yMDMtLjkzNC0uNTQtMS4yMjctLjMzOC0uMjkyLS43ODgtLjQzOC0xLjMzOS0uNDM4LS41MDcgMC0uOTQ2LjE0Ni0xLjMwNi40MzgtLjM3MS4yOTMtLjU5Ni42OTgtLjY2NCAxLjIxNmgzLjg0OVptLTEwLjY3MyA0LjEzYzAgLjUwNy4xOC44OS41NjMgMS4xMzcuMzgzLjI1OS44NDQuMzk0IDEuNDA3LjM5NC41NCAwIDEuMDAxLS4xMDEgMS4zODQtLjMxNXMuNTc0LS41NTIuNTc0LTEuMDAyYzAtLjQyOC0uMTkxLS43NTQtLjU2My0uOTktLjM3MS0uMjI1LS44MzMtLjM1LTEuMzg0LS4zNS0uODkgMC0xLjU5OC0uMjM1LTIuMTM4LS43My0uNTQtLjQ4NS0uOC0xLjE2LS44LTIuMDE1IDAtLjg1NS4yOTMtMS41My44NzktMi4wMjZhMy4xMzggMy4xMzggMCAwIDEgMi4wNTktLjczMWMuNjUzIDAgMS4xNy4xNDYgMS41NzYuNDE2bC41OTYtLjcyLjY1My41MTctLjYzLjc0M2MuNDcyLjU0LjcyIDEuMTQ4LjcyIDEuOCAwIC41MTktLjEzNS45OC0uNDA1IDEuMzk2LS4yNy40MTctLjY1My43MS0xLjE2Ljg2NyAxLjAxMy4zMDQgMS41MzEuOTEyIDEuNTMxIDEuODEyIDAgLjY4Ni0uMjkzIDEuMjE1LS44NTUgMS41OTgtLjU3NC4zODMtMS4yNi41NzQtMi4wNDkuNTc0LS44NTUgMC0xLjU1My0uMjAzLTIuMDgxLS42My0uNTMtLjQyOC0uNzg4LTEuMDAyLS43NjYtMS43NDVoLjg5Wm0tLjA0NS0zLjg3MWMwIC42MTkuMjAzIDEuMDkyLjU4NiAxLjQzLjM4Mi4zMzcuODY2LjUwNiAxLjQ1MS41MDYuNTg1IDAgMS4wNTgtLjE4IDEuNDQtLjU1Mi4zNzItLjM3MS41NjQtLjgzMy41NjQtMS4zNzMgMC0uNjA4LS4yMDMtMS4wOC0uNTk3LTEuNDE4LS4zOTQtLjMzOC0uODY3LS41MDYtMS40MTgtLjUwNi0uNTQgMC0xLjAxMy4xNjgtMS40MTguNTA2LS40MDUuMzM4LS42MDguOC0uNjA4IDEuNDA3Wk05Mi45IDM2LjY5MWwtLjAyMi4wMjMtLjAyMi0xLjAxM2EyLjExNCAyLjExNCAwIDAgMS0uODc4Ljg0NCAyLjU2IDIuNTYgMCAwIDEtMS4xNy4yODFjLS44MjIgMC0xLjQ5Ny0uMjU5LTIuMDM4LS43ODgtLjU0LS41MjgtLjgxLTEuMjM3LS44MS0yLjEyNyAwLS44NzcuMjctMS41NzUuODEtMi4wOTNzMS4yMjctLjc3NiAyLjA0OS0uNzc2Yy40MjcgMCAuODIxLjEgMS4yMDQuMjkyLjM3MS4xOTIuNjUzLjQ2Mi44NTUuODFsLjAxMS0xLjAxMmguOXY1LjU2aC0uODg4Wm0tMi4wMzYtNC43ODMtLjAxMi4wMTFjLS41NjIgMC0xLjAzNS4xOTItMS40MTguNTYzLS4zODIuMzcxLS41NzQuODU1LS41NzQgMS40NjMgMCAuNjA4LjE5MiAxLjEwMy41NzQgMS40NzQuMzgzLjM4My44NTYuNTYzIDEuNDE4LjU2My4zNiAwIC42ODctLjA2Ny45OC0uMjI1YTEuNjEgMS42MSAwIDAgMCAuNjY0LS41ODUgMi42IDIuNiAwIDAgMCAuMzI2LS43ODggMS44NzcgMS44NzcgMCAwIDAgMC0uODY3IDIuNzc0IDIuNzc0IDAgMCAwLS4zMjYtLjc5OSAxLjgzNyAxLjgzNyAwIDAgMC0uNjUzLS41ODUgMi4xNjIgMi4xNjIgMCAwIDAtLjk4LS4yMjVabS04Ljc5NCA1LjcxN2MwIC41MDcuMTguODkuNTYzIDEuMTM3LjM4My4yNTkuODQ0LjM5NCAxLjQwNy4zOTQuNTQgMCAxLjAwMS0uMTAxIDEuMzg0LS4zMTVzLjU3NC0uNTUyLjU3NC0xLjAwMmMwLS40MjgtLjE5MS0uNzU0LS41NjMtLjk5LS4zNzEtLjIyNS0uODMyLS4zNS0xLjM4NC0uMzUtLjg4OSAwLTEuNTk4LS4yMzUtMi4xMzgtLjczLS41NC0uNDg1LS44LTEuMTYtLjgtMi4wMTUgMC0uODU1LjI5My0xLjUzLjg3OS0yLjAyNmEzLjEzOCAzLjEzOCAwIDAgMSAyLjA2LS43MzFjLjY1MiAwIDEuMTcuMTQ2IDEuNTc1LjQxNmwuNTk2LS43Mi42NTMuNTE3LS42My43NDNjLjQ3Mi41NC43MiAxLjE0OC43MiAxLjhhMi41IDIuNSAwIDAgMS0uNDA1IDEuMzk2Yy0uMjcuNDE3LS42NTMuNzEtMS4xNi44NjcgMS4wMTQuMzA0IDEuNTMxLjkxMiAxLjUzMSAxLjgxMiAwIC42ODYtLjI5MiAxLjIxNS0uODU1IDEuNTk4LS41NzQuMzgzLTEuMjYuNTc0LTIuMDQ4LjU3NC0uODU2IDAtMS41NTMtLjIwMy0yLjA4Mi0uNjMtLjUzLS40MjgtLjc4OC0xLjAwMi0uNzY2LTEuNzQ1aC44OVptLS4wNDUtMy44NzFjMCAuNjE5LjIwMyAxLjA5Mi41ODYgMS40My4zODIuMzM3Ljg2Ni41MDYgMS40NTEuNTA2LjU4NiAwIDEuMDU4LS4xOCAxLjQ0LS41NTIuMzcyLS4zNzEuNTY0LS44MzMuNTY0LTEuMzczIDAtLjYwOC0uMjAzLTEuMDgtLjU5Ny0xLjQxOC0uMzk0LS4zMzgtLjg2Ni0uNTA2LTEuNDE4LS41MDYtLjU0IDAtMS4wMTMuMTY4LTEuNDE4LjUwNi0uNDA1LjMzOC0uNjA4LjgtLjYwOCAxLjQwN1ptLTMuNDE1LTQuMjQzdjEuNjMyaDEuNzIxdi43ODhoLTEuNzMzdjIuOTM3YzAgLjcyLjI5MiAxLjA3Ljg3OCAxLjA3LjI0NyAwIC41MDYtLjA2OC43NzYtLjIwM2wuMjcuNzY1Yy0uMzgyLjE4LS43NDMuMjctMS4wOC4yNy0xLjE3LjAyMi0xLjc1Ni0uNjA4LTEuNzU2LTEuOTAydi0yLjkzN2gtMS4xMTR2LS43ODhoMS4xMTR2LTEuNTNsLjkyMy0uMTAyWm0tNS41MDEgMS42MjEuMDEtLjAxMi4wNjkuODMzYy4zMjYtLjYwOC45LS45MjMgMS43MS0uOTIzLjQ4NC0uMDEuOTEyLjEyNCAxLjI5NC40MTdsLS40MTYuNzg3YTEuNjcyIDEuNjcyIDAgMCAwLTIuMTI3LjE3Yy0uMzE1LjMwMy0uNDczLjY5Ny0uNDczIDEuMTkydjMuMDk1aC0uOTIzdi01LjU2aC44NTZabS03LjkzMSAyLjc5MWMwLS44NTYuMjctMS41NTMuODEtMi4wOTQuNTQxLS41NCAxLjIzOS0uODIxIDIuMDcyLS44MjEuODQ0IDAgMS41NDEuMjcgMi4wODIuODEuNTQuNTQuODEgMS4yNS44MSAyLjEwNSAwIC44NDQtLjI4MSAxLjUzLS44MjIgMi4wNy0uNTQuNTQtMS4yMzcuOC0yLjA3LjgtLjgzMyAwLTEuNTMtLjI2LTIuMDcxLS44LS41NC0uNTQtLjgxLTEuMjI2LS44MS0yLjA3Wm00Ljg2MiAwYzAtLjYwOC0uMTktMS4xMDMtLjU2Mi0xLjQ4NmExLjkxMSAxLjkxMSAwIDAgMC0xLjQwNy0uNTg1Yy0uNTc0IDAtMS4wNDcuMTkxLTEuNDE4LjU3NC0uMzcyLjM4My0uNTUyLjg4OS0uNTUyIDEuNDk3IDAgLjU4NS4xOCAxLjA2OS41NTIgMS40NC4zNi4zODMuODMzLjU2MyAxLjQwNy41NjMuNTYyIDAgMS4wMzUtLjE4IDEuNDA2LS41NjMuMzcyLS4zNzEuNTYzLS44NTUuNTc0LTEuNDRabS03LjIwMy0zLjY5Mi0yLjg1OSAzLjk4NGgtLjIwMmwtMi44NTktNC4wMDZ2Ni40ODJoLS45Njh2LTcuODc4aDEuMTdsMi43NyA0LjA1MiAyLjc0NS00LjA1MmgxLjE3djcuODc4aC0uOTY3di02LjQ2WiIgZmlsbD0iIzM0Mzc0MCIvPjwvZz48ZGVmcz48Y2xpcFBhdGggaWQ9ImEiPjxwYXRoIGZpbGw9IiNmZmYiIGQ9Ik0wIDBoMTY1djQwSDB6Ii8+PC9jbGlwUGF0aD48L2RlZnM+PC9zdmc+";
+document.getElementById("logo").src=NMC_LOGO;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function toast(m){ const t=$("toast"); t.textContent=m; t.style.display="block"; clearTimeout(toast._x); toast._x=setTimeout(()=>t.style.display="none",2600); }
+const ago=t=>{ if(!t) return "never"; const s=(Date.now()-t)/1000;
+  return s<90?"just now": s<3600? Math.round(s/60)+" min ago": s<86400? Math.round(s/3600)+" hr ago": Math.round(s/86400)+" d ago"; };
+
+/* ---------- config ---------- */
+let S={mode:"server", base:"", token:"", extApi:""};
+const CFG_KEY = DEMO ? "nmc_mgmt_demo_v1" : "nmc_mgmt_v1";
+try{ Object.assign(S, JSON.parse(localStorage.getItem(CFG_KEY)||"{}")); }catch(e){}
+function saveCfg(){ S.base=$("baseUrl").value.trim().replace(/\/+$/,""); S.token=$("token").value;
+  S.extApi=$("extApi")?$("extApi").value.trim():S.extApi;
+  localStorage.setItem(CFG_KEY, JSON.stringify(S)); connBox(); }
+function setMode(m){ S.mode=m; localStorage.setItem(CFG_KEY, JSON.stringify(S));
+  $("setupServer").style.display=m==="server"?"block":"none";
+  $("setupDrive").style.display=m==="drive"?"block":"none"; connBox(); }
+function connBox(){ const b=$("connBox");
+  if(DEMO){ b.innerHTML="<b>Demo data</b>nothing here is real"; return; }
+  if(S.mode==="drive") b.innerHTML="<b>Shared folder</b>"+(dirHandle?esc(dirHandle.name):"not chosen yet");
+  else b.innerHTML="<b>Central server</b>"+(S.base?esc(S.base):"no URL yet"); }
+
+/* ---------- shared-folder mode ---------- */
+let dirHandle=null;
+function idb(){ return new Promise((ok,bad)=>{ const r=indexedDB.open("nmc_mgmt_fs",1);
+  r.onupgradeneeded=()=>r.result.createObjectStore("handles");
+  r.onsuccess=()=>ok(r.result); r.onerror=()=>bad(r.error); }); }
+async function persistDir(h){ try{ const db=await idb(); const tx=db.transaction("handles","readwrite");
+  tx.objectStore("handles").put(h,"dir"); }catch(e){} }
+async function restoreDir(){ try{ const db=await idb();
+  const h=await new Promise(ok=>{ const g=db.transaction("handles").objectStore("handles").get("dir");
+    g.onsuccess=()=>ok(g.result); g.onerror=()=>ok(null); });
+  if(h){ dirHandle=h; $("folderName").textContent="Using \u201c"+h.name+"\u201d"; } }catch(e){} connBox(); }
+async function pickFolder(){ try{ dirHandle=await window.showDirectoryPicker({mode:"readwrite"});
+  persistDir(dirHandle); $("folderName").textContent="Using \u201c"+dirHandle.name+"\u201d"; connBox(); loadAll(true);
+ }catch(e){} }
+async function readDrive(name){ if(!dirHandle) return null;
+ try{ const p=await dirHandle.queryPermission({mode:"readwrite"});
+  if(p!=="granted" && (await dirHandle.requestPermission({mode:"readwrite"}))!=="granted") return null;
+  const fh=await dirHandle.getFileHandle(name); return await (await fh.getFile()).text(); }catch(e){ return null; } }
+async function writeDrive(name,text){ if(!dirHandle) return false;
+ try{ const fh=await dirHandle.getFileHandle(name,{create:true}); const w=await fh.createWritable();
+  await w.write(text); await w.close(); return true; }catch(e){ return false; } }
+
+/* ---------- data loading ---------- */
+let D={team:null, rates:null, presence:null, shared:null, saves:null};
+let companyTmpls=[]; let tmplDirty=false;
+async function jget(url){ try{ const r=await fetch(url,{cache:"no-store"}); if(!r.ok) return null; return await r.json(); }catch(e){ return null; } }
+async function jdrive(name){ const t=await readDrive(name); if(!t) return null; try{ return JSON.parse(t); }catch(e){ return null; } }
+function demoData(){
+  const mo=(n)=>{ const d=new Date(); d.setMonth(d.getMonth()-n); return d.toISOString().slice(0,7); };
+  const names=[["Dave Maxwell","2821756"],["Sam Rivera","1938211"],["M. Kobeissi","2210984"],["A. Ali","2455120"],["J. Okafor","2017733"]];
+  const base=[[221,62,25,10,580],[198,55,22,9,520],[176,49,20,7,470],[147,41,15,5,430],[203,58,23,8,540]];
+  const month=(scale,sentDay)=>({ team:null, bankers:names.map(([n,id],i)=>{ const b=base[i].map(v=>Math.round(v*scale));
+    return {banker:n,nmls:id,dials:b[0],contacts:b[1],interested:b[2],folders:b[3],minutes:b[4],blocks:Math.round(b[4]/90),sent:sentDay}; }) });
+  const roll=m=>{ m.team=m.bankers.reduce((t,b)=>{ for(const k of ["dials","contacts","interested","folders","minutes","blocks"]) t[k]=(t[k]||0)+b[k]; return t; },{}); return m; };
+  const now=new Date().toISOString().slice(0,16);
+  const cur=roll(Object.assign({month:mo(0)},month(0.55, now))), h1=roll(Object.assign({month:mo(1)},month(1.0,mo(1)+"-30T16:30"))), h2=roll(Object.assign({month:mo(2)},month(0.93,mo(2)+"-30T16:30")));
+  const y=[4.21,4.18,4.14,4.16,4.11,4.09,4.05,4.07,4.02,3.98,3.96,3.99,3.94];
+  const hist=y.map((v,i)=>({d:new Date(Date.now()-(y.length-1-i)*86400000).toISOString().slice(0,10),y:v}));
+  return {
+    team:{updated:now, month:cur.month, team:cur.team, bankers:cur.bankers, history:[cur,h1,h2]},
+    rates:{updated:new Date().toISOString().slice(0,10), rates:{Conventional:6.125, FHA:5.875, VA:5.75, Jumbo:6.375},
+      treasury:{y10:3.94,date:hist[hist.length-1].d,change:-0.05,history:hist}},
+    presence:{bankers:[{slug:"dave-maxwell",name:"Dave Maxwell",last:Date.now()-40000,online:true},{slug:"sam-rivera",name:"Sam Rivera",last:Date.now()-70000,online:true},
+      {slug:"m-kobeissi",name:"M. Kobeissi",last:Date.now()-25*60000,online:false},{slug:"a-ali",name:"A. Ali",last:Date.now()-3*3600000,online:false},{slug:"j-okafor",name:"J. Okafor",last:Date.now()-90000,online:true}]},
+    shared:{templates:[{banker:"Sam Rivera",id:"s1",kind:"text",title:"Voicemail follow-up text",body:"Hey {client_first}, just left you a voicemail \u2014 {banker} at Neighborhood Mortgage. Nothing urgent, a rate update worth a look."},
+      {banker:"M. Kobeissi",id:"s2",kind:"intro",title:"Consolidation opener",body:"{client_first}, most people I talk to have a couple of cards sitting at 20%+ next to a mortgage at 6. Let me show you one payment instead \u2014 just the math."}]},
+    company:[{id:"c1",kind:"intro",title:"Warm loan review opener",subject:"",body:"Hi {client_first}, this is {banker} with Neighborhood Mortgage \u2014 I look after your loan. Rates moved this week; two minutes to show you your numbers?"},
+      {id:"c2",kind:"text",title:"Rate-move heads up",subject:"",body:"{client_first}, {banker} at Neighborhood Mortgage. Rates shifted and your loan is one it helps. Reply YES for the side-by-side."},
+      {id:"c3",kind:"email",title:"Your savings proposal",subject:"{client_first} \u2014 your side-by-side, as promised",body:"Hi {client_first},\n\nAttached is the proposal we walked through. Same house, same life, less interest.\n\n{banker}\nNMLS #{banker_nmls}"}],
+    saves:{saves:names.map(([n,id],i)=>({slug:n.toLowerCase().replace(/[^a-z0-9]+/g,"-"),banker:n,nmls:id,sent:now,clients:[14,9,11,6,12][i],bytes:[48210,31880,39002,22150,41400][i]}))}
+  };
+}
+async function loadAll(manual){
+  if(DEMO){ const dd=demoData(); D.team=dd.team; D.rates=dd.rates; D.presence=dd.presence; D.shared=dd.shared; D.saves=dd.saves;
+    if(!tmplDirty && !companyTmpls.length) companyTmpls=dd.company; renderAll(); if(manual) toast("Demo refreshed"); return; }
+  if(S.mode==="drive"){
+    if(!dirHandle){ renderAll(); if(manual) toast("Choose the shared folder first"); return; }
+    D.team=await jdrive("team.json"); D.rates=await jdrive("rates.json");
+    D.presence=await jdrive("presence.json"); D.shared=await jdrive("shared-templates.json");
+    const c=await jdrive("templates.json"); if(c&&!tmplDirty) companyTmpls=c.templates||[];
+  } else {
+    if(!S.base){ renderAll(); if(manual) toast("Set the server URL on the Connection screen"); return; }
+    D.team=await jget(S.base+"/api/team"); D.rates=await jget(S.base+"/rates.json");
+    D.presence=await jget(S.base+"/api/presence"); D.shared=await jget(S.base+"/api/shared-templates");
+    D.saves = S.token? await jget(S.base+"/api/saves?token="+encodeURIComponent(S.token)) : null;
+    const c=await jget(S.base+"/api/templates"); if(c&&!tmplDirty) companyTmpls=c.templates||[];
+  }
+  renderAll();
+  if(manual) toast("Refreshed");
+}
+function renderAll(){ renderDash(); renderRateDesk(); renderTemplates(); renderAdmin(); }
+
+/* ---------- dashboard ---------- */
+function renderDash(){
+  const j=D.team, el=$("dashStats");
+  const sel=$("dashMonth");
+  if(j&&(j.history||[]).length && sel.options.length!==(j.history.length)){
+    sel.innerHTML=(j.history||[]).map(h=>`<option value="${esc(h.month)}">${esc(h.month)}</option>`).join("");
+  }
+  if(!j){ el.innerHTML=`<div class="empty">No team data yet &mdash; connect on the Connection screen. Blocks appear as bankers end them.</div>`; return; }
+  let cur={month:j.month, team:j.team||{}, bankers:j.bankers||[]};
+  const pick=sel.value;
+  if(pick && pick!==j.month){ const m=(j.history||[]).find(h=>h.month===pick); if(m) cur=m; }
+  const T=cur.team||{}, P={}; ((D.presence||{}).bankers||[]).forEach(b=>P[b.slug]=b);
+  const slug=s=>String(s||"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"");
+  $("dashUpdated").textContent=j.updated? "updated "+j.updated.slice(0,16).replace("T"," "):"";
+  el.innerHTML=`
+   <div class="grid4">
+    <div class="stat"><div class="v">${T.folders||0}</div><div class="l">Folders &middot; ${esc(cur.month||"")}</div></div>
+    <div class="stat"><div class="v">${T.dials||0}</div><div class="l">Dials</div></div>
+    <div class="stat"><div class="v">${T.dials?Math.round((T.contacts||0)/T.dials*100):0}%</div><div class="l">Contact rate (${T.contacts||0})</div></div>
+    <div class="stat"><div class="v">${T.contacts?Math.round((T.interested||0)/T.contacts*100):0}%</div><div class="l">Contact &rarr; interested (${T.interested||0})</div></div>
+   </div>
+   ${(cur.bankers||[]).length?`<table class="data"><thead><tr><th>Banker</th><th class="num">Blocks</th><th class="num">Hours</th><th class="num">Dials</th><th class="num">Contact %</th><th class="num">Interested</th><th class="num">Folders</th><th class="num">Dials/hr</th><th>Last report</th></tr></thead><tbody>
+   ${cur.bankers.map(b=>{ const pr=P[slug(b.banker)]; const on=pr&&pr.online;
+     return `<tr><td><span class="dot ${on?"on":"off"}"></span><b>${esc(b.banker)}</b>${b.nmls?` <span class="hint">#${esc(b.nmls)}</span>`:""}</td>
+     <td class="num">${b.blocks||0}</td><td class="num">${((b.minutes||0)/60).toFixed(1)}</td>
+     <td class="num">${b.dials||0}</td><td class="num">${b.dials?Math.round((b.contacts||0)/b.dials*100):0}%</td>
+     <td class="num">${b.interested||0}</td><td class="num"><b>${b.folders||0}</b></td>
+     <td class="num">${b.minutes?((b.dials||0)/(b.minutes/60)).toFixed(1):"0"}</td>
+     <td class="hint">${esc((b.sent||"").slice(0,16).replace("T"," "))}</td></tr>`; }).join("")}
+   </tbody></table>`:`<div class="empty">No banker reports for this month yet.</div>`}`;
+  const r=D.rates;
+  $("dashRates").innerHTML = r&&r.rates? "Updated "+esc(r.updated||"")+": "+
+    Object.keys(r.rates).map(k=>`<b>${esc(k)}</b> ${(+r.rates[k]).toFixed(3)}%`).join(" &middot; ")+
+    (r.treasury?` &nbsp;|&nbsp; 10-yr Treasury <b>${r.treasury.y10}%</b> (${esc(r.treasury.date||"")})`:"") : "No rates published yet.";
+}
+
+/* ---------- rate desk ---------- */
+let rateRowsInit=false;
+function addRateRow(name,val){ const d=document.createElement("div");
+  d.className="btnrow"; d.style.marginBottom="8px";
+  d.innerHTML=`<input type="text" placeholder="Product (e.g. Conventional)" value="${esc(name)}" style="flex:2;min-width:140px">
+   <input type="number" step="0.001" class="num" placeholder="Rate %" value="${val!==""&&val!=null?val:""}" style="flex:1;min-width:90px">
+   <button class="btn ghost small" onclick="this.parentNode.remove()">&times;</button>`;
+  $("rateRows").appendChild(d); }
+function renderRateDesk(){ if(rateRowsInit) return;
+  const r=D.rates&&D.rates.rates;
+  if(r&&Object.keys(r).length){ $("rateRows").innerHTML="";
+    Object.keys(r).forEach(k=>addRateRow(k,r[k])); rateRowsInit=true; }
+  else if(!$("rateRows").children.length){ ["Conventional","FHA","VA"].forEach(k=>addRateRow(k,"")); }
+  if(S.extApi&&$("extApi")) $("extApi").value=S.extApi;
+  $("apiPullPanel").style.display = S.extApi ? "block" : "none";
+}
+async function testExternal(){ saveCfg(); const o=$("extApiOut"); const url=$("extApi").value.trim();
+  if(!url){ o.textContent="Cleared \u2014 rates stay manual."; renderRateDesk(); return; }
+  o.textContent="Testing\u2026"; const j=await jget(url);
+  o.textContent = j&&j.rates? "OK \u2014 "+Object.keys(j.rates).length+" products found: "+Object.keys(j.rates).join(", ")
+    : "That URL didn\u2019t return {rates:{\u2026}} \u2014 check with the vendor."; renderRateDesk(); }
+function collectRates(){ const out={};
+  $("rateRows").querySelectorAll(".btnrow").forEach(row=>{
+    const [n,v]=row.querySelectorAll("input");
+    const name=n.value.trim(), val=parseFloat(v.value);
+    if(name&&isFinite(val)&&val>0&&val<25) out[name]=val; });
+  return out; }
+async function publishRates(){
+  const rates=collectRates(); const st=$("rateStatus");
+  if(!Object.keys(rates).length){ st.textContent="Add at least one product with a valid rate."; return; }
+  const updated=new Date().toISOString().slice(0,10);
+  st.textContent="Publishing\u2026";
+  if(DEMO){ D.rates={updated,rates,treasury:D.rates&&D.rates.treasury}; renderDash(); st.textContent="Demo: published to this screen only."; toast("Rates published (demo)"); return; }
+  if(S.mode==="drive"){
+    const existing=await jdrive("rates.json")||{};
+    const out={updated, rates}; if(existing.treasury) out.treasury=existing.treasury;
+    const ok=await writeDrive("rates.json", JSON.stringify(out,null,2));
+    st.textContent= ok? "Published to the shared folder \u2014 bankers pick it up on their next sync (\u22645 min).":"Write failed \u2014 check folder permissions.";
+    if(ok){ D.rates=out; renderDash(); toast("Rates published"); }
+  } else {
+    try{ const r=await fetch(S.base+"/api/rates",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({token:S.token, updated, rates})});
+      const j=await r.json();
+      if(j&&j.ok){ st.textContent="Published \u2014 every toolkit picks it up within its poll window."; toast("Rates published"); loadAll(false); }
+      else st.textContent="Server said: "+(j&&j.error||r.status)+(r.status===403?" \u2014 check the admin token on the Connection screen.":"");
+    }catch(e){ st.textContent="Could not reach the server: "+e.message; } }
+}
+async function pullExternal(){ const url=S.extApi;
+  if(!url){ toast("IT hasn\u2019t connected a pricing API yet"); return; }
+  const j=await jget(url);
+  if(j&&j.rates){ $("rateRows").innerHTML=""; Object.keys(j.rates).forEach(k=>addRateRow(k,j.rates[k]));
+    toast("Prefilled from the API \u2014 review, then Publish"); }
+  else toast("That URL didn't return {rates:{\u2026}}"); }
+
+/* ---------- templates ---------- */
+const TKIND={intro:"Intro script",text:"Text",email:"Email"};
+function markDirty(){ tmplDirty=true; $("tmplDirty").style.display="inline-block"; }
+function addCompanyTmpl(kind){ companyTmpls.push({id:"c"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+  kind,title:"",subject:"",body:""}); markDirty(); renderTemplates(); }
+function updCompany(id,k,v){ const t=companyTmpls.find(x=>x.id===id); if(t){ t[k]=v; markDirty(); } }
+function delCompany(id){ companyTmpls=companyTmpls.filter(x=>x.id!==id); markDirty(); renderTemplates(); }
+function promote(id){ const t=(D.shared&&D.shared.templates||[]).find(x=>x.id===id&&true)||
+    (D.shared&&D.shared.templates||[]).find(x=>x.id===id);
+  if(!t) return;
+  companyTmpls.push({id:"c"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+    kind:t.kind,title:t.title,subject:t.subject||"",body:t.body});
+  markDirty(); renderTemplates(); toast("Promoted \u2014 remember to Publish the library"); }
+function renderTemplates(){
+  const el=$("companyList");
+  el.innerHTML = companyTmpls.length? companyTmpls.map(t=>`<div class="stat" style="margin-bottom:10px">
+   <div class="grid2">
+    <div class="field"><label>Title</label><input type="text" value="${esc(t.title)}" oninput="updCompany('${t.id}','title',this.value)"></div>
+    <div class="field"><label>Type</label><select onchange="updCompany('${t.id}','kind',this.value); renderTemplates()">
+      ${Object.keys(TKIND).map(k=>`<option value="${k}" ${t.kind===k?"selected":""}>${TKIND[k]}</option>`).join("")}</select></div>
+   </div>
+   <div class="field" style="display:${t.kind==="email"?"block":"none"}"><label>Subject</label><input type="text" value="${esc(t.subject||"")}" oninput="updCompany('${t.id}','subject',this.value)"></div>
+   <div class="field"><label>Body</label><textarea style="min-height:90px;font-family:inherit" oninput="updCompany('${t.id}','body',this.value)">${esc(t.body||"")}</textarea></div>
+   <div class="btnrow"><span class="tag-flat">${TKIND[t.kind]}</span><span style="flex:1"></span>
+    <button class="btn ghost small" onclick="delCompany('${t.id}')">Delete</button></div>
+  </div>`).join("") : `<div class="empty">No company templates yet &mdash; add your strongest intros, texts, and emails, then Publish.</div>`;
+  const sh=$("sharedList"); const pool=(D.shared&&D.shared.templates)||[];
+  sh.innerHTML = pool.length? pool.map(t=>`<div class="stat" style="margin-bottom:8px">
+   <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:baseline">
+    <div><span class="tag-flat">${TKIND[t.kind]||t.kind}</span> <b>${esc(t.title||"Untitled")}</b> <span class="hint">&mdash; ${esc(t.banker||"")}</span></div>
+    <button class="btn ghost small" onclick="promote('${t.id}')">Promote to company library</button></div>
+   ${t.subject?`<div class="hint">Subject: ${esc(t.subject)}</div>`:""}
+   <div style="font-size:13px;white-space:pre-wrap;margin-top:4px">${esc(t.body||"")}</div></div>`).join("")
+   : `<div class="empty">Nothing shared by the team yet.</div>`;
+}
+async function publishTemplates(){
+  const st=$("tmplStatus"); const list=companyTmpls.filter(t=>t.title||t.body);
+  st.textContent="Publishing\u2026";
+  if(DEMO){ tmplDirty=false; $("tmplDirty").style.display="none"; st.textContent="Demo: library published to this screen only."; toast("Library published (demo)"); return; }
+  if(S.mode==="drive"){
+    const ok=await writeDrive("templates.json", JSON.stringify({updated:new Date().toISOString().slice(0,10), templates:list},null,2));
+    st.textContent= ok? "Published to the shared folder \u2014 every toolkit picks it up on its next sync.":"Write failed \u2014 check folder permissions.";
+    if(ok){ tmplDirty=false; $("tmplDirty").style.display="none"; toast("Library published"); }
+  } else {
+    try{ const r=await fetch(S.base+"/api/templates",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({token:S.token, templates:list})});
+      const j=await r.json();
+      if(j&&j.ok){ st.textContent="Published "+j.count+" templates \u2014 toolkits sync them automatically."; tmplDirty=false; $("tmplDirty").style.display="none"; toast("Library published"); }
+      else st.textContent="Server said: "+(j&&j.error||r.status)+(r.status===403?" \u2014 check the admin token.":"");
+    }catch(e){ st.textContent="Could not reach the server: "+e.message; } }
+}
+
+/* ---------- admin ---------- */
+function renderAdmin(){
+  const el=$("presenceList"); const list=(D.presence&&D.presence.bankers)||[];
+  el.innerHTML = list.length? `<table class="data"><thead><tr><th>Banker</th><th>Status</th><th>Last seen</th></tr></thead><tbody>
+   ${list.map(b=>`<tr><td><b>${esc(b.name||b.slug)}</b></td>
+    <td>${b.online?`<span class="dot on"></span><span class="tag-good">toolkit open</span>`:`<span class="dot off"></span><span class="hint">offline</span>`}</td>
+    <td class="hint">${ago(b.last)}</td></tr>`).join("")}</tbody></table>`
+   : `<div class="empty">No heartbeats yet. They start automatically the moment a banker opens a toolkit that's pointed at this hub (report URL) or the shared folder.</div>`;
+  const sv=$("savesList"); const svList=(D.saves&&D.saves.saves)||[];
+  sv.innerHTML = (S.mode==="drive"&&!DEMO)
+    ? `<div class="empty">Air-gapped mode: banker saves live as <code>nmc-toolkit-&lt;name&gt;.json</code> in the shared folder itself.</div>`
+    : (!S.token&&!DEMO) ? `<div class="empty">Enter the admin token on the Connection screen to see mirrored saves.</div>`
+    : svList.length? `<table class="data"><thead><tr><th>Banker</th><th class="num">Clients</th><th class="num">Size</th><th>Last mirrored</th><th></th></tr></thead><tbody>
+      ${svList.map(s=>`<tr><td><b>${esc(s.banker||s.slug)}</b>${s.nmls?` <span class="hint">#${esc(s.nmls)}</span>`:""}</td>
+       <td class="num">${s.clients||0}</td><td class="num">${Math.round((s.bytes||0)/1024)} KB</td>
+       <td class="hint">${esc(String(s.sent||"").slice(0,16).replace("T"," "))}</td>
+       <td><button class="btn ghost small" onclick="downloadSave('${esc(s.slug)}')">Download</button></td></tr>`).join("")}
+      </tbody></table>`
+    : `<div class="empty">No mirrored saves yet. They arrive automatically once a banker's toolkit has the report URL set and can reach this hub.</div>`;
+  const eps=["/rates.json &mdash; the rate feed toolkits poll","/api/blocks &mdash; call-block reports in (POST)","/api/team &mdash; team rollups + monthly history","/api/templates &mdash; company library (GET / POST w/ token)","/api/shared-templates &mdash; banker-shared pool","/api/save &mdash; banker save mirror in (POST)","/api/saves &mdash; mirrored saves, admin token","/api/heartbeat &mdash; presence in (POST)","/api/presence &mdash; who's online","/api/master.csv &middot; /api/rates.csv &mdash; Excel exports","/api/snapshot &mdash; everything, for the future AI layer"];
+  $("endpoints").innerHTML = S.mode==="drive"
+    ? "Air-gapped mode: the same data lives as files in the shared folder &mdash; <code>rates.json</code>, <code>team.json</code>, <code>templates.json</code>, <code>shared-templates.json</code>, <code>presence.json</code> (built by merge-drive)."
+    : eps.map(e=>(S.base?`<code>${esc(S.base)}</code>`:"")+"<code>"+e.split(" &mdash;")[0].split(" &middot;")[0]+"</code> &mdash; "+e.split("&mdash; ").slice(1).join("")).join("<br>");
+}
+async function downloadSave(slug){
+  if(!S.base||!S.token){ toast("Server URL and admin token required"); return; }
+  const j=await jget(S.base+"/api/saves/"+encodeURIComponent(slug)+"?token="+encodeURIComponent(S.token));
+  if(!j){ toast("Could not fetch that save"); return; }
+  const blob=new Blob([JSON.stringify(j.state||j,null,2)],{type:"application/json"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
+  a.download="nmc-toolkit-"+slug+".json"; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  toast("Downloaded \u2014 a banker can import this in Settings"); }
+async function pingHub(){ const o=$("pingOut");
+  if(S.mode==="drive"){ const t=await readDrive("team.json");
+    o.textContent = dirHandle? (t? "Shared folder reachable \u2014 team.json present.":"Folder reachable, team.json not there yet (merge-drive builds it).") : "Choose the folder first."; return; }
+  if(!S.base){ o.textContent="Set the server URL first."; return; }
+  const t0=performance.now();
+  try{ const r=await fetch(S.base+"/rates.json",{cache:"no-store"});
+    o.textContent = r.ok? "OK \u2014 "+Math.round(performance.now()-t0)+" ms": "HTTP "+r.status;
+  }catch(e){ o.textContent="Unreachable: "+e.message; } }
+async function testConn(){ saveCfg(); $("setupStatus").textContent="Testing\u2026";
+  await loadAll(true);
+  $("setupStatus").textContent = (D.team||D.rates)? "Connected \u2014 data loaded.":"Connected call made, but no data yet (that's normal on a brand-new hub)."; }
+
+/* ---------- nav & boot ---------- */
+function go(s){ document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));
+  $("s-"+s).classList.add("active");
+  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.s===s)); }
+document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>go(b.dataset.s)));
+(function(){ if(DEMO){ $("demoBanner").style.display="block"; S.extApi=S.extApi||"https://pricing.example.com/demo-rates.json"; }
+  document.querySelector(`input[name=mode][value=${S.mode}]`).checked=true; setMode(S.mode);
+  $("baseUrl").value=S.base; $("token").value=S.token; if(S.extApi) $("extApi").value=S.extApi;
+  restoreDir().then(()=>loadAll(false));
+  setInterval(()=>loadAll(false), 60*1000);
+  window.addEventListener("focus",()=>loadAll(false));
+})();
+window._mgmt={setDir:h=>{dirHandle=h;}, loadAll, renderAll, publishRates, publishTemplates, D:()=>D, S,
+  company:()=>companyTmpls, promote};
+</script>
+</body>
+</html>
