@@ -315,6 +315,8 @@ table.data tr.rec td{background:var(--cream)}
           <div class="grid2">
             <div class="field"><label>Full name</label><input type="text" data-f="name"></div>
             <div class="field"><label>Status</label><select data-f="status"></select></div>
+            <div class="field" style="grid-column:1/-1"><label>Disposition <span class="hint" style="display:inline">(one click \u2014 Complete counts toward the monthly goal)</span></label>
+              <div class="chiprow" id="dispoChips"></div><div class="hint" id="dispoHint" style="margin-top:4px"></div></div>
             <div class="field"><label>Phone</label><input type="tel" data-f="phone"></div>
             <div class="field"><label>Email</label><input type="email" data-f="email"></div>
             <div class="field" style="grid-column:1/-1"><label>Property address</label><input type="text" data-f="address"></div>
@@ -754,7 +756,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.1.4";
+const TOOLKIT_VERSION = "1.1.5";
 const DEMO = true; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -763,7 +765,18 @@ function markHub(ok){ const was=hubOnline; hubOnline=!!ok; if(ok) hubLastOk=Date
   if(was!==hubOnline){ updateHubStatus(); updateRatePill(); } else updateHubStatus(); }
 function mirrorDirty(){ return mirrorSeq!==mirrorSent; }
 const NMC_LOGO = "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTY1IiBoZWlnaHQ9IjQwIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxnIGNsaXAtcGF0aD0idXJsKCNhKSI+PHBhdGggZD0iTTE2Mi42MDEgMTkuOGMwIDEuNDE2IDEuNTUxIDEuMDEyIDEuNTUxIDEuOTMzIDAgLjU0LS41NjIuODA5LTIuMjY5IDEuMzctMS4zOTMuNDk1LTEuNzMuNTYyLTEuOTU1LjU2Mi0uNjI5IDAtLjY5Ni0uNjUxLS42OTYtMS4xVjIxLjUzYy0uODMyIDEuMjM1LTIuMjI1IDIuMjAxLTQuMTM0IDIuMjAxLTIuODA5IDAtNS4xLTIuMTM0LTUuMS01Ljc3MyAwLTMuNTk1IDIuNTgzLTYuMTc5IDUuOTc2LTYuMTc5IDEuMzcgMCAyLjQ3MS40MjcgMy4yNTggMS4xMDF2LTIuNjk2YzAtMS40MzgtMS43My0uNzQxLTEuNzMtMS43OTcgMC0uNDk0LjU2MS0uNzg2IDIuMzE0LTEuNTA1IDEuNTA1LS42MDcgMS44NjQtLjY1MiAyLjA4OS0uNjUyLjU2MiAwIC42OTYuNDk0LjY5NiAxLjA3OVYxOS44Wm0tNS45NTMgMS41NzNjMS4zOTMgMCAyLjU4NC0xLjIxMyAyLjU4NC0zLjE0NXYtLjc4NmMwLTIuMjctMS40MzgtMy45NTQtMy4wNTYtMy45NTQtMS41NzMgMC0yLjYwNiAxLjMyNS0yLjYwNiAzLjUwNSAwIDIuNjk2IDEuNTI4IDQuMzggMy4wNzggNC4zOFptLTE0LjcwNSAyLjQ0OWMtMy45OTkgMC02LjQyNS0yLjU2LTYuNDI1LTUuOTA4IDAtMy41NzMgMi44NTMtNi4yMjQgNi44NTItNi4yMjRzNi40MjUgMi41NjIgNi40MjUgNS45MzJjMCAzLjY0LTIuOTQzIDYuMi02Ljg1MiA2LjJabS42MjktMS43MDdjMS42NjMgMCAyLjU4NC0xLjMyNiAyLjU4NC0zLjU3MiAwLTIuMjctMS4zMDMtNS4xNDUtMy40MTUtNS4xNDUtMS42NCAwLTIuNTg0IDEuMzI1LTIuNTg0IDMuNTk1IDAgMi4yNDYgMS4yODEgNS4xMjIgMy40MTUgNS4xMjJabS0xNS4wODcgMS43MDdjLTMuOTk5IDAtNi40MjUtMi41Ni02LjQyNS01LjkwOCAwLTMuNTczIDIuODUzLTYuMjI0IDYuODUyLTYuMjI0czYuNDI1IDIuNTYyIDYuNDI1IDUuOTMyYzAgMy42NC0yLjk0MyA2LjItNi44NTIgNi4yWm0uNjI5LTEuNzA3YzEuNjYzIDAgMi41ODQtMS4zMjYgMi41ODQtMy41NzIgMC0yLjI3LTEuMzAzLTUuMTQ1LTMuNDE1LTUuMTQ1LTEuNjQgMC0yLjU4NCAxLjMyNS0yLjU4NCAzLjU5NSAwIDIuMjQ2IDEuMjgxIDUuMTIyIDMuNDE1IDUuMTIyWm0tOS4wNjItMS42NGMuMjY5IDIgMS41MDUgMS4zOTMgMS41MDUgMi4zNTkgMCAuMzYtLjMxNS41ODQtLjgwOS41ODQtLjU4NCAwLTEuMDU2LS4wNjctMi4yMjQtLjA2Ny0xLjIxMyAwLTEuNjYzLjA2Ny0yLjI2OS4wNjctLjU4NCAwLS44MzEtLjI3LS44MzEtLjYzIDAtLjgzIDEuMzAzLS41MTYgMS4zMDMtMS41OTQgMC0uMzM3LS4wNDUtLjU0LS4wNjgtLjc0MmwtLjQ3Mi0zLjMyNWMtLjIwMi0xLjUyNy0uNzQxLTIuNjczLTEuOTk5LTIuNjczLS45ODkgMC0yLjExMi43NjQtMi4xMTIgMy4wMXYzLjI4YzAgMS42NjMgMS4zNDggMS4xNjkgMS4zNDggMi4wNjcgMCAuMjkyLS4yMjUuNjMtLjc2NC42My0uNTE3IDAtMS4xMjMtLjA2OC0yLjI2OS0uMDY4LTEuMTIzIDAtMS42ODUuMDY3LTIuMjI0LjA2Ny0uNTM5IDAtLjc2NC0uMzE0LS43NjQtLjYyOSAwLS44OTggMS4zMDMtLjQwNCAxLjMwMy0yLjA2N1YxMC4yNTNjMC0xLjQxNi0xLjQ4My0uNzg3LTEuNDgzLTEuNzk4IDAtLjQ5NC41ODQtLjc4NiAyLjE1Ny0xLjUwNSAxLjQ4My0uNjUxIDEuNzc1LS43MTkgMi4wNDUtLjcxOS41MTYgMCAuNjUxLjQyNy42NTEuOTg5djYuODk3Yy42OTctMS4xOSAxLjk3Ny0yLjIyNCAzLjc1Mi0yLjIyNCAyLjMxNCAwIDMuMzcgMS45NzcgMy42ODQgNC40MDNsLjU0IDQuMTc5Wm0tMTUuMjk0LTguNjA1YzEuMjU4IDAgMi4wOS43MiAyLjA5IDEuNTI4IDAgLjYyOS0uMjkyIDEuNDYtLjc2NCAyLjU4NC0uMTguNDQ5LS40MjcuNzE5LS44MDkuNzE5LS4zNTkgMC0uNTg0LS4yOTMtLjc2NC0uNjUyLS40MDQtLjgwOS0uNzg2LTEuMjgtMS4zOTMtMS4yOC0uODc2IDAtMi4yNDYgMS4xOS0yLjI0NiAzLjkwOHYyLjA2N2MwIDEuNjYzIDEuNjE3IDEuMDc5IDEuNjE3IDIuMDY3IDAgLjI5Mi0uMjI0LjYzLS43NjQuNjMtLjU4NCAwLTEuMjgtLjA2OC0yLjUzOC0uMDY4LTEuMTI0IDAtMS43MDguMDY3LTIuMjQ3LjA2Ny0uNTQgMC0uNzY0LS4zMTQtLjc2NC0uNjI5IDAtLjg5OCAxLjMyNi0uNDA0IDEuMzI2LTIuMDY3di00Ljc0YzAtMS40MzgtMS40ODMtLjgwOS0xLjQ4My0xLjc5NyAwLS40OTUuNTYyLS44MSAyLjE1Ny0xLjUwNiAxLjQ4My0uNjc0IDEuNzUyLS43NCAyLS43NC41MzggMCAuNjk2LjQ0OC42OTYgMS4wNzh2MS44NDJjLjY3NC0xLjcwOCAyLjI2OS0zLjAxIDMuODg2LTMuMDFaTTg2Ljk2NCAyMy44MjJjLTMuOTk5IDAtNi40MjUtMi41Ni02LjQyNS01LjkwOCAwLTMuNTczIDIuODUzLTYuMjI0IDYuODUyLTYuMjI0czYuNDI1IDIuNTYyIDYuNDI1IDUuOTMyYzAgMy42NC0yLjk0MyA2LjItNi44NTIgNi4yWm0uNjMtMS43MDdjMS42NjIgMCAyLjU4My0xLjMyNiAyLjU4My0zLjU3MiAwLTIuMjctMS4zMDMtNS4xNDUtMy40MTUtNS4xNDUtMS42NCAwLTIuNTg0IDEuMzI1LTIuNTg0IDMuNTk1IDAgMi4yNDYgMS4yOCA1LjEyMiAzLjQxNSA1LjEyMlpNNzQuMjIzIDExLjc4YzIuOTIgMCA1LjEgMi4xOCA1LjEgNS43OTcgMCAzLjYxNy0yLjcxOSA2LjE1NS02LjA4OSA2LjE1NS0yLjQ0OSAwLTMuMTktLjg5OC0zLjkwOS0uODk4LS42OTYgMC0xLjQ2Ljc0MS0yLjA0NC43NDEtLjQ3MiAwLS43Mi0uMzE0LS43Mi0uODU0VjEwLjI1M2MwLTEuNDE2LTEuNjYyLS43ODctMS42NjItMS43OTggMC0uNDk0LjU4NC0uNzg2IDIuMjAyLTEuNTA1IDEuMzkzLS41ODQgMS44NjUtLjcxOSAyLjEzNC0uNzE5LjU2MiAwIC42OTcuNTE3LjY5Ny45ODl2Ni44M2MuODc2LTEuMjU5IDIuMjkxLTIuMjcgNC4yOS0yLjI3Wk03My4wMSAyMi4wNDhjMS41MjcgMCAyLjc0LTEuMTQ2IDIuNzQtMy41MDUgMC0yLjU2MS0xLjM3LTQuNDA0LTMuMS00LjQwNC0xLjQ4MyAwLTIuNzE4IDEuMjgtMi43MTggMy4yMzZ2Ljg3NmMwIDIuMTExIDEuMjEzIDMuNzk2IDMuMDc4IDMuNzk2Wm0tOS4zNzYtMS41NzNjLjI3IDIgMS41MDUgMS4zOTMgMS41MDUgMi4zNTkgMCAuMzYtLjMxNC41ODQtLjgwOS41ODQtLjU4NCAwLTEuMDU1LS4wNjctMi4yMjQtLjA2Ny0xLjIxMyAwLTEuNjYyLjA2Ny0yLjI2OS4wNjctLjU4NCAwLS44MzEtLjI3LS44MzEtLjYzIDAtLjgzIDEuMzAzLS41MTYgMS4zMDMtMS41OTQgMC0uMzM3LS4wNDUtLjU0LS4wNjctLjc0MmwtLjQ3Mi0zLjMyNWMtLjIwMy0xLjUyNy0uNzQyLTIuNjczLTItMi42NzMtLjk4OCAwLTIuMTEyLjc2NC0yLjExMiAzLjAxdjMuMjhjMCAxLjY2MyAxLjM0OCAxLjE2OSAxLjM0OCAyLjA2NyAwIC4yOTItLjIyNC42My0uNzY0LjYzLS41MTYgMC0xLjEyMy0uMDY4LTIuMjY5LS4wNjgtMS4xMjMgMC0xLjY4NS4wNjctMi4yMjQuMDY3LS41MzkgMC0uNzY0LS4zMTQtLjc2NC0uNjI5IDAtLjg5OCAxLjMwMy0uNDA0IDEuMzAzLTIuMDY3VjEwLjI1M2MwLTEuNDE2LTEuNDgyLS43ODctMS40ODItMS43OTggMC0uNDk0LjU4NC0uNzg2IDIuMTU2LTEuNTA1IDEuNDgzLS42NTEgMS43NzUtLjcxOSAyLjA0NS0uNzE5LjUxNyAwIC42NTEuNDI3LjY1MS45ODl2Ni44OTdjLjY5Ny0xLjE5IDEuOTc3LTIuMjI0IDMuNzUyLTIuMjI0IDIuMzE0IDAgMy4zNyAxLjk3NyAzLjY4NSA0LjQwM2wuNTM5IDQuMTc5Wm0tMTYuNjc5LjIyNWMyLjA2Ny4xOCAzLjY2MiAxLjE2OCAzLjY2MiAzLjEgMCAyLjMxNC0yLjU4NCAzLjkwOS02Ljc0IDMuOTA5LTQuMjI0IDAtNi42NzItMS4xNDYtNi42NzItMi44MDggMC0uODc3LjY1MS0xLjU5NSAxLjc3NS0yLjA0NS0uNzQyLS4zODItMS4yMzYtLjk4OC0xLjIzNi0xLjg2NCAwLS45Ljc0MS0xLjg0MyAxLjcwNy0yLjQ5NC0xLjE5LS42MDctMS44NjQtMS41NS0xLjg2NC0yLjc2NCAwLTIuMTM0IDIuMTExLTQuMDIxIDYuMTMzLTQuMDIxLjMxNCAwIC42MDYuMDIyLjg5OC4wNDUuMjQ4LTIuMTggMS43MDgtMy41NSAyLjYyOS0zLjU1LjYwNyAwIDEuMjEzLjI3IDIuMDY3Ljk2Ni4zMzcuMjQ3LjU4NC41NjIuNTg0Ljg5OSAwIC4zNi0uMjI1LjY1Mi0uNzQxLjY1Mi0xLjUwNi4wNDQtMi44NzYuMjAyLTMuMTY4IDEuMjM1IDIuMTEyLjUxNyAzLjI4IDEuNzUyIDMuMjggMy4zNDggMCAyLjA4OS0yLjA0NCAzLjkzMS02LjExIDMuOTMxLS44NTUgMC0xLjYxOC0uMDktMi4zMTUtLjI0Ny0uMjcuMjQ3LS40OTQuNDcyLS40OTQuNjk3IDAgLjM4MS40NS41MzkgMS40MzguNjI5IDIuMDY3LjE1NyAzLjgxOS4yOTIgNS4xNjcuMzgxWm0tMy42MTctNy41NzJjLTEuNDM4IDAtMi40MjYuOTIxLTIuNDI2IDIuMjQ3IDAgMS41NzMgMS4yMTMgMi40NDkgMi41ODMgMi40NDkgMS40MzggMCAyLjQyNy0uODk5IDIuNDI3LTIuMjI0IDAtMS41NzMtMS4yMTQtMi40NzItMi41ODQtMi40NzJabS41NjIgMTMuMTY2YzIuMzgxIDAgMy41MDQtLjY1MiAzLjUwNC0xLjM0OCAwLS41NjItLjUxNi0uOTQ0LTEuNjg1LTEuMDc5LTEuNTcyLS4yMDItMy4zMjUtLjM2LTUuMDc3LS41ODQtLjQ1LjM2LS43NDEuODk5LS43NDEgMS4zNyAwIDEuMTY5IDEuNjE3IDEuNjQgMy45OTkgMS42NFpNMzIuNTI3IDEwLjM4N2MtLjk4OCAwLTEuNjYyLS41NjEtMS42NjItMS40MTUgMC0xLjEyMyAxLjE5LTIuMzM2IDIuNzQtMi4zMzYuOTQ0IDAgMS43NTMuNjA2IDEuNzUzIDEuNTA1IDAgMS4xLTEuMzAzIDIuMjQ2LTIuODMgMi4yNDZabS0xLjQ2IDEzLjA1M2MtLjU0IDAtLjc2NC0uMzE0LS43NjQtLjYyOSAwLS44OTggMS4zMjYtLjQwNCAxLjMyNi0yLjA2N3YtNC43NGMwLTEuNDM4LTEuNDgzLS44MDktMS40ODMtMS43OTcgMC0uNDk1LjU2MS0uODEgMi4xNTctMS41MDYgMS40ODItLjY3NCAxLjc1Mi0uNzQgMi0uNzQuNTM4IDAgLjY5Ni40NDguNjk2IDEuMDc4djcuNzA1YzAgMS42NjMgMS4zMjUgMS4xNjkgMS4zMjUgMi4wNjcgMCAuMjkyLS4yMjUuNjMtLjc0MS42My0uNTQgMC0xLjE0Ni0uMDY4LTIuMjctLjA2OC0xLjEyMyAwLTEuNzA3LjA2Ny0yLjI0Ni4wNjdabS0yLjUtMy4zNDdjLjMzNyAwIC41MzkuMzM3LjUzOS41ODQgMCAuMTgtLjA2OC4zNi0uMjAyLjU4NC0uNzQyIDEuMTY4LTIuODA5IDIuNTYxLTUuNTUgMi41NjEtMy40NiAwLTYuMDQzLTIuMzM2LTYuMDQzLTUuOTc2IDAtMy43MyAyLjg5OC02LjE1NSA2LjItNi4xNTUgMy4yMTMgMCA1LjE0NiAyLjI5MSA1LjE0NiA0LjQ5MyAwIC42NTEtLjIwMy43NjQtLjYwNy44OThsLTYuNzQgMi4wNjdjLjY5NyAxLjQxNiAxLjk3NyAyLjQ1IDMuNjE3IDIuNDUgMS4xMjMgMCAyLjA0NS0uNDI4IDIuODc2LTEuMTI0LjM2LS4yNy41MzktLjM4Mi43NjQtLjM4MlptLTUuNTI3LTYuNjk1Yy0xLjM0OCAwLTIuMzE0IDEuMjEzLTIuMzE0IDMuMTkgMCAuMzYuMDIyLjcyLjA5IDEuMDU2bDMuODY0LTEuMjU4Yy4zNi0uMTEyLjU0LS4yOTIuNTQtLjY5NiAwLTEuMDM0LS45LTIuMjkyLTIuMTgtMi4yOTJaTTE1LjY4IDcuMzFjLjU4NCAwIC44My4yOTIuODMuNjI5IDAgLjk2Ni0xLjQ2LjQ5NC0xLjQ2IDIuMDY2djEyLjY1YzAgLjY1LS40NDkuOTQzLS45Mi45NDMtLjY1MiAwLS45NjctLjMzNy0xLjM0OS0uNzg3bC04Ljg5Ni0xMC45NHY4Ljg3M2MwIDEuNTI4IDEuODIuOTQ0IDEuODIgMi4wNDUgMCAuNDA0LS4zMTUuNjUxLS45LjY1MS0uNjI4IDAtMS4zMDItLjA2Ny0xLjg4Ni0uMDY3LS41NCAwLTEuMTkxLjA2Ny0xLjc3NS4wNjctLjU2MiAwLS44MzEtLjMxNC0uODMxLS42NTEgMC0uOTQ0IDEuNDgyLS40NzIgMS40ODItMi4wNDVWMTAuMDA1YzAtMS41NzItMS40ODItMS4xLTEuNDgyLTIuMDQ0IDAtLjM4Mi4zMTQtLjY1MS45Mi0uNjUxLjQ5NSAwIDEuMDEyLjA0NSAxLjU1LjA0NS41ODUgMCAuOTY3LS4wNDUgMS4zOTQtLjA0NS40NDkgMCAuODA4LjE1NyAxLjIxMy42MjlsNy41NDkgOS4zNDZ2LTcuMjhjMC0xLjU1LTEuNzk4LS45NjYtMS43OTgtMi4wNjYgMC0uMzM3LjMzNy0uNjMuODk5LS42My42MjkgMCAxLjIxMy4wNjggMS44ODcuMDY4LjU4NCAwIDEuMTktLjA2NyAxLjc1Mi0uMDY3WiIgZmlsbD0iIzM0Mzc0MCIvPjxwYXRoIGQ9Ik0xMjEuOTk1IDkuNjM0aC03LjU3NWMtLjQ1NyAwLS41ODYtLjYyNi0uMTY2LS44MDdMMTM0LjY2MS4wMzRhLjQyMi40MjIgMCAwIDEgLjM0LjAwM0wxNTQuNDggOC44M2MuNDEzLjE4Ny4yOC44MDQtLjE3My44MDRoLTYuNjM5YS40MjQuNDI0IDAgMCAxLS4xNTYtLjAzbC0xMi41MjUtNC45OTlhLjQxOC40MTggMCAwIDAtLjMxMSAwbC0xMi41MjUgNWEuNDI0LjQyNCAwIDAgMS0uMTU2LjAzWiIgZmlsbD0iI0E1MzIyMiIvPjxwYXRoIGQ9Im0xNjIuNTIxIDMxLjEzMi0zLjUxMiA4LjE4MWgtLjk5bDEuMTU5LTIuNy0yLjIzOS01LjQ4MWgxLjA0NmwxLjA5MiAyLjg5Mi42MDggMS41ODcuNTk2LTEuNTc2IDEuMjI3LTIuOTAzaDEuMDEzWm0tMTEuNjE1LS4wMTJoLjg0NGwuMDQ1Ljg5Yy40NzMtLjY0MiAxLjEwMy0uOTY4IDEuOTAyLS45NjguNzIxIDAgMS4zMDYuMjM2IDEuNzU2LjY5Ny40NS40NjIuNjg3IDEuMDkyLjY4NyAxLjg4djMuMDcyaC0uOTIzdi0zLjA2YzAtLjU0MS0uMTU4LS45NTgtLjQ1MS0xLjI3My0uMzAzLS4zMDMtLjcyLS40NjEtMS4yMzctLjQ2MS0uNTA3LjAxMS0uOTIzLjE5MS0xLjIzOC41MjktLjMxNi4zNDktLjQ3My43NzYtLjQ3MyAxLjI4M3YyLjk4MmgtLjkxMnYtNS41N1ptLTIuNTUxIDUuNTcxLS4wMjMuMDIzLS4wMjItMS4wMTNhMi4xMTcgMi4xMTcgMCAwIDEtLjg3OC44NDQgMi41NiAyLjU2IDAgMCAxLTEuMTcxLjI4MWMtLjgyMSAwLTEuNDk2LS4yNTktMi4wMzctLjc4OC0uNTQtLjUyOC0uODEtMS4yMzctLjgxLTIuMTI3IDAtLjg3Ny4yNy0xLjU3NS44MS0yLjA5My41NDEtLjUxOCAxLjIyNy0uNzc2IDIuMDQ5LS43NzYuNDI3IDAgLjgyMS4xIDEuMjA0LjI5Mi4zNzEuMTkyLjY1My40NjIuODU1LjgxbC4wMTEtMS4wMTJoLjkwMXY1LjU2aC0uODg5Wm0tMi4wMzctNC43ODMtLjAxMi4wMTFjLS41NjIgMC0xLjAzNS4xOTItMS40MTguNTYzLS4zODIuMzcxLS41NzQuODU1LS41NzQgMS40NjMgMCAuNjA4LjE5MiAxLjEwMy41NzQgMS40NzQuMzgzLjM4My44NTYuNTYzIDEuNDE4LjU2My4zNjEgMCAuNjg3LS4wNjcuOTgtLjIyNWExLjYxIDEuNjEgMCAwIDAgLjY2NC0uNTg1IDIuNiAyLjYgMCAwIDAgLjMyNi0uNzg4IDEuODkzIDEuODkzIDAgMCAwIDAtLjg2NyAyLjc5OSAyLjc5OSAwIDAgMC0uMzI2LS43OTkgMS44NDUgMS44NDUgMCAwIDAtLjY1My0uNTg1IDIuMTYzIDIuMTYzIDAgMCAwLS45NzktLjIyNVptLTkuNjk4IDcuNDA1di04LjE1OWguODc3bC4wNDUgMS4wN2EyLjI4IDIuMjggMCAwIDEgLjkwMS0uODU2IDIuNTkzIDIuNTkzIDAgMCAxIDEuMjM4LS4zMTVjLjgxLjAyMiAxLjQ3NC4yOTIgMS45OTIuODEuNTE4LjUzLjc3NiAxLjIxNi43NzYgMi4wNiAwIC44NzctLjI3IDEuNTc1LS43ODcgMi4xMDQtLjUxOC41My0xLjIwNS43ODgtMi4wMzcuNzg4YTIuNjggMi42OCAwIDAgMS0xLjIxNi0uMjgxIDEuOSAxLjkgMCAwIDEtLjg4OS0uODQ0djMuNjIzaC0uOVptMi45NDgtMy4zNjRjLjU2MyAwIDEuMDM2LS4xOCAxLjQwNy0uNTQuMzYtLjM2LjU1Mi0uODQ1LjU1Mi0xLjQ2NCAwLS42MDgtLjE5Mi0xLjA5Mi0uNTUyLTEuNDUyLS4zNi0uMzYtLjgzMy0uNTQtMS40MDctLjU0LS41ODUgMC0xLjA0Ni4xOTItMS40MDcuNTYzLS4zNi4zODMtLjU0Ljg1NS0uNTQgMS40MyAwIC41NzMuMTggMS4wNDYuNTUyIDEuNDI4LjM2LjM4My44MzMuNTc1IDEuMzk1LjU3NVptLTEzLjI3OS00LjgxNy4wMTEuMDFoLjg1NmwuMDU2LjgxMWExLjU5IDEuNTkgMCAwIDEgLjY3NS0uNjg2IDIuMTUgMi4xNSAwIDAgMSAuOTY4LS4yMjVjLjQxNiAwIC43OTkuMSAxLjEzNy4yOTIuMzM3LjIwMy41NzQuNTA3LjczMS45MjNhMi4wMiAyLjAyIDAgMCAxIC44MTEtLjkxMiAyLjE5IDIuMTkgMCAwIDEgMS4xNDgtLjMwM2MuNzIgMCAxLjI5NC4yMjUgMS43MS42NjQuNDE3LjQ1LjYzIDEuMDQ2LjYzIDEuODExdjMuMTc0aC0uOTIydi0zLjE3NGMwLS40Ni0uMTM1LS44NDQtLjM5NC0xLjE0Ny0uMjU5LS4zMDQtLjYwOC0uNDYyLTEuMDQ3LS40NjItLjQ1IDAtLjgyMi4xNTgtMS4xMDMuNDczLS4yODEuMzE1LS40MTYuNjk4LS40MTYgMS4xNTl2My4xNTFoLS45MjNWMzMuNTRjMC0uNDYxLS4xNDYtLjg0NC0uNDE3LTEuMTYtLjI3LS4zMTQtLjYzLS40NzItMS4wOC0uNDcyLS40NSAwLS44MjIuMTU4LTEuMDkyLjQ3My0uMjgxLjMxNS0uNDE2LjY5OC0uNDE2IDEuMTU5djMuMTUxaC0uOTIzdi01LjU2Wm0tNy4wNzUgMi43OTFjMC0uODU2LjI3LTEuNTUzLjgxMS0yLjA5NC41NC0uNTQgMS4yMzgtLjgyMSAyLjA3LS44MjEuODQ0IDAgMS41NDIuMjcgMi4wODIuODEuNTQxLjU0LjgxMSAxLjI1LjgxMSAyLjEwNSAwIC44NDQtLjI4MiAxLjUzLS44MjIgMi4wNy0uNTQuNTQtMS4yMzguOC0yLjA3MS44LS44MzIgMC0xLjUzLS4yNi0yLjA3LS44LS41NDEtLjU0LS44MTEtMS4yMjYtLjgxMS0yLjA3Wm00Ljg2MiAwYzAtLjYwOC0uMTkxLTEuMTAzLS41NjMtMS40ODZhMS45MSAxLjkxIDAgMCAwLTEuNDA2LS41ODVjLS41NzQgMC0xLjA0Ny4xOTEtMS40MTguNTc0LS4zNzIuMzgzLS41NTIuODg5LS41NTIgMS40OTcgMCAuNTg1LjE4IDEuMDY5LjU1MiAxLjQ0LjM2LjM4My44MzIuNTYzIDEuNDA2LjU2My41NjMgMCAxLjAzNi0uMTggMS40MDctLjU2My4zNzItLjM3MS41NjMtLjg1NS41NzQtMS40NFptLTUuNTc0IDEuNzIyYy0uNzg3Ljc4Ny0xLjc2NiAxLjE3LTIuOTI2IDEuMTctMS4zMTYgMC0yLjMyOS0uMzgzLTMuMDM4LTEuMTYtLjcwOS0uNzc2LTEuMDY5LTEuNzMyLTEuMDY5LTIuODU4YTQuMzcxIDQuMzcxIDAgMCAxIC40MjctMS45OTJjLjI5My0uNjA3Ljc1NC0xLjEwMyAxLjM5Ni0xLjUwOC42My0uNDA1IDEuMzk1LS42MDggMi4yODQtLjYwOCAxLjExNSAwIDIuMDcxLjM5NCAyLjg4MSAxLjE4MmwtLjY3NS42M2MtLjU5Ni0uNTg1LTEuMzI4LS44NzgtMi4yMDYtLjg3OC0xLjAxMyAwLTEuNzg5LjMxNi0yLjMyOS45MjMtLjU0LjYyLS44MTEgMS4zNjItLjc5OSAyLjI0LjAxMS44NzguMjgxIDEuNjEuODIxIDIuMjA2LjUyOS41OTYgMS4yOTQuODg5IDIuMzA3Ljg4OS44NzggMCAxLjYzMi0uMzA0IDIuMjQtLjkxMmwuNjg2LjY3NlptLTExLjIwNy4xNTdoLS4wMTFjLS4yNy4zMjctLjYzLjU3NC0xLjA1OC43NDNhMy43MSAzLjcxIDAgMCAxLTEuMzM5LjI0N2MtLjg3OCAwLTEuNTc2LS4yNTgtMi4xMTYtLjc4Ny0uNTQtLjUzLS44MS0xLjIzOC0uODEtMi4xMTYgMC0uODMzLjI3LTEuNTMuODEtMi4wNy41NC0uNTQxIDEuMjI3LS44MTEgMi4wNzEtLjgxMS45IDAgMS42MDkuMjgxIDIuMTM4Ljg0NC41MjkuNTYzLjc0MyAxLjM2Mi42NDIgMi40MmgtNC43MjdjLjA0NS41MDYuMjU5LjkxMS42NDIgMS4yMTUuMzcxLjMwNC44MzIuNDUgMS4zNzMuNDUuMzI2IDAgLjY1Mi0uMDU2Ljk5LS4xOC4zMzgtLjEyNC41OTYtLjI5Mi43NzctLjUxOGwuNjE4LjU2M1ptLS41NTEtMi4zMDd2LjAxMWMtLjAyMi0uNTI5LS4yMDMtLjkzNC0uNTQtMS4yMjctLjMzOC0uMjkyLS43ODgtLjQzOC0xLjMzOS0uNDM4LS41MDcgMC0uOTQ2LjE0Ni0xLjMwNi40MzgtLjM3MS4yOTMtLjU5Ni42OTgtLjY2NCAxLjIxNmgzLjg0OVptLTEwLjY3MyA0LjEzYzAgLjUwNy4xOC44OS41NjMgMS4xMzcuMzgzLjI1OS44NDQuMzk0IDEuNDA3LjM5NC41NCAwIDEuMDAxLS4xMDEgMS4zODQtLjMxNXMuNTc0LS41NTIuNTc0LTEuMDAyYzAtLjQyOC0uMTkxLS43NTQtLjU2My0uOTktLjM3MS0uMjI1LS44MzMtLjM1LTEuMzg0LS4zNS0uODkgMC0xLjU5OC0uMjM1LTIuMTM4LS43My0uNTQtLjQ4NS0uOC0xLjE2LS44LTIuMDE1IDAtLjg1NS4yOTMtMS41My44NzktMi4wMjZhMy4xMzggMy4xMzggMCAwIDEgMi4wNTktLjczMWMuNjUzIDAgMS4xNy4xNDYgMS41NzYuNDE2bC41OTYtLjcyLjY1My41MTctLjYzLjc0M2MuNDcyLjU0LjcyIDEuMTQ4LjcyIDEuOCAwIC41MTktLjEzNS45OC0uNDA1IDEuMzk2LS4yNy40MTctLjY1My43MS0xLjE2Ljg2NyAxLjAxMy4zMDQgMS41MzEuOTEyIDEuNTMxIDEuODEyIDAgLjY4Ni0uMjkzIDEuMjE1LS44NTUgMS41OTgtLjU3NC4zODMtMS4yNi41NzQtMi4wNDkuNTc0LS44NTUgMC0xLjU1My0uMjAzLTIuMDgxLS42My0uNTMtLjQyOC0uNzg4LTEuMDAyLS43NjYtMS43NDVoLjg5Wm0tLjA0NS0zLjg3MWMwIC42MTkuMjAzIDEuMDkyLjU4NiAxLjQzLjM4Mi4zMzcuODY2LjUwNiAxLjQ1MS41MDYuNTg1IDAgMS4wNTgtLjE4IDEuNDQtLjU1Mi4zNzItLjM3MS41NjQtLjgzMy41NjQtMS4zNzMgMC0uNjA4LS4yMDMtMS4wOC0uNTk3LTEuNDE4LS4zOTQtLjMzOC0uODY3LS41MDYtMS40MTgtLjUwNi0uNTQgMC0xLjAxMy4xNjgtMS40MTguNTA2LS40MDUuMzM4LS42MDguOC0uNjA4IDEuNDA3Wk05Mi45IDM2LjY5MWwtLjAyMi4wMjMtLjAyMi0xLjAxM2EyLjExNCAyLjExNCAwIDAgMS0uODc4Ljg0NCAyLjU2IDIuNTYgMCAwIDEtMS4xNy4yODFjLS44MjIgMC0xLjQ5Ny0uMjU5LTIuMDM4LS43ODgtLjU0LS41MjgtLjgxLTEuMjM3LS44MS0yLjEyNyAwLS44NzcuMjctMS41NzUuODEtMi4wOTNzMS4yMjctLjc3NiAyLjA0OS0uNzc2Yy40MjcgMCAuODIxLjEgMS4yMDQuMjkyLjM3MS4xOTIuNjUzLjQ2Mi44NTUuODFsLjAxMS0xLjAxMmguOXY1LjU2aC0uODg4Wm0tMi4wMzYtNC43ODMtLjAxMi4wMTFjLS41NjIgMC0xLjAzNS4xOTItMS40MTguNTYzLS4zODIuMzcxLS41NzQuODU1LS41NzQgMS40NjMgMCAuNjA4LjE5MiAxLjEwMy41NzQgMS40NzQuMzgzLjM4My44NTYuNTYzIDEuNDE4LjU2My4zNiAwIC42ODctLjA2Ny45OC0uMjI1YTEuNjEgMS42MSAwIDAgMCAuNjY0LS41ODUgMi42IDIuNiAwIDAgMCAuMzI2LS43ODggMS44NzcgMS44NzcgMCAwIDAgMC0uODY3IDIuNzc0IDIuNzc0IDAgMCAwLS4zMjYtLjc5OSAxLjgzNyAxLjgzNyAwIDAgMC0uNjUzLS41ODUgMi4xNjIgMi4xNjIgMCAwIDAtLjk4LS4yMjVabS04Ljc5NCA1LjcxN2MwIC41MDcuMTguODkuNTYzIDEuMTM3LjM4My4yNTkuODQ0LjM5NCAxLjQwNy4zOTQuNTQgMCAxLjAwMS0uMTAxIDEuMzg0LS4zMTVzLjU3NC0uNTUyLjU3NC0xLjAwMmMwLS40MjgtLjE5MS0uNzU0LS41NjMtLjk5LS4zNzEtLjIyNS0uODMyLS4zNS0xLjM4NC0uMzUtLjg4OSAwLTEuNTk4LS4yMzUtMi4xMzgtLjczLS41NC0uNDg1LS44LTEuMTYtLjgtMi4wMTUgMC0uODU1LjI5My0xLjUzLjg3OS0yLjAyNmEzLjEzOCAzLjEzOCAwIDAgMSAyLjA2LS43MzFjLjY1MiAwIDEuMTcuMTQ2IDEuNTc1LjQxNmwuNTk2LS43Mi42NTMuNTE3LS42My43NDNjLjQ3Mi41NC43MiAxLjE0OC43MiAxLjhhMi41IDIuNSAwIDAgMS0uNDA1IDEuMzk2Yy0uMjcuNDE3LS42NTMuNzEtMS4xNi44NjcgMS4wMTQuMzA0IDEuNTMxLjkxMiAxLjUzMSAxLjgxMiAwIC42ODYtLjI5MiAxLjIxNS0uODU1IDEuNTk4LS41NzQuMzgzLTEuMjYuNTc0LTIuMDQ4LjU3NC0uODU2IDAtMS41NTMtLjIwMy0yLjA4Mi0uNjMtLjUzLS40MjgtLjc4OC0xLjAwMi0uNzY2LTEuNzQ1aC44OVptLS4wNDUtMy44NzFjMCAuNjE5LjIwMyAxLjA5Mi41ODYgMS40My4zODIuMzM3Ljg2Ni41MDYgMS40NTEuNTA2LjU4NiAwIDEuMDU4LS4xOCAxLjQ0LS41NTIuMzcyLS4zNzEuNTY0LS44MzMuNTY0LTEuMzczIDAtLjYwOC0uMjAzLTEuMDgtLjU5Ny0xLjQxOC0uMzk0LS4zMzgtLjg2Ni0uNTA2LTEuNDE4LS41MDYtLjU0IDAtMS4wMTMuMTY4LTEuNDE4LjUwNi0uNDA1LjMzOC0uNjA4LjgtLjYwOCAxLjQwN1ptLTMuNDE1LTQuMjQzdjEuNjMyaDEuNzIxdi43ODhoLTEuNzMzdjIuOTM3YzAgLjcyLjI5MiAxLjA3Ljg3OCAxLjA3LjI0NyAwIC41MDYtLjA2OC43NzYtLjIwM2wuMjcuNzY1Yy0uMzgyLjE4LS43NDMuMjctMS4wOC4yNy0xLjE3LjAyMi0xLjc1Ni0uNjA4LTEuNzU2LTEuOTAydi0yLjkzN2gtMS4xMTR2LS43ODhoMS4xMTR2LTEuNTNsLjkyMy0uMTAyWm0tNS41MDEgMS42MjEuMDEtLjAxMi4wNjkuODMzYy4zMjYtLjYwOC45LS45MjMgMS43MS0uOTIzLjQ4NC0uMDEuOTEyLjEyNCAxLjI5NC40MTdsLS40MTYuNzg3YTEuNjcyIDEuNjcyIDAgMCAwLTIuMTI3LjE3Yy0uMzE1LjMwMy0uNDczLjY5Ny0uNDczIDEuMTkydjMuMDk1aC0uOTIzdi01LjU2aC44NTZabS03LjkzMSAyLjc5MWMwLS44NTYuMjctMS41NTMuODEtMi4wOTQuNTQxLS41NCAxLjIzOS0uODIxIDIuMDcyLS44MjEuODQ0IDAgMS41NDEuMjcgMi4wODIuODEuNTQuNTQuODEgMS4yNS44MSAyLjEwNSAwIC44NDQtLjI4MSAxLjUzLS44MjIgMi4wNy0uNTQuNTQtMS4yMzcuOC0yLjA3LjgtLjgzMyAwLTEuNTMtLjI2LTIuMDcxLS44LS41NC0uNTQtLjgxLTEuMjI2LS44MS0yLjA3Wm00Ljg2MiAwYzAtLjYwOC0uMTktMS4xMDMtLjU2Mi0xLjQ4NmExLjkxMSAxLjkxMSAwIDAgMC0xLjQwNy0uNTg1Yy0uNTc0IDAtMS4wNDcuMTkxLTEuNDE4LjU3NC0uMzcyLjM4My0uNTUyLjg4OS0uNTUyIDEuNDk3IDAgLjU4NS4xOCAxLjA2OS41NTIgMS40NC4zNi4zODMuODMzLjU2MyAxLjQwNy41NjMuNTYyIDAgMS4wMzUtLjE4IDEuNDA2LS41NjMuMzcyLS4zNzEuNTYzLS44NTUuNTc0LTEuNDRabS03LjIwMy0zLjY5Mi0yLjg1OSAzLjk4NGgtLjIwMmwtMi44NTktNC4wMDZ2Ni40ODJoLS45Njh2LTcuODc4aDEuMTdsMi43NyA0LjA1MiAyLjc0NS00LjA1MmgxLjE3djcuODc4aC0uOTY3di02LjQ2WiIgZmlsbD0iIzM0Mzc0MCIvPjwvZz48ZGVmcz48Y2xpcFBhdGggaWQ9ImEiPjxwYXRoIGZpbGw9IiNmZmYiIGQ9Ik0wIDBoMTY1djQwSDB6Ii8+PC9jbGlwUGF0aD48L2RlZnM+PC9zdmc+"; /* official NMC logo, built in */
-const STATUSES = ["New lead","Contacted","Working","Quoted","Application","Locked","Closed","Lost"];
+const STATUSES = ["New lead","Needs follow-up","Ineligible \u2014 rate","Needs docs","In app","In process","Complete","Lost"];
+const STATUS_MIGRATE = {"Contacted":"Needs follow-up","Working":"Needs follow-up","Quoted":"Needs follow-up","Application":"In app","Locked":"In process","Closed":"Complete"};
+const S_RATE="Ineligible \u2014 rate", S_DONE="Complete";
+const isDone=c=>c.status===S_DONE||c.status==="Lost";
+function nextBizDay(){ const d=new Date(); d.setDate(d.getDate()+1); while(d.getDay()===0||d.getDay()===6) d.setDate(d.getDate()+1); return d.toISOString().slice(0,10); }
+/* side effects of a disposition: Complete = loan sold & closed (counts toward the month); Ineligible-rate needs the rate to reach; follow-up needs a date */
+function applyDispo(c){ if(c.status===S_DONE&&!c.closedAt) c.closedAt=new Date().toISOString().slice(0,10);
+  if(c.status===S_RATE&&!(c.targetRate>0)&&c.rate>0) c.targetRate=+(c.rate-0.5).toFixed(3);
+  if(c.status==="Needs follow-up"&&!c.followUp) c.followUp=nextBizDay(); }
+function dispo(st){ const c=cur(); if(!c) return; c.status=st; applyDispo(c); save(); fillClientForm(); renderPipeline(); renderClientBar();
+  toast(st===S_DONE?"Marked complete \u2014 counts toward this month\u2019s goal":st===S_RATE?"Flagged ineligible \u2014 set the rate they need; the pipeline will light up when the feed gets there":"Disposition: "+st); }
+function closedThisMonth(){ const mkey=new Date().toISOString().slice(0,7); return state.clients.filter(c=>!c.quick&&c.status===S_DONE&&(c.closedAt||"").slice(0,7)===mkey); }
 const DEFAULT_SFMAP = {
   name:["name","contact name","full name","borrower","borrower name","account name","opportunity name","client"],
   phone:["phone","mobile","mobile phone","home phone","cell","cell phone"],
@@ -812,7 +825,7 @@ function load(){ try{ const raw=readStore(); if(raw){ const s=JSON.parse(raw);
   state = Object.assign(state, s); state.settings = Object.assign({}, {reportUrl:"",folderGoal:15}, state.settings, s.settings||{});
   if(!state.settings.sfMap) state.settings.sfMap = JSON.parse(JSON.stringify(DEFAULT_SFMAP));
   if(!state.blocks) state.blocks=[]; if(!state.rateHistory) state.rateHistory=[]; } }catch(e){} }
-const SCHEMA=4;
+const SCHEMA=5;
 function migrate(){ /* additive only — old saves gain new fields, nothing is ever dropped */
  try{
   state.schema=SCHEMA;
@@ -827,7 +840,7 @@ function migrate(){ /* additive only — old saves gain new fields, nothing is e
   if(!Array.isArray(state.templates.mine)) state.templates.mine=[];
   if(!Array.isArray(state.templates.shared)) state.templates.shared=[];
   const tpl=blankClient();
-  (state.clients||[]).forEach(c=>{ for(const k in tpl) if(c[k]===undefined) c[k]=Array.isArray(tpl[k])?[]:tpl[k];
+  (state.clients||[]).forEach(c=>{ if(STATUS_MIGRATE[c.status]) c.status=STATUS_MIGRATE[c.status]; for(const k in tpl) if(c[k]===undefined) c[k]=Array.isArray(tpl[k])?[]:tpl[k];
    c.analysis=Object.assign({}, tpl.analysis, c.analysis||{});
    c.debts=c.debts||[]; c.options=c.options||[]; c.scenarios=c.scenarios||[];
    c.prop=Object.assign({included:[],rec:"",why:""}, c.prop||{});
@@ -946,7 +959,7 @@ function bindClientFields(){
     if(el.tagName==="SELECT" && el.dataset.f==="status") el.innerHTML = STATUSES.map(s=>`<option>${s}</option>`).join("");
     el.addEventListener("input", ()=>{ const c=cur(); if(!c) return;
       const f=el.dataset.f; c[f] = (el.type==="number") ? num(el.value) : el.value;
-      if(f==="status"&&c[f]==="Closed"&&!c.closedAt) c.closedAt=new Date().toISOString().slice(0,10);
+      if(f==="status") applyDispo(c);
       normalizePayment(c,f);
       if(f==="value") c.valueSrc={type:"manual",when:todayStr()};
       ["payment","escrow","paymentTotal"].forEach(k=>{ if(k!==f){ const o=document.querySelector(`#s-client [data-f="${k}"]`); if(o) o.value=c[k]==null?"":c[k]; } });
@@ -960,6 +973,9 @@ function fillClientForm(){ const c=cur();
     ? `<span class="tag-warn">Not in pipeline</span> <button class="btn small" onclick="promoteQuick()">Save to pipeline</button>`
     : `<span class="tag-good">In pipeline</span>`);
   ltvHint(); const vs=$("valueSrc"); if(vs) vs.innerHTML=valueSrcText(c);
+  const dc=$("dispoChips"); if(dc){ dc.innerHTML = !c ? "" : STATUSES.map(st=>`<button class="chip${c.status===st?" on":""}" ${c.status===st?'style="background:var(--brand);color:#fff;border-color:var(--brand)"':''} onclick="dispo('${st.replace(/'/g,"\\'")}')">${st}</button>`).join("");
+    const dh=$("dispoHint"); if(dh) dh.innerHTML = !c ? "" : c.status===S_RATE ? `Needs the market at <b>${c.targetRate>0?pct(c.targetRate):"\u2014 set the rate alert above"}</b> \u2014 they\u2019ll show under \uD83D\uDD25 Hot now when the feed gets there.`
+      : c.status===S_DONE ? `Closed ${esc(c.closedAt||"")} \u2014 counted in this month\u2019s goal.` : c.status==="Needs follow-up"&&c.followUp ? `Follow-up ${esc(c.followUp)} \u2014 shows under Follow-ups due on that day.` : ""; }
 }
 function ltvHint(){ const c=cur(); const el=$("clientLtv"); if(!c||!c.balance||!c.value){ el.textContent=""; return; }
   const ltv=c.balance/c.value*100; el.textContent = "LTV: "+ltv.toFixed(1)+"%"+(ltv<=80?" \u2014 conventional cash-out territory":ltv<=97?"":" \u2014 above standard limits");
@@ -980,7 +996,7 @@ let pipeView="all";
 function setPipeView(v){ pipeView=v; renderPipeline(); }
 function pipeAlerts(){
   const today=new Date().toISOString().slice(0,10);
-  const act=c=>!c.quick&&c.status!=="Closed"&&c.status!=="Lost";
+  const act=c=>!c.quick&&!isDone(c);
   const hotSet=new Set(eligibleIds());
   const hot=state.clients.filter(c=>act(c)&&hotSet.has(c.id));
   const due=state.clients.filter(c=>act(c)&&c.followUp&&c.followUp<=today);
@@ -1010,7 +1026,7 @@ function renderPipeline(){
   `<table class="data"><thead><tr><th>Client</th><th>Status</th><th class="num">Balance</th><th class="num">Rate</th><th class="num">P&amp;I</th><th>Follow-up</th><th>Opportunity</th><th></th></tr></thead><tbody>`+
   rows.map(c=>{ const op=opportunity(c);
     return `<tr><td><b>${esc(c.name)}</b><br><span class="hint">${esc(c.loanType)}${c.servicer?" \u00b7 "+esc(c.servicer):""}</span></td>
-    <td><span class="tag-flat">${esc(c.status)}</span></td>
+    <td><span class="${c.status===S_DONE?"tag-good":c.status==="Lost"?"tag-warn":c.status===S_RATE?"tag-flat":"tag-flat"}">${esc(c.status)}${c.status===S_RATE&&c.targetRate>0?" \u00b7 needs "+pct(c.targetRate):""}</span></td>
     <td class="num">${money(c.balance)}</td><td class="num">${pct(c.rate)}</td><td class="num">${money(c.payment)}</td>
     <td>${esc(c.followUp||"\u2014")}</td>
     <td>${op?`<span class="${op.tag}">${op.txt}</span>`:""}</td>
@@ -1680,12 +1696,12 @@ function renderBlocks(){
   const mB=state.blocks.filter(b=>b.date.slice(0,7)===mkey);
   const sum=k=>mB.reduce((t,b)=>t+(b[k]||0),0);
   const dials=sum("dials"),contacts=sum("contacts"),inter=sum("interested"),folders=sum("folders"),mins=sum("dur");
-  const goal=s.folderGoal||15;
+  const goal=s.folderGoal||15; const closedN=closedThisMonth().length;
   const daysInMonth=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
-  const onPace=folders>=goal*(now.getDate()/daysInMonth);
+  const onPace=closedN>=goal*(now.getDate()/daysInMonth);
   $("blockStats").innerHTML = (!mB.length&&!lv) ? `<div class="empty">No blocks yet this month. Start one above.</div>` :
   `<div class="grid4">
-    <div class="stat highlight"><div class="v">${folders} / ${goal}</div><div class="l">Folders vs goal \u2014 ${onPace?'<span class="tag-good">on pace</span>':'<span class="tag-warn">behind pace</span>'}</div></div>
+    <div class="stat highlight"><div class="v">${closedN} / ${goal}</div><div class="l">Closed (Complete) vs goal \u2014 ${onPace?'<span class="tag-good">on pace</span>':'<span class="tag-warn">behind pace</span>'} \u00b7 ${folders} folders taken in blocks</div></div>
     <div class="stat"><div class="v">${dials?Math.round(contacts/dials*100):0}%</div><div class="l">Contact rate (${contacts} of ${dials} dials)</div></div>
     <div class="stat"><div class="v">${contacts?Math.round(inter/contacts*100):0}%</div><div class="l">Contact \u2192 interested (${inter})</div></div>
     <div class="stat"><div class="v">${mins?(dials/(mins/60)).toFixed(1):"0"}</div><div class="l">Dials/hour \u00b7 ${mB.length} blocks \u00b7 ${(mins/60).toFixed(1)} hrs</div></div>
@@ -1729,17 +1745,17 @@ function loadSamples(silent){
   const fu=new Date(Date.now()+2*86400000).toISOString().slice(0,10);
   const mk=o=>Object.assign(blankClient(),o);
   const samples=[
-   mk({name:"Darnell Washington", status:"Quoted", loanType:"VA", phone:"(313) 555-0142", email:"d.washington@example.com",
+   mk({name:"Darnell Washington", status:"Needs follow-up", loanType:"VA", phone:"(313) 555-0142", email:"d.washington@example.com",
      address:"1427 Longfellow St, Detroit, MI 48206", balance:312000, rate:7.125, payment:2123, monthsLeft:348, value:405000,
      fico:702, servicer:"Freedom Mortgage", followUp:fu, notes:"VA IRRRL candidate \u2014 no appraisal, no income docs. Wants a lower payment; two skipped payments help with holiday cash.",
      analysis:{anRate:5.75,anTerm:30,anCosts:5200,anCashOut:0,anSkip:2,anRoll:"no",anLien:"refi"}}),
-   mk({name:"Maria & Luis Ortega", status:"Working", loanType:"Conventional", phone:"(469) 555-0177", email:"ortega.family@example.com",
+   mk({name:"Maria & Luis Ortega", status:"Needs follow-up", loanType:"Conventional", phone:"(469) 555-0177", email:"ortega.family@example.com",
      address:"2214 Bluebonnet Dr, Plano, TX 75023", balance:268000, rate:6.875, payment:1821, monthsLeft:324, value:440000,
      fico:731, servicer:"Mr. Cooper", followUp:fu, notes:"Card payments eating them alive \u2014 want one payment and the cards at zero.",
      debts:[{name:"Visa",balance:18500,apr:26.99,pay:540},{name:"Mastercard",balance:9200,apr:24.49,pay:280},
             {name:"Auto loan",balance:21400,apr:8.9,pay:465},{name:"Personal loan",balance:12000,apr:13.5,pay:310}],
      analysis:{anRate:6.125,anTerm:30,anCosts:7500,anCashOut:0,anSkip:2,anRoll:"yes",anLien:"refi"}}),
-   mk({name:"Angela Price", status:"Quoted", loanType:"Conventional", phone:"(704) 555-0129", email:"angela.p@example.com",
+   mk({name:"Angela Price", status:"Needs follow-up", loanType:"Conventional", phone:"(704) 555-0129", email:"angela.p@example.com",
      address:"88 Camellia Ct, Charlotte, NC 28214", balance:195000, rate:3.25, payment:1104, monthsLeft:264, value:520000,
      fico:768, servicer:"Chase", followUp:fu, notes:"Do NOT touch her 3.25% first. HELOAN for the kitchen ($35k) plus paying off the Visa.",
      debts:[{name:"Visa",balance:24000,apr:27.99,pay:690}],
@@ -1747,7 +1763,7 @@ function loadSamples(silent){
                 {id:"sc2",label:"30-yr fixed HEL",kind:"hel",amount:60500,rate:8.75,term:30,draw:0},
                 {id:"sc3",label:"HELOC \u2014 10-yr draw",kind:"heloc",amount:60500,rate:8.99,term:30,draw:10}],
      analysis:{anRate:8.49,anTerm:20,anCosts:1500,anCashOut:35000,anSkip:0,anRoll:"yes",anLien:"second"}}),
-   mk({name:"Marcus Bell", status:"Working", loanType:"Conventional", phone:"(614) 555-0163", email:"mbell@example.com",
+   mk({name:"Marcus Bell", status:"Needs follow-up", loanType:"Conventional", phone:"(614) 555-0163", email:"mbell@example.com",
      address:"501 Whittier St, Columbus, OH 43206", balance:342000, rate:6.375, payment:2134, monthsLeft:352, value:410000,
      fico:715, servicer:"PennyMac", followUp:fu, notes:"Rate watch. Needs a full 0.5% drop for the streamline to make sense \u2014 call him the day it hits.",
      analysis:{anRate:null,anTerm:30,anCosts:6000,anCashOut:0,anSkip:1,anRoll:"no",anLien:"refi"}})
@@ -1774,7 +1790,7 @@ function simulateDrop(){
   notifyNewEligible(before);
 }
 function targetHit(c){ const fr=feedRateFor(c); return c.targetRate>0 && fr!=null && fr<=c.targetRate; }
-function eligibleIds(){ return state.clients.filter(c=>{ if(c.quick||c.status==="Closed"||c.status==="Lost") return false;
+function eligibleIds(){ return state.clients.filter(c=>{ if(c.quick||isDone(c)) return false;
   const fr=feedRateFor(c); return targetHit(c) || (fr!=null && c.rate!=null && c.rate-fr>=0.5); }).map(c=>c.id); }
 function notifyNewEligible(before){
   const fresh=eligibleIds().filter(id=>!before.includes(id));
@@ -2173,18 +2189,18 @@ function renderDesk(){ if(!$("deskStats")) return; updateMirrorStatus(); const s
  const mkey=new Date().toISOString().slice(0,7);
  const mB=state.blocks.filter(b=>b.date.slice(0,7)===mkey);
  const sum=k=>mB.reduce((t,b)=>t+(b[k]||0),0);
- const closed=state.clients.filter(c=>!c.quick&&(c.closedAt||"").slice(0,7)===mkey);
+ const closed=closedThisMonth();
  const vol=closed.reduce((t,c)=>{const r=computeAnalysis(c); return t+((r&&!r.tooSmall&&r.newP)||c.balance||0);},0);
  const counts={}; state.clients.forEach(c=>{ if(!c.quick) counts[c.status]=(counts[c.status]||0)+1; });
  $("deskStats").innerHTML = `
   <div class="grid4" style="margin-bottom:10px">
    <div class="stat highlight"><div class="v">${closed.length}</div><div class="l">Loans closed this month</div></div>
    <div class="stat highlight"><div class="v">${money(vol)}</div><div class="l">Closed volume</div></div>
-   <div class="stat"><div class="v">${sum("folders")} / ${s.folderGoal||15}</div><div class="l">Folders vs goal</div></div>
+   <div class="stat"><div class="v">${closed.length} / ${s.folderGoal||15}</div><div class="l">Closed vs monthly goal \u00b7 ${sum("folders")} folders in blocks</div></div>
    <div class="stat"><div class="v">${sum("dials")?Math.round(sum("contacts")/sum("dials")*100):0}%</div><div class="l">Contact rate \u00b7 ${sum("dials")} dials</div></div>
   </div>
   <div style="display:flex;gap:6px;flex-wrap:wrap">${STATUSES.filter(st=>counts[st]).map(st=>
-   `<span class="${st==="Closed"?"tag-good":st==="Lost"?"tag-warn":"tag-flat"}">${st}: ${counts[st]}</span>`).join("")||'<span class="hint">No pipeline clients yet.</span>'}</div>`;
+   `<span class="${st===S_DONE?"tag-good":st==="Lost"?"tag-warn":"tag-flat"}">${st}: ${counts[st]}</span>`).join("")||'<span class="hint">No pipeline clients yet.</span>'}</div>`;
 }
 
 /* ---------- folder autosave (File System Access API) ---------- */
