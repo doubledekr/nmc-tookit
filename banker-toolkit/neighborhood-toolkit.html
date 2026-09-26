@@ -745,7 +745,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.1.12";
+const TOOLKIT_VERSION = "1.1.13";
 const DEMO = false; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -1110,10 +1110,12 @@ function parseSFText(text){
   if(n(raw.helBal)>0) debts.push({name:"Home equity loan", balance:n(raw.helBal), apr:9.0, pay:n(raw.helPay)});
   Object.keys(found).forEach(k=>{ if(found[k]==null||found[k]==="") delete found[k]; });
   lastSF={fields:found, debts};
-  const keys=Object.keys(found); const cc=cur();
+  const keys=Object.keys(found); const cc=null;   /* a paste never targets the selected client */
+  const digits=v=>String(v||"").replace(/\D/g,"").slice(-10);
+  const dup=state.clients.find(x=>!x.quick&&((found.phone&&digits(x.phone)&&digits(x.phone)===digits(found.phone))||(found.email&&x.email&&x.email.toLowerCase()===found.email.toLowerCase())));
   const fmt=(k,v)=> ["balance","payment","paymentTotal","escrow","value"].includes(k)? money(v) : k==="rate"||k==="targetRate"? pct(v) : esc(v);
   const mlNote = raw.monthsSince && raw.monthsLeft==null ? `<div class="hint">Months left assumes a 30-year term from \u201cMonths Since Close Date\u201d \u2014 adjust in the details if it was a 15 or 20.</div>` : "";
-  const hdr = cc ? `<div class="hint" style="margin-bottom:6px">Applying to <b>${esc(cc.name)}</b>: changed fields show current \u2192 new and are checked; unchanged ones are unchecked. Uncheck anything you\u2019d rather keep.</div>` : "";
+  const hdr = dup ? `<div style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:13px"><b>${esc(dup.name)}</b> is already in your pipeline with this ${found.phone&&digits(dup.phone)===digits(found.phone)?"phone number":"email"}. <button class="btn small" onclick="pickClient('${dup.id}'); go('client'); toast('Opened '+${JSON.stringify(dup.name)})">Open ${esc(dup.name)}</button> <button class="btn ghost small" onclick="applySFTo('${dup.id}')">Update ${esc(dup.name.split(/[ ,&]/)[0])} with this paste</button></div>` : "";
   $("sfPreview").innerHTML = !keys.length && !debts.length ? `<div class="empty">Nothing recognized \u2014 make sure the lead page was in front when you clicked the bookmarklet, then try again. If it keeps happening, send the page to your admin.</div>` :
    hdr+(keys.length? `<table class="data"><thead><tr><th></th><th>Field</th><th>Value</th></tr></thead><tbody>`+
    keys.map(k=>{ const cv=cc?cc[k]:null; const has=cv!=null&&cv!==""; const same=has&&String(cv)===String(found[k]);
@@ -1122,11 +1124,13 @@ function parseSFText(text){
    debts.map((d,i)=>`<tr><td><input type="checkbox" checked data-sfd="${i}"></td><td>${esc(d.name)}</td><td class="num">${money(d.balance)}</td><td class="num">${d.pay!=null?money(d.pay):"\u2014"}</td><td class="num">${d.apr}% est.</td></tr>`).join("")+`</tbody></table>` : "")+
    `<div class="hint" style="margin-top:6px">SSN, birthdate, age, and marital status are never captured.</div>
    <div class="btnrow" style="margin-top:10px">
-     <button class="btn" onclick="applySF(false)">Apply to current client</button>
-     <button class="btn ghost" onclick="applySF(true)">Create new client from this</button></div>`;
+     <button class="btn" onclick="applySF(true)">Create new client from this</button>
+     <span class="hint">A paste always makes a new client \u2014 it never writes over one you already have.</span></div>`;
 }
-function applySF(asNew){
+function applySFTo(id){ if(!lastSF) return; const c=state.clients.find(x=>x.id===id); if(!c) return; state.currentId=c.id; applySF(false,true); }
+function applySF(asNew,onto){
   if(!lastSF) return; let c=cur();
+  if(!onto){ asNew=true; }                                    /* never overwrite an existing client from a paste */
   if(asNew||!c){ c=blankClient(); state.clients.unshift(c); state.currentId=c.id; }
   const F=lastSF.fields||lastSF;
   document.querySelectorAll("#sfPreview [data-sfk]").forEach(cb=>{ if(!cb.checked&&!asNew) return; const k=cb.dataset.sfk;   /* a brand-new client takes every recognized field */
@@ -1135,7 +1139,8 @@ function applySF(asNew){
     const ex=c.debts.find(x=>x.name===d.name); if(ex){ ex.balance=d.balance; if(d.pay!=null) ex.pay=d.pay; } else c.debts.push(Object.assign({},d)); });
   if(asNew && !F.name) c.name="Pasted client";
   normalizePayment(c,"paymentTotal");
-  save(); refreshAll(); toast("Applied to "+c.name+(lastSF.debts.length?" \u2014 debts added to the analysis":""));
+  const nd=lastSF.debts.length; const ta=$("sfPaste"); if(ta) ta.value=""; const pv=$("sfPreview"); if(pv) pv.innerHTML=""; lastSF=null;   /* clear the paste box so the next one starts blank */
+  save(); refreshAll(); toast((asNew?"New client: ":"Updated ")+c.name+(nd?" \u2014 debts added to the analysis":""));
 }
 
 /* ---------- pricing parser ---------- */
