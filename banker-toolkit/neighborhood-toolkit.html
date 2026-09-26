@@ -745,7 +745,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.1.16";
+const TOOLKIT_VERSION = "1.1.17";
 const DEMO = false; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -1453,7 +1453,7 @@ function proposalHTML(){ const c=cur(); if(!c) return `<div class="empty">Pick a
 function optionWins(c,r,h){ /* benefits only, for the side-by-side proposal */
   const w=[];
   if(h.save>0) w.push(`<b>${money(h.save)}/month</b> less going out than today`);
-  if((r.roll||r.second)&&r.dBal>0) w.push(`Pays off <b>${money(r.dBal)}</b> of debt at closing \u2014 ${r.debts.length>1?r.debts.length+" payments become one":"that payment is gone"}`);
+  if((r.roll||r.second)&&r.dBal>0) w.push(`Pays off <b>${money(r.dBal)}</b> of debt at closing \u2014 ${r.debts.length>1?r.debts.length+" payments become one":"that payment is gone"}${r.second?` new payment of <b>${money(r.newPay)}/mo</b> (minimum)`:""}`);
   if(r.second) w.push(`Your current mortgage (<b>${money(r.curPay)}/mo at ${pct(c.rate)}</b>) stays exactly as it is \u2014 total going out becomes <b>${money(h.now)}/mo</b>`);
   if(r.cashOut>0) w.push(`<b>${money(r.cashOut)}</b> cash in hand at closing`);
   if(r.skipCash>0) w.push(`Skip ${r.skipN===1?"a payment":r.skipN+" payments"} \u2014 about <b>${money(r.skipCash)}</b> stays in your account`);
@@ -1485,6 +1485,7 @@ function comparisonProposalHTML(c,sel){
     <h2 style="margin:2px 0 6px;font-size:15px">${esc(x.sc.label)}</h2>
     <div style="font-size:11px;color:#555;margin-bottom:6px">${pct(x.r.a.anRate)} \u00b7 ${x.r.a.anTerm} years \u00b7 ${money(x.r.newP)}${x.r.second?" second mortgage":""}</div>
     <div style="display:flex;gap:22px;margin:2px 0 8px;flex-wrap:wrap">
+      <div><div style="font-size:21px;font-weight:700;font-family:Georgia,'Times New Roman',serif;color:#343740">${money(x.r.newPay)}/mo</div><div style="font-size:10.5px;color:#666">${x.r.second?"New second mortgage payment (minimum)":"New mortgage payment (minimum)"}</div></div>
       ${x.r.second?`<div><div style="font-size:21px;font-weight:700;font-family:Georgia,'Times New Roman',serif;color:#343740">${money(x.r.dPay)} \u2192 ${money(x.r.newPay)}</div><div style="font-size:10.5px;color:#666">Debt payments each month</div></div>`
       :`<div><div style="font-size:21px;font-weight:700;font-family:Georgia,'Times New Roman',serif;color:#343740">${money(x.h.now)}</div><div style="font-size:10.5px;color:#666">Going out each month</div></div>`}
       ${x.h.save>0?`<div><div style="font-size:21px;font-weight:700;font-family:Georgia,'Times New Roman',serif;color:#2E6B4F">${money(x.h.save)}</div><div style="font-size:10.5px;color:#666">Monthly savings</div></div>`:x.r.cashOut+x.r.skipCash>0?`<div><div style="font-size:21px;font-weight:700;font-family:Georgia,'Times New Roman',serif;color:#2E6B4F">${money(x.r.cashOut+x.r.skipCash)}</div><div style="font-size:10.5px;color:#666">Cash at closing</div></div>`:""}
@@ -1573,6 +1574,7 @@ function proposalSingleHTML(){
   ${debtRows?`<h2>Debts consolidated at closing</h2><table><thead><tr><th>Debt</th><th class="num">Balance</th><th class="num">APR</th><th class="num">Payment</th><th class="num">After closing</th></tr></thead><tbody>${debtRows}</tbody></table>`:""}
   ${(()=>{ /* the stat strip shows wins only \u2014 anything that isn't a benefit simply isn't shown */
     const wins=[];
+    wins.push(`<div><div class="v">${money(r.newPay)}/mo</div><div class="l">${r.second?"New second mortgage payment (minimum)":r.heloc?"Payment during the draw":"New mortgage payment (P&amp;I, minimum)"}</div></div>`);
     if(r.saveMo>0) wins.push(`<div><div class="v">${money(r.saveMo)}</div><div class="l">Monthly savings</div></div>`);
     if(!r.second&&r.skipCash>0) wins.push(`<div><div class="v">${money(r.skipCash)}</div><div class="l">Cash kept from skipped payment${r.a.anSkip===1?"":"s"}</div></div>`);
     if(r.second){ const sooner=isFinite(r.dMonths)&&r.dMonths>0 ? r.dMonths-r.pw.months : null;
@@ -1582,7 +1584,7 @@ function proposalSingleHTML(){
     if(intSavedPW>0) wins.push(`<div><div class="v">${money(intSavedPW)}</div><div class="l">Interest saved vs today's path</div></div>`);
     if(r.extra>0&&r.pwEff<r.a.anRate-0.05&&wins.length<4) wins.push(`<div><div class="v">${pct(r.pwEff)}</div><div class="l">Effective rate paying what you pay now</div></div>`);
     if(r.roll&&r.debts.length&&wins.length<4) wins.push(`<div><div class="v">${money(r.dBal)}</div><div class="l">Debt paid off at closing</div></div>`);
-    return wins.length? `<div class="statline">${wins.slice(0,4).join("")}</div>` : ""; })()}
+    return wins.length? `<div class="statline">${wins.slice(0,5).join("")}</div>` : ""; })()}
   <h2>Pay what you pay now \u2014 amortization snapshot</h2>
   <p style="font-size:11px;color:#555;margin-bottom:4px">Keep your familiar ${money(r.outlayNow)}/month; the extra ${money(r.extra)} attacks principal directly.</p>
   <table><thead><tr><th>Year</th><th class="num">Balance \u2014 minimum payment</th><th class="num">Balance \u2014 pay what you pay now</th></tr></thead><tbody>
@@ -2004,7 +2006,8 @@ function programMatrix(c,snaps,recId){
   ${row("Program",x=>snapLabel(x.sc.inputs,x.r))}
   ${row("New loan",x=>money(x.r.newP)+(x.r.second?" second":""))}
   ${row("Rate \u00b7 term",x=>pct(x.r.a.anRate)+" \u00b7 "+x.r.a.anTerm+" yrs")}
-  ${row("Mortgage payment (principal &amp; interest)",x=>x.r.second?money(x.r.curPay)+" current mortgage (unchanged) + "+money(x.r.newPay)+" new second":money(x.r.newPay)+"/mo")}
+  ${row("New loan payment (minimum)",x=>money(x.r.newPay)+"/mo"+(x.r.second?" on the second":""))}
+  ${comps.some(x=>x.r.second)?row("All mortgage payments (principal &amp; interest)",x=>x.r.second?money(x.r.curPay)+" current mortgage (unchanged) + "+money(x.r.newPay)+" new second = "+money(x.r.curPay+x.r.newPay):money(x.r.newPay)+"/mo"):""}
   ${anyDebts?row("Debts paid off at closing",x=>(x.r.roll||x.r.second)&&x.r.dBal>0?money(x.r.dBal)+" \u2014 "+money(x.r.dPay)+"/mo gone":"\u2014 debts stay as they are"):""}
   ${row("What goes out each month today (mortgage + debts)",x=>money(x.h.today))}
   ${row("What goes out each month with this option",x=>money(x.h.now)+"/mo",x=>x.h.now===bestPay)}
