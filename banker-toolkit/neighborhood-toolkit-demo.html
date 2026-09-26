@@ -322,7 +322,8 @@ table.data tr.rec td{background:var(--cream)}
             <div class="field"><label>Email</label><input type="email" data-f="email"></div>
             <div class="field" style="grid-column:1/-1"><label>Property address</label><input type="text" data-f="address"></div>
             <div class="field"><label>Current loan balance ($)</label><input type="number" data-f="balance" step="1000"></div>
-            <div class="field"><label>Original loan amount ($) <span class="hint" style="display:inline">(lets the app work out P&amp;I and months remaining)</span></label><input type="number" data-f="origAmount" step="1000"></div>
+            <div class="field"><label>Original loan amount ($) <span class="hint" style="display:inline">(lets the app work out P&amp;I and months remaining)</span></label>
+              <div class="chiprow"><input type="number" data-f="origAmount" step="1000" style="flex:1"><select data-f="origTerm" style="width:96px;flex:0 0 96px" title="Original term"><option value="30">30 yr</option><option value="20">20 yr</option><option value="15">15 yr</option><option value="10">10 yr</option></select></div></div>
             <div class="field"><label>Current rate (%)</label><input type="number" data-f="rate" step="0.125"></div>
             <div class="field"><label>Total monthly payment (PITI)</label><input type="number" data-f="paymentTotal" step="10" placeholder="what they actually pay"></div>
             <div class="field"><label>P&amp;I <span class="hint" style="display:inline">(auto from balance, rate, months — or from the total)</span></label><input type="number" data-f="payment" step="10" placeholder="auto"></div>
@@ -756,7 +757,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.1.9";
+const TOOLKIT_VERSION = "1.1.10";
 const DEMO = true; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -840,7 +841,7 @@ function migrate(){ /* additive only — old saves gain new fields, nothing is e
   if(!Array.isArray(state.templates.mine)) state.templates.mine=[];
   if(!Array.isArray(state.templates.shared)) state.templates.shared=[];
   const tpl=blankClient();
-  (state.clients||[]).forEach(c=>{ if(STATUS_MIGRATE[c.status]) c.status=STATUS_MIGRATE[c.status]; for(const k in tpl) if(c[k]===undefined) c[k]=Array.isArray(tpl[k])?[]:tpl[k];
+  (state.clients||[]).forEach(c=>{ if(STATUS_MIGRATE[c.status]) c.status=STATUS_MIGRATE[c.status]; if(!c.origTerm) c.origTerm=30; for(const k in tpl) if(c[k]===undefined) c[k]=Array.isArray(tpl[k])?[]:tpl[k];
    c.analysis=Object.assign({}, tpl.analysis, c.analysis||{});
    c.debts=c.debts||[]; c.options=c.options||[]; c.scenarios=c.scenarios||[];
    c.prop=Object.assign({included:[],rec:"",why:""}, c.prop||{});
@@ -874,7 +875,7 @@ function debtInterest(bal, apr, pay){ const m=debtMonths(bal,apr,pay); return is
 function cur(){ return state.clients.find(c=>c.id===state.currentId) || null; }
 function blankClient(){ return {id:"c"+Date.now()+Math.floor(Math.random()*999), name:"New client", status:"New lead", quick:false,
   phone:"",email:"",address:"",balance:null,rate:null,payment:null,monthsLeft:null,value:null,fico:null,
-  servicer:"",loanType:"Conventional",followUp:"",notes:"",paymentTotal:null,escrow:null,origAmount:null,targetRate:null,tz:"",debts:[],options:[],scenarios:[],library:[],prop:{included:[],rec:"",why:""},cmp:{pwypn:false,rec:"",why:"",include:false},
+  servicer:"",loanType:"Conventional",followUp:"",notes:"",paymentTotal:null,escrow:null,origAmount:null,origTerm:30,targetRate:null,tz:"",debts:[],options:[],scenarios:[],library:[],prop:{included:[],rec:"",why:""},cmp:{pwypn:false,rec:"",why:"",include:false},
   analysis:{anRate:null,anTerm:30,anCosts:0,anCashOut:0,anSkip:1,anRoll:"yes",anLien:"refi"}}; }
 function newClient(){ const c=blankClient(); state.clients.unshift(c); state.currentId=c.id; save(); refreshAll(); go("client"); toast("New client added"); }
 function newQuickQuote(){ const c=blankClient(); c.quick=true;
@@ -930,10 +931,12 @@ function renderClientBar(){ const bar=$("clientBar"); if(!bar) return; const c=c
 function piCalc(c){ return (c.balance>0&&c.rate>0)? pmt(c.balance,c.rate,c.monthsLeft||360) : null; }
 /* original amount + current balance + rate ⇒ how far into a 30-year schedule they are ⇒ P&I and months remaining */
 function monthsFromOrig(c){ if(!(c.origAmount>0&&c.balance>0&&c.rate>0&&c.origAmount>c.balance)) return null;
-  const i=c.rate/1200, P=pmt(c.origAmount,c.rate,360); const num=P-c.balance*i, den=P-c.origAmount*i; if(!(num>0&&den>0)) return null;
-  const k=Math.log(num/den)/Math.log(1+i); if(!isFinite(k)||k<0||k>359) return null; return {monthsLeft:Math.max(1,360-Math.round(k)), pi:P}; }
+  const N=(+c.origTerm||30)*12;   /* 30 years unless the banker says otherwise */
+  const i=c.rate/1200, P=pmt(c.origAmount,c.rate,N); const num=P-c.balance*i, den=P-c.origAmount*i; if(!(num>0&&den>0)) return null;
+  const k=Math.log(num/den)/Math.log(1+i); if(!isFinite(k)||k<0||k>N-1) return null; return {monthsLeft:Math.max(1,N-Math.round(k)), pi:P}; }
 function normalizePayment(c,changed){
-  if(["origAmount","balance","rate","paymentTotal"].includes(changed) && (!c.monthsLeft||c.monthsLeftAuto)){ const m=monthsFromOrig(c);
+  if(changed==="origTerm") c.monthsLeftAuto=true;   /* changing the term re-solves months */
+  if(["origAmount","origTerm","balance","rate","paymentTotal"].includes(changed) && (!c.monthsLeft||c.monthsLeftAuto)){ const m=monthsFromOrig(c);
     if(m){ c.monthsLeft=m.monthsLeft; c.monthsLeftAuto=true; if(!c.payment||c.paymentAuto){ c.payment=Math.round(m.pi); c.paymentAuto=true; } } }
   const pi=piCalc(c);
   if(["paymentTotal","balance","rate","monthsLeft"].includes(changed)){
