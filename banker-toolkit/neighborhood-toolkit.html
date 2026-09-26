@@ -62,6 +62,7 @@ main{flex:1;padding:28px 32px;max-width:1150px}
 .modebtn span{font-size:12.5px;color:var(--muted);font-weight:400;line-height:1.4}
 .modebtn b{font-size:14.5px}
 .modebtn.on{border-color:var(--brand);background:var(--cream-soft);box-shadow:inset 0 0 0 1px var(--brand)}
+body.mode-fha #debtPanel,body.mode-va #debtPanel{display:none}
 body.mode-fha .m-skip,body.mode-second .m-skip,body.mode-fha .m-refi,body.mode-va .m-refi,body.mode-second .m-refi,body.mode-fha .m-cash,body.mode-va .m-cash{display:none}
 body:not(.mode-second) .m-second{display:none}
 body.mode-second:not(.heloc) .m-heloc{display:none}
@@ -263,7 +264,6 @@ table.data tr.rec td{background:var(--cream)}
       <button data-s="client">Client workspace</button>
       <button data-s="analysis">Savings analysis</button>
       <button data-s="proposal">Client proposal</button>
-      <button data-s="compare">Compare options</button>
       <button data-s="tools">Tools</button>
       <button data-s="pricing">Lender pricing</button>
       <button data-s="blocks">Call blocks</button>
@@ -324,8 +324,8 @@ table.data tr.rec td{background:var(--cream)}
             <div class="field"><label>Current rate (%)</label><input type="number" data-f="rate" step="0.125"></div>
             <div class="field"><label>Total monthly payment (PITI)</label><input type="number" data-f="paymentTotal" step="10" placeholder="what they actually pay"></div>
             <div class="field"><label>P&amp;I <span class="hint" style="display:inline">(auto from balance, rate, months — or from the total)</span></label><input type="number" data-f="payment" step="10" placeholder="auto"></div>
-            <div class="field"><label>Escrow — taxes &amp; insurance <span class="hint" style="display:inline">(auto)</span></label><input type="number" data-f="escrow" step="10"></div>
-            <div class="field"><label>Months remaining</label><input type="number" data-f="monthsLeft"></div>
+            <div class="field"><label>Escrow — taxes &amp; insurance <span class="hint" style="display:inline">(auto = total minus P&amp;I; type it if the total is P&amp;I only)</span></label><input type="number" data-f="escrow" step="10"></div>
+            <div class="field"><label>Months remaining <span class="hint" style="display:inline">(auto from balance, rate &amp; P&amp;I when you type the P&amp;I; from the Salesforce close date on paste)</span></label><input type="number" data-f="monthsLeft"></div>
             <div class="field"><label>Est. home value ($)</label>
               <div class="chiprow"><input type="number" data-f="value" step="5000" style="flex:1;min-width:120px">
                 <button class="chip" onclick="fetchAVM()" title="Ask the hub's AVM provider for this address">Estimate value</button>
@@ -417,12 +417,12 @@ table.data tr.rec td{background:var(--cream)}
         </div>
         <div class="btnrow" style="margin-top:6px">
           <button class="btn ghost" onclick="newQuickQuote()">Quick quote — skip the pipeline</button>
-          <button class="btn ghost" onclick="addSnapScenario()" title="Save this exact set-up as one column on Compare options">+ Add this option to Compare</button>
+          <button class="btn ghost" onclick="addSnapScenario()" title="Keep this exact set-up on the client file — pick it on Client proposal, alone or side by side with others">Save this option for the proposal</button>
           <button class="btn accent" onclick="go('proposal')">Build proposal →</button>
         </div>
       </div>
 
-      <div class="panel">
+      <div class="panel" id="debtPanel">
         <h2>Client's other debts (credit cards, autos, personal loans)</h2>
         <div class="hint" style="margin-bottom:8px">APR is optional — leave it blank if you don't know it and the blended rate is figured from the debts you do know. Monthly payment should be the minimum; put anything they pay on top in the box below.</div>
         <div id="debtTable"></div>
@@ -481,7 +481,9 @@ Discover 6,100 190 24.9"></textarea>
           <div class="field" style="align-self:end"><div class="btnrow"><button class="btn" onclick="copyImage('proposal')">Copy proposal</button><button class="btn ghost" onclick="emailImage('proposal')">Email</button><button class="btn ghost" onclick="exportImage('proposal')">Save image</button><button class="btn ghost" onclick="exportPDF()">PDF</button><button class="btn ghost" onclick="librarySave('proposal')">Save to library</button></div></div>
         </div>
         <div class="field"><label>Personal note to client (optional)</label><textarea id="propNote" style="min-height:60px;font-family:inherit" oninput="renderProposalPreview()" placeholder="e.g. Maria — here's the consolidation option we walked through on Tuesday."></textarea></div>
-        <div class="field"><label>Programs on this proposal (check to include · star one as your recommendation)</label><div id="propOptsList"></div></div>
+        <div class="field"><label>Saved options from Savings analysis <span class="hint" style="display:inline">(check one for a single proposal, two or more for a side-by-side · ★ marks your recommendation)</span></label><div id="propSnapList"></div></div>
+        <div class="field" id="propCmpWhyWrap" style="display:none"><label>Banker notes on the recommendation (prints on the side-by-side)</label><textarea id="propCmpWhy" style="min-height:50px;font-family:inherit" oninput="setCmpWhy(this.value); const el=$('propPreview'); if(el) el.innerHTML=proposalHTML();" placeholder="e.g. The cash-out frees up the most each month and clears the cards for good; the IRRRL is the lighter-touch option if you'd rather leave the balance alone."></textarea></div>
+        <div class="field"><label>Lender pricing on this proposal (check to include · star one as your recommendation)</label><div id="propOptsList"></div></div>
         <div class="field" id="propWhyWrap" style="display:none"><label>Why this is your recommendation (prints on the proposal)</label><textarea id="propWhy" style="min-height:50px;font-family:inherit" oninput="savePropWhy(this.value)" placeholder="e.g. Best balance of rate and cost — the lower-rate option costs 1.25 points that take 4 years to recoup."></textarea></div>
         <div class="hint">Heads up: this is a savings proposal, not a Loan Estimate. The official LE is a regulated disclosure that comes from the lender after application.</div>
       </div>
@@ -752,7 +754,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.1.7";
+const TOOLKIT_VERSION = "1.1.8";
 const DEMO = false; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -926,12 +928,18 @@ function renderClientBar(){ const bar=$("clientBar"); if(!bar) return; const c=c
 function piCalc(c){ return (c.balance>0&&c.rate>0)? pmt(c.balance,c.rate,c.monthsLeft||360) : null; }
 function normalizePayment(c,changed){ const pi=piCalc(c);
   if(["paymentTotal","balance","rate","monthsLeft"].includes(changed)){
-    if(c.paymentTotal>0){ if(pi&&c.paymentTotal>pi*1.03){ c.payment=Math.round(pi); c.escrow=Math.round(c.paymentTotal-pi); }
+    if(c.paymentTotal>0){ if(pi&&c.paymentTotal>pi+1){ c.payment=Math.round(pi); c.escrow=Math.round(c.paymentTotal-pi); }   /* anything above P&I is taxes & insurance */
       else { c.payment=c.paymentTotal; c.escrow=0; } c.paymentAuto=false; }
     else if(pi && (!c.payment || c.paymentAuto)){ c.payment=Math.round(pi); c.paymentAuto=true; } /* auto P&I from the numbers we have */
   }
   else if(changed==="payment"){ c.paymentAuto=false; }
+  else if(changed==="escrow"){ if(c.paymentTotal>0) c.payment=Math.max(0,Math.round(c.paymentTotal-(c.escrow||0))); else if(c.payment>0) c.paymentTotal=Math.round(c.payment+(c.escrow||0)); c.paymentAuto=false; }
   if(changed==="payment"&&c.paymentTotal>0){ c.escrow=Math.max(0,Math.round(c.paymentTotal-(c.payment||0))); }
+  if(changed==="payment"&&!(c.paymentTotal>0)&&c.escrow>0){ c.paymentTotal=Math.round(c.payment+c.escrow); }
+  /* months remaining from balance, rate and a P&I the banker typed (not one we derived) */
+  if(changed==="monthsLeft") c.monthsLeftAuto=false;
+  if(changed==="payment"&&c.balance>0&&c.rate>0&&c.payment>0&&(!c.monthsLeft||c.monthsLeftAuto)){ const i=c.rate/1200, x=1-c.balance*i/c.payment;
+    if(x>0){ const n=Math.ceil(-Math.log(x)/Math.log(1+i)); if(n>0&&n<=480){ c.monthsLeft=n; c.monthsLeftAuto=true; } } }
   else if(changed==="escrow"&&c.paymentTotal>0){ c.payment=Math.max(0,Math.round(c.paymentTotal-(c.escrow||0))); }
   else if(changed==="payment"&&!c.paymentTotal&&c.escrow>0){ c.paymentTotal=(c.payment||0)+c.escrow; }
 }
@@ -958,7 +966,7 @@ function bindClientFields(){
       if(f==="status") applyDispo(c);
       normalizePayment(c,f);
       if(f==="value") c.valueSrc={type:"manual",when:todayStr()};
-      ["payment","escrow","paymentTotal"].forEach(k=>{ if(k!==f){ const o=document.querySelector(`#s-client [data-f="${k}"]`); if(o) o.value=c[k]==null?"":c[k]; } });
+      ["payment","escrow","paymentTotal","monthsLeft"].forEach(k=>{ if(k!==f){ const o=document.querySelector(`#s-client [data-f="${k}"]`); if(o) o.value=c[k]==null?"":c[k]; } });
       save(); if(f==="name") renderPickers(); renderPipeline(); ltvHint(); renderClientBar(); });
   });
 }
@@ -1429,7 +1437,56 @@ function renderPropOptionPicker(){ const c=cur(); const el=$("propOption"); if(!
   el.innerHTML = `<option value="">Use analysis rate only</option>` + (c?c.options.map(o=>
     `<option value="${o.id}" ${o.id===c.selectedOption?"selected":""}>${esc(o.lender)} \u2014 ${pct(o.rate)}${o.points!=null?" / "+o.points.toFixed(3)+" pts":""}</option>`).join(""):"");
 }
-function proposalHTML(){
+function proposalHTML(){ const c=cur(); if(!c) return `<div class="empty">Pick a client.</div>`;
+  const sel=propSelected(c);
+  if(sel.length>=2) return comparisonProposalHTML(c,sel);
+  if(sel.length===1) return withAnalysis(c,sel[0].inputs,proposalSingleHTML);
+  return proposalSingleHTML(); }
+function optionWins(c,r,h){ /* benefits only, for the side-by-side proposal */
+  const w=[];
+  if(h.save>0) w.push(`Frees up <b>${money(h.save)}/month</b> across your mortgage and debts`);
+  if((r.roll||r.second)&&r.dBal>0) w.push(`Pays off <b>${money(r.dBal)}</b> of debt at closing \u2014 ${r.debts.length>1?r.debts.length+" payments become one":"that payment is gone"}`);
+  if(r.second) w.push(`Your first mortgage at <b>${pct(c.rate)}</b> stays exactly as it is`);
+  if(r.cashOut>0) w.push(`<b>${money(r.cashOut)}</b> cash in hand at closing`);
+  if(r.skipCash>0) w.push(`Skip ${r.skipN===1?"a payment":r.skipN+" payments"} \u2014 about <b>${money(r.skipCash)}</b> stays in your account`);
+  if(r.fhaS) w.push(`No appraisal, no income re-verification, and closing costs are lender-paid`);
+  if(r.prog==="va_irrrl"&&!r.second) w.push(`VA IRRRL \u2014 typically no appraisal or income re-verification, reduced funding fee`);
+  if(h.newInt<h.todayInt) w.push(`Saves <b>${money(h.todayInt-h.newInt)}</b> in total interest versus staying on today\u2019s path`);
+  if(!r.second&&c.rate>r.a.anRate) w.push(`Rate goes from ${pct(c.rate)} to <b>${pct(r.a.anRate)}</b>`);
+  return w; }
+function comparisonProposalHTML(c,sel){
+  const s=state.settings; const note=$("propNote")?$("propNote").value.trim():"";
+  const items=sel.map(sc=>{ const r=computeSnap(c,sc); return {sc,r,h:snapHousehold(c,r)}; });
+  const rec=c.cmp&&c.cmp.rec; const recIt=items.find(x=>x.sc.id===rec);
+  return `
+  <div class="brandbar">
+    <div><img src="${s.logo||NMC_LOGO}" alt="${esc(s.co)}"><div class="tag">${esc(s.tag)}</div></div>
+    <div class="lo"><b>${esc(s.loName||"Your Loan Officer")}</b>${s.loNmls?` \u00b7 NMLS #${esc(s.loNmls)}`:""}<br>${esc(s.loPhone||"")}${s.loPhone&&s.loEmail?" \u00b7 ":""}${esc(s.loEmail||"")}<br>Prepared ${new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}</div>
+  </div>
+  <div class="eyebrow">Your options</div>
+  <h1>${items.length} Ways Forward \u2014 ${esc(c.name)}</h1>
+  <div style="font-size:11.5px;color:#555">${esc(c.address||"")}</div>
+  ${note?`<p class="note">${esc(note)}</p>`:""}
+  <p style="font-size:12px;margin:8px 0 10px">Today your mortgage${items[0].h.dPay>0?" and other debts":""} run about <b>${money(items[0].h.today)}/month</b>. Here is what each option does with that.</p>
+  <div class="optgrid" style="display:grid;grid-template-columns:repeat(${Math.min(items.length,3)},1fr);gap:10px;margin-bottom:12px">
+  ${items.map(x=>`<div class="optcard${x.sc.id===rec?" rec":""}" style="border:1.5px solid ${x.sc.id===rec?"var(--brand,#A53222)":"#ddd"};border-radius:10px;padding:10px 12px;background:${x.sc.id===rec?"#FBF3F1":"#fff"}">
+    ${x.sc.id===rec?`<div style="color:var(--brand,#A53222);font-size:10.5px;font-weight:700;letter-spacing:.04em">\u2605 OUR RECOMMENDATION</div>`:""}
+    <h2 style="margin:2px 0 6px;font-size:15px">${esc(x.sc.label)}</h2>
+    <div style="font-size:11px;color:#555;margin-bottom:6px">${pct(x.r.a.anRate)} \u00b7 ${x.r.a.anTerm} years \u00b7 ${money(x.r.newP)}${x.r.second?" second mortgage":""}</div>
+    <div style="display:flex;gap:22px;margin:2px 0 8px">
+      <div><div style="font-size:21px;font-weight:700;font-family:Georgia,'Times New Roman',serif;color:#343740">${money(x.h.now)}</div><div style="font-size:10.5px;color:#666">New total monthly</div></div>
+      ${x.h.save>0?`<div><div style="font-size:21px;font-weight:700;font-family:Georgia,'Times New Roman',serif;color:#2E6B4F">${money(x.h.save)}</div><div style="font-size:10.5px;color:#666">Monthly savings</div></div>`:x.r.cashOut+x.r.skipCash>0?`<div><div style="font-size:21px;font-weight:700;font-family:Georgia,'Times New Roman',serif;color:#2E6B4F">${money(x.r.cashOut+x.r.skipCash)}</div><div style="font-size:10.5px;color:#666">Cash at closing</div></div>`:""}
+    </div>
+    <ul style="margin:0;padding-left:16px;font-size:11.5px;line-height:1.5">${optionWins(c,x.r,x.h).slice(0,5).map(b=>`<li>${b}</li>`).join("")}</ul>
+  </div>`).join("")}
+  </div>
+  <h2>Side by side</h2>
+  ${programMatrix(c,sel,rec)}
+  <div class="hint" style="margin-top:4px">Interest totals count your current debts at today\u2019s minimum payments in every column, so the options are compared apples to apples.${c.escrow>0?" Taxes &amp; insurance escrow (~"+money(c.escrow)+"/mo) continues on any option and is not included above.":""}</div>
+  ${recIt?`<div class="recbox"><b>\u2605 Our recommendation: ${esc(recIt.sc.label)}.</b> ${c.cmp&&c.cmp.why?esc(c.cmp.why):""}</div>`:""}
+  <div class="disc">This comparison is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. Figures exclude taxes, insurance, and escrows unless noted. Program eligibility (including FHA Streamline and VA IRRRL) is subject to lender and agency guidelines. ${esc(s.co)} \u00b7 NMLS #2484730 \u00b7 Equal Housing Lender.</div>`;
+}
+function proposalSingleHTML(){
   const c=cur(); if(!c) return `<div class="empty">Pick a client.</div>`;
   const r=computeAnalysis(c);
   if(!r||r.tooSmall) return `<div class="empty">Complete the Savings analysis first \u2014 the proposal is built from it.</div>`;
@@ -1496,12 +1553,6 @@ function proposalHTML(){
       <td class="num">${money(pay)}/mo</td><td>${esc(o.lock||"")}</td></tr>`;}).join("")}</tbody></table>
 
     ${recO&&P.why?`<div class="recbox"><b>Why we recommend ${esc(recO.lender)} at ${pct(recO.rate)}:</b> ${esc(P.why)}</div>`:""}`; })()}
-  ${(()=>{ const cm=c.cmp||{}; if(!cm.include) return "";
-    const cp=c.payment||(c.balance&&c.rate?pmt(c.balance,c.rate,c.monthsLeft||360):0);
-    const list=(c.scenarios||[]).filter(sc=>sc.kind==="snap"?computeSnap(c,sc):computeScenario(sc,cp)); if(list.length<2) return "";
-    const recSc=list.find(s=>s.id===cm.rec);
-    return `<h2>Your options side by side</h2>${programMatrix(c,list.filter(x=>x.kind==="snap"),cm.rec)}${compareMatrix(list.filter(x=>x.kind!=="snap"),cp,cmpOpts(c))}
-    ${recSc&&cm.why?`<div class="recbox"><b>Why we recommend ${esc(recSc.label)}:</b> ${esc(cm.why)}</div>`:recSc?`<div class="recbox"><b>Our recommendation:</b> ${esc(recSc.label)}</div>`:""}`; })()}
   <h2>Your numbers, side by side</h2>
   <table><thead><tr><th></th><th class="num">Today</th><th class="num">Proposed</th></tr></thead><tbody>${sideRows}</tbody></table>
   ${r.heloc?`<div class="hint" style="margin-top:4px">HELOC rates are variable and can change with the market; the payment shown is interest-only during the draw period and will rise when repayment begins.</div>`:""}
@@ -1549,7 +1600,21 @@ function renderPropOptions(){ const c=cur(); const el=$("propOptsList"); if(!el)
   const ww=$("propWhyWrap"); if(ww){ ww.style.display=P.rec?"block":"none";
     const wt=$("propWhy"); if(wt&&document.activeElement!==wt) wt.value=P.why||""; }
 }
-function renderProposalPreview(){ renderPropOptionPicker(); renderPropOptions(); renderLibrary(); const el=$("propPreview"); if(el) el.innerHTML=proposalHTML();
+function renderPropSnaps(){ const c=cur(); const el=$("propSnapList"); if(!el) return;
+  const L=c?(c.scenarios||[]).filter(x=>x.kind==="snap"):[];
+  if(!c||!L.length){ el.innerHTML=`<div class="hint">Nothing saved yet \u2014 on <b>Savings analysis</b>, set up a path and click <b>Save this option for the proposal</b>. Until then the proposal follows whatever is on the analysis screen.</div>`; const w=$("propCmpWhyWrap"); if(w) w.style.display="none"; return; }
+  const rec=c.cmp&&c.cmp.rec; const sel=propSelected(c);
+  el.innerHTML = L.map(sc=>{ const r=computeSnap(c,sc); const h=r&&snapHousehold(c,r);
+    return `<div class="btnrow" style="margin:4px 0;gap:10px">
+    <label style="margin:0;display:flex;align-items:center;gap:6px;color:var(--ink);font-size:13.5px"><input type="checkbox" style="width:auto" ${sc.onProp?"checked":""} onchange="toggleSnapProp('${sc.id}',this.checked)"> <b>${esc(sc.label)}</b>
+      <span class="hint">${r?`${pct(sc.inputs.anRate)} \u00b7 ${sc.inputs.anTerm} yrs \u00b7 ${money(r.newP)}${h&&h.save>0?" \u00b7 saves "+money(h.save)+"/mo":""}`:"needs the client\u2019s numbers"}</span></label>
+    <span style="flex:1"></span>
+    <button class="btn small ${rec===sc.id?"":"ghost "}" onclick="recommendScenario('${sc.id}')">${rec===sc.id?"\u2605 Recommended":"\u2606 Recommend"}</button>
+    <button class="btn ghost small" onclick="loadSnap('${sc.id}')" title="Open this set-up on Savings analysis">Open</button>
+    <button class="btn ghost small" title="Remove" onclick="delScenario('${sc.id}')">\u2715</button></div>`; }).join("")
+    + `<div class="hint" style="margin-top:6px">${sel.length===0?"None checked \u2014 the proposal follows the analysis screen.":sel.length===1?"One checked \u2014 a single proposal for "+esc(sel[0].label)+".":sel.length+" checked \u2014 a side-by-side proposal"+(rec?"":" (\u2606 star the one you recommend)")+"."}</div>`;
+  const w=$("propCmpWhyWrap"); if(w){ w.style.display=(sel.length>=2&&rec)?"block":"none"; const t=$("propCmpWhy"); if(t&&document.activeElement!==t) t.value=(c.cmp&&c.cmp.why)||""; } }
+function renderProposalPreview(){ renderPropOptionPicker(); renderPropOptions(); renderPropSnaps(); renderLibrary(); const el=$("propPreview"); if(el) el.innerHTML=proposalHTML();
   const ps=$("propRateSrc"); if(ps){ const t=rateSrcText(cur()); ps.textContent=t; ps.style.color = /ESTIMATE/.test(t)?"var(--warn)":"var(--muted)"; } }
 const APP_TITLE=document.title;
 function printAs(title, html){ /* the browser prints the page title in the header, so give the
@@ -1572,7 +1637,8 @@ function buildSheetSVG(html,W){
   const xhtml=new XMLSerializer().serializeToString(wrap);
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml"><style>${sheetCSS(W).replace(/</g,"\\3c ")}</style>${xhtml}</div></foreignObject></svg>`;
   return {svg,W,H}; }
-function sheetTitle(kind,c,r){ return (kind==="compare"?"Loan Options":(r&&r.second?"Home Equity Proposal":"Savings Proposal"))+(c&&c.name?" \u2014 "+c.name:""); }
+function sheetTitle(kind,c,r){ const multi=c&&kind==="proposal"&&propSelected(c).length>=2;
+  return (kind==="compare"||multi?"Your Options":(r&&r.second?"Home Equity Proposal":"Savings Proposal"))+(c&&c.name?" \u2014 "+c.name:""); }
 async function renderSheet(kind, snap){ const c=cur();
   const html = snap ? snap.html : (kind==="compare" ? compareHTML() : proposalHTML());
   if(html.includes('class="empty"')) throw new Error(kind==="compare"?"Add at least two complete scenarios first":"Finish the analysis first");
@@ -1890,12 +1956,12 @@ function addSnapScenario(){ const c=cur(); if(!c){ toast("Pick a client first");
   if(!r||r.tooSmall){ toast("Finish the analysis first \u2014 rate, term and the client\u2019s numbers"); return; }
   c.scenarios=c.scenarios||[]; if(c.scenarios.length>=5){ toast("Five scenarios max \u2014 remove one on Compare first"); return; }
   const inputs={}; SNAP_KEYS.forEach(k=>inputs[k]=c.analysis[k]);
-  const dup=c.scenarios.find(x=>x.kind==="snap"&&JSON.stringify(x.inputs)===JSON.stringify(inputs)); if(dup){ go("compare"); toast("That exact option is already on Compare"); return; }
+  const dup=c.scenarios.find(x=>x.kind==="snap"&&JSON.stringify(x.inputs)===JSON.stringify(inputs)); if(dup){ toast("That exact option is already saved"); return; }
   const label=snapLabel(inputs,r);
-  c.scenarios.push({id:"s"+Date.now()+Math.random().toString(36).slice(2,5), kind:"snap", label, inputs});
-  save(); renderCompare(); go("compare"); toast("Added \u201c"+label+"\u201d. Change the set-up on Savings analysis and add again to compare another path."); }
+  c.scenarios.push({id:"s"+Date.now()+Math.random().toString(36).slice(2,5), kind:"snap", label, inputs, onProp:true});
+  save(); toast("Saved \u201c"+label+"\u201d \u2014 pick it on Client proposal. Change the set-up and save again for another path."); }
 function loadSnap(id){ const c=cur(); const sc=c&&(c.scenarios||[]).find(x=>x.id===id); if(!sc||sc.kind!=="snap") return;
-  applySnap(c,sc); save(); fillAnalysisInputs(); applyMode(); go("analysis"); runAnalysis(); toast("Loaded \u201c"+sc.label+"\u201d into the analysis \u2014 edit, then add it to Compare again"); }
+  applySnap(c,sc); save(); fillAnalysisInputs(); applyMode(); go("analysis"); runAnalysis(); toast("Loaded \u201c"+sc.label+"\u201d into the analysis \u2014 edit, then save it again"); }
 function snapHousehold(c,r){ const dPay=(c.debts||[]).filter(d=>d.balance>0).reduce((s,d)=>s+(d.pay||0),0); const first=r.curPay||0;
   const today=first+dPay; const now = r.second ? first+r.newPay : r.newPay+(r.roll?0:dPay);
   const todayInt=(r.curSched?r.curSched.interest:0)+(r.dInt||0);
@@ -1959,8 +2025,10 @@ function recommendScenario(id){ const c=cur(); if(!c) return; const sc=(c.scenar
   if(c.cmp.rec){ /* keep the proposal's main numbers in step with the recommended scenario */
     if(sc.kind==="refi"){ c.analysis.anRate=sc.rate; c.analysis.anTerm=sc.term; c.analysis.anLien="refi"; c.analysis.rateSrc={type:sc.optionId?"quote":"manual",lender:(c.options.find(o=>o.id===sc.optionId)||{}).lender,when:todayStr()}; if(sc.optionId){ c.selectedOption=sc.optionId; c.prop.rec=sc.optionId; if(!c.prop.included.includes(sc.optionId)) c.prop.included.push(sc.optionId); } }
     else if(sc.kind==="hel"){ c.analysis.anRate=sc.rate; c.analysis.anTerm=sc.term; c.analysis.anLien="second"; }
-    else if(sc.kind==="snap"){ applySnap(c,sc); } }
-  save(); renderCompare(); fillAnalysisInputs(); applyMode(); toast(c.cmp.rec? "Recommended: "+sc.label+" \u2014 it's starred on the comparison and the proposal follows it" : "Recommendation cleared"); }
+    else if(sc.kind==="snap"){ /* saved options are fixed; the proposal reads them directly */ } }
+  if(sc.kind==="snap"&&c.cmp.rec) sc.onProp=true;
+  save(); renderCompare(); if($("s-proposal").classList.contains("active")) renderProposalPreview(); else { fillAnalysisInputs(); applyMode(); }
+  toast(c.cmp.rec? "\u2605 Recommended: "+sc.label : "Recommendation cleared"); }
 function addScenario(kind){ const c=cur(); if(!c){ toast("Pick a client first"); return; }
   if(!c.scenarios) c.scenarios=[];
   if(c.scenarios.length>=5){ toast("Five scenarios max \u2014 remove one first"); return; }
@@ -1976,7 +2044,10 @@ function addScenario(kind){ const c=cur(); if(!c){ toast("Pick a client first");
 }
 function updScenario(id,k,v){ const c=cur(); const sc=c&&(c.scenarios||[]).find(x=>x.id===id); if(!sc) return;
   sc[k]=(k==="label"||k==="kind")?v:(String(v).trim()===""?null:num(v)); if(k==="kind"&&v==="heloc"&&!sc.draw) sc.draw=10; save(); renderCompare(); }
-function delScenario(id){ const c=cur(); if(!c) return; c.scenarios=(c.scenarios||[]).filter(x=>x.id!==id); save(); renderCompare(); }
+function delScenario(id){ const c=cur(); if(!c) return; c.scenarios=(c.scenarios||[]).filter(x=>x.id!==id); if(c.cmp&&c.cmp.rec===id) c.cmp.rec=""; save(); renderCompare(); if($("s-proposal").classList.contains("active")) renderProposalPreview(); }
+function toggleSnapProp(id,on){ const c=cur(); const sc=c&&(c.scenarios||[]).find(x=>x.id===id); if(!sc) return; sc.onProp=!!on; if(!on&&c.cmp.rec===id) c.cmp.rec=""; save(); renderProposalPreview(); }
+function propSelected(c){ return (c.scenarios||[]).filter(sc=>sc.kind==="snap"&&sc.onProp&&computeSnap(c,sc)); }
+function withAnalysis(c,inputs,fn){ const keep=c.analysis; c.analysis=Object.assign({},keep,inputs); try{ return fn(); } finally{ c.analysis=keep; } }
 function renderCompare(){
   const ed=$("cmpEditor"); if(!ed) return; const c=cur();
   if(!c){ ed.innerHTML=`<div class="empty">Pick a client (or start a quick quote).</div>`; $("cmpTable").innerHTML=""; return; }
