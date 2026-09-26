@@ -745,7 +745,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.1.15";
+const TOOLKIT_VERSION = "1.1.16";
 const DEMO = true; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -1452,17 +1452,17 @@ function proposalHTML(){ const c=cur(); if(!c) return `<div class="empty">Pick a
   return proposalSingleHTML(); }
 function optionWins(c,r,h){ /* benefits only, for the side-by-side proposal */
   const w=[];
-  if(h.save>0) w.push(`Frees up <b>${money(h.save)}/month</b> across your mortgage and debts`);
+  if(h.save>0) w.push(`<b>${money(h.save)}/month</b> less going out than today`);
   if((r.roll||r.second)&&r.dBal>0) w.push(`Pays off <b>${money(r.dBal)}</b> of debt at closing \u2014 ${r.debts.length>1?r.debts.length+" payments become one":"that payment is gone"}`);
-  if(r.second) w.push(`Your first mortgage at <b>${pct(c.rate)}</b> stays exactly as it is`);
+  if(r.second) w.push(`Your current mortgage (<b>${money(r.curPay)}/mo at ${pct(c.rate)}</b>) stays exactly as it is \u2014 total going out becomes <b>${money(h.now)}/mo</b>`);
   if(r.cashOut>0) w.push(`<b>${money(r.cashOut)}</b> cash in hand at closing`);
   if(r.skipCash>0) w.push(`Skip ${r.skipN===1?"a payment":r.skipN+" payments"} \u2014 about <b>${money(r.skipCash)}</b> stays in your account`);
   if(r.fhaS) w.push(`No appraisal, no income re-verification, and closing costs are lender-paid`);
   if(r.prog==="va_irrrl"&&!r.second) w.push(`VA IRRRL \u2014 typically no appraisal or income re-verification, reduced funding fee`);
   if(h.newInt<h.todayInt) w.push(`Saves <b>${money(h.todayInt-h.newInt)}</b> in total interest versus staying on today\u2019s path`);
   const p=snapPW(c,r,h);
-  if(p) w.push(`<b>Pay what you pay now:</b> keep the same ${money(h.today)}/mo going out and ${r.second?"the new loan is paid off":"you\u2019re mortgage-free"} in <b>${yrsMo(p.months)}</b>${p.cut>0?" \u2014 "+yrsMo(p.cut)+" sooner":""}${p.saved>0?`, saving <b>${money(p.saved)}</b> in interest vs today\u2019s path`:""}`);
-  if(p&&p.eff<r.a.anRate-0.05) w.push(`Paying what you pay now makes your <b>effective rate ${pct(p.eff)}</b> \u2014 ${pct(r.a.anRate)} on paper, but the extra going to principal means you pay interest like a ${pct(p.eff)} loan`);
+  if(p) w.push(`<b>Keep paying what you pay today</b> (${money(h.today)}/mo) and put the difference toward the loan: ${r.second?"the new loan is paid off":"you\u2019re mortgage-free"} in <b>${yrsMo(p.months)}</b>${p.cut>0?" \u2014 "+yrsMo(p.cut)+" sooner":""}${p.saved>0?`, and you pay <b>${money(p.saved)}</b> less interest than staying where you are`:""}`);
+  if(p&&p.eff<r.a.anRate-0.05) w.push(`Done that way, the loan costs you interest like a <b>${pct(p.eff)}</b> loan, even though the rate on paper is ${pct(r.a.anRate)}`);
   if(!r.second&&c.rate>r.a.anRate) w.push(`Rate goes from ${pct(c.rate)} to <b>${pct(r.a.anRate)}</b>`);
   return w; }
 function comparisonProposalHTML(c,sel){
@@ -1478,23 +1478,24 @@ function comparisonProposalHTML(c,sel){
   <h1>${items.length} Ways Forward \u2014 ${esc(c.name)}</h1>
   <div style="font-size:11.5px;color:#555">${esc(c.address||"")}</div>
   ${note?`<p class="note">${esc(note)}</p>`:""}
-  <p style="font-size:12px;margin:8px 0 10px">Today your mortgage${items[0].h.dPay>0?" and other debts":""} run about <b>${money(items[0].h.today)}/month</b>. Here is what each option does with that.</p>
+  <p style="font-size:12px;margin:8px 0 10px">Today about <b>${money(items[0].h.today)}/month</b> goes out for your mortgage${items[0].h.dPay>0?" and other debts":""}. Here is what each option does with that.</p>
   <div class="optgrid" style="display:grid;grid-template-columns:repeat(${Math.min(items.length,3)},1fr);gap:10px;margin-bottom:12px">
   ${items.map(x=>`<div class="optcard${x.sc.id===rec?" rec":""}" style="border:1.5px solid ${x.sc.id===rec?"var(--brand,#A53222)":"#ddd"};border-radius:10px;padding:10px 12px;background:${x.sc.id===rec?"#FBF3F1":"#fff"}">
     ${x.sc.id===rec?`<div style="color:var(--brand,#A53222);font-size:10.5px;font-weight:700;letter-spacing:.04em">\u2605 OUR RECOMMENDATION</div>`:""}
     <h2 style="margin:2px 0 6px;font-size:15px">${esc(x.sc.label)}</h2>
     <div style="font-size:11px;color:#555;margin-bottom:6px">${pct(x.r.a.anRate)} \u00b7 ${x.r.a.anTerm} years \u00b7 ${money(x.r.newP)}${x.r.second?" second mortgage":""}</div>
-    <div style="display:flex;gap:22px;margin:2px 0 8px">
-      <div><div style="font-size:21px;font-weight:700;font-family:Georgia,'Times New Roman',serif;color:#343740">${money(x.h.now)}</div><div style="font-size:10.5px;color:#666">New total monthly</div></div>
+    <div style="display:flex;gap:22px;margin:2px 0 8px;flex-wrap:wrap">
+      ${x.r.second?`<div><div style="font-size:21px;font-weight:700;font-family:Georgia,'Times New Roman',serif;color:#343740">${money(x.r.dPay)} \u2192 ${money(x.r.newPay)}</div><div style="font-size:10.5px;color:#666">Debt payments each month</div></div>`
+      :`<div><div style="font-size:21px;font-weight:700;font-family:Georgia,'Times New Roman',serif;color:#343740">${money(x.h.now)}</div><div style="font-size:10.5px;color:#666">Going out each month</div></div>`}
       ${x.h.save>0?`<div><div style="font-size:21px;font-weight:700;font-family:Georgia,'Times New Roman',serif;color:#2E6B4F">${money(x.h.save)}</div><div style="font-size:10.5px;color:#666">Monthly savings</div></div>`:x.r.cashOut+x.r.skipCash>0?`<div><div style="font-size:21px;font-weight:700;font-family:Georgia,'Times New Roman',serif;color:#2E6B4F">${money(x.r.cashOut+x.r.skipCash)}</div><div style="font-size:10.5px;color:#666">Cash at closing</div></div>`:""}
-      ${(()=>{ const p=snapPW(c,x.r,x.h); return p&&p.eff<x.r.a.anRate-0.05 ? `<div><div style="font-size:21px;font-weight:700;font-family:Georgia,'Times New Roman',serif;color:#2E6B4F">${pct(p.eff)}</div><div style="font-size:10.5px;color:#666">Effective rate, paying what you pay now</div></div>` : ""; })()}
+      ${(()=>{ const p=snapPW(c,x.r,x.h); return p&&p.eff<x.r.a.anRate-0.05 ? `<div><div style="font-size:21px;font-weight:700;font-family:Georgia,'Times New Roman',serif;color:#2E6B4F">${pct(p.eff)}</div><div style="font-size:10.5px;color:#666">What the rate works out to if you keep paying what you pay today</div></div>` : ""; })()}
     </div>
     <ul style="margin:0;padding-left:16px;font-size:11.5px;line-height:1.5">${optionWins(c,x.r,x.h).slice(0,7).map(b=>`<li>${b}</li>`).join("")}</ul>
   </div>`).join("")}
   </div>
   <h2>Side by side</h2>
   ${programMatrix(c,sel,rec)}
-  <div class="hint" style="margin-top:4px">Interest totals count your current debts at today\u2019s minimum payments in every column, so the options are compared apples to apples.${c.escrow>0?" Taxes &amp; insurance escrow (~"+money(c.escrow)+"/mo) continues on any option and is not included above.":""}</div>
+  <div class="hint" style="margin-top:4px">Interest totals include your current debts at today\u2019s minimum payments in every column, so the options are compared apples to apples.${c.escrow>0?" Taxes &amp; insurance escrow (~"+money(c.escrow)+"/mo) continues on any option and is not included above.":""}</div>
   ${recIt?`<div class="recbox"><b>\u2605 Our recommendation: ${esc(recIt.sc.label)}.</b> ${c.cmp&&c.cmp.why?esc(c.cmp.why):""}</div>`:""}
   <div class="disc">This comparison is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. Figures exclude taxes, insurance, and escrows unless noted. Program eligibility (including FHA Streamline and VA IRRRL) is subject to lender and agency guidelines. ${esc(s.co)} \u00b7 NMLS #2484730 \u00b7 Equal Housing Lender.</div>`;
 }
@@ -2003,22 +2004,22 @@ function programMatrix(c,snaps,recId){
   ${row("Program",x=>snapLabel(x.sc.inputs,x.r))}
   ${row("New loan",x=>money(x.r.newP)+(x.r.second?" second":""))}
   ${row("Rate \u00b7 term",x=>pct(x.r.a.anRate)+" \u00b7 "+x.r.a.anTerm+" yrs")}
-  ${row("New mortgage payment (P&amp;I)",x=>x.r.second?money(x.r.curPay)+" first + "+money(x.r.newPay)+" second":money(x.r.newPay)+"/mo")}
+  ${row("Mortgage payment (principal &amp; interest)",x=>x.r.second?money(x.r.curPay)+" current mortgage (unchanged) + "+money(x.r.newPay)+" new second":money(x.r.newPay)+"/mo")}
   ${anyDebts?row("Debts paid off at closing",x=>(x.r.roll||x.r.second)&&x.r.dBal>0?money(x.r.dBal)+" \u2014 "+money(x.r.dPay)+"/mo gone":"\u2014 debts stay as they are"):""}
-  ${row("Total monthly outlay today (mortgage P&amp;I + debts)",x=>money(x.h.today))}
-  ${row("Total monthly outlay with this option",x=>money(x.h.now)+"/mo",x=>x.h.now===bestPay)}
+  ${row("What goes out each month today (mortgage + debts)",x=>money(x.h.today))}
+  ${row("What goes out each month with this option",x=>money(x.h.now)+"/mo",x=>x.h.now===bestPay)}
   ${row("Monthly savings",x=>(x.h.save>=0?"":"\u2212")+money(Math.abs(x.h.save))+"/mo",x=>x.h.save===bestSave&&bestSave>0)}
   ${anyCash?row("Cash to you at closing",x=>{const parts=[]; if(x.r.cashOut>0) parts.push(money(x.r.cashOut)+" cash out"); if(x.r.skipCash>0) parts.push(money(x.r.skipCash)+" from "+x.r.skipN+" skipped pmt"+(x.r.skipN>1?"s":"")); return parts.join(" + ")||"\u2014";}):""}
-  ${row("Total interest \u2014 stay as-is",x=>money(x.h.todayInt))}
-  ${row("Total interest \u2014 this option",x=>money(x.h.newInt),x=>x.h.newInt===bestInt)}
+  ${row("Total interest if you stay where you are",x=>money(x.h.todayInt))}
+  ${row("Total interest with this option (minimum payments)",x=>money(x.h.newInt),x=>x.h.newInt===bestInt)}
   ${row("Mortgage paid off in",x=>x.r.second?yrsMo(x.r.curMonths)+" (first) \u00b7 "+yrsMo(x.r.newSched.months)+" (second)":yrsMo(x.r.newSched.months))}
   ${anyDebts?row("Debts gone",x=>(x.r.roll||x.r.second)?"at closing":x.r.dMonths>0?yrsMo(x.r.dMonths)+" at today\u2019s minimums":"\u2014"):""}
-  ${anyPw?`<tr><td colspan="${comps.length+1}" style="background:var(--cream-soft,#F4EFE6);font-weight:700;padding:6px 8px">Paying what you pay now \u2014 keep the same ${money(comps[0].h.today)}/month going out</td></tr>`:""}
-  ${anyPw?row("Extra to principal each month",x=>x.p?money(x.p.extra):"\u2014"):""}
+  ${anyPw?`<tr><td colspan="${comps.length+1}" style="background:var(--cream-soft,#F4EFE6);font-weight:700;padding:6px 8px">If you keep paying what you pay today (${money(comps[0].h.today)}/month) and put the difference toward the loan</td></tr>`:""}
+  ${anyPw?row("Extra toward the loan each month",x=>x.p?money(x.p.extra):"\u2014"):""}
   ${anyPw?row(comps.some(x=>x.r.second)?"New loan paid off in":"Mortgage paid off in",x=>x.p?yrsMo(x.p.months)+(x.p.cut>0?" ("+yrsMo(x.p.cut)+" sooner)":""):"\u2014",x=>x.p&&x.p.months===bestPwMo):""}
-  ${anyPw?row("Total interest \u2014 paying what you pay now",x=>x.p?money(x.p.newInt):"\u2014",x=>x.p&&x.p.newInt===bestPwInt):""}
-  ${anyPw?row("Interest saved vs staying as-is",x=>x.p&&x.p.saved>0?money(x.p.saved):"\u2014",x=>x.p&&x.p.saved>0&&x.p.newInt===bestPwInt):""}
-  ${anyPw?row("Effective rate",x=>x.p?pct(x.p.eff)+(x.p.eff<x.r.a.anRate-0.05?" (vs "+pct(x.r.a.anRate)+" on paper)":""):"\u2014",x=>x.p&&x.p.eff===bestEff):""}
+  ${anyPw?row("Total interest, done this way",x=>x.p?money(x.p.newInt):"\u2014",x=>x.p&&x.p.newInt===bestPwInt):""}
+  ${anyPw?row("Interest you avoid vs staying where you are",x=>x.p&&x.p.saved>0?money(x.p.saved):"\u2014",x=>x.p&&x.p.saved>0&&x.p.newInt===bestPwInt):""}
+  ${anyPw?row("What the rate works out to",x=>x.p?pct(x.p.eff)+(x.p.eff<x.r.a.anRate-0.05?" (rate on paper: "+pct(x.r.a.anRate)+")":""):"\u2014",x=>x.p&&x.p.eff===bestEff):""}
   </tbody></table>`;
 }
 function cmpCount(c){ const cp=c.payment||(c.balance&&c.rate?pmt(c.balance,c.rate,c.monthsLeft||360):0);
