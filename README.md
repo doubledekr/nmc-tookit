@@ -6,7 +6,7 @@ Banker toolkit, management console, and central hub for Neighborhood Mortgage Co
 |---|---|---|
 | `banker-toolkit/` | `neighborhood-toolkit.html` — the standalone banker app (starts empty) and a `-demo` copy with sample data | every banker |
 | `management-console/` | `nmc-management.html` — leaders (rate desk, templates) + IT (presence, admin); `-demo` copy | leaders, IT |
-| `central-server/` | `server.js` (the hub, Node 18+, no packages) and `merge-drive.js` (shared-folder bridge) | IT |
+| `hub/` | the hub service: `server.js`, install scripts for Windows / Linux / Mac / Docker, `.env.example`, `ENDPOINTS.md` | IT (Abe) |
 | `nmc-toolkit-desktop/` | Windows / Mac app wrapper (Electron) — see its `README-DESKTOP.md` | IT / dev |
 | `docs/` | Setup guide, integration spec (Salesforce / Five9 / Dialpad / AVM), developer handoff, ideas backlog, the deep-dive briefing | everyone |
 
@@ -23,7 +23,7 @@ cd nmc-toolkit-desktop && npm install && npm run build:mac     # or build:win
 ```
 
 ## Rules of the road
-- `central-server/data/` holds live client data (save mirrors) and is git-ignored. Never commit it.
+- `hub/data/` holds live client data (save mirrors) and is git-ignored. Never commit it.
 - Demo HTML files are the real files with `DEMO = true`; edit the real file and regenerate (see `docs/DEV-HANDOFF.md`).
 - Anything client-facing on the proposal must be a true benefit for that client's numbers.
 - SSN, DOB, age, and marital status are never captured or transmitted anywhere.

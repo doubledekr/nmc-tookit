@@ -1,0 +1,8 @@
+services:
+  nmc-hub:
+    build: .
+    container_name: nmc-hub
+    restart: unless-stopped
+    ports: ["8787:8787"]
+    env_file: .env
+    volumes: ["./data:/hub/data"]
