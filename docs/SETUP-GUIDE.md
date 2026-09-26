@@ -170,7 +170,7 @@ under your save file on My desk tells you where the backup stands.
 3. **Working a client:** paste their Salesforce record → Parse → Apply. Paste
    lender pricing → save options. Run the Savings analysis (skip payments, debt
    roll-in, HELOAN mode). Need side-by-sides? Compare options.
-4. **Proposal:** check which programs to include, hit **Recommend** on your pick,
+4. **Proposal:** **Copy proposal** puts the finished proposal on your clipboard as an image — paste it straight into a text or email. Email, Save image, and PDF are there too. Every proposal you copy, email, print, or save is kept in that client's **proposal library** on the same screen, so you can re-send or view exactly what they received. Check which programs to include, hit **Recommend** on your pick,
    write one line on why — it prints in a highlighted box. Export = Print → Save
    as PDF.
 5. **Tools** — the mid-call calculator deck, no client needed. The big one is

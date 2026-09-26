@@ -42,6 +42,8 @@ discussion.
 | A32 | Demo builds of both files, isolated storage, derived by a flag | |
 | A33 | Responsive layouts (tablet top bar, phone tiers) and a unified control system | |
 | A34 | Legacy sweep: older auto-seeded samples removed from real builds on first open | |
+| A36 | Copy proposal to clipboard as an image; per-client proposal library (auto-records every copy/email/print, view/re-send/delete) | v1.1.0 |
+| A37 | Hub access key + HTTPS guide for remote bankers; IT hub package with service installers | hub/ |
 | A35 | Desktop app (Electron) for Windows and Mac: self-contained data file with backups, imports old browser exports on first launch, native dialogs, auto-update from the hub | `nmc-toolkit-desktop/`; needs code signing before rollout |
 
 ## B. Designed — spec written, needs company systems

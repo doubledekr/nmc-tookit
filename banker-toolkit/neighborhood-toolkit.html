@@ -456,7 +456,7 @@ Discover 6,100 190 24.9"></textarea>
               <button class="btn ghost small" onclick="addScenario('hel')">+ Fixed HEL</button>
               <button class="btn ghost small" onclick="addScenario('heloc')">+ HELOC</button>
               <button class="btn ghost small" onclick="addScenario('refi')">+ Cash-out refi</button>
-              <button class="btn" onclick="exportComparePDF()">Export comparison PDF</button>
+              <button class="btn" onclick="copyImage('compare')">Copy comparison</button><button class="btn ghost" onclick="exportComparePDF()">PDF</button>
               <button class="btn ghost" onclick="exportImage('compare')">Save as image</button><button class="btn ghost" onclick="emailImage('compare')">Email as image</button>
             </div>
           </div>
@@ -474,7 +474,7 @@ Discover 6,100 190 24.9"></textarea>
         <div class="grid3">
           <div class="field"><label>Client</label><select id="propClientPicker" onchange="pickClient(this.value)"></select></div>
           <div class="field"><label>Pricing option on proposal</label><select id="propOption" onchange="renderProposalPreview()"></select></div>
-          <div class="field" style="align-self:end"><div class="btnrow"><button class="btn" onclick="exportPDF()">Export branded PDF</button><button class="btn ghost" onclick="exportImage('proposal')">Save as image</button><button class="btn ghost" onclick="emailImage('proposal')">Email as image</button></div></div>
+          <div class="field" style="align-self:end"><div class="btnrow"><button class="btn" onclick="copyImage('proposal')">Copy proposal</button><button class="btn ghost" onclick="emailImage('proposal')">Email</button><button class="btn ghost" onclick="exportImage('proposal')">Save image</button><button class="btn ghost" onclick="exportPDF()">PDF</button><button class="btn ghost" onclick="librarySave('proposal')">Save to library</button></div></div>
         </div>
         <div class="field"><label>Personal note to client (optional)</label><textarea id="propNote" style="min-height:60px;font-family:inherit" oninput="renderProposalPreview()" placeholder="e.g. Maria — here's the consolidation option we walked through on Tuesday."></textarea></div>
         <div class="field"><label>Programs on this proposal (check to include · star one as your recommendation)</label><div id="propOptsList"></div></div>
@@ -482,6 +482,7 @@ Discover 6,100 190 24.9"></textarea>
         <div class="hint">Heads up: this is a savings proposal, not a Loan Estimate. The official LE is a regulated disclosure that comes from the lender after application.</div>
       </div>
       <div class="panel"><h2>Preview</h2><div class="hint" id="propRateSrc" style="margin-bottom:8px"></div><div id="propPreview" style="border:1px solid var(--line);padding:20px;background:#fff"></div></div>
+      <div class="panel"><h2>This client\u2019s proposal library</h2><div id="propLibrary"></div></div>
     </section>
 
     <!-- ================= CALL BLOCKS ================= -->
@@ -753,7 +754,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.0.0";
+const TOOLKIT_VERSION = "1.1.0";
 const DEMO = false; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -830,7 +831,7 @@ function migrate(){ /* additive only — old saves gain new fields, nothing is e
    c.analysis=Object.assign({}, tpl.analysis, c.analysis||{});
    c.debts=c.debts||[]; c.options=c.options||[]; c.scenarios=c.scenarios||[];
    c.prop=Object.assign({included:[],rec:"",why:""}, c.prop||{});
-   c.cmp=Object.assign({pwypn:false,rec:"",why:"",include:false}, c.cmp||{});
+   c.cmp=Object.assign({pwypn:false,rec:"",why:"",include:false}, c.cmp||{}); if(!Array.isArray(c.library)) c.library=[];
    if(!Array.isArray(c.prop.included)) c.prop.included=[]; });
   const sm=state.settings.sfMap||{};
   for(const fk in DEFAULT_SFMAP) if(!sm[fk]||!sm[fk].length) sm[fk]=DEFAULT_SFMAP[fk].slice();
@@ -860,7 +861,7 @@ function debtInterest(bal, apr, pay){ const m=debtMonths(bal,apr,pay); return is
 function cur(){ return state.clients.find(c=>c.id===state.currentId) || null; }
 function blankClient(){ return {id:"c"+Date.now()+Math.floor(Math.random()*999), name:"New client", status:"New lead", quick:false,
   phone:"",email:"",address:"",balance:null,rate:null,payment:null,monthsLeft:null,value:null,fico:null,
-  servicer:"",loanType:"Conventional",followUp:"",notes:"",paymentTotal:null,escrow:null,targetRate:null,tz:"",debts:[],options:[],scenarios:[],prop:{included:[],rec:"",why:""},cmp:{pwypn:false,rec:"",why:"",include:false},
+  servicer:"",loanType:"Conventional",followUp:"",notes:"",paymentTotal:null,escrow:null,targetRate:null,tz:"",debts:[],options:[],scenarios:[],library:[],prop:{included:[],rec:"",why:""},cmp:{pwypn:false,rec:"",why:"",include:false},
   analysis:{anRate:null,anTerm:30,anCosts:0,anCashOut:0,anSkip:1,anRoll:"yes",anLien:"refi"}}; }
 function newClient(){ const c=blankClient(); state.clients.unshift(c); state.currentId=c.id; save(); refreshAll(); go("client"); toast("New client added"); }
 function newQuickQuote(){ const c=blankClient(); c.quick=true;
@@ -1536,7 +1537,7 @@ function renderPropOptions(){ const c=cur(); const el=$("propOptsList"); if(!el)
   const ww=$("propWhyWrap"); if(ww){ ww.style.display=P.rec?"block":"none";
     const wt=$("propWhy"); if(wt&&document.activeElement!==wt) wt.value=P.why||""; }
 }
-function renderProposalPreview(){ renderPropOptionPicker(); renderPropOptions(); const el=$("propPreview"); if(el) el.innerHTML=proposalHTML();
+function renderProposalPreview(){ renderPropOptionPicker(); renderPropOptions(); renderLibrary(); const el=$("propPreview"); if(el) el.innerHTML=proposalHTML();
   const ps=$("propRateSrc"); if(ps){ const t=rateSrcText(cur()); ps.textContent=t; ps.style.color = /ESTIMATE/.test(t)?"var(--warn)":"var(--muted)"; } }
 const APP_TITLE=document.title;
 function printAs(title, html){ /* the browser prints the page title in the header, so give the
@@ -1559,11 +1560,13 @@ function buildSheetSVG(html,W){
   const xhtml=new XMLSerializer().serializeToString(wrap);
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml"><style>${sheetCSS(W).replace(/</g,"\\3c ")}</style>${xhtml}</div></foreignObject></svg>`;
   return {svg,W,H}; }
-async function renderSheet(kind){ const c=cur();
-  const html = kind==="compare" ? compareHTML() : proposalHTML();
+function sheetTitle(kind,c,r){ return (kind==="compare"?"Loan Options":(r&&r.second?"Home Equity Proposal":"Savings Proposal"))+(c&&c.name?" \u2014 "+c.name:""); }
+async function renderSheet(kind, snap){ const c=cur();
+  const html = snap ? snap.html : (kind==="compare" ? compareHTML() : proposalHTML());
   if(html.includes('class="empty"')) throw new Error(kind==="compare"?"Add at least two complete scenarios first":"Finish the analysis first");
-  const r=c&&computeAnalysis(c);
-  const title=(kind==="compare"?"Loan Options":(r&&r.second?"Home Equity Proposal":"Savings Proposal"))+(c&&c.name?" \u2014 "+c.name:"");
+  const r=c&&!snap&&computeAnalysis(c);
+  const title= snap ? snap.title : sheetTitle(kind,c,r);
+  if(!snap) libraryAdd(kind, html, title);          /* every proposal that leaves the app is on record for that client */
   const name=title.replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"");
   const {svg,W,H}=buildSheetSVG(html,880);
   const img=new Image(); await new Promise((ok,bad)=>{ img.onload=ok; img.onerror=()=>bad(new Error("render")); img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg); });
@@ -1571,9 +1574,32 @@ async function renderSheet(kind){ const c=cur();
   const ctx=cv.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,cv.width,cv.height); ctx.scale(scale,scale); ctx.drawImage(img,0,0);
   const jpg=await new Promise(res=>cv.toBlob(res,"image/jpeg",0.88)); if(!jpg) throw new Error("canvas");
   return {c,r,title,name,cv,jpg}; }
-async function exportImage(kind){
+/* ---- proposal library: a per-client record of every proposal produced ---- */
+function libraryAdd(kind, html, title){ const c=cur(); if(!c) return; const today=todayStr();
+  const last=c.library[0]; if(last && last.html===html){ last.when=today; save(); renderLibrary(); return; }   /* same content again today: don't duplicate */
+  c.library.unshift({id:"L"+Date.now().toString(36), kind, title, when:today, version:appVersion(), html}); if(c.library.length>40) c.library.length=40; save(); renderLibrary(); }
+function librarySave(kind){ try{ const c=cur(); const html= kind==="compare"?compareHTML():proposalHTML(); if(html.includes('class="empty"')){ toast("Finish the analysis first"); return; }
+  const r=c&&computeAnalysis(c); libraryAdd(kind, html, sheetTitle(kind,c,r)); toast("Saved to "+c.name+"\u2019s library"); }catch(e){ toast("Nothing to save yet"); } }
+function libraryDel(id){ const c=cur(); if(!c) return; c.library=c.library.filter(x=>x.id!==id); save(); renderLibrary(); }
+function libraryView(id){ const c=cur(); const e=c&&c.library.find(x=>x.id===id); if(!e) return; const el=$("propPreview"); if(el) el.innerHTML=e.html; $("propRateSrc").textContent="Viewing a saved proposal from "+e.when+" \u2014 the live preview comes back when you change anything."; try{ window.scrollTo({top:$("propPreview").offsetTop-80,behavior:"smooth"}); }catch(e){} }
+function libSnap(id){ const c=cur(); return c&&c.library.find(x=>x.id===id); }
+function renderLibrary(){ const el=$("propLibrary"); if(!el) return; const c=cur(); const L=(c&&c.library)||[];
+  el.innerHTML = !L.length ? `<div class="empty">Nothing saved yet. Every proposal you copy, email, print, or save is kept here for this client automatically \u2014 or click Save to library.</div>` :
+  `<table class="data"><thead><tr><th>Saved</th><th>Proposal</th><th></th></tr></thead><tbody>`+L.map(e=>`<tr><td class="hint" style="white-space:nowrap">${esc(e.when)}</td><td><b>${esc(e.title)}</b> <span class="hint">\u00b7 ${e.kind==="compare"?"comparison":"proposal"} \u00b7 v${esc(e.version||"")}</span></td>
+   <td><div class="btnrow" style="gap:6px;flex-wrap:nowrap"><button class="btn ghost small" onclick="libraryView('${e.id}')">View</button><button class="btn small" onclick="copyImage('${e.kind}','${e.id}')">Copy</button><button class="btn ghost small" onclick="exportImage('${e.kind}','${e.id}')">Save image</button><button class="btn ghost small" onclick="emailImage('${e.kind}','${e.id}')">Email</button><button class="btn ghost small" onclick="exportSnapPDF('${e.id}')">PDF</button><button class="btn ghost small" title="Remove" onclick="libraryDel('${e.id}')">\u2715</button></div></td></tr>`).join("")+`</tbody></table>`; }
+function exportSnapPDF(id){ const e=libSnap(id); if(!e) return; printAs(e.title, e.html); }
+/* copy the rendered proposal straight to the clipboard: paste into a text, an email, Teams — no file involved */
+async function copyImage(kind, snapId){
+  toast("Rendering\u2026");
+  try{ const {cv,title}=await renderSheet(kind, snapId?libSnap(snapId):null);
+    if(!(navigator.clipboard && window.ClipboardItem)) throw new Error("nocb");
+    const png=await new Promise(res=>cv.toBlob(res,"image/png"));
+    await navigator.clipboard.write([new ClipboardItem({"image/png":png})]);
+    toast("Copied \u2014 paste it into a text or email (Ctrl+V / \u2318V)");
+  }catch(e){ toast(e.message==="nocb" ? "This browser can\u2019t copy images \u2014 use Save as image" : e.message==="render"||e.message==="canvas" ? "Couldn\u2019t render here \u2014 use Chrome or Edge, or the desktop app" : e.message); } }
+async function exportImage(kind, snapId){
   toast("Building the image\u2026");
-  try{ const {title,name,jpg}=await renderSheet(kind); const fname=name+".jpg";
+  try{ const {title,name,jpg}=await renderSheet(kind, snapId?libSnap(snapId):null); const fname=name+".jpg";
     const file=new File([jpg],fname,{type:"image/jpeg"});
     const mobile=/Android|iPhone|iPad/i.test(navigator.userAgent);
     if(mobile && navigator.canShare && navigator.canShare({files:[file]})){ try{ await navigator.share({files:[file],title}); return; }catch(e){ if(e&&e.name==="AbortError") return; } }
@@ -1587,9 +1613,9 @@ async function exportImage(kind){
 function emailBodyFor(c,r,kind){ const s=state.settings; const first=c&&c.name? c.name.split(/[ ,&]/)[0] : "there";
   const what = kind==="compare" ? "the side-by-side of your options" : (r&&r.second ? "the home equity proposal" : "the savings proposal");
   return `Hi ${first},\n\nHere is ${what} we talked about \u2014 the image below has the full breakdown.\n\nCall or text me with any questions.\n\n${s.loName||""}\nNeighborhood Mortgage Company\nNMLS #${s.loNmls||""}${s.loPhone?" \u00b7 "+s.loPhone:""}${s.loEmail?" \u00b7 "+s.loEmail:""}`; }
-async function emailImage(kind){
+async function emailImage(kind, snapId){
   toast("Building the image\u2026");
-  try{ const {c,r,title,name,cv,jpg}=await renderSheet(kind);
+  try{ const {c,r,title,name,cv,jpg}=await renderSheet(kind, snapId?libSnap(snapId):null);
     const to=(c&&c.email)||"";                                   /* client email auto-filled when it's on file */
     const mailto="mailto:"+encodeURIComponent(to)+"?subject="+encodeURIComponent(title)+"&body="+encodeURIComponent(emailBodyFor(c,r,kind));
     const file=new File([jpg],name+".jpg",{type:"image/jpeg"});
@@ -1609,7 +1635,7 @@ async function emailImage(kind){
   }catch(e){ toast(e.message==="render"||e.message==="canvas" ? "Couldn\u2019t build the image in this browser \u2014 use Export PDF (Chrome or Edge recommended)" : e.message); }
 }
 function exportPDF(){ const html=proposalHTML(); if(html.includes('class="empty"')){ toast("Finish the analysis first"); return; }
-  const c=cur(); const r=c&&computeAnalysis(c); printAs((r&&r.second?"Home Equity Proposal":"Savings Proposal")+(c&&c.name?" \u2014 "+c.name:""), html); }
+  const c=cur(); const r=c&&computeAnalysis(c); libraryAdd("proposal", html, sheetTitle("proposal",c,r)); printAs(sheetTitle("proposal",c,r), html); }
 
 /* ---------- call blocks ---------- */
 function startBlock(){ state.live={start:Date.now(),label:(schedNow().label||"Off-schedule"),dials:0,contacts:0,interested:0,folders:0,calls:[]}; save(); renderBlocks(); }
@@ -1966,7 +1992,7 @@ function compareHTML(){
   <div class="disc">This comparison is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. Figures exclude taxes, insurance, and escrows unless noted. HELOC rates are variable and payments will change when the index changes. Borrowing against your home converts other spending or unsecured debt into debt secured by your home. All loans subject to credit approval. Equal Housing Opportunity. ${esc(s.footer)}${s.loNmls?` \u00b7 Loan Officer NMLS #${esc(s.loNmls)}`:""}</div>`;
 }
 function exportComparePDF(){ const html=compareHTML(); if(html.includes('class="empty"')){ toast("Add at least two complete scenarios first"); return; }
-  const c=cur(); printAs("Loan Options Comparison"+(c&&c.name?" \u2014 "+c.name:""), html); }
+  const c=cur(); libraryAdd("compare", html, sheetTitle("compare",c,null)); printAs("Loan Options Comparison"+(c&&c.name?" \u2014 "+c.name:""), html); }
 
 /* ---------- first-run banker setup ---------- */
 function maybeSetup(){ const s=state.settings; if(!s.loName && !s.setupDone){ const m=$("setupModal"); if(m) m.style.display="flex"; } }
