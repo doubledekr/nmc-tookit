@@ -417,6 +417,7 @@ table.data tr.rec td{background:var(--cream)}
         </div>
         <div class="btnrow" style="margin-top:6px">
           <button class="btn ghost" onclick="newQuickQuote()">Quick quote — skip the pipeline</button>
+          <button class="btn ghost" onclick="addSnapScenario()" title="Save this exact set-up as one column on Compare options">+ Add this option to Compare</button>
           <button class="btn accent" onclick="go('proposal')">Build proposal →</button>
         </div>
       </div>
@@ -449,12 +450,13 @@ Discover 6,100 190 24.9"></textarea>
     <!-- ================= COMPARE ================= -->
     <section class="screen" id="s-compare">
       <div class="eyebrow">Every path, one table</div><h1>Compare options</h1>
-      <div class="sub">HELOC vs fixed home equity loan, 20 vs 30 years, different amounts out — build up to five scenarios and export the comparison on Neighborhood Mortgage letterhead.</div>
+      <div class="sub">Two ways to fill this: build a path on <b>Savings analysis</b> (VA IRRRL, FHA Streamline, cash-out with debts paid off, home equity loan) and click <b>+ Add this option to Compare</b> — change the set-up and add again for the next path. Or add quick loan-only scenarios below. Star the one you recommend: the proposal follows it, and “Include this comparison” adds the side-by-side to the proposal.</div>
       <div class="panel">
         <div class="grid3" style="margin-bottom:8px">
           <div class="field"><label>Client</label><select id="cmpClientPicker" onchange="pickClient(this.value)"></select></div>
           <div class="field" style="align-self:end;grid-column:2/4">
             <div class="btnrow">
+              <button class="btn small" onclick="go('analysis')" title="Set up a full path (program, debts, cash out, skips) then add it from there">Add from Savings analysis →</button>
               <button class="btn ghost small" onclick="addScenario('hel')">+ Fixed HEL</button>
               <button class="btn ghost small" onclick="addScenario('heloc')">+ HELOC</button>
               <button class="btn ghost small" onclick="addScenario('refi')">+ Cash-out refi</button>
@@ -750,7 +752,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.1.6";
+const TOOLKIT_VERSION = "1.1.7";
 const DEMO = false; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -1496,9 +1498,9 @@ function proposalHTML(){
     ${recO&&P.why?`<div class="recbox"><b>Why we recommend ${esc(recO.lender)} at ${pct(recO.rate)}:</b> ${esc(P.why)}</div>`:""}`; })()}
   ${(()=>{ const cm=c.cmp||{}; if(!cm.include) return "";
     const cp=c.payment||(c.balance&&c.rate?pmt(c.balance,c.rate,c.monthsLeft||360):0);
-    const list=(c.scenarios||[]).filter(sc=>computeScenario(sc,cp)); if(list.length<2) return "";
+    const list=(c.scenarios||[]).filter(sc=>sc.kind==="snap"?computeSnap(c,sc):computeScenario(sc,cp)); if(list.length<2) return "";
     const recSc=list.find(s=>s.id===cm.rec);
-    return `<h2>Your options side by side</h2>${compareMatrix(list,cp,cmpOpts(c))}
+    return `<h2>Your options side by side</h2>${programMatrix(c,list.filter(x=>x.kind==="snap"),cm.rec)}${compareMatrix(list.filter(x=>x.kind!=="snap"),cp,cmpOpts(c))}
     ${recSc&&cm.why?`<div class="recbox"><b>Why we recommend ${esc(recSc.label)}:</b> ${esc(cm.why)}</div>`:recSc?`<div class="recbox"><b>Our recommendation:</b> ${esc(recSc.label)}</div>`:""}`; })()}
   <h2>Your numbers, side by side</h2>
   <table><thead><tr><th></th><th class="num">Today</th><th class="num">Proposed</th></tr></thead><tbody>${sideRows}</tbody></table>
@@ -1876,7 +1878,54 @@ function setupPolling(){ clearInterval(pollTimer);
 
 
 /* ---------- option comparison ---------- */
-const KIND_LBL={hel:"Fixed home equity loan",heloc:"HELOC (interest-only draw)",refi:"Cash-out refinance"};
+const KIND_LBL={hel:"Fixed home equity loan",heloc:"HELOC (interest-only draw)",refi:"Cash-out refinance",snap:"From savings analysis"};
+/* ---- program snapshots: a full Savings-analysis set-up saved as one Compare column ---- */
+const SNAP_KEYS=MODE_KEYS.concat(["anLien","anProgram"]);
+function snapLabel(inp,r){ const m=modeOf(inp); if(m==="va") return "VA IRRRL"; if(m==="fha") return "FHA Streamline";
+  if(m==="second") return (r&&r.cashOut>0)?"Home equity loan \u2014 debts paid off + cash":"Home equity loan \u2014 debts paid off";
+  return r&&r.roll ? (r.cashOut>0?"Cash-out refi \u2014 debts paid off + cash":"Refi \u2014 debts paid off") : (inp.anCashOut>0? "Cash-out refi":"Rate & term refi"); }
+function computeSnap(c,sc){ if(!sc||sc.kind!=="snap"||!sc.inputs) return null; const t=Object.assign({},c,{analysis:Object.assign({},c.analysis,sc.inputs)}); const r=computeAnalysis(t); return r&&!r.tooSmall?r:null; }
+function applySnap(c,sc){ const a=c.analysis; SNAP_KEYS.forEach(k=>a[k]=sc.inputs[k]); a.saved=a.saved||{}; const m=modeOf(a); a.saved[m]={}; MODE_KEYS.forEach(k=>a.saved[m][k]=a[k]); }
+function addSnapScenario(){ const c=cur(); if(!c){ toast("Pick a client first"); return; } readAnalysisInputs(); const r=computeAnalysis(c);
+  if(!r||r.tooSmall){ toast("Finish the analysis first \u2014 rate, term and the client\u2019s numbers"); return; }
+  c.scenarios=c.scenarios||[]; if(c.scenarios.length>=5){ toast("Five scenarios max \u2014 remove one on Compare first"); return; }
+  const inputs={}; SNAP_KEYS.forEach(k=>inputs[k]=c.analysis[k]);
+  const dup=c.scenarios.find(x=>x.kind==="snap"&&JSON.stringify(x.inputs)===JSON.stringify(inputs)); if(dup){ go("compare"); toast("That exact option is already on Compare"); return; }
+  const label=snapLabel(inputs,r);
+  c.scenarios.push({id:"s"+Date.now()+Math.random().toString(36).slice(2,5), kind:"snap", label, inputs});
+  save(); renderCompare(); go("compare"); toast("Added \u201c"+label+"\u201d. Change the set-up on Savings analysis and add again to compare another path."); }
+function loadSnap(id){ const c=cur(); const sc=c&&(c.scenarios||[]).find(x=>x.id===id); if(!sc||sc.kind!=="snap") return;
+  applySnap(c,sc); save(); fillAnalysisInputs(); applyMode(); go("analysis"); runAnalysis(); toast("Loaded \u201c"+sc.label+"\u201d into the analysis \u2014 edit, then add it to Compare again"); }
+function snapHousehold(c,r){ const dPay=(c.debts||[]).filter(d=>d.balance>0).reduce((s,d)=>s+(d.pay||0),0); const first=r.curPay||0;
+  const today=first+dPay; const now = r.second ? first+r.newPay : r.newPay+(r.roll?0:dPay);
+  const todayInt=(r.curSched?r.curSched.interest:0)+(r.dInt||0);
+  const newInt = r.second ? (r.curSched?r.curSched.interest:0)+r.newSched.interest : r.newSched.interest+(r.roll?0:(r.dInt||0));
+  return {today,now,save:today-now,dPay,todayInt,newInt}; }
+function programMatrix(c,snaps,recId){
+  const comps=snaps.map(sc=>({sc,r:computeSnap(c,sc)})).filter(x=>x.r).map(x=>Object.assign(x,{h:snapHousehold(c,x.r)}));
+  if(!comps.length) return "";
+  const bestSave=Math.max(...comps.map(x=>x.h.save)), bestInt=Math.min(...comps.map(x=>x.h.newInt)), bestPay=Math.min(...comps.map(x=>x.h.now));
+  const cell=(v,best,rec)=>`<td class="num${rec?" reccol":""}"${best?' style="color:#2E6B4F;font-weight:700"':''}>${v}</td>`;
+  const row=(label,fn,bestFn)=>`<tr><td><b>${label}</b></td>`+comps.map(x=>cell(fn(x), bestFn?bestFn(x):false, x.sc.id===recId)).join("")+`</tr>`;
+  const anyDebts=comps.some(x=>x.r.debts&&x.r.debts.length), anyCash=comps.some(x=>x.r.cashOut>0||x.r.skipCash>0);
+  return `<table class="data"><thead><tr><th></th>${comps.map(x=>`<th class="num${x.sc.id===recId?" reccol":""}">${esc(x.sc.label)}${x.sc.id===recId?'<br><span style="color:var(--brand);font-size:11px">\u2605 Recommended</span>':""}</th>`).join("")}</tr></thead><tbody>
+  ${row("Program",x=>snapLabel(x.sc.inputs,x.r))}
+  ${row("New loan",x=>money(x.r.newP)+(x.r.second?" second":""))}
+  ${row("Rate \u00b7 term",x=>pct(x.r.a.anRate)+" \u00b7 "+x.r.a.anTerm+" yrs")}
+  ${row("New mortgage payment (P&amp;I)",x=>x.r.second?money(x.r.curPay)+" first + "+money(x.r.newPay)+" second":money(x.r.newPay)+"/mo")}
+  ${anyDebts?row("Debts paid off at closing",x=>(x.r.roll||x.r.second)&&x.r.dBal>0?money(x.r.dBal)+" \u2014 "+money(x.r.dPay)+"/mo gone":"\u2014 debts stay as they are"):""}
+  ${row("Total monthly outlay today (mortgage P&amp;I + debts)",x=>money(x.h.today))}
+  ${row("Total monthly outlay with this option",x=>money(x.h.now)+"/mo",x=>x.h.now===bestPay)}
+  ${row("Monthly savings",x=>(x.h.save>=0?"":"\u2212")+money(Math.abs(x.h.save))+"/mo",x=>x.h.save===bestSave&&bestSave>0)}
+  ${anyCash?row("Cash to you at closing",x=>{const parts=[]; if(x.r.cashOut>0) parts.push(money(x.r.cashOut)+" cash out"); if(x.r.skipCash>0) parts.push(money(x.r.skipCash)+" from "+x.r.skipN+" skipped pmt"+(x.r.skipN>1?"s":"")); return parts.join(" + ")||"\u2014";}):""}
+  ${row("Total interest \u2014 stay as-is",x=>money(x.h.todayInt))}
+  ${row("Total interest \u2014 this option",x=>money(x.h.newInt),x=>x.h.newInt===bestInt)}
+  ${row("Mortgage paid off in",x=>x.r.second?yrsMo(x.r.curMonths)+" (first) \u00b7 "+yrsMo(x.r.newSched.months)+" (second)":yrsMo(x.r.newSched.months))}
+  ${anyDebts?row("Debts gone",x=>(x.r.roll||x.r.second)?"at closing":x.r.dMonths>0?yrsMo(x.r.dMonths)+" at today\u2019s minimums":"\u2014"):""}
+  </tbody></table>`;
+}
+function cmpCount(c){ const cp=c.payment||(c.balance&&c.rate?pmt(c.balance,c.rate,c.monthsLeft||360):0);
+  return (c.scenarios||[]).filter(sc=>sc.kind==="snap"?computeSnap(c,sc):computeScenario(sc,cp)).length; }
 function sumInt(rows,n){ let s=0; for(let i=0;i<Math.min(n,rows.length);i++) s+=rows[i].int; return s; }
 function pitiOf(c){ const pi=c.payment||(c.balance&&c.rate?pmt(c.balance,c.rate,c.monthsLeft||360):0); return c.paymentTotal>0 ? c.paymentTotal : pi+(c.escrow||0); }
 function cmpOutlays(c){ /* what they pay today, for pay-what-you-pay-now on each scenario type */
@@ -1909,8 +1958,9 @@ function recommendScenario(id){ const c=cur(); if(!c) return; const sc=(c.scenar
   c.cmp.rec = c.cmp.rec===id ? "" : id; c.cmp.include = c.cmp.include || !!c.cmp.rec;
   if(c.cmp.rec){ /* keep the proposal's main numbers in step with the recommended scenario */
     if(sc.kind==="refi"){ c.analysis.anRate=sc.rate; c.analysis.anTerm=sc.term; c.analysis.anLien="refi"; c.analysis.rateSrc={type:sc.optionId?"quote":"manual",lender:(c.options.find(o=>o.id===sc.optionId)||{}).lender,when:todayStr()}; if(sc.optionId){ c.selectedOption=sc.optionId; c.prop.rec=sc.optionId; if(!c.prop.included.includes(sc.optionId)) c.prop.included.push(sc.optionId); } }
-    else if(sc.kind==="hel"){ c.analysis.anRate=sc.rate; c.analysis.anTerm=sc.term; c.analysis.anLien="second"; } }
-  save(); renderCompare(); fillAnalysisInputs(); toast(c.cmp.rec? "Recommended: "+sc.label+" \u2014 it's starred on the comparison and the proposal follows it" : "Recommendation cleared"); }
+    else if(sc.kind==="hel"){ c.analysis.anRate=sc.rate; c.analysis.anTerm=sc.term; c.analysis.anLien="second"; }
+    else if(sc.kind==="snap"){ applySnap(c,sc); } }
+  save(); renderCompare(); fillAnalysisInputs(); applyMode(); toast(c.cmp.rec? "Recommended: "+sc.label+" \u2014 it's starred on the comparison and the proposal follows it" : "Recommendation cleared"); }
 function addScenario(kind){ const c=cur(); if(!c){ toast("Pick a client first"); return; }
   if(!c.scenarios) c.scenarios=[];
   if(c.scenarios.length>=5){ toast("Five scenarios max \u2014 remove one first"); return; }
@@ -1934,7 +1984,13 @@ function renderCompare(){
   const curPay = c.payment || (c.balance&&c.rate ? pmt(c.balance,c.rate,c.monthsLeft||360) : 0);
   ed.innerHTML = !list.length ? `<div class="empty">No scenarios yet \u2014 add a couple above to compare side by side.</div>` :
   `<table class="data"><thead><tr><th>Label</th><th>Type</th><th class="num">Amount ($)</th><th class="num">Rate (%)</th><th class="num">Term (yrs)</th><th class="num">Draw (yrs)</th><th class="num">Skip (mo)</th><th class="num">Extra/mo</th><th></th></tr></thead><tbody>`+
-  list.map(sc=>`<tr>
+  list.map(sc=>{ if(sc.kind==="snap"){ const r=computeSnap(c,sc); return `<tr>
+   <td><input type="text" value="${esc(sc.label)}" oninput="updScenario('${sc.id}','label',this.value)"></td>
+   <td>${KIND_LBL.snap}<br><span class="hint">${r?esc(snapLabel(sc.inputs,r)):"needs the client\u2019s numbers"}</span></td>
+   <td class="num">${r?money(r.newP):"\u2014"}</td><td class="num">${pct(sc.inputs.anRate)}</td><td class="num">${sc.inputs.anTerm||"\u2014"}</td>
+   <td colspan="3"><span class="hint">${r&&r.roll?"debts rolled in":r&&r.second?"first mortgage kept":"rate &amp; term"}${r&&r.cashOut>0?" \u00b7 "+money(r.cashOut)+" out":""}${r&&r.skipN>0?" \u00b7 "+r.skipN+" skipped":""}</span> <button class="btn ghost small" onclick="loadSnap('${sc.id}')">Edit in analysis</button></td>
+   <td><div class="btnrow" style="gap:6px;flex-wrap:nowrap"><button class="btn ghost small" onclick="recommendScenario('${sc.id}')">${c.cmp&&c.cmp.rec===sc.id?"\u2605":"\u2606"}</button><button class="btn ghost small" title="Remove" onclick="delScenario('${sc.id}')">\u2715</button></div></td></tr>`; }
+   return `<tr>
    <td><input type="text" value="${esc(sc.label)}" oninput="updScenario('${sc.id}','label',this.value)"></td>
    <td><select onchange="updScenario('${sc.id}','kind',this.value)">${Object.keys(KIND_LBL).map(k=>`<option value="${k}" ${sc.kind===k?"selected":""}>${KIND_LBL[k]}</option>`).join("")}</select></td>
    <td><input type="number" class="num" value="${sc.amount??""}" oninput="updScenario('${sc.id}','amount',this.value)"></td>
@@ -1943,14 +1999,15 @@ function renderCompare(){
    <td><input type="number" class="num" value="${sc.draw??0}" ${sc.kind==="heloc"?"":"disabled"} oninput="updScenario('${sc.id}','draw',this.value)"></td>
    <td><input type="number" class="num" min="0" max="2" value="${sc.skip??0}" ${sc.kind==="refi"?"":"disabled"} oninput="updScenario('${sc.id}','skip',this.value)"></td>
    <td><input type="number" class="num" placeholder="${c.cmp&&c.cmp.pwypn?"auto":"0"}" value="${sc.extra??""}" ${sc.kind==="heloc"?"disabled":""} oninput="updScenario('${sc.id}','extra',this.value)"></td>
-   <td><div class="btnrow" style="gap:6px;flex-wrap:nowrap"><button class="btn ghost small" onclick="recommendScenario('${sc.id}')">${c.cmp&&c.cmp.rec===sc.id?"\u2605":"\u2606"}</button><button class="btn ghost small" title="Remove" onclick="delScenario('${sc.id}')">\u2715</button></div></td></tr>`).join("")+`</tbody></table>`;
+   <td><div class="btnrow" style="gap:6px;flex-wrap:nowrap"><button class="btn ghost small" onclick="recommendScenario('${sc.id}')">${c.cmp&&c.cmp.rec===sc.id?"\u2605":"\u2606"}</button><button class="btn ghost small" title="Remove" onclick="delScenario('${sc.id}')">\u2715</button></div></td></tr>`;}).join("")+`</tbody></table>`;
   const ctl=$("cmpControls"); if(ctl){ const cm=c.cmp||{};
     ctl.innerHTML=`<div class="btnrow" style="margin:6px 0 10px">
       <label style="margin:0;display:flex;align-items:center;gap:7px"><input type="checkbox" ${cm.pwypn?"checked":""} onchange="setCmpPwypn(this.checked)"> <b>Pay what they pay now</b> <span class="hint">\u2014 puts today's outlay on every option and shows payoff time and effective rate</span></label>
       <span style="flex:1"></span>
       <label style="margin:0;display:flex;align-items:center;gap:7px"><input type="checkbox" ${cm.include?"checked":""} onchange="setCmpInclude(this.checked)"> Include this comparison on the client proposal</label></div>
-      ${cm.rec?`<div class="field"><label>Why you recommend ${esc((list.find(s=>s.id===cm.rec)||{}).label||"this option")} (prints on the proposal)</label><textarea style="min-height:50px;font-family:inherit" oninput="setCmpWhy(this.value)" placeholder="e.g. Lowest lifetime cost, and the payment fits without stretching.">${esc(cm.why||"")}</textarea></div>`:`<div class="hint">\u2606 Star an option to recommend it \u2014 the proposal's numbers follow the starred one.</div>`}`; }
-  $("cmpTable").innerHTML = compareMatrix(list,curPay,cmpOpts(c)) || `<div class="empty">Fill in amount, rate, and term on at least one scenario.</div>`;
+      ${cm.rec?`<div class="field"><label>Banker notes \u2014 why you recommend ${esc((list.find(s=>s.id===cm.rec)||{}).label||"this option")} (prints on the proposal under the comparison)</label><textarea style="min-height:50px;font-family:inherit" oninput="setCmpWhy(this.value)" placeholder="e.g. Lowest lifetime cost, and the payment fits without stretching.">${esc(cm.why||"")}</textarea></div>`:`<div class="hint">\u2606 Star an option to recommend it \u2014 the proposal's numbers follow the starred one.</div>`}`; }
+  const pm=programMatrix(c,list.filter(x=>x.kind==="snap"),c.cmp&&c.cmp.rec), lm=compareMatrix(list.filter(x=>x.kind!=="snap"),curPay,cmpOpts(c));
+  $("cmpTable").innerHTML = (pm?`<div class="eyebrow" style="margin-bottom:6px">Full paths from Savings analysis \u2014 whole-household view</div>`+pm:"")+(pm&&lm?`<div class="eyebrow" style="margin:14px 0 6px">Loan-only scenarios</div>`:"")+lm || `<div class="empty">Nothing to compare yet \u2014 add an option from Savings analysis, or fill in amount, rate, and term on a scenario.</div>`;
 }
 function compareMatrix(list,curPay,opts){ opts=opts||{};
   const comps=list.map(sc=>({sc,r:computeScenario(sc,curPay,opts)})).filter(x=>x.r);
@@ -1982,7 +2039,7 @@ function compareMatrix(list,curPay,opts){ opts=opts||{};
 function compareHTML(){
   const c=cur(); if(!c) return `<div class="empty">Pick a client.</div>`;
   const curPay = c.payment || (c.balance&&c.rate ? pmt(c.balance,c.rate,c.monthsLeft||360) : 0);
-  const list=(c.scenarios||[]).filter(sc=>computeScenario(sc,curPay));
+  const list=(c.scenarios||[]).filter(sc=>sc.kind==="snap"?computeSnap(c,sc):computeScenario(sc,curPay));
   if(list.length<2) return `<div class="empty">Add at least two complete scenarios to export a comparison.</div>`;
   const cmpWhy = c.cmp&&c.cmp.rec&&c.cmp.why ? `<div class="recbox"><b>Why we recommend ${esc((list.find(s=>s.id===c.cmp.rec)||{}).label||"this option")}:</b> ${esc(c.cmp.why)}</div>` : "";
   const s=state.settings;
@@ -1998,7 +2055,8 @@ function compareHTML(){
   <h1>Option Comparison \u2014 ${esc(c.name)}</h1>
   <div style="font-size:11.5px;color:#555">${esc(c.address||"")}</div>
   <h2>The numbers</h2>
-  ${compareMatrix(list,curPay,cmpOpts(c))}
+  ${programMatrix(c,list.filter(x=>x.kind==="snap"),c.cmp&&c.cmp.rec)}
+  ${compareMatrix(list.filter(x=>x.kind!=="snap"),curPay,cmpOpts(c))}
   ${cmpWhy}
   <div class="disc">This comparison is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. Figures exclude taxes, insurance, and escrows unless noted. HELOC rates are variable and payments will change when the index changes. Borrowing against your home converts other spending or unsecured debt into debt secured by your home. All loans subject to credit approval. Equal Housing Opportunity. ${esc(s.footer)}${s.loNmls?` \u00b7 Loan Officer NMLS #${esc(s.loNmls)}`:""}</div>`;
 }
