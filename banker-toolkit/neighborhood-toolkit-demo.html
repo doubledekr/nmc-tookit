@@ -745,7 +745,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.1.17";
+const TOOLKIT_VERSION = "1.1.18";
 const DEMO = true; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -1333,7 +1333,9 @@ function computeAnalysis(c){
   const dBal = debts.reduce((s,d)=>s+(d.balance||0),0);
   const dPay = debts.reduce((s,d)=>s+(d.pay||0),0);
   const dInt = debts.reduce((s,d)=>{ const x=debtInterest(d.balance,d.apr||0,d.pay||0); return s+(isFinite(x)?x:d.balance*3); },0);
-  const dMonths = debts.length ? Math.max(...debts.map(d=>d.apr>0&&d.pay>0?debtMonths(d.balance,d.apr,d.pay):0)) : 0;   /* longest payoff at today's minimums */
+  /* longest payoff at today's minimums. No APR on a debt: count it interest-free (a floor) and flag the result as an estimate; no payment: unknown */
+  const dMonths = debts.length ? Math.max(...debts.map(d=>d.pay>0 ? (d.apr>0?debtMonths(d.balance,d.apr,d.pay):Math.ceil(d.balance/d.pay)) : 0)) : 0;
+  const dMonthsEst = debts.some(d=>!(d.apr>0)&&d.pay>0), dMonthsUnknown = debts.some(d=>!(d.pay>0));
   if(second && !debts.length && !(cashOut>0)) return null;
   const prog=a.anProgram||"standard"; const fhaS=prog==="fha_streamline"&&!second;
   const costs = fhaS ? 0 : a.anCosts;                                   /* FHA Streamline: lender-paid, no origination */
@@ -1371,7 +1373,7 @@ function computeAnalysis(c){
   const piti = c.paymentTotal>0 ? c.paymentTotal : curPay + escrow;   /* a skipped payment is the whole PITI, not just P&I */
   const skipCash = second ? 0 : skipN * piti;
   const curPathInterest = (second?0:curSched.interest) + (roll?dInt:0);
-  return {second,heloc,drawYrs,ioPay,afterDrawPay,curPay,curMonths,curSched,roll,cashOut,streamline,debts,dBal,dPay,dInt,dMonths,dExtra,dNoApr,newP,n,newPay,newSched,outlayNow,saveMo,blended,extra,pw,pwEff,skipCash,skipN,prog,fhaS,mipAmt,escrow,curPathInterest,a};
+  return {second,heloc,drawYrs,ioPay,afterDrawPay,curPay,curMonths,curSched,roll,cashOut,streamline,debts,dBal,dPay,dInt,dMonths,dMonthsEst,dMonthsUnknown,dExtra,dNoApr,newP,n,newPay,newSched,outlayNow,saveMo,blended,extra,pw,pwEff,skipCash,skipN,prog,fhaS,mipAmt,escrow,curPathInterest,a};
 }
 
 function balanceChart(r){
@@ -2016,7 +2018,7 @@ function programMatrix(c,snaps,recId){
   ${row("Total interest if you stay where you are",x=>money(x.h.todayInt))}
   ${row("Total interest with this option (minimum payments)",x=>money(x.h.newInt),x=>x.h.newInt===bestInt)}
   ${row("Mortgage paid off in",x=>x.r.second?yrsMo(x.r.curMonths)+" (first) \u00b7 "+yrsMo(x.r.newSched.months)+" (second)":yrsMo(x.r.newSched.months))}
-  ${anyDebts?row("Debts gone",x=>(x.r.roll||x.r.second)?"at closing":x.r.dMonths>0?yrsMo(x.r.dMonths)+" at today\u2019s minimums":"\u2014"):""}
+  ${anyDebts?row("Other debts paid off",x=>(x.r.roll||x.r.second)?"at closing":x.r.dMonths===Infinity?"never at today\u2019s minimums":x.r.dMonthsUnknown?"depends on the payments you make":x.r.dMonths>0?(x.r.dMonthsEst?"about ":"")+yrsMo(x.r.dMonths)+" if you keep paying today\u2019s minimums":"\u2014"):""}
   ${anyPw?`<tr><td colspan="${comps.length+1}" style="background:var(--cream-soft,#F4EFE6);font-weight:700;padding:6px 8px">If you keep paying what you pay today (${money(comps[0].h.today)}/month) and put the difference toward the loan</td></tr>`:""}
   ${anyPw?row("Extra toward the loan each month",x=>x.p?money(x.p.extra):"\u2014"):""}
   ${anyPw?row(comps.some(x=>x.r.second)?"New loan paid off in":"Mortgage paid off in",x=>x.p?yrsMo(x.p.months)+(x.p.cut>0?" ("+yrsMo(x.p.cut)+" sooner)":""):"\u2014",x=>x.p&&x.p.months===bestPwMo):""}
