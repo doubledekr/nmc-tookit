@@ -10,10 +10,10 @@
   "scripts": {
     "sync": "node scripts/sync-html.js",
     "start": "npm run sync && electron .",
-    "build": "npm run sync && electron-builder --win --mac",
-    "build:win": "npm run sync && electron-builder --win",
-    "build:mac": "npm run sync && electron-builder --mac",
-    "build:portable": "npm run sync && electron-builder --win portable"
+    "build": "npm run sync && electron-builder --win --mac --publish never",
+    "build:win": "npm run sync && electron-builder --win --publish never",
+    "build:mac": "npm run sync && electron-builder --mac --publish never",
+    "build:portable": "npm run sync && electron-builder --win portable --publish never"
   },
   "devDependencies": {
     "electron": "^33.2.0",
@@ -80,10 +80,8 @@
       "artifactName": "NMC-Toolkit-${version}.${ext}"
     },
     "publish": {
-      "provider": "github",
-      "owner": "doubledekr",
-      "repo": "nmc-tookit",
-      "releaseType": "release"
+      "provider": "generic",
+      "url": "http://HUB:8787/updates/"
     }
   }
 }
