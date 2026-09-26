@@ -213,5 +213,5 @@ require `TOKEN` to read (see `/api/saves`).
 ## Versioning and updates
 `TOOLKIT_VERSION` in the toolkit HTML is the single version number; `npm run sync` writes it into the
 desktop app's package.json. Release flow: bump it → push → Actions builds + releases → hub mirrors
-(`NMC_UPDATE_REPO`, `NMC_GITHUB_TOKEN`) → apps update themselves (mandatory, 90-second countdown).
+(`NMC_UPDATE_REPO`, `NMC_GITHUB_TOKEN`) → apps download in the background and show an Update bar; install on click or next quit.
 Heartbeats carry `version` and `platform`; `/api/presence` includes `latest`; the console flags stragglers.

@@ -52,32 +52,26 @@ ipcMain.handle("data:pickAndRead", async () => {
   if (r.canceled || !r.filePaths[0]) return null; try { return fs.readFileSync(r.filePaths[0], "utf8"); } catch (e) { return null; } });
 ipcMain.handle("app:version", () => app.getVersion());
 
-/* ---- updates: mandatory, fed by the hub ----
+/* ---- updates, fed by the hub, installed when the banker is ready ----
    The toolkit tells us the hub address (Settings → hub). We check <hub>/updates/ on launch and every 30
-   minutes; when a new version has downloaded, the banker gets a 90-second countdown and the app restarts
-   into it. Data is flushed before restart, so nothing is lost. Set NMC_NO_UPDATES=1 to disable (dev). */
-let updater = null, updateFeed = null, mainWin = null, updateArmed = false;
+   minutes and download new versions in the background. The toolkit then shows an "update available" bar
+   with an Update button; nothing restarts until the banker clicks it (or closes the app — an update that
+   has downloaded also installs on quit). Set NMC_NO_UPDATES=1 to disable (dev). */
+let updater = null, updateFeed = null, mainWin = null;
 function setupUpdates(){ if (process.env.NMC_NO_UPDATES) return;
   try { updater = require("electron-updater").autoUpdater; } catch (e) { return; }
   updater.autoDownload = true; updater.autoInstallOnAppQuit = true; updater.allowDowngrade = false;
   updater.on("error", () => {});
   updater.on("update-available", info => { if (mainWin) mainWin.webContents.send("update:status", { state: "downloading", version: info.version }); });
-  updater.on("update-downloaded", info => {
-    if (mainWin) mainWin.webContents.send("update:status", { state: "ready", version: info.version });
-    if (updateArmed) return; updateArmed = true;
-    let secs = 90; const restart = () => { flushWrites(); updater.quitAndInstall(false, true); };
-    const box = dialog.showMessageBox(mainWin, { type: "info", buttons: ["Restart now"], defaultId: 0, cancelId: -1, noLink: true,
-      title: "NMC Toolkit update required",
-      message: "Version " + info.version + " is required.",
-      detail: "The toolkit will restart into the new version in 90 seconds. Your clients, pipeline, and settings are kept." });
-    box.then(restart); setTimeout(restart, secs * 1000);
-  });
+  updater.on("update-downloaded", info => {   /* no dialog, no countdown: the toolkit shows a bar with an Update button */
+    if (mainWin) mainWin.webContents.send("update:status", { state: "ready", version: info.version }); });
   setInterval(checkUpdates, 30 * 60 * 1000);
 }
 function checkUpdates(){ if (!updater || !updateFeed) return; try { updater.setFeedURL({ provider: "generic", url: updateFeed }); updater.checkForUpdates().catch(() => {}); } catch (e) {} }
 ipcMain.on("update:setHub", (e, hub) => { hub = String(hub || "").replace(/\/+$/, ""); const feed = hub ? hub + "/updates/" : null;
   if (feed && feed !== updateFeed) { updateFeed = feed; checkUpdates(); } });
 ipcMain.handle("update:check", () => { checkUpdates(); return !!updateFeed; });
+ipcMain.handle("update:install", () => { if (!updater) return false; flushWrites(); setTimeout(() => updater.quitAndInstall(false, true), 300); return true; });
 
 function createWindow(){
   const win = mainWin = new BrowserWindow({ width: 1360, height: 900, minWidth: 900, minHeight: 600, title: "NMC Toolkit " + app.getVersion(),

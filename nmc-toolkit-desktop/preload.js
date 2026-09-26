@@ -13,5 +13,6 @@ contextBridge.exposeInMainWorld("nmcDesktop", {
   pickAndRead: () => ipcRenderer.invoke("data:pickAndRead"),
   setHub: (hub) => ipcRenderer.send("update:setHub", hub),          /* the toolkit passes its hub address → update feed */
   checkUpdates: () => ipcRenderer.invoke("update:check"),
+  installUpdate: () => ipcRenderer.invoke("update:install"),
   onUpdateStatus: (fn) => ipcRenderer.on("update:status", (e, s) => fn(s)),
 });

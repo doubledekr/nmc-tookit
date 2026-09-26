@@ -277,7 +277,7 @@ table.data tr.rec td{background:var(--cream)}
 
   <main>
     <div id="clientBar" class="clientbar"></div>
-    <div id="updBanner" style="display:none;background:var(--warn-soft);border:1px solid var(--warn);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px"></div>
+    <div id="updBanner" style="display:none;background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px"></div>
     <div id="demoBanner" style="display:none;background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:13px"><b>Demo mode.</b> Sample clients, rates, team numbers, and templates — none of it is real. This file saves to its own separate slot and never touches a real toolkit on the same computer.</div>
     <!-- ================= PIPELINE ================= -->
     <section class="screen active" id="s-pipeline">
@@ -2508,7 +2508,9 @@ if(state.settings.accent==="#D98E2B") state.settings.accent="#DDE4F4";
 if(DEMO){ document.body.classList.add("demo"); const bn=$("demoBanner"); if(bn) bn.style.display="block"; }
 { const v=$("verTag"); if(v) v.innerHTML="<b>NMC Toolkit v"+esc(appVersion())+"</b>"+(DESK?" \u00b7 desktop":" \u00b7 browser")+"<br>"; }
 if(DESK){ DESK.setHub(apiBase()||""); DESK.onUpdateStatus(s=>{ const b=$("updBanner"); if(!b) return;
-    b.style.display="block"; b.innerHTML = s.state==="ready" ? "<b>Update ready:</b> version "+esc(s.version)+" is required and will restart the toolkit in about 90 seconds \u2014 finish what you\u2019re typing." : "<b>Downloading update</b> to version "+esc(s.version)+"\u2026"; });
+    b.style.display="block"; b.innerHTML = s.state==="ready"
+      ? `<div class="btnrow"><span><b>Update available:</b> version ${esc(s.version)} is ready. Everything you\u2019re working on is saved \u2014 update whenever you have a moment.</span><span style="flex:1"></span><button class="btn small" onclick="DESK.installUpdate()">Update now</button><button class="btn ghost small" onclick="this.closest('#updBanner').style.display='none'">Later</button></div>`
+      : "<b>Downloading update</b> to version "+esc(s.version)+" in the background\u2026"; });
   document.body.classList.add("desktop"); const b=$("deskBox"); if(b) b.style.display="block";
   const p=$("deskPath"); if(p) p.innerHTML="Your data saves automatically to <b>"+esc(DESK.dataPath())+"</b> \u2014 self-contained with the app, no browser involved. Version "+esc(DESK.version()||"")+".";
   (async()=>{ try{ const found=await DESK.findOldExports(); const el=$("deskFound"); if(!el||!found||!found.length) return;

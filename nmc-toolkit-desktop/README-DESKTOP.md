@@ -53,7 +53,7 @@ Gatekeeper ("can't be opened") warnings. To avoid them:
   `APPLE_TEAM_ID` set; electron-builder signs **and notarizes**. Without this,
   bankers must right-click → Open the first time, and IT will hear about it.
 
-## Updates: mandatory, automatic, hub-driven
+## Updates: automatic download, banker-timed install, hub-driven
 
 The pipeline, end to end:
 
@@ -68,9 +68,10 @@ The pipeline, end to end:
    private). `GET /api/presence` reports the current version.
 4. Every banker's app checks `<hub>/updates/` on launch and every 30 minutes
    (the hub address comes from the toolkit's Settings). A new version
-   downloads in the background; then a dialog says **"Version X is required"**
-   with a 90-second countdown and a *Restart now* button. There is no *Later*.
-   Data is flushed before the restart.
+   downloads in the background; then a bar appears at the top of the toolkit:
+   **"Update available: version X is ready"** with an *Update now* button and
+   *Later*. Nothing restarts until the banker clicks Update (a downloaded update
+   also installs the next time they quit). Data is flushed before the restart.
 
 Seeing who's on what: Management console → Presence & IT admin shows each
 banker's version and platform, with "update pending" flagged against the
