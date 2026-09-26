@@ -62,6 +62,7 @@ table.data th.num,table.data td.num{text-align:right}
 .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:baseline}
 .dot.on{background:var(--good)} .dot.off{background:#C9C2B4}
 .tag-good{background:var(--good-soft);color:var(--good);border-radius:20px;padding:2px 10px;font-size:12px;font-weight:600;display:inline-block}
+.tag-warn{background:var(--warn-soft);color:var(--warn);border-radius:20px;padding:2px 10px;font-size:12px;font-weight:600;display:inline-block}
 .tag-flat{background:var(--cream-soft);border:1px solid var(--line);color:var(--muted);border-radius:20px;padding:2px 10px;font-size:12px;display:inline-block}
 #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;border-radius:10px;padding:10px 18px;font-size:13.5px;display:none;z-index:99}
 code{background:var(--cream-soft);border-radius:6px;padding:1px 6px;font-size:12.5px}
@@ -323,7 +324,7 @@ function demoData(){
     team:{updated:now, month:cur.month, team:cur.team, bankers:cur.bankers, history:[cur,h1,h2]},
     rates:{updated:new Date().toISOString().slice(0,10), rates:{Conventional:6.125, FHA:5.875, VA:5.75, Jumbo:6.375},
       treasury:{y10:3.94,date:hist[hist.length-1].d,change:-0.05,history:hist}},
-    presence:{bankers:[{slug:"dave-maxwell",name:"Dave Maxwell",last:Date.now()-40000,online:true},{slug:"sam-rivera",name:"Sam Rivera",last:Date.now()-70000,online:true},
+    presence:{latest:"1.0.0",bankers:[{slug:"dave-maxwell",name:"Dave Maxwell",version:"1.0.0",platform:"desktop",last:Date.now()-40000,online:true},{slug:"sam-rivera",name:"Sam Rivera",version:"0.9.2",platform:"desktop",last:Date.now()-70000,online:true},
       {slug:"m-kobeissi",name:"M. Kobeissi",last:Date.now()-25*60000,online:false},{slug:"a-ali",name:"A. Ali",last:Date.now()-3*3600000,online:false},{slug:"j-okafor",name:"J. Okafor",last:Date.now()-90000,online:true}]},
     shared:{templates:[{banker:"Sam Rivera",id:"s1",kind:"text",title:"Voicemail follow-up text",body:"Hey {client_first}, just left you a voicemail \u2014 {banker} at Neighborhood Mortgage. Nothing urgent, a rate update worth a look."},
       {banker:"M. Kobeissi",id:"s2",kind:"intro",title:"Consolidation opener",body:"{client_first}, most people I talk to have a couple of cards sitting at 20%+ next to a mortgage at 6. Let me show you one payment instead \u2014 just the math."}]},
@@ -498,10 +499,12 @@ async function publishTemplates(){
 /* ---------- admin ---------- */
 function renderAdmin(){
   const el=$("presenceList"); const list=(D.presence&&D.presence.bankers)||[];
-  el.innerHTML = list.length? `<table class="data"><thead><tr><th>Banker</th><th>Status</th><th>Last seen</th></tr></thead><tbody>
-   ${list.map(b=>`<tr><td><b>${esc(b.name||b.slug)}</b></td>
+  const latest=(D.presence&&D.presence.latest)||null; const behind=list.filter(b=>latest&&b.version&&b.version!==latest).length;
+  el.innerHTML = list.length? (latest?`<div class="hint" style="margin-bottom:6px">Current version: <b>${esc(latest)}</b>${behind?` \u00b7 <span style="color:var(--warn);font-weight:600">${behind} banker${behind===1?"":"s"} on an older version</span> \u2014 their app updates itself the next time it checks the hub (within 30 min of opening)`:" \u00b7 everyone is current"}</div>`:"")+`<table class="data"><thead><tr><th>Banker</th><th>Status</th><th>Version</th><th>Last seen</th></tr></thead><tbody>
+   ${list.map(b=>{ const old=latest&&b.version&&b.version!==latest; return `<tr><td><b>${esc(b.name||b.slug)}</b></td>
     <td>${b.online?`<span class="dot on"></span><span class="tag-good">toolkit open</span>`:`<span class="dot off"></span><span class="hint">offline</span>`}</td>
-    <td class="hint">${ago(b.last)}</td></tr>`).join("")}</tbody></table>`
+    <td>${b.version?`<span class="${old?"tag-warn":"tag-flat"}">${esc(b.version)}${b.platform?" \u00b7 "+esc(b.platform):""}${old?" \u2014 update pending":""}</span>`:'<span class="hint">\u2014</span>'}</td>
+    <td class="hint">${ago(b.last)}</td></tr>`; }).join("")}</tbody></table>`
    : `<div class="empty">No heartbeats yet. They start automatically the moment a banker opens a toolkit that's pointed at this hub (report URL) or the shared folder.</div>`;
   const sv=$("savesList"); const svList=(D.saves&&D.saves.saves)||[];
   sv.innerHTML = (S.mode==="drive"&&!DEMO)

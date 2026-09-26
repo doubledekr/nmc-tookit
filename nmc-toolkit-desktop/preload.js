@@ -11,4 +11,7 @@ contextBridge.exposeInMainWorld("nmcDesktop", {
   findOldExports: () => ipcRenderer.invoke("data:findOld"),
   readFile: (p) => ipcRenderer.invoke("data:readFile", p),
   pickAndRead: () => ipcRenderer.invoke("data:pickAndRead"),
+  setHub: (hub) => ipcRenderer.send("update:setHub", hub),          /* the toolkit passes its hub address → update feed */
+  checkUpdates: () => ipcRenderer.invoke("update:check"),
+  onUpdateStatus: (fn) => ipcRenderer.on("update:status", (e, s) => fn(s)),
 });

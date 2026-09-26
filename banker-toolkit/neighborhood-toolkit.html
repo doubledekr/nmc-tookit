@@ -229,7 +229,8 @@ table.data tr.rec td{background:var(--cream)}
   nav{display:flex;flex-wrap:nowrap;overflow-x:auto;width:100%;-webkit-overflow-scrolling:touch;scrollbar-width:thin}
   nav button{width:auto;white-space:nowrap;padding:9px 12px 9px 24px}
   nav button::before{left:9px;top:11px}
-  .rate-pill,.side-foot{display:none}
+  .rate-pill,#sideFoot{display:none}
+  .side-foot{padding:4px 10px}
   main{padding:16px;max-width:100%}
   .panel{overflow-x:auto}
   .grid2{grid-template-columns:1fr}
@@ -271,11 +272,12 @@ table.data tr.rec td{background:var(--cream)}
       <button data-s="settings">Settings &amp; data</button>
     </nav>
     <div class="rate-pill" id="ratePill">Rate feed<br><b>not connected</b></div>
-    <div class="side-foot" id="sideFoot">NMLS #2484730 · Dearborn, MI</div>
+    <div class="side-foot" style="padding-bottom:0"><span id="verTag"></span></div><div class="side-foot" id="sideFoot" style="margin-top:0;padding-top:4px">NMLS #2484730 · Dearborn, MI</div>
   </aside>
 
   <main>
     <div id="clientBar" class="clientbar"></div>
+    <div id="updBanner" style="display:none;background:var(--warn-soft);border:1px solid var(--warn);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px"></div>
     <div id="demoBanner" style="display:none;background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:13px"><b>Demo mode.</b> Sample clients, rates, team numbers, and templates — none of it is real. This file saves to its own separate slot and never touches a real toolkit on the same computer.</div>
     <!-- ================= PIPELINE ================= -->
     <section class="screen active" id="s-pipeline">
@@ -667,6 +669,7 @@ Discover 6,100 190 24.9"></textarea>
               <div class="eyebrow" style="font-size:11px">Desktop app</div>
               <div class="hint" id="deskPath" style="margin:4px 0 8px"></div>
               <div class="btnrow"><button class="btn ghost small" onclick="DESK.openDataFolder()">Open data folder</button>
+                <button class="btn ghost small" onclick="DESK.checkUpdates().then(ok=>toast(ok?'Checking the hub for updates\u2026':'Link the hub first \u2014 updates come from it'))">Check for updates</button>
                 <button class="btn ghost small" onclick="importOldDesktop()">Import a previous toolkit file (.json)</button></div>
               <div id="deskFound" style="margin-top:8px"></div>
             </div>
@@ -749,6 +752,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
+const TOOLKIT_VERSION = "1.0.0";
 const DEMO = false; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -798,7 +802,8 @@ const yrsMo = m => { if(m==null||!isFinite(m)) return "\u2014"; const y=Math.flo
   return ((y?y+" yr ":"") + (r? r+" mo":"")).trim() || "0 mo"; };
 function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),3200); }
 function save(){ writeStore(JSON.stringify(state)); mirrorSeq++; scheduleAutosave(); }
-const DESK = window.nmcDesktop || null;   /* present only inside the desktop app (preload bridge) */
+const DESK = window.nmcDesktop || null;
+function appVersion(){ try{ return (DESK&&DESK.version())||TOOLKIT_VERSION; }catch(e){ return TOOLKIT_VERSION; } }   /* present only inside the desktop app (preload bridge) */
 function readStore(){ if(DESK){ try{ return DESK.readData(); }catch(e){ return null; } } return localStorage.getItem(LS_KEY); }
 function writeStore(json){ if(DESK){ try{ DESK.writeData(json); }catch(e){} } try{ localStorage.setItem(LS_KEY, json); }catch(e){} }
 function load(){ try{ const raw=readStore(); if(raw){ const s=JSON.parse(raw);
@@ -1780,7 +1785,7 @@ function saveSettingsFromUI(announce){ const s=state.settings;
   const hubChanged = hub!==(s.hub||""); s.hub=hub;
   if(hub){ s.reportUrl=hub+"/api/blocks"; s.feedUrl=hub+"/rates.json"; s.poll=true; s.teamUrl=""; }
   else { if(/\/api\/blocks\/?$/.test(s.reportUrl||"")) s.reportUrl=""; if(/\/rates\.json$/.test(s.feedUrl||"")) s.feedUrl=""; s.poll=false; }
-  if(hubChanged){ hubOnline=null; save(); fillSettingsUI(); if(hub){ setupPolling(); checkHub(); } else { updateHubStatus(); updateRatePill(); } }
+  if(hubChanged){ hubOnline=null; save(); fillSettingsUI(); if(hub){ setupPolling(); checkHub(); } else { updateHubStatus(); updateRatePill(); } if(DESK) DESK.setHub(hub); }
   save(); applyBrandCss(); setupPolling(); if(announce) toast("Saved"); renderProposalPreview(); renderBlocks();
 }
 function saveSfMap(){ document.querySelectorAll("[data-map]").forEach(el=>{
@@ -2300,7 +2305,7 @@ function importInbox(id){ const it=(state.inbox||[]).find(x=>x.id===id); if(!it)
 async function heartbeat(){ const nm=state.settings.loName||"Banker";
  const b=apiBase();
  if(b){ try{ const r=await fetch(b+"/api/heartbeat",{method:"POST",headers:{"Content-Type":"application/json"},
-   body:JSON.stringify({slug:slugTag(),name:nm})}); markHub(r&&r.ok); }catch(e){ markHub(false); } }
+   body:JSON.stringify({slug:slugTag(),name:nm,version:appVersion(),platform:DESK?"desktop":"browser"})}); markHub(r&&r.ok); }catch(e){ markHub(false); } }
  if(dirHandle) writeDriveFile("presence-"+slugTag()+".json", JSON.stringify({slug:slugTag(),name:nm,t:Date.now()}));
 }
 function setupDriveSync(){ clearInterval(driveTimer);
@@ -2501,7 +2506,10 @@ load(); migrate();
 if(state.settings.brand==="#0E3A5D"||state.settings.brand==="#7E2318") state.settings.brand="#A53222";
 if(state.settings.accent==="#D98E2B") state.settings.accent="#DDE4F4";
 if(DEMO){ document.body.classList.add("demo"); const bn=$("demoBanner"); if(bn) bn.style.display="block"; }
-if(DESK){ document.body.classList.add("desktop"); const b=$("deskBox"); if(b) b.style.display="block";
+{ const v=$("verTag"); if(v) v.innerHTML="<b>NMC Toolkit v"+esc(appVersion())+"</b>"+(DESK?" \u00b7 desktop":" \u00b7 browser")+"<br>"; }
+if(DESK){ DESK.setHub(apiBase()||""); DESK.onUpdateStatus(s=>{ const b=$("updBanner"); if(!b) return;
+    b.style.display="block"; b.innerHTML = s.state==="ready" ? "<b>Update ready:</b> version "+esc(s.version)+" is required and will restart the toolkit in about 90 seconds \u2014 finish what you\u2019re typing." : "<b>Downloading update</b> to version "+esc(s.version)+"\u2026"; });
+  document.body.classList.add("desktop"); const b=$("deskBox"); if(b) b.style.display="block";
   const p=$("deskPath"); if(p) p.innerHTML="Your data saves automatically to <b>"+esc(DESK.dataPath())+"</b> \u2014 self-contained with the app, no browser involved. Version "+esc(DESK.version()||"")+".";
   (async()=>{ try{ const found=await DESK.findOldExports(); const el=$("deskFound"); if(!el||!found||!found.length) return;
     el.innerHTML='<div class="hint" style="margin-bottom:4px">Previous toolkit files found on this computer:</div>'+found.slice(0,6).map(f=>`<div class="btnrow" style="margin:3px 0"><span class="hint" style="flex:1">${esc(f.name)} <span style="opacity:.7">\u00b7 ${esc(f.where)} \u00b7 ${esc(f.when)}</span></span><button class="btn small" onclick="importFromPath(${JSON.stringify(f.path).replace(/"/g,"&quot;")})">Import</button></div>`).join("");

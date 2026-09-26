@@ -53,15 +53,34 @@ Gatekeeper ("can't be opened") warnings. To avoid them:
   `APPLE_TEAM_ID` set; electron-builder signs **and notarizes**. Without this,
   bankers must right-click → Open the first time, and IT will hear about it.
 
-## Auto-update via the hub
+## Updates: mandatory, automatic, hub-driven
 
-`package.json` → `build.publish.url` points at `http://HUB:8787/updates/`.
-After each build, copy from `dist/` to a folder the hub serves at `/updates/`:
-`latest.yml` + the `.exe` (Windows), `latest-mac.yml` + the `.zip` and `.dmg`
-(Mac). The app checks on launch and prompts to restart when a new version is
-downloaded; data is untouched. macOS updates require the app to be signed.
-Set `NMC_NO_UPDATES=1` to disable the check. (Adding a static `/updates/`
-route to server.js is ~5 lines: serve files from `data/updates/`.)
+The pipeline, end to end:
+
+1. Change the toolkit (or the desktop shell). Bump `TOOLKIT_VERSION` in
+   `banker-toolkit/neighborhood-toolkit.html` — that one constant is the version
+   everywhere (`npm run sync` copies it into package.json).
+2. Push to `main`. GitHub Actions builds the Windows and Mac installers and
+   publishes a release (`.github/workflows/build-desktop.yml`).
+3. The hub mirrors that release into `data/updates/` every 15 minutes. Set on
+   the server: `NMC_UPDATE_REPO=doubledekr/nmc-tookit` and `NMC_GITHUB_TOKEN`
+   (a fine-grained token with *Contents: read* on that repo, since it's
+   private). `GET /api/presence` reports the current version.
+4. Every banker's app checks `<hub>/updates/` on launch and every 30 minutes
+   (the hub address comes from the toolkit's Settings). A new version
+   downloads in the background; then a dialog says **"Version X is required"**
+   with a 90-second countdown and a *Restart now* button. There is no *Later*.
+   Data is flushed before the restart.
+
+Seeing who's on what: Management console → Presence & IT admin shows each
+banker's version and platform, with "update pending" flagged against the
+hub's current version. The toolkit shows its own version in the sidebar footer
+(`NMC Toolkit v1.0.0 · desktop`) and in the window title.
+
+Notes: macOS auto-update requires the app to be signed (unsigned builds can
+still be installed by hand). `NMC_NO_UPDATES=1` disables the check for
+development. Browser-version users don't auto-update — they get the new file
+from wherever IT hosts it.
 
 ## Layout
 

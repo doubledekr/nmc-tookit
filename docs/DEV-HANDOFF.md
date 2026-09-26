@@ -208,3 +208,10 @@ require `TOKEN` to read (see `/api/saves`).
   benefit (see the `benefits` array and the wins-only stat strip).
 - Never store or transmit SSN, DOB, age, marital status. `SF_NEVER` and the
   hub's `IMPORT_NEVER` are the two gates; keep both.
+
+
+## Versioning and updates
+`TOOLKIT_VERSION` in the toolkit HTML is the single version number; `npm run sync` writes it into the
+desktop app's package.json. Release flow: bump it → push → Actions builds + releases → hub mirrors
+(`NMC_UPDATE_REPO`, `NMC_GITHUB_TOKEN`) → apps update themselves (mandatory, 90-second countdown).
+Heartbeats carry `version` and `platform`; `/api/presence` includes `latest`; the console flags stragglers.

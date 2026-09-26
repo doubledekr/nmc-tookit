@@ -52,16 +52,35 @@ ipcMain.handle("data:pickAndRead", async () => {
   if (r.canceled || !r.filePaths[0]) return null; try { return fs.readFileSync(r.filePaths[0], "utf8"); } catch (e) { return null; } });
 ipcMain.handle("app:version", () => app.getVersion());
 
-/* ---- auto-update (optional): points at the hub's /updates/ folder; see README ---- */
-function setupUpdates(){ try { const { autoUpdater } = require("electron-updater");
-  autoUpdater.autoDownload = true; autoUpdater.on("update-downloaded", () => {
-    dialog.showMessageBox({ type: "info", buttons: ["Restart now", "Later"], title: "NMC Toolkit update",
-      message: "A new version of the toolkit is ready. Your data is kept.", }).then(r => { if (r.response === 0) autoUpdater.quitAndInstall(); }); });
-  autoUpdater.on("error", () => {}); autoUpdater.checkForUpdates().catch(() => {});
-} catch (e) {} }
+/* ---- updates: mandatory, fed by the hub ----
+   The toolkit tells us the hub address (Settings → hub). We check <hub>/updates/ on launch and every 30
+   minutes; when a new version has downloaded, the banker gets a 90-second countdown and the app restarts
+   into it. Data is flushed before restart, so nothing is lost. Set NMC_NO_UPDATES=1 to disable (dev). */
+let updater = null, updateFeed = null, mainWin = null, updateArmed = false;
+function setupUpdates(){ if (process.env.NMC_NO_UPDATES) return;
+  try { updater = require("electron-updater").autoUpdater; } catch (e) { return; }
+  updater.autoDownload = true; updater.autoInstallOnAppQuit = true; updater.allowDowngrade = false;
+  updater.on("error", () => {});
+  updater.on("update-available", info => { if (mainWin) mainWin.webContents.send("update:status", { state: "downloading", version: info.version }); });
+  updater.on("update-downloaded", info => {
+    if (mainWin) mainWin.webContents.send("update:status", { state: "ready", version: info.version });
+    if (updateArmed) return; updateArmed = true;
+    let secs = 90; const restart = () => { flushWrites(); updater.quitAndInstall(false, true); };
+    const box = dialog.showMessageBox(mainWin, { type: "info", buttons: ["Restart now"], defaultId: 0, cancelId: -1, noLink: true,
+      title: "NMC Toolkit update required",
+      message: "Version " + info.version + " is required.",
+      detail: "The toolkit will restart into the new version in 90 seconds. Your clients, pipeline, and settings are kept." });
+    box.then(restart); setTimeout(restart, secs * 1000);
+  });
+  setInterval(checkUpdates, 30 * 60 * 1000);
+}
+function checkUpdates(){ if (!updater || !updateFeed) return; try { updater.setFeedURL({ provider: "generic", url: updateFeed }); updater.checkForUpdates().catch(() => {}); } catch (e) {} }
+ipcMain.on("update:setHub", (e, hub) => { hub = String(hub || "").replace(/\/+$/, ""); const feed = hub ? hub + "/updates/" : null;
+  if (feed && feed !== updateFeed) { updateFeed = feed; checkUpdates(); } });
+ipcMain.handle("update:check", () => { checkUpdates(); return !!updateFeed; });
 
 function createWindow(){
-  const win = new BrowserWindow({ width: 1360, height: 900, minWidth: 900, minHeight: 600, title: "NMC Toolkit",
+  const win = mainWin = new BrowserWindow({ width: 1360, height: 900, minWidth: 900, minHeight: 600, title: "NMC Toolkit " + app.getVersion(),
     backgroundColor: "#FBF8F2", icon: path.join(__dirname, "build", "icon.png"),
     webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: false } });
   win.loadFile(path.join(__dirname, "app", "neighborhood-toolkit.html"));
@@ -73,7 +92,7 @@ app.whenReady().then(() => {
   Menu.setApplicationMenu(Menu.buildFromTemplate([
     { label: "NMC Toolkit", submenu: [{ role: "reload" }, { role: "toggleDevTools" }, { type: "separator" }, { role: "quit" }] },
     { role: "editMenu" }, { role: "viewMenu" }, { role: "windowMenu" } ]));
-  createWindow(); if (!process.env.NMC_NO_UPDATES) setupUpdates();
+  createWindow(); setupUpdates();
   app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
 app.on("before-quit", flushWrites);

@@ -36,6 +36,7 @@ function presenceList(){
   try { for (const fn of fs.readdirSync(PRESENCE_DIR)) {
     try { const j = JSON.parse(fs.readFileSync(path.join(PRESENCE_DIR, fn), "utf8"));
       out.push({ slug: j.slug || fn.replace(/\.json$/, ""), name: String(j.name || "").slice(0, 80),
+        version: String(j.version || "").slice(0, 20), platform: String(j.platform || "").slice(0, 12),
         last: j.t || 0, online: now - (j.t || 0) < 3 * 60 * 1000 }); } catch (e) {}
   } } catch (e) {}
   return out.sort((a, b) => b.last - a.last);
@@ -220,12 +221,12 @@ const server = http.createServer(async (req, res) => {
       const b = JSON.parse((await readBody(req)) || "{}");
       const slug = slugify(b.slug || b.name);
       fs.writeFileSync(path.join(PRESENCE_DIR, slug + ".json"),
-        JSON.stringify({ slug, name: String(b.name || "").slice(0, 80), t: Date.now() }));
+        JSON.stringify({ slug, name: String(b.name || "").slice(0, 80), version: String(b.version || "").slice(0, 20), platform: String(b.platform || "").slice(0, 12), t: Date.now() }));
       return send(res, 200, { ok: true });
     }
 
     if (p === "/api/presence" && req.method === "GET"){
-      return send(res, 200, { generated: new Date().toISOString(), bankers: presenceList() });
+      return send(res, 200, { generated: new Date().toISOString(), latest: latestVersion(), bankers: presenceList() });
     }
 
     if (p === "/api/save" && req.method === "POST"){
@@ -441,6 +442,37 @@ const DASH = "<!DOCTYPE html><html><head><meta charset='utf-8'><title>NMC Team D
 "refresh();setInterval(refresh,5*60*1000);" +
 "</script></body></html>";
 
+/* ------------------- desktop-app updates: mirror GitHub releases into data/updates/ -------------------
+   Push to main → GitHub Actions builds the installers and publishes a release → this hub copies the
+   release files here every 15 minutes → every banker's app sees <hub>/updates/ and updates itself.
+   Env: NMC_UPDATE_REPO=doubledekr/nmc-tookit   NMC_GITHUB_TOKEN=<fine-grained token, contents:read>   */
+const UPDATES_DIR = path.join(DATA, "updates");
+function latestVersion(){ try { const y = fs.readFileSync(path.join(UPDATES_DIR, "latest.yml"), "utf8"); const m = y.match(/^version:\s*(\S+)/m); return m ? m[1] : null; } catch (e) { return null; } }
+function download(url, dest, headers){ return new Promise((ok, bad) => {
+  const go = (u, hops, hdrs) => { const req = (u.startsWith("http:") ? http : https).get(u, { headers: hdrs }, res => {
+    if ([301,302,303,307,308].includes(res.statusCode) && res.headers.location && hops > 0){ res.resume();
+      const next = res.headers.location; const h2 = Object.assign({}, hdrs); if (!/api\.github\.com/.test(next)) delete h2.Authorization;   /* never forward the token to S3 */
+      return go(next, hops - 1, h2); }
+    if (res.statusCode !== 200){ res.resume(); return bad(new Error("HTTP " + res.statusCode + " for " + u)); }
+    const tmp = dest + ".part"; const ws = fs.createWriteStream(tmp); res.pipe(ws);
+    ws.on("finish", () => { fs.renameSync(tmp, dest); ok(); }); ws.on("error", bad); });
+    req.on("error", bad); req.setTimeout(120000, () => req.destroy(new Error("timeout"))); };
+  go(url, 5, Object.assign({ "User-Agent": "NMC-Toolkit-Hub" }, headers || {})); }); }
+async function mirrorReleases(){
+  const repo = process.env.NMC_UPDATE_REPO, token = process.env.NMC_GITHUB_TOKEN; if (!repo) return;
+  try { fs.mkdirSync(UPDATES_DIR, { recursive: true });
+    const hdr = { "User-Agent": "NMC-Toolkit-Hub", "Accept": "application/vnd.github+json" }; if (token) hdr.Authorization = "Bearer " + token;
+    const r = await httpGet("https://api.github.com/repos/" + repo + "/releases/latest", 3, hdr);
+    if (r.status !== 200) throw new Error("GitHub HTTP " + r.status); const rel = JSON.parse(r.body);
+    const want = (rel.assets || []).filter(a => /\.(yml|exe|dmg|zip|blockmap)$/i.test(a.name));
+    let got = 0;
+    for (const a of want){ const dest = path.join(UPDATES_DIR, a.name);
+      try { if (fs.existsSync(dest) && fs.statSync(dest).size === a.size) continue; } catch (e) {}
+      await download(a.url, dest, Object.assign({ "Accept": "application/octet-stream" }, token ? { Authorization: "Bearer " + token } : {})); got++; }
+    if (got) console.log("Mirrored release " + rel.tag_name + ": " + got + " file(s) → /updates/  (latest " + latestVersion() + ")");
+  } catch (e) { if (!mirrorReleases.warned){ console.log("Release mirror: " + e.message); mirrorReleases.warned = true; } }
+}
+
 /* ------------------- 10-yr Treasury (public, keyless, official) -------------------
    Pulled hourly from treasury.gov's daily yield-curve XML. Market-direction context
    only — never a lockable rate. Merged into rates.json so every toolkit (and the
@@ -495,6 +527,7 @@ async function fetchTreasury(){
 if (require.main === module){
   fetchTreasury();
   setInterval(fetchTreasury, 60 * 60 * 1000);
+  mirrorReleases(); setInterval(mirrorReleases, 15 * 60 * 1000);
   server.listen(PORT, () => console.log(
     "NMC Central Server running on http://localhost:" + PORT +
     "\n  dashboard  /        rates admin  /admin        feed  /rates.json" +
