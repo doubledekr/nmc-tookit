@@ -2,12 +2,12 @@ name: Build desktop app
 
 on:
   push:
-    tags: ["v*"]          # tag a commit v1.0.0 → builds + publishes a Release with both installers
-  workflow_dispatch:      # or run it by hand from the Actions tab
-    inputs:
-      version:
-        description: "Release tag to create (e.g. v1.0.0). Leave blank to only attach installers to the run."
-        required: false
+    branches: [main]
+    paths:
+      - "nmc-toolkit-desktop/**"
+      - "banker-toolkit/neighborhood-toolkit.html"
+      - ".github/workflows/build-desktop.yml"
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -19,9 +19,18 @@ jobs:
       matrix:
         include:
           - os: macos-latest
-            target: mac
+            script: build:mac
+            artifact: NMC-Toolkit-mac
+            glob: |
+              nmc-toolkit-desktop/dist/*.dmg
+              nmc-toolkit-desktop/dist/*.zip
+              nmc-toolkit-desktop/dist/latest-mac.yml
           - os: windows-latest
-            target: win
+            script: build:win
+            artifact: NMC-Toolkit-windows
+            glob: |
+              nmc-toolkit-desktop/dist/*.exe
+              nmc-toolkit-desktop/dist/latest.yml
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -31,43 +40,37 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - run: npm install
-      - run: npm run build:${{ matrix.target }}
+          cache: npm
+          cache-dependency-path: nmc-toolkit-desktop/package-lock.json
+      - run: npm ci
+      - run: npm run ${{ matrix.script }}
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"   # unsigned until certificates are added (see README-DESKTOP.md)
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/upload-artifact@v4
         with:
-          name: NMC-Toolkit-${{ matrix.target }}
-          path: |
-            nmc-toolkit-desktop/dist/*.dmg
-            nmc-toolkit-desktop/dist/*.exe
-            nmc-toolkit-desktop/dist/*.zip
-            nmc-toolkit-desktop/dist/*.yml
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.glob }}
           if-no-files-found: error
 
   release:
-    if: startsWith(github.ref, 'refs/tags/v') || github.event.inputs.version != ''
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          path: dist
-          merge-multiple: true
+          path: out
+      - id: v
+        run: echo "version=$(node -p "require('./nmc-toolkit-desktop/package.json').version")" >> "$GITHUB_OUTPUT"
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event.inputs.version || github.ref_name }}
-          name: NMC Toolkit ${{ github.event.inputs.version || github.ref_name }}
-          files: |
-            dist/*.dmg
-            dist/*.exe
-            dist/*.zip
-            dist/*.yml
+          tag_name: v${{ steps.v.outputs.version }}-build${{ github.run_number }}
+          name: NMC Toolkit ${{ steps.v.outputs.version }} (build ${{ github.run_number }})
           body: |
-            Desktop installers for the NMC Toolkit.
+            Desktop installers built by GitHub Actions from commit ${{ github.sha }}.
 
-            - **Windows:** download `NMC-Toolkit-Setup-*.exe`. SmartScreen will show "unrecognized app" until the build is code-signed — click *More info → Run anyway*.
-            - **Mac:** download `NMC-Toolkit-*.dmg`, drag to Applications. Unsigned for now: the first time, right-click the app → *Open*.
+            - **Windows:** `NMC-Toolkit-Setup-*.exe` — unsigned, so SmartScreen may show "unrecognized app" → More info → Run anyway.
+            - **Mac:** `NMC-Toolkit-*.dmg` — unsigned, so the first open is right-click → Open.
 
-            The `latest*.yml` files are for the hub's auto-update feed.
+            Your data is stored with the app (Settings → Open data folder) and survives updates.
+          files: out/**/*
