@@ -236,6 +236,7 @@ nav button{min-height:42px;cursor:pointer;font-family:inherit}
           <div class="grid2">
             <div class="field"><label>Server base URL</label><input type="url" id="baseUrl" placeholder="http://SERVER:8787" onchange="saveCfg()"></div>
             <div class="field"><label>Admin token (for publishing &mdash; stored only in this browser)</label><input type="password" id="token" onchange="saveCfg()"></div>
+            <div class="field"><label>Banker access key (if the hub requires one)</label><input type="password" id="bkey" onchange="saveCfg()"></div>
           </div>
         </div>
         <div id="setupDrive" style="display:none">
@@ -268,10 +269,11 @@ const ago=t=>{ if(!t) return "never"; const s=(Date.now()-t)/1000;
   return s<90?"just now": s<3600? Math.round(s/60)+" min ago": s<86400? Math.round(s/3600)+" hr ago": Math.round(s/86400)+" d ago"; };
 
 /* ---------- config ---------- */
-let S={mode:"server", base:"", token:"", extApi:""};
+let S={mode:"server", base:"", token:"", extApi:"", bkey:""};
+const _fetch=window.fetch.bind(window); window.fetch=function(u,o){ try{ if(S.base&&String(u).startsWith(S.base)){ o=Object.assign({},o||{}); o.headers=Object.assign({},o.headers||{}, S.bkey?{"X-NMC-Key":S.bkey}:{}, S.token?{"X-Admin-Token":S.token}:{}); } }catch(e){} return _fetch(u,o); };
 const CFG_KEY = DEMO ? "nmc_mgmt_demo_v1" : "nmc_mgmt_v1";
 try{ Object.assign(S, JSON.parse(localStorage.getItem(CFG_KEY)||"{}")); }catch(e){}
-function saveCfg(){ S.base=$("baseUrl").value.trim().replace(/\/+$/,""); S.token=$("token").value;
+function saveCfg(){ S.base=$("baseUrl").value.trim().replace(/\/+$/,""); S.token=$("token").value; S.bkey=$("bkey")?$("bkey").value:S.bkey;
   S.extApi=$("extApi")?$("extApi").value.trim():S.extApi;
   localStorage.setItem(CFG_KEY, JSON.stringify(S)); connBox(); }
 function setMode(m){ S.mode=m; localStorage.setItem(CFG_KEY, JSON.stringify(S));
@@ -550,7 +552,7 @@ function go(s){ document.querySelectorAll(".screen").forEach(x=>x.classList.remo
 document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>go(b.dataset.s)));
 (function(){ if(DEMO){ $("demoBanner").style.display="block"; S.extApi=S.extApi||"https://pricing.example.com/demo-rates.json"; }
   document.querySelector(`input[name=mode][value=${S.mode}]`).checked=true; setMode(S.mode);
-  $("baseUrl").value=S.base; $("token").value=S.token; if(S.extApi) $("extApi").value=S.extApi;
+  $("baseUrl").value=S.base; $("token").value=S.token; if($("bkey")) $("bkey").value=S.bkey||""; if(S.extApi) $("extApi").value=S.extApi;
   restoreDir().then(()=>loadAll(false));
   setInterval(()=>loadAll(false), 60*1000);
   window.addEventListener("focus",()=>loadAll(false));

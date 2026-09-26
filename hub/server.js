@@ -70,7 +70,7 @@ if (!fs.existsSync(RATES))
 
 function cors(res){ res.setHeader("Access-Control-Allow-Origin", ORIGIN);
   res.setHeader("Access-Control-Allow-Methods","GET,POST,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers","Content-Type"); }
+  res.setHeader("Access-Control-Allow-Headers","Content-Type, X-NMC-Key, X-Admin-Token"); }
 function send(res, code, body, type){ cors(res);
   res.writeHead(code, { "Content-Type": type || "application/json; charset=utf-8" });
   res.end(typeof body === "string" ? body : JSON.stringify(body)); }
@@ -125,6 +125,16 @@ function teamData(){
 const server = http.createServer(async (req, res) => {
   const p = new URL(req.url, "http://x").pathname;
   if (req.method === "OPTIONS") return send(res, 204, "");
+  /* ---- banker access key: required on everything except the public health/dashboard pages when NMC_BANKER_KEY is set.
+     Bankers enter it once in the toolkit's Settings; the console on its Connection screen. Needed whenever the hub is
+     reachable from the internet; on a closed LAN it can be left blank. ---- */
+  const BKEY = process.env.NMC_BANKER_KEY || "";
+  if (BKEY){ const q = new URL(req.url, "http://x").searchParams;
+    const given = req.headers["x-nmc-key"] || q.get("key") || "";
+    const open_ = p === "/health" || p === "/" || p === "/admin" || p.startsWith("/updates/");   /* installers carry no data; the admin page has its own token */
+    if (!open_ && given !== BKEY && (req.headers["x-admin-token"] || q.get("token") || "") !== TOKEN)
+      return send(res, 401, { error: "access key required", hint: "enter the NMC access key in Settings" }); }
+  if (p === "/health") return send(res, 200, { ok: true, version: "hub", keyRequired: !!BKEY, time: new Date().toISOString() });
   try {
     if (p === "/rates.json" && req.method === "GET")
       return send(res, 200, fs.readFileSync(RATES, "utf8"));
@@ -524,7 +534,7 @@ async function fetchTreasury(){
   }
 }
 
-if (require.main === module){
+if (require.main === module || process.env.NMC_HUB_START === "1"){
   fetchTreasury();
   setInterval(fetchTreasury, 60 * 60 * 1000);
   mirrorReleases(); setInterval(mirrorReleases, 15 * 60 * 1000);

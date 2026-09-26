@@ -31,6 +31,30 @@ Each installer stops the first time to make you edit `.env`; run it again after.
 - Give bankers the address `http://SERVER:8787`; they paste it once in the toolkit's Settings.
 - Open the management console (`management-console/nmc-management.html`) → Connection → same address + admin token.
 
+## Remote bankers (working from home, no VPN) — expose the hub safely
+
+If bankers work outside the office network, the hub needs a public HTTPS address so their
+toolkits can reach it for rates, templates, Salesforce imports, and app updates. Three steps:
+
+1. **Set `NMC_BANKER_KEY` in `.env`** (a long random string). Once set, every request to the
+   hub must carry it — bankers paste it once into Settings next to the hub address, the
+   console on its Connection screen. Without it, anyone who finds the address could post
+   fake call stats or pull Salesforce inbox records. Only `/health`, the dashboard page, the
+   admin page (which has its own token), and the installer files stay open.
+2. **HTTPS**, one of:
+   - **Caddy** (simplest with a public IP): install it, point a DNS name at the box
+     (`hub.neighborhoodmc.com`), open ports 80/443, use the included `Caddyfile`, run
+     `caddy run`. Certificates are automatic.
+   - **Cloudflare Tunnel** (no open ports, works from behind the office firewall):
+     `cloudflared tunnel create nmc-hub`, route the DNS name to it, run
+     `cloudflared tunnel run --url http://localhost:8787 nmc-hub`. Add Cloudflare Access
+     in front for an extra login if you want.
+   - A cloud VM (any small Linux VM) running the hub + Caddy.
+3. Give bankers **`https://hub.neighborhoodmc.com`** and the access key.
+
+On a closed office LAN with everyone on VPN, you can leave `NMC_BANKER_KEY` blank and skip
+HTTPS — but the moment the hub is reachable from the internet, both are required.
+
 ## Keep in mind
 - `data/` holds everything, **including banker save mirrors (client data)**. Back it up nightly;
   restrict who can read the box; keep the hub on the LAN/VPN or behind HTTPS with auth.

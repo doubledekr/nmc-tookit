@@ -42,8 +42,8 @@ NMC_ADMIN_TOKEN="pick-something-strong" node server.js       # port 8787
 ```
 Run it as a service: `pm2 start server.js` or a systemd unit / Windows Task
 Scheduler "At startup" task running `node C:\nmc\server.js`.
-- Bankers paste one thing in the toolkit's Settings → hub address
-  `http://SERVER:8787`. Rates, reports, team stats, templates, presence, and
+- Bankers paste the hub address in the toolkit's Settings (`http://SERVER:8787`, or the
+  `https://` name if it's exposed for remote bankers) plus the access key if IT set one. Rates, reports, team stats, templates, presence, and
   the save mirror all derive from it.
 - Internet-facing? Put it behind a reverse proxy with HTTPS, set
   `NMC_ALLOW_ORIGIN` to the exact origin, and add basic auth on `/` and `/admin`.

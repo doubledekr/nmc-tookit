@@ -686,7 +686,8 @@ Discover 6,100 190 24.9"></textarea>
           </div>
           <div>
             <div class="eyebrow" style="font-size:11px">Home office hub</div>
-            <div class="field" style="margin-top:4px"><label>Hub address (from IT)</label><input type="url" id="setHub" placeholder="http://SERVER:8787" onchange="saveSettingsFromUI(true)"></div>
+            <div class="field" style="margin-top:4px"><label>Hub address (from IT)</label><input type="url" id="setHub" placeholder="https://hub.neighborhoodmc.com" onchange="saveSettingsFromUI(true)"></div>
+            <div class="field"><label>Access key (from IT \u2014 needed when the hub is reachable from the internet)</label><input type="password" id="setHubKey" placeholder="leave blank on the office network if IT says so" onchange="saveSettingsFromUI(true)"></div>
             <div class="hint" id="hubStatus" style="margin-bottom:4px"></div>
             <div class="hint" id="mirrorStatus" style="margin-bottom:8px"></div>
             <div class="btnrow">
@@ -756,7 +757,7 @@ const TOOLKIT_VERSION = "1.0.0";
 const DEMO = false; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
-let hubOnline=null, hubLastOk=0;
+let hubOnline=null, hubLastOk=0, hubDenied=false;
 function markHub(ok){ const was=hubOnline; hubOnline=!!ok; if(ok) hubLastOk=Date.now();
   if(was!==hubOnline){ updateHubStatus(); updateRatePill(); } else updateHubStatus(); }
 function mirrorDirty(){ return mirrorSeq!==mirrorSent; }
@@ -1773,7 +1774,7 @@ function fillSettingsUI(){ const s=state.settings;
   $("setLoName").value=s.loName; $("setLoNmls").value=s.loNmls;
   $("setLoPhone").value=s.loPhone; $("setLoEmail").value=s.loEmail; $("setFeed").value=s.feedUrl; $("setPoll").checked=!!s.poll;
   $("setReport").value=s.reportUrl||""; $("setGoal").value=s.folderGoal||15; $("setTeam").value=s.teamUrl||"";
-  if($("setHub")) $("setHub").value=s.hub||""; updateHubStatus(); updateMirrorStatus();
+  if($("setHub")) $("setHub").value=s.hub||""; if($("setHubKey")) $("setHubKey").value=s.hubKey||""; updateHubStatus(); updateMirrorStatus();
   const ed=$("sfMapEditor"); ed.innerHTML=Object.keys(DEFAULT_SFMAP).map(f=>
    `<div class="field"><label>${FIELD_LABELS[f]}</label><input type="text" data-map="${f}" value="${esc((s.sfMap[f]||[]).join(", "))}"></div>`).join("");
 }
@@ -1782,7 +1783,8 @@ function saveSettingsFromUI(announce){ const s=state.settings;
   s.feedUrl=$("setFeed").value.trim(); s.poll=$("setPoll").checked;
   s.reportUrl=$("setReport").value.trim(); s.folderGoal=num($("setGoal").value)||15; s.teamUrl=$("setTeam").value.trim();
   const hub=$("setHub")? $("setHub").value.trim().replace(/\/+$/,"") : (s.hub||"");
-  const hubChanged = hub!==(s.hub||""); s.hub=hub;
+  const key=$("setHubKey")? $("setHubKey").value.trim() : (s.hubKey||""); const keyChanged=key!==(s.hubKey||""); s.hubKey=key;
+  const hubChanged = hub!==(s.hub||"") || keyChanged; s.hub=hub;
   if(hub){ s.reportUrl=hub+"/api/blocks"; s.feedUrl=hub+"/rates.json"; s.poll=true; s.teamUrl=""; }
   else { if(/\/api\/blocks\/?$/.test(s.reportUrl||"")) s.reportUrl=""; if(/\/rates\.json$/.test(s.feedUrl||"")) s.feedUrl=""; s.poll=false; }
   if(hubChanged){ hubOnline=null; save(); fillSettingsUI(); if(hub){ setupPolling(); checkHub(); } else { updateHubStatus(); updateRatePill(); } if(DESK) DESK.setHub(hub); }
@@ -1981,6 +1983,11 @@ function skipSetup(){ state.settings.setupDone=true; save(); $("setupModal").sty
 function teamUrlGuess(){ const s=state.settings; if(s.teamUrl) return s.teamUrl;
   if(/\/api\/blocks\/?$/.test(s.reportUrl||"")) return s.reportUrl.replace(/\/api\/blocks\/?$/,"/api/team");
   return ""; }
+/* every call to the hub carries the banker access key (harmless when the hub doesn't require one) */
+const _fetch = window.fetch.bind(window);
+window.fetch = function(url, opts){ try{ const b=apiBase(); const k=state.settings.hubKey;
+  if(k && b && String(url).startsWith(b)){ opts=Object.assign({},opts||{}); opts.headers=Object.assign({},opts.headers||{}, {"X-NMC-Key":k}); } }catch(e){}
+  return _fetch(url, opts); };
 function apiBase(){ const s=state.settings;
   if(/\/api\/blocks\/?$/.test(s.reportUrl||"")) return s.reportUrl.replace(/\/api\/blocks\/?$/,"");
   return ""; }
@@ -2228,7 +2235,7 @@ function updateHubStatus(){ const el=$("hubStatus"); if(!el) return;
  const b=apiBase();
  if(!b){ el.innerHTML="Not linked to a hub \u2014 everything works locally. Ask IT for the address to turn on rates, team stats, and templates."; return; }
  if(hubOnline===true) el.innerHTML='<span class="dot on"></span><b>Online</b> \u2014 last contact '+agoTxt(hubLastOk)+'.';
- else if(hubOnline===false) el.innerHTML='<span class="dot off"></span><b>Offline</b> \u2014 working from your local copy; it syncs on its own when the hub is back.';
+ else if(hubOnline===false) el.innerHTML='<span class="dot off"></span><b>'+(hubDenied?'Access key rejected':'Offline')+'</b> \u2014 '+(hubDenied?'check the key IT gave you.':'working from your local copy; it syncs on its own when the hub is back.');
  else el.innerHTML='<span class="dot off"></span>Checking the hub\u2026';
 }
 async function checkHub(){ if(!apiBase()){ toast("Enter the hub address first"); return; }
@@ -2305,7 +2312,7 @@ function importInbox(id){ const it=(state.inbox||[]).find(x=>x.id===id); if(!it)
 async function heartbeat(){ const nm=state.settings.loName||"Banker";
  const b=apiBase();
  if(b){ try{ const r=await fetch(b+"/api/heartbeat",{method:"POST",headers:{"Content-Type":"application/json"},
-   body:JSON.stringify({slug:slugTag(),name:nm,version:appVersion(),platform:DESK?"desktop":"browser"})}); markHub(r&&r.ok); }catch(e){ markHub(false); } }
+   body:JSON.stringify({slug:slugTag(),name:nm,version:appVersion(),platform:DESK?"desktop":"browser"})}); hubDenied=!!(r&&r.status===401); markHub(r&&r.ok); }catch(e){ markHub(false); } }
  if(dirHandle) writeDriveFile("presence-"+slugTag()+".json", JSON.stringify({slug:slugTag(),name:nm,t:Date.now()}));
 }
 function setupDriveSync(){ clearInterval(driveTimer);

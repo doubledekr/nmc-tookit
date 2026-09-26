@@ -1,0 +1,7 @@
+# HTTPS in front of the hub with automatic certificates. Install Caddy (caddyserver.com), put this file
+# next to it, point a DNS name at the box, open ports 80/443, run:  caddy run
+# Bankers then use  https://hub.neighborhoodmc.com  as the hub address.
+hub.neighborhoodmc.com {
+    reverse_proxy localhost:8787
+    encode gzip
+}
