@@ -487,7 +487,7 @@ Discover 6,100 190 24.9"></textarea>
         <div class="hint">Heads up: this is a savings proposal, not a Loan Estimate. The official LE is a regulated disclosure that comes from the lender after application.</div>
       </div>
       <div class="panel"><h2>Preview</h2><div class="hint" id="propRateSrc" style="margin-bottom:8px"></div><div id="propPreview" style="border:1px solid var(--line);padding:20px;background:#fff"></div></div>
-      <div class="panel"><h2 id="propLibTitle">Proposal library</h2><div id="propLibrary"></div></div>
+      <div class="panel"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><h2 id="propLibTitle">Proposal library</h2><button class="btn ghost small" onclick="libraryClear()">Clear all</button></div><div id="propLibrary"></div></div>
     </section>
 
     <!-- ================= CALL BLOCKS ================= -->
@@ -745,7 +745,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.1.14";
+const TOOLKIT_VERSION = "1.1.15";
 const DEMO = false; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -1666,9 +1666,14 @@ async function renderSheet(kind, snap){ const c=cur();
   const jpg=await new Promise(res=>cv.toBlob(res,"image/jpeg",0.88)); if(!jpg) throw new Error("canvas");
   return {c,r,title,name,cv,jpg}; }
 /* ---- proposal library: a per-client record of every proposal produced ---- */
-function libraryAdd(kind, html, title){ const c=cur(); if(!c) return; const today=todayStr();
-  const last=c.library[0]; if(last && last.html===html){ last.when=today; save(); renderLibrary(); return; }   /* same content again today: don't duplicate */
-  c.library.unshift({id:"L"+Date.now().toString(36), kind, title, when:today, version:appVersion(), html}); if(c.library.length>40) c.library.length=40; save(); renderLibrary(); }
+/* one library entry per distinct proposal (which saved options are on it + the recommendation); re-exporting the same set-up refreshes that entry instead of adding another */
+function librarySig(c,kind){ const sel=propSelected(c).map(x=>x.id).sort(); const rec=c.cmp&&c.cmp.rec||"";
+  return kind+"|"+(sel.length?sel.join(",")+"|"+rec:"live|"+modeOf(c.analysis)+"|"+(c.analysis.anRate||"")+"|"+(c.analysis.anTerm||"")+"|"+(c.analysis.anCashOut||0)+"|"+(c.analysis.anRoll||"")+"|"+(c.analysis.anSkip||0)); }
+function libraryAdd(kind, html, title){ const c=cur(); if(!c) return; const today=todayStr(); const sig=librarySig(c,kind);
+  const same=c.library.find(e=>e.html===html) || c.library.find(e=>e.sig===sig && e.when===today);
+  if(same){ Object.assign(same,{html,title,when:today,version:appVersion(),sig}); c.library=[same].concat(c.library.filter(e=>e!==same)); save(); renderLibrary(); return; }
+  c.library.unshift({id:"L"+Date.now().toString(36), kind, title, when:today, version:appVersion(), html, sig}); if(c.library.length>40) c.library.length=40; save(); renderLibrary(); }
+function libraryClear(){ const c=cur(); if(!c||!c.library.length) return; if(!confirm("Remove all "+c.library.length+" saved proposals for "+c.name+"?")) return; c.library=[]; save(); renderLibrary(); }
 function librarySave(kind){ try{ const c=cur(); const html= kind==="compare"?compareHTML():proposalHTML(); if(html.includes('class="empty"')){ toast("Finish the analysis first"); return; }
   const r=c&&computeAnalysis(c); libraryAdd(kind, html, sheetTitle(kind,c,r)); toast("Saved to "+c.name+"\u2019s library"); }catch(e){ toast("Nothing to save yet"); } }
 function libraryDel(id){ const c=cur(); if(!c) return; c.library=c.library.filter(x=>x.id!==id); save(); renderLibrary(); }
@@ -1970,7 +1975,8 @@ function addSnapScenario(){ const c=cur(); if(!c){ toast("Pick a client first");
   if(!r||r.tooSmall){ toast("Finish the analysis first \u2014 rate, term and the client\u2019s numbers"); return; }
   c.scenarios=c.scenarios||[]; if(c.scenarios.length>=5){ toast("Five scenarios max \u2014 remove one on Compare first"); return; }
   const inputs={}; SNAP_KEYS.forEach(k=>inputs[k]=c.analysis[k]);
-  const dup=c.scenarios.find(x=>x.kind==="snap"&&JSON.stringify(x.inputs)===JSON.stringify(inputs)); if(dup){ toast("That exact option is already saved"); return; }
+  const strip=o=>{ const t=Object.assign({},o); delete t.rateSrc; return JSON.stringify(t); };
+  const dup=c.scenarios.find(x=>x.kind==="snap"&&strip(x.inputs)===strip(inputs)); if(dup){ dup.onProp=true; save(); renderProposalPreview(); toast("That exact option is already saved \u2014 it\u2019s checked on the proposal"); return; }
   const label=snapLabel(inputs,r);
   c.scenarios.push({id:"s"+Date.now()+Math.random().toString(36).slice(2,5), kind:"snap", label, inputs, onProp:true});
   save(); toast("Saved \u201c"+label+"\u201d \u2014 pick it on Client proposal. Change the set-up and save again for another path."); }
