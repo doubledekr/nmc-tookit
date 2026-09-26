@@ -33,7 +33,7 @@ function findOldExports(){
   const home = os.homedir(); const spots = ["Downloads", "Desktop", "Documents", "OneDrive/Desktop", "OneDrive/Documents"];
   const out = [];
   for (const s of spots){ const dir = path.join(home, s); let names = []; try { names = fs.readdirSync(dir); } catch (e) { continue; }
-    for (const n of names){ if (!/^nmc-toolkit-.*\.json$/i.test(n)) continue;
+    for (const n of names){ if (!/nmc-toolkit-.*\.json$/i.test(n)) continue;
       try { const st = fs.statSync(path.join(dir, n)); out.push({ name: n, path: path.join(dir, n), where: s, when: st.mtime.toISOString().slice(0, 10), mtime: st.mtimeMs }); } catch (e) {} } }
   return out.sort((a, b) => b.mtime - a.mtime);
 }

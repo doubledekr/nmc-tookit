@@ -266,8 +266,6 @@ table.data tr.rec td{background:var(--cream)}
       <button data-s="analysis">Savings analysis</button>
       <button data-s="proposal">Client proposal</button>
       <button data-s="tools">Tools</button>
-      <button data-s="pricing" class="soon" title="Coming soon">Lender pricing <small>soon</small></button>
-      <button data-s="blocks" class="soon" title="Coming soon">Call blocks <small>soon</small></button>
       <button data-s="tmpl">Scripts &amp; templates</button>
       <button data-s="desk">My desk</button>
       <button data-s="settings">Settings &amp; data</button>
@@ -288,7 +286,6 @@ table.data tr.rec td{background:var(--cream)}
         <div class="btnrow" style="margin-bottom:12px">
           <button class="btn" onclick="newClient()">Add client</button>
           <button class="btn ghost" onclick="go('client')">Paste from Salesforce</button>
-          <button class="btn ghost" onclick="newQuickQuote()">Quick quote — skip the pipeline</button>
           <span id="pipeChips" class="btnrow" style="gap:6px;margin-left:6px"></span>
           <span style="flex:1"></span>
           <select id="pipeFilter" onchange="renderPipeline()" style="width:auto">
@@ -419,7 +416,6 @@ table.data tr.rec td{background:var(--cream)}
             <option value="refi" selected>Refinance the first mortgage</option><option value="second">Keep the first — HELOAN / HELOC</option></select></div>
         </div>
         <div class="btnrow" style="margin-top:6px">
-          <button class="btn ghost" onclick="newQuickQuote()">Quick quote — skip the pipeline</button>
           <button class="btn ghost" onclick="addSnapScenario()" title="Keep this exact set-up on the client file — pick it on Client proposal, alone or side by side with others">Save this option for the proposal</button>
           <button class="btn accent" onclick="go('proposal')">Build proposal →</button>
         </div>
@@ -480,13 +476,13 @@ Discover 6,100 190 24.9"></textarea>
       <div class="panel">
         <div class="grid3">
           <div class="field"><label>Client</label><select id="propClientPicker" onchange="pickClient(this.value)"></select></div>
-          <div class="field"><label>Pricing option on proposal</label><select id="propOption" onchange="renderProposalPreview()"></select></div>
+          <div class="field" style="display:none"><label>Pricing option on proposal</label><select id="propOption" onchange="renderProposalPreview()"></select></div>
           <div class="field" style="align-self:end"><div class="btnrow"><button class="btn" onclick="copyImage('proposal')">Copy proposal</button><button class="btn ghost" onclick="emailImage('proposal')">Email</button><button class="btn ghost" onclick="exportImage('proposal')">Save image</button><button class="btn ghost" onclick="exportPDF()">PDF</button><button class="btn ghost" onclick="librarySave('proposal')">Save to library</button></div></div>
         </div>
         <div class="field"><label>Personal note to client (optional)</label><textarea id="propNote" style="min-height:60px;font-family:inherit" oninput="renderProposalPreview()" placeholder="e.g. Maria — here's the consolidation option we walked through on Tuesday."></textarea></div>
         <div class="field"><label>Saved options from Savings analysis <span class="hint" style="display:inline">(check one for a single proposal, two or more for a side-by-side · ★ marks your recommendation)</span></label><div id="propSnapList"></div></div>
         <div class="field" id="propCmpWhyWrap" style="display:none"><label>Banker notes on the recommendation (prints on the side-by-side)</label><textarea id="propCmpWhy" style="min-height:50px;font-family:inherit" oninput="setCmpWhy(this.value); const el=$('propPreview'); if(el) el.innerHTML=proposalHTML();" placeholder="e.g. The cash-out frees up the most each month and clears the cards for good; the IRRRL is the lighter-touch option if you'd rather leave the balance alone."></textarea></div>
-        <div class="field"><label>Lender pricing on this proposal (check to include · star one as your recommendation)</label><div id="propOptsList"></div></div>
+        <div class="field" style="display:none"><label>Lender pricing on this proposal (check to include · star one as your recommendation)</label><div id="propOptsList"></div></div>
         <div class="field" id="propWhyWrap" style="display:none"><label>Why this is your recommendation (prints on the proposal)</label><textarea id="propWhy" style="min-height:50px;font-family:inherit" oninput="savePropWhy(this.value)" placeholder="e.g. Best balance of rate and cost — the lower-rate option costs 1.25 points that take 4 years to recoup."></textarea></div>
         <div class="hint">Heads up: this is a savings proposal, not a Loan Estimate. The official LE is a regulated disclosure that comes from the lender after application.</div>
       </div>
@@ -546,7 +542,7 @@ Discover 6,100 190 24.9"></textarea>
           <span class="hint" id="toolsUsing"></span>
           <span style="flex:1"></span>
           <button class="btn ghost small" onclick="toolsFromClient()">Re-fill from client</button>
-          <button class="btn ghost small" onclick="toolsToQuote()">Turn into a quick quote</button>
+          <button class="btn ghost small" onclick="toolsToQuote()">Turn into a new client</button>
           <button class="btn ghost small" onclick="toolsClear()">Clear</button>
         </div>
         <div id="toolsCompare"></div>
@@ -625,27 +621,22 @@ Discover 6,100 190 24.9"></textarea>
     <!-- ================= MY DESK ================= -->
     <section class="screen" id="s-desk">
       <div class="eyebrow">Your corner of the office</div><h1>My desk</h1>
-      <div class="sub">Everything that's about you, not a client: your banker file, today's rates and where they've been, and your month.</div>
-      <div class="row">
-        <div class="panel">
-          <h2>Your banker file</h2>
-          <div class="grid2">
-            <div class="field"><label>Name</label><input type="text" id="dskName"></div>
-            <div class="field"><label>NMLS #</label><input type="text" id="dskNmls"></div>
-            <div class="field"><label>Phone</label><input type="tel" id="dskPhone"></div>
-            <div class="field"><label>Email</label><input type="email" id="dskEmail"></div>
-          </div>
-          <div class="btnrow"><button class="btn" onclick="saveDeskProfile()">Save</button>
-            <span class="hint">Goes on every proposal, comparison, and home-office report.</span></div>
-        </div>
-      </div>
-      <div class="panel"><h2>Rates — today and lately</h2><div id="deskRates"></div></div>
+      <div class="sub">Your month at a glance, and where rates are. Your banker details live under Settings &amp; data.</div>
       <div class="panel"><h2>Your month</h2><div id="deskStats"></div></div>
+      <div class="panel"><h2>Rates — today and lately</h2><div id="deskRates"></div></div>
     </section>
 
     <!-- ================= SETTINGS ================= -->
     <section class="screen" id="s-tmpl">
       <div class="eyebrow">Say it well</div><h1>Scripts &amp; templates</h1>
+      <div class="panel">
+        <h2>NMC message library</h2>
+        <div class="hint" id="tmplWho" style="margin-bottom:8px"></div>
+        <div class="btnrow" style="margin-bottom:8px"><input type="search" placeholder="Search messages\u2026 (escrow, voicemail, HELOC)" style="max-width:360px" oninput="setLibQ(this.value)"></div>
+        <div class="chiprow" id="tmplNmcChips" style="margin-bottom:10px"></div>
+        <div id="tmplNmc"></div>
+        <div class="hint" style="margin-top:8px">Copy fills in the client and your details automatically; anything still in <mark style="background:#F6E8D8;color:#9A4E0E;border-radius:3px;padding:0 3px;font-weight:600">[brackets]</mark> needs a quick swap before you send.</div>
+      </div>
       <div class="panel">
         <h2>Company library</h2>
         <div class="hint" style="margin-bottom:8px">Pushed from the management node — arrives automatically over the rate feed or shared folder. Copy fills in the selected client and your info.</div>
@@ -664,7 +655,7 @@ Discover 6,100 190 24.9"></textarea>
           <button class="btn ghost" onclick="addTemplate('email')">+ Email</button>
         </div>
         <div id="tmplMine"></div>
-        <div class="hint" style="margin-top:8px">Tokens that auto-fill on copy: {client_first} {client} {banker} {banker_phone} {banker_email} {banker_nmls} {rate}</div>
+        <div class="hint" style="margin-top:8px">Tokens that auto-fill on copy: {client_first} {client} {address} {banker} {banker_first} {banker_phone} {banker_email} {banker_nmls} {rate}</div>
       </div>
     </section>
 
@@ -702,9 +693,6 @@ Discover 6,100 190 24.9"></textarea>
             <div class="hint" id="mirrorStatus" style="margin-bottom:8px"></div>
             <div class="btnrow">
               <button class="btn ghost small" onclick="checkHub()">Sync &amp; check now</button>
-              <button class="demo-only btn ghost small" onclick="loadSampleRates(false)">Load sample rates</button>
-              <button class="demo-only btn ghost small" onclick="simulateDrop()">Demo: drop rates 0.5%</button>
-              <button class="demo-only btn ghost small" onclick="loadSamples(false)">Load sample clients</button>
             </div>
             <div class="hint" id="feedStatus" style="margin-top:6px"></div>
             <div class="field" style="margin-top:8px;max-width:220px"><label>Monthly folder goal</label><input type="number" id="setGoal" placeholder="15" onchange="saveSettingsFromUI()"></div>
@@ -757,7 +745,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.1.10";
+const TOOLKIT_VERSION = "1.1.11";
 const DEMO = true; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -1919,7 +1907,8 @@ function clearLogo(){ state.settings.logo=""; save(); fillSettingsUI(); applyBra
 /* ---------- data file ---------- */
 function exportJSON(){ const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
-  a.download="nmc-toolkit-"+new Date().toISOString().slice(0,10)+".json"; a.click(); URL.revokeObjectURL(a.href); toast("Data exported"); }
+  const who=(state.settings.loName||"").trim().replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"");
+  a.download=(who?who+"-":"")+"nmc-toolkit-"+new Date().toISOString().slice(0,10)+".json"; a.click(); URL.revokeObjectURL(a.href); toast("Data exported"); }
 function importText(text){ try{ const s=JSON.parse(text); if(!s.clients||!s.settings) throw 0;
     state=s; save(); location.reload(); }catch(e){ toast("That file doesn't look like a toolkit export"); } }
 function importJSON(input){ const f=input.files[0]; if(!f) return; const rd=new FileReader();
@@ -2300,10 +2289,7 @@ function rateHistTable(){ const Hh=(state.rateHistory||[]).slice(-8).reverse(); 
    return `<td class="num">${pct(v)}${arr}</td>`;}).join("")+`</tr>`;}).join("")+`</tbody></table>`; }
 
 /* ---------- My desk ---------- */
-function saveDeskProfile(){ const s=state.settings;
- s.loName=$("dskName").value.trim(); s.loNmls=$("dskNmls").value.trim();
- s.loPhone=$("dskPhone").value.trim(); s.loEmail=$("dskEmail").value.trim();
- s.setupDone=true; save(); fillSettingsUI(); renderProposalPreview(); toast("Banker file saved"); }
+function saveDeskProfile(){ /* banker details are edited under Settings & data now */ }
 function spark(hist){ if(!hist||hist.length<2) return "";
  const W=170,Hh=44; let mn=99,mx=0; hist.forEach(p=>{mn=Math.min(mn,p.y);mx=Math.max(mx,p.y);});
  if(mx-mn<0.05){mx+=0.05;mn-=0.05;}
@@ -2505,16 +2491,36 @@ setInterval(heartbeat, 60*1000);
 setTimeout(()=>{ syncAll(false); heartbeat(); }, 1500);
 
 /* ---------- scripts & templates ---------- */
-const TKIND={intro:"Intro script",text:"Text",email:"Email"};
+const TKIND={intro:"Intro script",text:"Text",vm:"Voicemail",email:"Email"};
+/* built-in NMC message library (company standard). Tokens fill from the selected client + your Settings. [Bracketed] bits need a manual swap. */
+const NMC_LIBRARY=[{"id": "nmc01", "cat": "Call Intros", "kind": "intro", "title": "Intro — Cash-out / debt consolidation (Rocket)", "use": "Rocket partnership framing for transferred files.", "body": "Hi {client_first}, this is {banker_first} with Neighborhood Mortgage — how are you today? We're in partnership with Rocket Mortgage, and they sent your file over as it shows you recently inquired about consolidating some debt or pulling cash out. Does that sound familiar?", "note": "Openers for the first seconds of an outbound call. The closing question is the point — it hands them something to confirm instead of a pitch to resist."}, {"id": "nmc02", "cat": "Call Intros", "kind": "intro", "title": "Intro — Cash-out (TransUnion / credit data)", "use": "Fill the debt figure before dialing — the specific number is what makes the anchor question land.", "body": "Hi {client_first}, this is {banker_first} with Neighborhood Mortgage, a TransUnion partner — how are you today? We got your file today because it looks like you have some high-interest liabilities that can get lowered. Have you looked into that before?\n\nThis is a courtesy call because a lot of people aren't qualified, but you have a great payment history and a good bit of home equity built up — does around $[X] in credit card debt sound about right?", "note": "Openers for the first seconds of an outbound call. The closing question is the point — it hands them something to confirm instead of a pitch to resist."}, {"id": "nmc03", "cat": "Call Intros", "kind": "intro", "title": "Intro — VA Streamline", "use": "", "body": "Hi {client_first}, this is {banker} reaching out in partnership with the VA, how have you been? This is a courtesy call about the IRRRL or streamline program tied to your home. Have you heard of that program before? Has anybody called you about it?", "note": "Openers for the first seconds of an outbound call. The closing question is the point — it hands them something to confirm instead of a pitch to resist."}, {"id": "nmc04", "cat": "Objections & Plays", "kind": "intro", "title": "Objection: “I'm not interested”", "use": "", "body": "I hear you — before I let you go... when you had your credit pulled, what were you looking to do?", "note": "Run these after a strong intro. The pattern: acknowledge, one benefit, then the assumptive question — end on the question and stop talking."}, {"id": "nmc05", "cat": "Objections & Plays", "kind": "intro", "title": "Objection: “Take me off your list”", "use": "Fill the rate before dialing — quote only what today's pricing actually supports.", "body": "{client_first}, before I take you off the list — I see you can qualify for rates in the [X]% range, and I'd be doing you a disservice if I didn't bring that to your attention... Are you refinancing your home at {address}?", "note": "Run these after a strong intro. The pattern: acknowledge, one benefit, then the assumptive question — end on the question and stop talking."}, {"id": "nmc06", "cat": "Objections & Plays", "kind": "intro", "title": "Objection: “I'm already working with someone”", "use": "", "body": "I can appreciate that... but at the end of the day, I'm sure you wouldn't want to miss out on any savings in this process — wholesale rates are much lower than the average bank or retail lender... Are you refinancing your property at {address}?", "note": "Run these after a strong intro. The pattern: acknowledge, one benefit, then the assumptive question — end on the question and stop talking."}, {"id": "nmc07", "cat": "Objections & Plays", "kind": "intro", "title": "Play: Amazing credit → wholesale pivot", "use": "Compliment the profile, then pivot into the benefits.", "body": "Look, you have amazing credit. We have a fiduciary duty to extend credit your way... you have access to wholesale pricing, and I'm confident we can help you save more.", "note": "Run these after a strong intro. The pattern: acknowledge, one benefit, then the assumptive question — end on the question and stop talking."}, {"id": "nmc08", "cat": "Objections & Plays", "kind": "intro", "title": "Play: Profile praise → wholesale vs retail", "use": "Make them feel good about their profile, then pivot into wholesale vs retail. We save clients on average $9k more.", "body": "With a profile like yours, you're exactly who wholesale pricing was built for. A retail lender can only offer you their own rate — as a broker we shop dozens of lenders against each other, and on average that saves our clients around $9k more.", "note": "Run these after a strong intro. The pattern: acknowledge, one benefit, then the assumptive question — end on the question and stop talking."}, {"id": "nmc09", "cat": "VA Streamline — No Answer", "kind": "text", "title": "First touch (same day as missed call)", "use": "Send within minutes of the missed call.", "body": "Hi {client_first}, it's {banker} with Neighborhood Mortgage, a VA partner. Just tried you — I was looking at your VA loan and rates have moved enough that a streamline refi would lower your rate and payment, with no appraisal, no income docs, and 2 skipped payments. Takes about 5 min to see the actual numbers. When's a good time to call you back?", "note": "Texts for VA clients who didn't pick up. One concrete benefit per text, small ask."}, {"id": "nmc10", "cat": "VA Streamline — No Answer", "kind": "text", "title": "The “no homework” angle", "use": "", "body": "Hi {client_first}, {banker} w/ Neighborhood Mortgage. Quick one: the VA has a streamline program (IRRRL) built for situations like yours — no appraisal, no pay stubs, no tax returns. If I can't show you real monthly savings, I'll tell you that too. Worth a 5-minute call? Reply with a good time.", "note": "Texts for VA clients who didn't pick up. One concrete benefit per text, small ask."}, {"id": "nmc11", "cat": "VA Streamline — No Answer", "kind": "text", "title": "Dollar-anchored", "use": "Only if you've run rough numbers. Keep it “looks like it could,” never a promise.", "body": "Hi {client_first}, it's {banker_first} at Neighborhood Mortgage. Based on your current VA loan, a streamline looks like it could save you around $[X]/mo. I'd rather show you the exact breakdown than text it — got 5 minutes today or tomorrow?", "note": "Texts for VA clients who didn't pick up. One concrete benefit per text, small ask."}, {"id": "nmc12", "cat": "VA Streamline — No Answer", "kind": "text", "title": "Second touch", "use": "2–3 days after the first.", "body": "Hi {client_first}, {banker} again — Neighborhood Mortgage. Not trying to blow up your phone, just don't want you to miss this window if rates tick back up. The VA streamline is the easiest refi that exists: no appraisal, minimal paperwork, and you'd see the numbers before deciding anything. Call or text me back and I'll have it ready.", "note": "Texts for VA clients who didn't pick up. One concrete benefit per text, small ask."}, {"id": "nmc13", "cat": "VA Streamline — No Answer", "kind": "text", "title": "Escrow angle", "use": "", "body": "Hi {client_first}, {banker_first} w/ Neighborhood Mortgage. One thing people don't realize about a VA streamline: on top of a lower payment, you typically get your current escrow balance refunded after closing. That's often a nice check back in your pocket. Want me to run your numbers? 5 min call.", "note": "Texts for VA clients who didn't pick up. One concrete benefit per text, small ask."}, {"id": "nmc14", "cat": "VA Streamline — No Answer", "kind": "text", "title": "Break-up text (final attempt)", "use": "", "body": "Hi {client_first}, {banker}, Neighborhood Mortgage. Last note from me — I'll close out your file so I'm not bugging you. If you ever want to see what a VA streamline would save you (no appraisal, no income docs), my direct line is {banker_phone}. Takes 5 minutes and there's zero obligation. Semper appreciated 🇺🇸 — {banker_first}", "note": "Texts for VA clients who didn't pick up. One concrete benefit per text, small ask."}, {"id": "nmc15", "cat": "VA Streamline — Voicemails", "kind": "vm", "title": "First-touch voicemail (~20 sec)", "use": "Pairs with the first-touch text.", "body": "Hi {client_first}, this is {banker} with Neighborhood Mortgage. I was reviewing your VA loan and I think a streamline refi could lower your monthly payment — and the VA makes these easy: no appraisal, no income docs. I'm sending you a text right now with my info so you don't have to write anything down. Give me a call back or just reply to the text — takes about five minutes to see your actual numbers. Again, {banker}, Neighborhood Mortgage, {banker_phone}. Talk soon.", "note": "Leave the voicemail first, then send the matching text within a minute or two."}, {"id": "nmc16", "cat": "VA Streamline — Voicemails", "kind": "vm", "title": "Second-attempt voicemail", "use": "Pairs with the second-touch text.", "body": "Hi {client_first}, {banker}, Neighborhood Mortgage — just following up on the VA streamline I mentioned. I don't want you to miss the window if rates move. Shoot me a text or call, {banker_phone}, and I'll have your numbers ready. Thanks.", "note": "Leave the voicemail first, then send the matching text within a minute or two."}, {"id": "nmc17", "cat": "Cash-Out Refi", "kind": "text", "title": "First touch", "use": "", "body": "Hi {client_first}, it's {banker} with Neighborhood Mortgage. Just tried you — I was looking at your loan and with the equity you've built, you may be able to pull cash out for debt, projects, or a cushion, possibly without a big change to your payment. Takes 5 min to see real numbers. When works for a callback?", "note": "For clients whose current rate isn't precious. Debt consolidation is the strongest hook."}, {"id": "nmc18", "cat": "Cash-Out Refi", "kind": "text", "title": "Debt consolidation angle", "use": "Lead with this if you know they carry balances.", "body": "Hi {client_first}, {banker} w/ Neighborhood Mortgage. Quick thought: if you're carrying credit cards or other high-interest debt, rolling it into your mortgage with a cash-out refi can drop your total monthly outflow by hundreds. I'd rather show you the actual math than promise anything — got 5 minutes today?", "note": "For clients whose current rate isn't precious. Debt consolidation is the strongest hook."}, {"id": "nmc19", "cat": "Cash-Out Refi", "kind": "text", "title": "Dollar-anchored", "use": "", "body": "Hi {client_first}, it's {banker_first} at Neighborhood Mortgage. Based on your home's value, you've got roughly $[X] in usable equity. Whether that's worth touching depends on the numbers — I can walk you through it in 5 min, no obligation. Call or text me a good time.", "note": "For clients whose current rate isn't precious. Debt consolidation is the strongest hook."}, {"id": "nmc20", "cat": "Cash-Out Refi", "kind": "text", "title": "Second touch", "use": "", "body": "Hi {client_first}, {banker} again, Neighborhood Mortgage. Not trying to fill your inbox — just know that equity only helps you if you can see your options. 5-minute call, I show you the numbers, you decide. That's the whole thing. What day works?", "note": "For clients whose current rate isn't precious. Debt consolidation is the strongest hook."}, {"id": "nmc21", "cat": "Cash-Out Refi", "kind": "text", "title": "Break-up", "use": "", "body": "Hi {client_first}, {banker}, Neighborhood Mortgage. Last note from me — closing out your file so I'm not a pest. If you ever want to see what your equity could do (consolidate debt, fund a project, build a cushion), my direct line is {banker_phone}. Five minutes, zero pressure. — {banker_first}", "note": "For clients whose current rate isn't precious. Debt consolidation is the strongest hook."}, {"id": "nmc22", "cat": "HELOC / Home Equity", "kind": "text", "title": "First touch", "use": "", "body": "Hi {client_first}, it's {banker} with Neighborhood Mortgage. Tried you just now — I noticed you've got a great rate on your mortgage, and I wouldn't touch it. But a HELOC lets you tap your equity without refinancing that rate away. Worth 5 minutes to see what you qualify for? Text me a good time.", "note": "For clients sitting on a low rate. “Keep your rate” is the whole pitch."}, {"id": "nmc23", "cat": "HELOC / Home Equity", "kind": "text", "title": "The “keep your rate” angle", "use": "Use this one hard on 2020–2021 rates.", "body": "Hi {client_first}, {banker} w/ Neighborhood Mortgage. Most people think using equity means giving up their low mortgage rate. It doesn't — a home equity line sits behind your current loan, which stays exactly as-is. If you've got projects or debt to knock out, this is the way to do it. 5-min call?", "note": "For clients sitting on a low rate. “Keep your rate” is the whole pitch."}, {"id": "nmc24", "cat": "HELOC / Home Equity", "kind": "text", "title": "Project / renovation angle", "use": "", "body": "Hi {client_first}, {banker_first} at Neighborhood Mortgage. If there's a renovation, repair, or big expense you've been putting off, your equity can fund it — and with a HELOC you only pay interest on what you actually use. Happy to run your numbers, takes 5 minutes. When's good?", "note": "For clients sitting on a low rate. “Keep your rate” is the whole pitch."}, {"id": "nmc25", "cat": "HELOC / Home Equity", "kind": "text", "title": "Second touch", "use": "", "body": "Hi {client_first}, {banker} again — Neighborhood Mortgage. Just don't want this to fall through the cracks: you can access your equity without touching your current mortgage rate. Numbers first, decision after. Call or text and I'll have them ready.", "note": "For clients sitting on a low rate. “Keep your rate” is the whole pitch."}, {"id": "nmc26", "cat": "HELOC / Home Equity", "kind": "text", "title": "Break-up", "use": "", "body": "Hi {client_first}, {banker}, Neighborhood Mortgage. Last one from me. If a project or expense ever comes up and you want to use your equity without refinancing your rate, I'm your guy — {banker_phone}. Five minutes and you'll know your options. — {banker_first}", "note": "For clients sitting on a low rate. “Keep your rate” is the whole pitch."}, {"id": "nmc27", "cat": "Equity Voicemails", "kind": "vm", "title": "Cash-out first touch", "use": "", "body": "Hi {client_first}, this is {banker} with Neighborhood Mortgage. I was reviewing your loan and with the equity you've built up, you've got some options — whether that's consolidating debt, funding a project, or just having cash on hand. I'm texting you right now so you have my info. Call back or just reply to the text — five minutes and I can show you real numbers. Again, {banker}, Neighborhood Mortgage, {banker_phone}.", "note": ""}, {"id": "nmc28", "cat": "Equity Voicemails", "kind": "vm", "title": "HELOC first touch", "use": "", "body": "Hi {client_first}, {banker} with Neighborhood Mortgage. Quick one — you've got a great rate on your mortgage and I'd never tell you to refinance it. But there's a way to tap your equity without touching that rate at all, and I think it's worth five minutes to see your numbers. Sending you a text now with my info — call or reply whenever's easy. {banker}, Neighborhood Mortgage, {banker_phone}.", "note": ""}, {"id": "nmc29", "cat": "Equity Voicemails", "kind": "vm", "title": "Second attempt (either product)", "use": "", "body": "Hi {client_first}, {banker}, Neighborhood Mortgage — following up on the equity options I mentioned. No pressure, I just want you to see the numbers before deciding anything. Text or call, {banker_phone}. Thanks.", "note": ""}, {"id": "nmc30", "cat": "Post-Call — Great Rate", "kind": "text", "title": "Streamline watch + equity door (main one)", "use": "Streamline promise lands last on purpose — it's what sticks.", "body": "Hi {client_first}, {banker}, Neighborhood Mortgage — enjoyed the call today. Keeping an eye on rates for your streamline, but you're in a good spot right now, as you know. In the meantime, if you ever want to tap your equity without touching that mortgage rate — projects, debt, a cushion — we can look at that anytime. And the moment your streamline makes sense, I'll be reaching out. — {banker_first}", "note": "For clients you just spoke to who are in a good spot. Send within 10–15 min of hanging up. Seeds the equity door and pre-frames your future streamline call."}, {"id": "nmc31", "cat": "Post-Call — Great Rate", "kind": "text", "title": "Heavier equity lean", "use": "", "body": "Hi {client_first}, {banker} w/ Neighborhood Mortgage — good talking today. Your rate's solid, so the streamline waits until it actually saves you money — I'll flag you the moment it does. One thing worth remembering: your equity is usable without refinancing that rate. If a project or expense comes up, that's a 5-minute conversation. Save my number. — {banker_first}", "note": "For clients you just spoke to who are in a good spot. Send within 10–15 min of hanging up. Seeds the equity door and pre-frames your future streamline call."}, {"id": "nmc32", "cat": "Post-Call — Great Rate", "kind": "text", "title": "Not eligible yet (seasoning/timing)", "use": "Use when it's a 210-day / 6-payment timing issue, not rate. Set the eligibility date in Salesforce on the spot.", "body": "Hi {client_first}, {banker}, Neighborhood Mortgage — enjoyed the call. Like I said, you're not quite eligible for the streamline yet, but I've got your date marked and I'll reach out when you are. Between now and then, if you want to put your equity to work — without touching your mortgage — just text me. — {banker_first}", "note": "For clients you just spoke to who are in a good spot. Send within 10–15 min of hanging up. Seeds the equity door and pre-frames your future streamline call."}, {"id": "nmc33", "cat": "Post-Call — Great Rate", "kind": "text", "title": "Full introduction — not eligible yet", "use": "The longer “save my contact” text: who you are, NMC, streamline recap, direct line. Good first text after the intro call.", "body": "Hi {client_first}, {banker} with Neighborhood Mortgage — great talking with you today. Quick intro so you know who's in your corner: I'm a licensed loan officer, NMLS #{banker_nmls}, and you can verify me and Neighborhood Mortgage anytime at nmlsconsumeraccess.org, or check us out at neighborhoodmc.com. One thing that sets us apart: we're a broker, not a retail lender — so instead of offering you one company's rate, we shop dozens of lenders to find you the best deal.\n\nRecap on the VA streamline (IRRRL) we discussed: it's the VA's built-in benefit for lowering your rate and payment — no appraisal, no income docs, minimal paperwork. You're not quite eligible yet, but I've got your date marked and you'll hear from me the moment you are.\n\nOne more thing — this is my direct line, not a call center. Save my number and call or text anytime with questions, big or small. — {banker_first}", "note": "For clients you just spoke to who are in a good spot. Send within 10–15 min of hanging up. Seeds the equity door and pre-frames your future streamline call."}, {"id": "nmc34", "cat": "Post-Call — Great Rate", "kind": "text", "title": "Shortest version", "use": "", "body": "Hi {client_first} — {banker}, Neighborhood Mortgage. Good call today. Streamline's on my watch list for you, and if equity ever becomes useful before then (no change to your rate), I'm one text away. — {banker_first}", "note": "For clients you just spoke to who are in a good spot. Send within 10–15 min of hanging up. Seeds the equity door and pre-frames your future streamline call."}, {"id": "nmc35", "cat": "Post-Call — Great Rate", "kind": "text", "title": "They gave you the update themselves", "use": "", "body": "Hi {client_first}, {banker}, Neighborhood Mortgage. Thanks for catching me up today — appreciate you taking the call. You're right where you should be, so no action needed. I'll keep watching rates on your loan and reach out the moment a streamline is actually worth your time. Save my info in the meantime. — {banker_first}", "note": "For clients you just spoke to who are in a good spot. Send within 10–15 min of hanging up. Seeds the equity door and pre-frames your future streamline call."}, {"id": "nmc36", "cat": "Post-Call — Great Rate", "kind": "text", "title": "Call surfaced a future need", "use": "Swap in the actual project/goal they mentioned, then log it in Salesforce.", "body": "Hi {client_first}, {banker}, Neighborhood Mortgage — enjoyed the call today. Keeping an eye on rates for your streamline, and when that [kitchen project / next home] gets closer, reach out — there may be equity options that don't touch your current rate. My number, saved and ready. — {banker_first}", "note": "For clients you just spoke to who are in a good spot. Send within 10–15 min of hanging up. Seeds the equity door and pre-frames your future streamline call."}, {"id": "nmc37", "cat": "Trust & Verification", "kind": "text", "title": "Trust-repair text (after a scared hang-up)", "use": "", "body": "Hi {client_first}, {banker} with Neighborhood Mortgage. Totally understand hanging up — honestly, being careful with your SSN is exactly the right instinct, and I'd tell my own family to do the same. So verify me before we talk again: I'm a licensed loan officer, NMLS #{banker_nmls} — you can look me up yourself at nmlsconsumeraccess.org, and Neighborhood Mortgage the same way. You can also call our main office line at 844-210-3644 and ask for me by name, so you know the person calling you is real. The Loan Estimate I sent is in your inbox — no sensitive info needed to review it. When you're comfortable, call me. No rush. — {banker_first}", "note": "For clients spooked about giving personal info (SSN, DOB). Point verification at YOU, never at their data — don't send their own digits to “prove” you have their file."}, {"id": "nmc38", "cat": "Trust & Verification", "kind": "text", "title": "Shorter version", "use": "", "body": "Hi {client_first}, {banker}, Neighborhood Mortgage. No hard feelings on the hang-up — protecting your SSN is smart. Verify me independently: NMLS #{banker_nmls} at nmlsconsumeraccess.org, or call our main office at 844-210-3644 and ask for {banker}. The Loan Estimate is in your email whenever you want to look. Reach out when you're ready. — {banker_first}", "note": "For clients spooked about giving personal info (SSN, DOB). Point verification at YOU, never at their data — don't send their own digits to “prove” you have their file."}, {"id": "nmc39", "cat": "Trust & Verification", "kind": "intro", "title": "Opener when they call back (say this, don't text it)", "use": "Makes their caution the right move — converts a spooked lead into a loyal client.", "body": "Before anything else — did you get a chance to look me up? Good. You should do that with anyone who asks for that stuff.", "note": "For clients spooked about giving personal info (SSN, DOB). Point verification at YOU, never at their data — don't send their own digits to “prove” you have their file."}, {"id": "nmc40", "cat": "Client How-Tos", "kind": "email", "title": "iPhone — attach photos to an email", "use": "“Actual Size” matters for photos of documents — compression makes small print illegible.", "body": "Hi {client_first} — here's how to send those photos from your iPhone. The easiest way is to start from your Photos app, not from email:\n\n1. Open the Photos app\n2. Tap Select in the top right corner\n3. Tap each photo you want to send (a blue checkmark appears on each one)\n4. Tap the share button — the little square with an arrow pointing up, bottom left corner\n5. Tap Mail in the row of app icons\n6. A new email opens with your photos already attached — in the “To” line, type my email: {banker_email}\n7. Tap the blue send arrow in the top right\n\nIf it asks what size to send, choose Actual Size so the documents stay readable.\n\nThat's it! If anything gives you trouble, just call me and I'll walk you through it on the phone.", "note": "Ready to text or email straight to the client."}];
 function tmplFill(s){ const c=cur(); const st=state.settings;
- const first=c&&c.name? c.name.split(/[ ,&]/)[0] : "{client_first}";
- const map={"{client_first}":first, "{client}":c?c.name:"{client}",
-  "{banker}":st.loName||"", "{banker_phone}":st.loPhone||"", "{banker_email}":st.loEmail||"",
-  "{banker_nmls}":st.loNmls||"", "{rate}": c&&c.analysis&&c.analysis.anRate? pct(c.analysis.anRate) : "{rate}"};
- return String(s||"").replace(/\{client_first\}|\{client\}|\{banker_phone\}|\{banker_email\}|\{banker_nmls\}|\{banker\}|\{rate\}/g, m=>map[m]);
+ const first=c&&c.name? c.name.split(/[ ,&]/)[0] : "[Name]";
+ const bf=(st.loName||"").split(/\s+/)[0]||"[your name]";
+ const map={"{client_first}":first, "{client}":c?c.name:"[Name]", "{address}":c&&c.address?c.address:"[property address]",
+  "{banker}":st.loName||"[your name]", "{banker_first}":bf, "{banker_phone}":st.loPhone||"[your cell]", "{banker_email}":st.loEmail||"[your email]",
+  "{banker_nmls}":(st.loNmls||"[your NMLS]").replace(/^#/,""), "{rate}": c&&c.analysis&&c.analysis.anRate? pct(c.analysis.anRate) : "[rate]"};
+ return String(s||"").replace(/\{client_first\}|\{client\}|\{address\}|\{banker_phone\}|\{banker_email\}|\{banker_nmls\}|\{banker_first\}|\{banker\}|\{rate\}/g, m=>map[m]);
 }
+function tmplPreview(s){ /* filled text with the bits that still need a hand highlighted */
+ return esc(tmplFill(s)).replace(/\[([^\]\n]{1,40})\]/g,'<mark style="background:#F6E8D8;color:#9A4E0E;border-radius:3px;padding:0 3px;font-weight:600">[$1]</mark>'); }
+let libCat="All", libQ="";
+function setLibCat(c){ libCat=c; renderTemplates(); }
+function setLibQ(v){ libQ=(v||"").trim().toLowerCase(); renderTemplates(); }
+function renderLibrary_nmc(){ const el=$("tmplNmc"); if(!el) return; const c=cur();
+ const cats=["All"]; NMC_LIBRARY.forEach(t=>{ if(!cats.includes(t.cat)) cats.push(t.cat); });
+ const chips=$("tmplNmcChips"); if(chips) chips.innerHTML=cats.map(x=>`<button class="chip" ${libCat===x?'style="background:var(--brand);color:#fff;border-color:var(--brand)"':""} onclick="setLibCat('${x.replace(/'/g,"\\'")}')">${esc(x)}</button>`).join("");
+ const who=$("tmplWho"); if(who) who.innerHTML = c ? `Filling in for <b>${esc(c.name)}</b>${c.address?" \u00b7 "+esc(c.address):""} \u00b7 from <b>${esc(state.settings.loName||"(set your name in Settings)")}</b>` : `No client selected \u2014 client bits show as <b>[Name]</b> until you pick one on the Pipeline.`;
+ const items=NMC_LIBRARY.filter(t=>(libCat==="All"||t.cat===libCat)&&(!libQ||(t.title+" "+t.use+" "+t.cat+" "+tmplFill(t.body)).toLowerCase().includes(libQ)));
+ if(!items.length){ el.innerHTML=`<div class="empty">No messages match.</div>`; return; }
+ let lastCat=""; el.innerHTML = items.map(t=>{ const hdr = t.cat!==lastCat ? `<div class="eyebrow" style="margin:${lastCat?"16px":"4px"} 0 4px">${esc(t.cat)}</div>${t.note?`<div class="hint" style="margin-bottom:8px">${esc(t.note)}</div>`:""}` : ""; lastCat=t.cat;
+  return hdr+`<div class="stat" style="margin-bottom:8px">
+  <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap">
+   <div><span class="tag-flat">${TKIND[t.kind]||t.kind}</span> <b>${esc(t.title)}</b>${t.use?`<div class="hint" style="margin-top:2px">${esc(t.use)}</div>`:""}</div>
+   <div class="btnrow"><button class="btn small" onclick="copyTmplById('n','${t.id}')">Copy</button><button class="btn ghost small" onclick="saveToMine('n','${t.id}')">Save to mine</button></div></div>
+  <div style="font-size:13px;white-space:pre-wrap;margin-top:6px">${tmplPreview(t.body)}</div></div>`; }).join(""); }
 function tmplPoolGet(pool,id){ const T=state.templates||{};
- const list = pool==="c" ? ((T.company&&T.company.templates)||[]) : pool==="s" ? (T.shared||[]) : (T.mine||[]);
+ const list = pool==="n" ? NMC_LIBRARY : pool==="c" ? ((T.company&&T.company.templates)||[]) : pool==="s" ? (T.shared||[]) : (T.mine||[]);
  return list.find(t=>t.id===id); }
 function copyTmplById(pool,id){ const t=tmplPoolGet(pool,id); if(!t) return;
  const txt=(t.kind==="email"&&t.subject? "Subject: "+tmplFill(t.subject)+"\n\n":"")+tmplFill(t.body);
@@ -2531,7 +2537,7 @@ function tmplCard(t,pool,by){ return `<div class="stat" style="margin-bottom:8px
    <div><span class="tag-flat">${TKIND[t.kind]||t.kind}</span> <b>${esc(t.title||"Untitled")}</b>${by?` <span class="hint">\u2014 ${esc(by)}</span>`:""}</div>
    <div class="btnrow"><button class="btn small" onclick="copyTmplById('${pool}','${t.id}')">Copy</button>${pool!=="m"?`<button class="btn ghost small" onclick="saveToMine('${pool}','${t.id}')">Save to mine</button>`:""}</div></div>
   ${t.subject?`<div class="hint">Subject: ${esc(t.subject)}</div>`:""}
-  <div style="font-size:13px;white-space:pre-wrap;margin-top:4px">${esc(t.body||"")}</div></div>`; }
+  <div style="font-size:13px;white-space:pre-wrap;margin-top:4px">${tmplPreview(t.body||"")}</div></div>`; }
 function addTemplate(kind){ state.templates.mine.push({id:"m"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
  kind,title:"",subject:"",body:"",shared:false}); save(); renderTemplates(); }
 function updTemplate(id,k,v){ const t=tmplPoolGet("m",id); if(!t) return;
@@ -2540,7 +2546,7 @@ function delTemplate(id){ state.templates.mine=(state.templates.mine||[]).filter
  save(); renderTemplates(); pushSharedTemplates(false); }
 function renderTemplates(){ const T=state.templates||{mine:[]};
  const comp=$("tmplCompany"), sh=$("tmplShared"), mine=$("tmplMine");
- if(!comp) return;
+ if(!comp) return; renderLibrary_nmc();
  const cList=(T.company&&T.company.templates)||[];
  comp.innerHTML = cList.length? cList.map(t=>tmplCard(t,"c","")).join("")
   : `<div class="empty">Nothing pushed yet \u2014 the company library appears here automatically once management publishes it.</div>`;
@@ -2665,12 +2671,12 @@ function toolsCalc(){
   else dbx.innerHTML=`<div class="hint">Balance, APR, and the payment they\u2019re making.</div>`;
 }
 function toolsToQuote(){ const m=toolsModel(); if(!m.ok){ toast("Fill in today's mortgage first"); return; }
-  const c=blankClient(); c.quick=true; c.name="Quick quote \u2014 "+new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
+  const c=blankClient(); c.name="New client";
   c.balance=m.cBal; c.rate=m.cRate; c.monthsLeft=m.cMo; c.payment=Math.round(m.curMin.pay); if(T("hVal")) c.value=T("hVal");
   if(m.dBal>0) c.debts.push({name:"Debts (from Tools)", balance:m.dBal, apr:m.dApr||null, pay:m.dPay||null});
   Object.assign(c.analysis,{anRate:m.nRate||null, anTerm:Math.round(m.nTerm/12), anCosts:m.nCosts||0, anExtra:m.dExtra||0, anRoll: m.dBal>0?"yes":"no"});
   state.clients.unshift(c); state.currentId=c.id; save(); refreshAll(); go("analysis"); fillAnalysisInputs(); runAnalysis();
-  toast("Quick quote created from the tool \u2014 full analysis and proposal ready"); }
+  toast("New client created from the tool \u2014 add their name on the Client workspace"); }
 
 /* ---------- nav & boot ---------- */
 function go(s){ document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));
@@ -2686,7 +2692,7 @@ function go(s){ document.querySelectorAll(".screen").forEach(x=>x.classList.remo
   if(s==="desk") renderDesk();
 }
 function refreshAll(){ renderPickers(); fillClientForm(); renderPipeline(); renderSavedOptions();
-  fillAnalysisInputs(); renderDebts(); runAnalysis(); renderProposalPreview(); renderBlocks(); renderCompare(); renderDesk(); }
+  fillAnalysisInputs(); renderDebts(); runAnalysis(); renderProposalPreview(); renderBlocks(); renderCompare(); renderDesk(); if($("s-tmpl").classList.contains("active")) renderTemplates(); }
 document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>{ if(b.classList.contains("soon")){ toast("Coming soon \u2014 not part of this rollout yet"); return; } go(b.dataset.s); }));
 load(); migrate();
 if(state.settings.brand==="#0E3A5D"||state.settings.brand==="#7E2318") state.settings.brand="#A53222";
