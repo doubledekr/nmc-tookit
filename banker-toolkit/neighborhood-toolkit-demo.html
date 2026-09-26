@@ -477,7 +477,7 @@ Discover 6,100 190 24.9"></textarea>
         <div class="grid3">
           <div class="field"><label>Client</label><select id="propClientPicker" onchange="pickClient(this.value)"></select></div>
           <div class="field" style="display:none"><label>Pricing option on proposal</label><select id="propOption" onchange="renderProposalPreview()"></select></div>
-          <div class="field" style="align-self:end"><div class="btnrow"><button class="btn" onclick="copyImage('proposal')">Copy proposal</button><button class="btn ghost" onclick="emailImage('proposal')">Email</button><button class="btn ghost" onclick="exportImage('proposal')">Save image</button><button class="btn ghost" onclick="exportPDF()">PDF</button><button class="btn ghost" onclick="librarySave('proposal')">Save to library</button></div></div>
+          <div class="field" style="align-self:end"><div class="btnrow"><button class="btn" onclick="copyImage('proposal')">Copy proposal</button><button class="btn ghost" onclick="emailImage('proposal')">Email</button><button class="btn ghost" onclick="exportImage('proposal')">Save image</button><button class="btn ghost" onclick="exportPDF()">PDF</button><button class="btn ghost" onclick="librarySave('proposal')">Save to library</button><button class="btn ghost" id="propSaveOpt" onclick="addSnapScenario(); renderProposalPreview()" title="Keep this proposal's set-up as a saved option, so it can sit side by side with others">Save as an option</button></div></div>
         </div>
         <div class="field"><label>Personal note to client (optional)</label><textarea id="propNote" style="min-height:60px;font-family:inherit" oninput="renderProposalPreview()" placeholder="e.g. Maria — here's the consolidation option we walked through on Tuesday."></textarea></div>
         <div class="field"><label>Saved options from Savings analysis <span class="hint" style="display:inline">(check one for a single proposal, two or more for a side-by-side · ★ marks your recommendation)</span></label><div id="propSnapList"></div></div>
@@ -745,7 +745,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.1.11";
+const TOOLKIT_VERSION = "1.1.12";
 const DEMO = true; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -863,7 +863,7 @@ function debtInterest(bal, apr, pay){ const m=debtMonths(bal,apr,pay); return is
 function cur(){ return state.clients.find(c=>c.id===state.currentId) || null; }
 function blankClient(){ return {id:"c"+Date.now()+Math.floor(Math.random()*999), name:"New client", status:"New lead", quick:false,
   phone:"",email:"",address:"",balance:null,rate:null,payment:null,monthsLeft:null,value:null,fico:null,
-  servicer:"",loanType:"Conventional",followUp:"",notes:"",paymentTotal:null,escrow:null,origAmount:null,origTerm:30,targetRate:null,tz:"",debts:[],options:[],scenarios:[],library:[],prop:{included:[],rec:"",why:""},cmp:{pwypn:false,rec:"",why:"",include:false},
+  servicer:"",loanType:"Conventional",followUp:"",notes:"",paymentTotal:null,escrow:null,origAmount:null,origTerm:30,targetRate:null,tz:"",debts:[],debtsTrash:[],options:[],scenarios:[],library:[],prop:{included:[],rec:"",why:""},cmp:{pwypn:false,rec:"",why:"",include:false},
   analysis:{anRate:null,anTerm:30,anCosts:0,anCashOut:0,anSkip:1,anRoll:"yes",anLien:"refi"}}; }
 function newClient(){ const c=blankClient(); state.clients.unshift(c); state.currentId=c.id; save(); refreshAll(); go("client"); toast("New client added"); }
 function newQuickQuote(){ const c=blankClient(); c.quick=true;
@@ -1201,7 +1201,8 @@ function addScenarioFromOption(id){ const c=cur(); if(!c) return; const o=c.opti
 /* ---------- debts ---------- */
 function addDebt(){ const c=cur(); if(!c){ toast("Pick a client first"); return; }
   c.debts.push({name:"Credit card", balance:5000, apr:24.99, pay:150}); save(); renderDebts(); runAnalysis(); }
-function delDebt(i){ const c=cur(); if(!c) return; c.debts.splice(i,1); save(); renderDebts(); runAnalysis(); }
+function delDebt(i){ const c=cur(); if(!c) return; const d=c.debts.splice(i,1)[0]; if(d){ c.debtsTrash=c.debtsTrash||[]; c.debtsTrash.push(d); } save(); renderDebts(); runAnalysis(); }
+function restoreDebts(){ const c=cur(); if(!c||!(c.debtsTrash||[]).length) return; c.debtsTrash.forEach(d=>{ if(!c.debts.some(x=>x.name===d.name&&x.balance===d.balance)) c.debts.push(d); }); c.debtsTrash=[]; save(); renderDebts(); runAnalysis(); toast("Debts restored"); }
 function updDebt(i,k,v){ const c=cur(); if(!c) return; c.debts[i][k]=(k==="name")?v:(String(v).trim()===""?null:num(v)); save(); runAnalysis(); }
 function toggleDebtPaste(){ const w=$("debtPasteWrap"); w.style.display=w.style.display==="none"?"block":"none"; }
 let lastDebts=[];
@@ -1235,14 +1236,15 @@ function addParsedDebts(){ const c=cur(); if(!c){ toast("Pick a client first"); 
   toast((n?n+" added":"")+(n&&u?", ":"")+(u?u+" updated with the new numbers":"")||"Nothing selected"); }
 function renderDebts(){
   const c=cur(); const el=$("debtTable"); if(!el) return;
-  el.innerHTML = (!c||!c.debts.length) ? `<div class="empty">No debts entered. Add the client's cards, autos, and personal loans to model consolidation.</div>` :
+  const tr=c&&(c.debtsTrash||[]).length ? `<div class="hint" style="margin:6px 0">${c.debtsTrash.length} removed debt${c.debtsTrash.length>1?"s":""} \u2014 <a href="#" onclick="restoreDebts();return false" style="color:var(--brand);font-weight:600">put back</a>. (On a streamline you don\u2019t need to remove debts \u2014 they\u2019re simply left out.)</div>` : "";
+  el.innerHTML = tr + ((!c||!c.debts.length) ? `<div class="empty">No debts entered. Add the client's cards, autos, and personal loans to model consolidation.</div>` :
   `<table class="data"><thead><tr><th>Debt</th><th class="num">Balance ($)</th><th class="num">APR (%)</th><th class="num">Monthly pay ($)</th><th></th></tr></thead><tbody>`+
   c.debts.map((d,i)=>`<tr>
    <td><input type="text" value="${esc(d.name)}" oninput="updDebt(${i},'name',this.value)"></td>
    <td><input type="number" class="num" value="${d.balance??""}" oninput="updDebt(${i},'balance',this.value)"></td>
    <td><input type="number" class="num" step="0.01" placeholder="optional" value="${d.apr??""}" oninput="updDebt(${i},'apr',this.value)"></td>
    <td><input type="number" class="num" value="${d.pay??""}" oninput="updDebt(${i},'pay',this.value)"></td>
-   <td><button class="btn danger small" onclick="delDebt(${i})">\u2715</button></td></tr>`).join("")+`</tbody></table>`;
+   <td><button class="btn danger small" onclick="delDebt(${i})">\u2715</button></td></tr>`).join("")+`</tbody></table>`);
 }
 
 /* ---------- analysis ---------- */
@@ -1603,7 +1605,7 @@ function renderPropOptions(){ const c=cur(); const el=$("propOptsList"); if(!el)
 }
 function renderPropSnaps(){ const c=cur(); const el=$("propSnapList"); if(!el) return;
   const L=c?(c.scenarios||[]).filter(x=>x.kind==="snap"):[];
-  if(!c||!L.length){ el.innerHTML=`<div class="hint">Nothing saved yet \u2014 on <b>Savings analysis</b>, set up a path and click <b>Save this option for the proposal</b>. Until then the proposal follows whatever is on the analysis screen.</div>`; const w=$("propCmpWhyWrap"); if(w) w.style.display="none"; return; }
+  if(!c||!L.length){ el.innerHTML=`<div class="hint">Nothing saved yet \u2014 click <b>Save as an option</b> above (or <b>Save this option for the proposal</b> on Savings analysis). Save two or more and check them here for a side-by-side. Until then the proposal follows whatever is on the analysis screen.</div>`; const w=$("propCmpWhyWrap"); if(w) w.style.display="none"; const so=$("propSaveOpt"); if(so) so.style.display=""; return; }
   const rec=c.cmp&&c.cmp.rec; const sel=propSelected(c);
   el.innerHTML = L.map(sc=>{ const r=computeSnap(c,sc); const h=r&&snapHousehold(c,r);
     return `<div class="btnrow" style="margin:4px 0;gap:10px">
@@ -1614,7 +1616,8 @@ function renderPropSnaps(){ const c=cur(); const el=$("propSnapList"); if(!el) r
     <button class="btn ghost small" onclick="loadSnap('${sc.id}')" title="Open this set-up on Savings analysis">Open</button>
     <button class="btn ghost small" title="Remove" onclick="delScenario('${sc.id}')">\u2715</button></div>`; }).join("")
     + `<div class="hint" style="margin-top:6px">${sel.length===0?"None checked \u2014 the proposal follows the analysis screen.":sel.length===1?"One checked \u2014 a single proposal for "+esc(sel[0].label)+".":sel.length+" checked \u2014 a side-by-side proposal"+(rec?"":" (\u2606 star the one you recommend)")+"."}</div>`;
-  const w=$("propCmpWhyWrap"); if(w){ w.style.display=(sel.length>=2&&rec)?"block":"none"; const t=$("propCmpWhy"); if(t&&document.activeElement!==t) t.value=(c.cmp&&c.cmp.why)||""; } }
+  const w=$("propCmpWhyWrap"); if(w){ w.style.display=(sel.length>=2&&rec)?"block":"none"; const t=$("propCmpWhy"); if(t&&document.activeElement!==t) t.value=(c.cmp&&c.cmp.why)||""; }
+  const so=$("propSaveOpt"); if(so) so.style.display = sel.length===0 ? "" : "none"; }
 function renderProposalPreview(){ renderPropOptionPicker(); renderPropOptions(); renderPropSnaps(); renderLibrary(); const el=$("propPreview"); if(el) el.innerHTML=proposalHTML();
   const ps=$("propRateSrc"); if(ps){ const t=rateSrcText(cur()); ps.textContent=t; ps.style.color = /ESTIMATE/.test(t)?"var(--warn)":"var(--muted)"; } }
 const APP_TITLE=document.title;
