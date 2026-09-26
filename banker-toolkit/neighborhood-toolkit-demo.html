@@ -745,7 +745,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.1.13";
+const TOOLKIT_VERSION = "1.1.14";
 const DEMO = true; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -1460,6 +1460,9 @@ function optionWins(c,r,h){ /* benefits only, for the side-by-side proposal */
   if(r.fhaS) w.push(`No appraisal, no income re-verification, and closing costs are lender-paid`);
   if(r.prog==="va_irrrl"&&!r.second) w.push(`VA IRRRL \u2014 typically no appraisal or income re-verification, reduced funding fee`);
   if(h.newInt<h.todayInt) w.push(`Saves <b>${money(h.todayInt-h.newInt)}</b> in total interest versus staying on today\u2019s path`);
+  const p=snapPW(c,r,h);
+  if(p) w.push(`<b>Pay what you pay now:</b> keep the same ${money(h.today)}/mo going out and ${r.second?"the new loan is paid off":"you\u2019re mortgage-free"} in <b>${yrsMo(p.months)}</b>${p.cut>0?" \u2014 "+yrsMo(p.cut)+" sooner":""}${p.saved>0?`, saving <b>${money(p.saved)}</b> in interest vs today\u2019s path`:""}`);
+  if(p&&p.eff<r.a.anRate-0.05) w.push(`Paying what you pay now makes your <b>effective rate ${pct(p.eff)}</b> \u2014 ${pct(r.a.anRate)} on paper, but the extra going to principal means you pay interest like a ${pct(p.eff)} loan`);
   if(!r.second&&c.rate>r.a.anRate) w.push(`Rate goes from ${pct(c.rate)} to <b>${pct(r.a.anRate)}</b>`);
   return w; }
 function comparisonProposalHTML(c,sel){
@@ -1484,8 +1487,9 @@ function comparisonProposalHTML(c,sel){
     <div style="display:flex;gap:22px;margin:2px 0 8px">
       <div><div style="font-size:21px;font-weight:700;font-family:Georgia,'Times New Roman',serif;color:#343740">${money(x.h.now)}</div><div style="font-size:10.5px;color:#666">New total monthly</div></div>
       ${x.h.save>0?`<div><div style="font-size:21px;font-weight:700;font-family:Georgia,'Times New Roman',serif;color:#2E6B4F">${money(x.h.save)}</div><div style="font-size:10.5px;color:#666">Monthly savings</div></div>`:x.r.cashOut+x.r.skipCash>0?`<div><div style="font-size:21px;font-weight:700;font-family:Georgia,'Times New Roman',serif;color:#2E6B4F">${money(x.r.cashOut+x.r.skipCash)}</div><div style="font-size:10.5px;color:#666">Cash at closing</div></div>`:""}
+      ${(()=>{ const p=snapPW(c,x.r,x.h); return p&&p.eff<x.r.a.anRate-0.05 ? `<div><div style="font-size:21px;font-weight:700;font-family:Georgia,'Times New Roman',serif;color:#2E6B4F">${pct(p.eff)}</div><div style="font-size:10.5px;color:#666">Effective rate, paying what you pay now</div></div>` : ""; })()}
     </div>
-    <ul style="margin:0;padding-left:16px;font-size:11.5px;line-height:1.5">${optionWins(c,x.r,x.h).slice(0,5).map(b=>`<li>${b}</li>`).join("")}</ul>
+    <ul style="margin:0;padding-left:16px;font-size:11.5px;line-height:1.5">${optionWins(c,x.r,x.h).slice(0,7).map(b=>`<li>${b}</li>`).join("")}</ul>
   </div>`).join("")}
   </div>
   <h2>Side by side</h2>
@@ -1977,9 +1981,14 @@ function snapHousehold(c,r){ const dPay=(c.debts||[]).filter(d=>d.balance>0).red
   const todayInt=(r.curSched?r.curSched.interest:0)+(r.dInt||0);
   const newInt = r.second ? (r.curSched?r.curSched.interest:0)+r.newSched.interest : r.newSched.interest+(r.roll?0:(r.dInt||0));
   return {today,now,save:today-now,dPay,todayInt,newInt}; }
+/* pay-what-you-pay-now on the household view: keep today's total outlay, the difference attacks the new loan */
+function snapPW(c,r,h){ if(!(r.extra>0)||!r.pw||!isFinite(r.pw.months)) return null;
+  const newInt = r.second ? (r.curSched?r.curSched.interest:0)+r.pw.interest : r.pw.interest+(r.roll?0:(r.dInt||0));
+  return {extra:r.extra, months:r.pw.months, eff:r.pwEff, newInt, saved:h.todayInt-newInt, cut:r.n-r.pw.months}; }
 function programMatrix(c,snaps,recId){
-  const comps=snaps.map(sc=>({sc,r:computeSnap(c,sc)})).filter(x=>x.r).map(x=>Object.assign(x,{h:snapHousehold(c,x.r)}));
+  const comps=snaps.map(sc=>({sc,r:computeSnap(c,sc)})).filter(x=>x.r).map(x=>Object.assign(x,{h:snapHousehold(c,x.r)})).map(x=>Object.assign(x,{p:snapPW(c,x.r,x.h)}));
   if(!comps.length) return "";
+  const anyPw=comps.some(x=>x.p); const pwOf=f=>comps.filter(x=>x.p).map(x=>f(x.p)); const bestPwInt=anyPw?Math.min(...pwOf(p=>p.newInt)):null, bestPwMo=anyPw?Math.min(...pwOf(p=>p.months)):null, bestEff=anyPw?Math.min(...pwOf(p=>p.eff)):null;
   const bestSave=Math.max(...comps.map(x=>x.h.save)), bestInt=Math.min(...comps.map(x=>x.h.newInt)), bestPay=Math.min(...comps.map(x=>x.h.now));
   const cell=(v,best,rec)=>`<td class="num${rec?" reccol":""}"${best?' style="color:#2E6B4F;font-weight:700"':''}>${v}</td>`;
   const row=(label,fn,bestFn)=>`<tr><td><b>${label}</b></td>`+comps.map(x=>cell(fn(x), bestFn?bestFn(x):false, x.sc.id===recId)).join("")+`</tr>`;
@@ -1998,6 +2007,12 @@ function programMatrix(c,snaps,recId){
   ${row("Total interest \u2014 this option",x=>money(x.h.newInt),x=>x.h.newInt===bestInt)}
   ${row("Mortgage paid off in",x=>x.r.second?yrsMo(x.r.curMonths)+" (first) \u00b7 "+yrsMo(x.r.newSched.months)+" (second)":yrsMo(x.r.newSched.months))}
   ${anyDebts?row("Debts gone",x=>(x.r.roll||x.r.second)?"at closing":x.r.dMonths>0?yrsMo(x.r.dMonths)+" at today\u2019s minimums":"\u2014"):""}
+  ${anyPw?`<tr><td colspan="${comps.length+1}" style="background:var(--cream-soft,#F4EFE6);font-weight:700;padding:6px 8px">Paying what you pay now \u2014 keep the same ${money(comps[0].h.today)}/month going out</td></tr>`:""}
+  ${anyPw?row("Extra to principal each month",x=>x.p?money(x.p.extra):"\u2014"):""}
+  ${anyPw?row(comps.some(x=>x.r.second)?"New loan paid off in":"Mortgage paid off in",x=>x.p?yrsMo(x.p.months)+(x.p.cut>0?" ("+yrsMo(x.p.cut)+" sooner)":""):"\u2014",x=>x.p&&x.p.months===bestPwMo):""}
+  ${anyPw?row("Total interest \u2014 paying what you pay now",x=>x.p?money(x.p.newInt):"\u2014",x=>x.p&&x.p.newInt===bestPwInt):""}
+  ${anyPw?row("Interest saved vs staying as-is",x=>x.p&&x.p.saved>0?money(x.p.saved):"\u2014",x=>x.p&&x.p.saved>0&&x.p.newInt===bestPwInt):""}
+  ${anyPw?row("Effective rate",x=>x.p?pct(x.p.eff)+(x.p.eff<x.r.a.anRate-0.05?" (vs "+pct(x.r.a.anRate)+" on paper)":""):"\u2014",x=>x.p&&x.p.eff===bestEff):""}
   </tbody></table>`;
 }
 function cmpCount(c){ const cp=c.payment||(c.balance&&c.rate?pmt(c.balance,c.rate,c.monthsLeft||360):0);
