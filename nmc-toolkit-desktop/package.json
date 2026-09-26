@@ -25,11 +25,26 @@
   "build": {
     "appId": "com.neighborhoodmc.toolkit",
     "productName": "NMC Toolkit",
-    "copyright": "© Neighborhood Mortgage Company",
-    "directories": { "output": "dist", "buildResources": "build" },
-    "files": ["main.js", "preload.js", "app/**/*", "package.json"],
+    "copyright": "\u00a9 Neighborhood Mortgage Company",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "app/**/*",
+      "package.json"
+    ],
     "win": {
-      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "icon": "build/icon.png",
       "artifactName": "NMC-Toolkit-Setup-${version}.${ext}"
     },
@@ -41,9 +56,18 @@
       "createStartMenuShortcut": true,
       "shortcutName": "NMC Toolkit"
     },
-    "portable": { "artifactName": "NMC-Toolkit-Portable-${version}.${ext}" },
+    "portable": {
+      "artifactName": "NMC-Toolkit-Portable-${version}.${ext}"
+    },
     "mac": {
-      "target": [{ "target": "dmg", "arch": ["universal"] }],
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
       "icon": "build/icon.png",
       "category": "public.app-category.finance",
       "hardenedRuntime": true,
@@ -52,7 +76,14 @@
       "entitlementsInherit": "build/entitlements.mac.plist",
       "artifactName": "NMC-Toolkit-${version}.${ext}"
     },
-    "dmg": { "artifactName": "NMC-Toolkit-${version}.${ext}" },
-    "publish": { "provider": "generic", "url": "http://HUB:8787/updates/" }
+    "dmg": {
+      "artifactName": "NMC-Toolkit-${version}.${ext}"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "doubledekr",
+      "repo": "nmc-tookit",
+      "releaseType": "release"
+    }
   }
 }
