@@ -746,7 +746,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.1.21";
+const TOOLKIT_VERSION = "1.1.22";
 const DEMO = true; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -830,7 +830,8 @@ function migrate(){ /* additive only — old saves gain new fields, nothing is e
   if(!Array.isArray(state.templates.mine)) state.templates.mine=[];
   if(!Array.isArray(state.templates.shared)) state.templates.shared=[];
   const tpl=blankClient();
-  (state.clients||[]).forEach(c=>{ if(STATUS_MIGRATE[c.status]) c.status=STATUS_MIGRATE[c.status]; if(!c.origTerm) c.origTerm=30; for(const k in tpl) if(c[k]===undefined) c[k]=Array.isArray(tpl[k])?[]:tpl[k];
+  (state.clients||[]).forEach(c=>{ if(STATUS_MIGRATE[c.status]) c.status=STATUS_MIGRATE[c.status]; if(!c.origTerm) c.origTerm=30;
+    if(c.paymentTotal>0&&!(c.payment>0)){ c.payment=c.paymentTotal; c.escrow=0; c.paymentAuto=true; c.payFromTotal=c.payFromTotal||(c.monthsLeft>0||c.origAmount>0?"low":"months"); } for(const k in tpl) if(c[k]===undefined) c[k]=Array.isArray(tpl[k])?[]:tpl[k];
    c.analysis=Object.assign({}, tpl.analysis, c.analysis||{});
    c.debts=c.debts||[]; c.options=c.options||[]; c.scenarios=c.scenarios||[];
    c.prop=Object.assign({included:[],rec:"",why:""}, c.prop||{});
@@ -924,7 +925,7 @@ function monthsFromOrig(c){ if(!(c.origAmount>0&&c.balance>0&&c.rate>0&&c.origAm
   const i=c.rate/1200, P=pmt(c.origAmount,c.rate,N); const num=P-c.balance*i, den=P-c.origAmount*i; if(!(num>0&&den>0)) return null;
   const k=Math.log(num/den)/Math.log(1+i); if(!isFinite(k)||k<0||k>N-1) return null; return {monthsLeft:Math.max(1,N-Math.round(k)), pi:P}; }
 function payHintText(c){ if(!c) return "";
-  if(c.paymentTotal>0&&!(c.payment>0)) return `<span style="color:var(--warn)">\u26A0 Can\u2019t split P&amp;I from the ${money(c.paymentTotal)} total yet \u2014 enter the <b>original loan amount</b> or <b>months remaining</b>, or type the P&amp;I.</span>`;
+  if(c.paymentTotal>0&&c.paymentAuto&&c.payFromTotal) return `<span style="color:var(--warn)">Using the <b>${money(c.paymentTotal)} total</b> as the current payment, escrow 0 \u2014 P&amp;I couldn\u2019t be separated ${c.payFromTotal==="months"?"without the original loan amount or months remaining":"because the payment is lower than the P&amp;I this balance and rate would need (the balance may cover more than one loan)"}. Fine for an estimate; type the P&amp;I if you have it.</span>`;
   if(c.payment>0&&!c.paymentAuto) return `P&amp;I as typed${c.paymentTotal>0?` \u00b7 escrow = ${money(c.paymentTotal)} \u2212 ${money(c.payment)}`:""}.`;
   if(c.payment>0&&c.paymentAuto) return `P&amp;I estimated from ${c.origAmount>0?"the original loan amount":"balance, rate and "+(c.monthsLeft||360)+" months remaining"}${c.paymentTotal>0?` \u00b7 escrow = total \u2212 P&amp;I`:""}. Type the P&amp;I if you have it.`;
   return ""; }
@@ -939,8 +940,8 @@ function normalizePayment(c,changed){
   if(["paymentTotal","balance","rate","monthsLeft","origAmount","origTerm"].includes(changed)){
     if(c.paymentTotal>0){
       if(manualPI){ c.escrow=Math.max(0,Math.round(c.paymentTotal-c.payment)); }                         /* typed P&I wins; escrow is the rest */
-      else if(pi&&reliable&&c.paymentTotal>pi+1){ c.payment=Math.round(pi); c.escrow=Math.round(c.paymentTotal-pi); c.paymentAuto=true; }   /* anything above P&I is taxes & insurance */
-      else { c.payment=null; c.escrow=null; c.paymentAuto=true; }                                        /* can't split honestly yet — say so instead of guessing */
+      else if(pi&&reliable&&c.paymentTotal>pi+1){ c.payment=Math.round(pi); c.escrow=Math.round(c.paymentTotal-pi); c.paymentAuto=true; c.payFromTotal=false; }   /* anything above P&I is taxes & insurance */
+      else { c.payment=c.paymentTotal; c.escrow=0; c.paymentAuto=true; c.payFromTotal = !reliable ? "months" : "low"; }   /* can't separate P&I: the whole payment is the starting point — it's an estimate */
     }
     else if(pi&&reliable&&!manualPI){ c.payment=Math.round(pi); c.paymentAuto=true; }
     else if(!manualPI&&!reliable){ c.payment=null; c.paymentAuto=true; }
