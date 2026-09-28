@@ -746,7 +746,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.1.20";
+const TOOLKIT_VERSION = "1.1.21";
 const DEMO = false; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -2752,6 +2752,8 @@ if(DEMO){ document.body.classList.add("demo"); const bn=$("demoBanner"); if(bn) 
 if(DESK){ DESK.setHub(apiBase()||""); DESK.onUpdateStatus(s=>{ const b=$("updBanner"); if(!b) return;
     b.style.display="block"; b.innerHTML = s.state==="ready"
       ? `<div class="btnrow"><span><b>Update available:</b> version ${esc(s.version)} is ready. Everything you\u2019re working on is saved \u2014 update whenever you have a moment.</span><span style="flex:1"></span><button class="btn small" onclick="DESK.installUpdate()">Update now</button><button class="btn ghost small" onclick="this.closest('#updBanner').style.display='none'">Later</button></div>`
+      : s.state==="manual"
+      ? `<div class="btnrow"><span><b>Update available:</b> version ${esc(s.version)}. Download the new installer and drag it over the app \u2014 your data stays put.</span><span style="flex:1"></span><button class="btn small" onclick="DESK.openReleases&&DESK.openReleases()">Download update</button><button class="btn ghost small" onclick="this.closest('#updBanner').style.display='none'">Later</button></div>`
       : "<b>Downloading update</b> to version "+esc(s.version)+" in the background\u2026"; });
   document.body.classList.add("desktop"); const b=$("deskBox"); if(b) b.style.display="block";
   const p=$("deskPath"); if(p) p.innerHTML="Your data saves automatically to <b>"+esc(DESK.dataPath())+"</b> \u2014 self-contained with the app, no browser involved. Version "+esc(DESK.version()||"")+".";

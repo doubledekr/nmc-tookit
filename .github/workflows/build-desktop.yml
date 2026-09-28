@@ -64,10 +64,12 @@ jobs:
         run: echo "version=$(node -p "require('./nmc-toolkit-desktop/package.json').version")" >> "$GITHUB_OUTPUT"
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.v.outputs.version }}-build${{ github.run_number }}
-          name: NMC Toolkit ${{ steps.v.outputs.version }} (build ${{ github.run_number }})
+          tag_name: v${{ steps.v.outputs.version }}
+          name: NMC Toolkit ${{ steps.v.outputs.version }}
+          make_latest: true
           body: |
-            Desktop installers built by GitHub Actions from commit ${{ github.sha }}.
+            Desktop installers built by GitHub Actions from commit ${{ github.sha }} (build ${{ github.run_number }}).
+            Installed copies check this page for updates automatically.
 
             - **Windows:** `NMC-Toolkit-Setup-*.exe` — unsigned, so SmartScreen may show "unrecognized app" → More info → Run anyway.
             - **Mac:** `NMC-Toolkit-*.dmg` — unsigned, so the first open is right-click → Open.

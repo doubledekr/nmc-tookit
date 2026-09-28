@@ -1,7 +1,7 @@
 {
   "name": "nmc-toolkit",
   "productName": "NMC Toolkit",
-  "version": "1.1.20",
+  "version": "1.1.21",
   "description": "Neighborhood Mortgage Company banker toolkit",
   "author": "Neighborhood Mortgage Company",
   "license": "UNLICENSED",
@@ -80,8 +80,10 @@
       "artifactName": "NMC-Toolkit-${version}.${ext}"
     },
     "publish": {
-      "provider": "generic",
-      "url": "http://HUB:8787/updates/"
+      "provider": "github",
+      "owner": "doubledekr",
+      "repo": "nmc-tookit",
+      "releaseType": "release"
     }
   }
 }

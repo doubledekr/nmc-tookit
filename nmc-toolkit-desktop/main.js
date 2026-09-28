@@ -52,25 +52,33 @@ ipcMain.handle("data:pickAndRead", async () => {
   if (r.canceled || !r.filePaths[0]) return null; try { return fs.readFileSync(r.filePaths[0], "utf8"); } catch (e) { return null; } });
 ipcMain.handle("app:version", () => app.getVersion());
 
-/* ---- updates, fed by the hub, installed when the banker is ready ----
-   The toolkit tells us the hub address (Settings → hub). We check <hub>/updates/ on launch and every 30
-   minutes and download new versions in the background. The toolkit then shows an "update available" bar
-   with an Update button; nothing restarts until the banker clicks it (or closes the app — an update that
-   has downloaded also installs on quit). Set NMC_NO_UPDATES=1 to disable (dev). */
-let updater = null, updateFeed = null, mainWin = null;
+/* ---- updates straight from GitHub Releases (no server needed) ----
+   electron-builder writes the GitHub feed (package.json → build.publish) into the app. On launch and every
+   30 minutes we ask GitHub for the newest release, download it in the background, and the toolkit shows an
+   "update available" bar with an Update button; nothing restarts until the banker clicks it (or closes the
+   app — a downloaded update also installs on quit). If the toolkit has a hub address, <hub>/updates/ is used
+   instead (for offices that mirror releases). Unsigned Mac builds can't self-install, so on a Mac the bar
+   offers the download page instead. Set NMC_NO_UPDATES=1 to disable (dev). */
+const RELEASES_URL = "https://github.com/doubledekr/nmc-tookit/releases/latest";
+let updater = null, updateFeed = null, mainWin = null, pendingVersion = null;
 function setupUpdates(){ if (process.env.NMC_NO_UPDATES) return;
   try { updater = require("electron-updater").autoUpdater; } catch (e) { return; }
-  updater.autoDownload = true; updater.autoInstallOnAppQuit = true; updater.allowDowngrade = false;
-  updater.on("error", () => {});
-  updater.on("update-available", info => { if (mainWin) mainWin.webContents.send("update:status", { state: "downloading", version: info.version }); });
+  updater.autoDownload = process.platform !== "darwin";   /* Mac: unsigned → can't self-install; just announce */
+  updater.autoInstallOnAppQuit = true; updater.allowDowngrade = false; updater.allowPrerelease = false;
+  updater.on("error", () => { if (pendingVersion && mainWin) mainWin.webContents.send("update:status", { state: "manual", version: pendingVersion, url: RELEASES_URL }); });
+  updater.on("update-available", info => { pendingVersion = info.version; if (!mainWin) return;
+    mainWin.webContents.send("update:status", process.platform === "darwin" ? { state: "manual", version: info.version, url: RELEASES_URL } : { state: "downloading", version: info.version }); });
   updater.on("update-downloaded", info => {   /* no dialog, no countdown: the toolkit shows a bar with an Update button */
     if (mainWin) mainWin.webContents.send("update:status", { state: "ready", version: info.version }); });
+  setTimeout(checkUpdates, 8000);
   setInterval(checkUpdates, 30 * 60 * 1000);
 }
-function checkUpdates(){ if (!updater || !updateFeed) return; try { updater.setFeedURL({ provider: "generic", url: updateFeed }); updater.checkForUpdates().catch(() => {}); } catch (e) {} }
+function checkUpdates(){ if (!updater) return;
+  try { if (updateFeed) updater.setFeedURL({ provider: "generic", url: updateFeed }); updater.checkForUpdates().catch(() => {}); } catch (e) {} }
 ipcMain.on("update:setHub", (e, hub) => { hub = String(hub || "").replace(/\/+$/, ""); const feed = hub ? hub + "/updates/" : null;
-  if (feed && feed !== updateFeed) { updateFeed = feed; checkUpdates(); } });
-ipcMain.handle("update:check", () => { checkUpdates(); return !!updateFeed; });
+  if (feed !== updateFeed) { updateFeed = feed; checkUpdates(); } });
+ipcMain.handle("update:check", () => { checkUpdates(); return true; });
+ipcMain.handle("update:openReleases", () => { shell.openExternal(RELEASES_URL); return true; });
 ipcMain.handle("update:install", () => { if (!updater) return false; flushWrites(); setTimeout(() => updater.quitAndInstall(false, true), 300); return true; });
 
 function createWindow(){
