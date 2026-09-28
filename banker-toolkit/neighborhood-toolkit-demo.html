@@ -324,7 +324,8 @@ table.data tr.rec td{background:var(--cream)}
             <div class="field"><label>Current rate (%)</label><input type="number" data-f="rate" step="0.125"></div>
             <div class="field"><label>Total monthly payment (PITI)</label><input type="number" data-f="paymentTotal" step="10" placeholder="what they actually pay"></div>
             <div class="field"><label>P&amp;I <span class="hint" style="display:inline">(auto from balance, rate, months — or from the total)</span></label><input type="number" data-f="payment" step="10" placeholder="auto"></div>
-            <div class="field"><label>Escrow — taxes &amp; insurance <span class="hint" style="display:inline">(auto = total minus P&amp;I; type it if the total is P&amp;I only)</span></label><input type="number" data-f="escrow" step="10"></div>
+            <div class="field"><label>Escrow — taxes &amp; insurance <span class="hint" style="display:inline">(auto = total minus P&amp;I)</span></label><input type="number" data-f="escrow" step="10"></div>
+            <div class="hint" id="payHint" style="grid-column:1/-1;margin-top:-4px"></div>
             <div class="field"><label>Months remaining <span class="hint" style="display:inline">(auto from the original amount, or from P&amp;I if you type it, or the Salesforce close date)</span></label><input type="number" data-f="monthsLeft"></div>
             <div class="field"><label>Est. home value ($)</label>
               <div class="chiprow"><input type="number" data-f="value" step="5000" style="flex:1;min-width:120px">
@@ -745,7 +746,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.1.19";
+const TOOLKIT_VERSION = "1.1.20";
 const DEMO = true; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -922,15 +923,27 @@ function monthsFromOrig(c){ if(!(c.origAmount>0&&c.balance>0&&c.rate>0&&c.origAm
   const N=(+c.origTerm||30)*12;   /* 30 years unless the banker says otherwise */
   const i=c.rate/1200, P=pmt(c.origAmount,c.rate,N); const num=P-c.balance*i, den=P-c.origAmount*i; if(!(num>0&&den>0)) return null;
   const k=Math.log(num/den)/Math.log(1+i); if(!isFinite(k)||k<0||k>N-1) return null; return {monthsLeft:Math.max(1,N-Math.round(k)), pi:P}; }
+function payHintText(c){ if(!c) return "";
+  if(c.paymentTotal>0&&!(c.payment>0)) return `<span style="color:var(--warn)">\u26A0 Can\u2019t split P&amp;I from the ${money(c.paymentTotal)} total yet \u2014 enter the <b>original loan amount</b> or <b>months remaining</b>, or type the P&amp;I.</span>`;
+  if(c.payment>0&&!c.paymentAuto) return `P&amp;I as typed${c.paymentTotal>0?` \u00b7 escrow = ${money(c.paymentTotal)} \u2212 ${money(c.payment)}`:""}.`;
+  if(c.payment>0&&c.paymentAuto) return `P&amp;I estimated from ${c.origAmount>0?"the original loan amount":"balance, rate and "+(c.monthsLeft||360)+" months remaining"}${c.paymentTotal>0?` \u00b7 escrow = total \u2212 P&amp;I`:""}. Type the P&amp;I if you have it.`;
+  return ""; }
 function normalizePayment(c,changed){
   if(changed==="origTerm") c.monthsLeftAuto=true;   /* changing the term re-solves months */
   if(["origAmount","origTerm","balance","rate","paymentTotal"].includes(changed) && (!c.monthsLeft||c.monthsLeftAuto)){ const m=monthsFromOrig(c);
     if(m){ c.monthsLeft=m.monthsLeft; c.monthsLeftAuto=true; if(!c.payment||c.paymentAuto){ c.payment=Math.round(m.pi); c.paymentAuto=true; } } }
   const pi=piCalc(c);
-  if(["paymentTotal","balance","rate","monthsLeft"].includes(changed)){
-    if(c.paymentTotal>0){ if(pi&&c.paymentTotal>pi+1){ c.payment=Math.round(pi); c.escrow=Math.round(c.paymentTotal-pi); c.paymentAuto=true; }   /* anything above P&I is taxes & insurance */
-      else { c.payment=c.paymentTotal; c.escrow=0; c.paymentAuto=false; } }
-    else if(pi && (!c.payment || c.paymentAuto)){ c.payment=Math.round(pi); c.paymentAuto=true; } /* auto P&I from the numbers we have */
+  /* a P&I estimate is only trustworthy when we know how far into the loan they are (typed months, close date, or the original amount) */
+  const reliable = c.origAmount>0 || c.monthsLeft>0;
+  const manualPI = c.payment>0 && !c.paymentAuto;
+  if(["paymentTotal","balance","rate","monthsLeft","origAmount","origTerm"].includes(changed)){
+    if(c.paymentTotal>0){
+      if(manualPI){ c.escrow=Math.max(0,Math.round(c.paymentTotal-c.payment)); }                         /* typed P&I wins; escrow is the rest */
+      else if(pi&&reliable&&c.paymentTotal>pi+1){ c.payment=Math.round(pi); c.escrow=Math.round(c.paymentTotal-pi); c.paymentAuto=true; }   /* anything above P&I is taxes & insurance */
+      else { c.payment=null; c.escrow=null; c.paymentAuto=true; }                                        /* can't split honestly yet — say so instead of guessing */
+    }
+    else if(pi&&reliable&&!manualPI){ c.payment=Math.round(pi); c.paymentAuto=true; }
+    else if(!manualPI&&!reliable){ c.payment=null; c.paymentAuto=true; }
   }
   else if(changed==="payment"){ c.paymentAuto=false; }
   else if(changed==="escrow"){ if(c.paymentTotal>0) c.payment=Math.max(0,Math.round(c.paymentTotal-(c.escrow||0))); else if(c.payment>0) c.paymentTotal=Math.round(c.payment+(c.escrow||0)); c.paymentAuto=false; }
@@ -967,6 +980,7 @@ function bindClientFields(){
       normalizePayment(c,f);
       if(f==="value") c.valueSrc={type:"manual",when:todayStr()};
       ["payment","escrow","paymentTotal","monthsLeft","origAmount"].forEach(k=>{ if(k!==f){ const o=document.querySelector(`#s-client [data-f="${k}"]`); if(o) o.value=c[k]==null?"":c[k]; } });
+      { const ph=$("payHint"); if(ph) ph.innerHTML=payHintText(c); }
       save(); if(f==="name") renderPickers(); renderPipeline(); ltvHint(); renderClientBar(); });
   });
 }
@@ -977,6 +991,7 @@ function fillClientForm(){ const c=cur();
     ? `<span class="tag-warn">Not in pipeline</span> <button class="btn small" onclick="promoteQuick()">Save to pipeline</button>`
     : `<span class="tag-good">In pipeline</span>`);
   ltvHint(); const vs=$("valueSrc"); if(vs) vs.innerHTML=valueSrcText(c);
+  const ph=$("payHint"); if(ph) ph.innerHTML=payHintText(c);
   const dc=$("dispoChips"); if(dc){ dc.innerHTML = !c ? "" : STATUSES.map(st=>`<button class="chip${c.status===st?" on":""}" ${c.status===st?'style="background:var(--brand);color:#fff;border-color:var(--brand)"':''} onclick="dispo('${st.replace(/'/g,"\\'")}')">${st}</button>`).join("");
     const dh=$("dispoHint"); if(dh) dh.innerHTML = !c ? "" : c.status===S_RATE ? `Needs the market at <b>${c.targetRate>0?pct(c.targetRate):"\u2014 set the rate alert above"}</b> \u2014 they\u2019ll show under \uD83D\uDD25 Hot now when the feed gets there.`
       : c.status===S_DONE ? `Closed ${esc(c.closedAt||"")} \u2014 counted in this month\u2019s goal.` : c.status==="Needs follow-up"&&c.followUp ? `Follow-up ${esc(c.followUp)} \u2014 shows under Follow-ups due on that day.` : ""; }
