@@ -53,35 +53,23 @@ Gatekeeper ("can't be opened") warnings. To avoid them:
   `APPLE_TEAM_ID` set; electron-builder signs **and notarizes**. Without this,
   bankers must right-click → Open the first time, and IT will hear about it.
 
-## Updates: automatic download, banker-timed install, hub-driven
+## Updates: straight from GitHub Releases (no server needed)
 
-The pipeline, end to end:
+Every push to `main` builds the installers and publishes a release tagged `v<version>`.
+Installed copies check that page on launch and every 30 minutes:
 
-1. Change the toolkit (or the desktop shell). Bump `TOOLKIT_VERSION` in
-   `banker-toolkit/neighborhood-toolkit.html` — that one constant is the version
-   everywhere (`npm run sync` copies it into package.json).
-2. Push to `main`. GitHub Actions builds the Windows and Mac installers and
-   publishes a release (`.github/workflows/build-desktop.yml`).
-3. The hub mirrors that release into `data/updates/` every 15 minutes. Set on
-   the server: `NMC_UPDATE_REPO=doubledekr/nmc-tookit` and `NMC_GITHUB_TOKEN`
-   (a fine-grained token with *Contents: read* on that repo, since it's
-   private). `GET /api/presence` reports the current version.
-4. Every banker's app checks `<hub>/updates/` on launch and every 30 minutes
-   (the hub address comes from the toolkit's Settings). A new version
-   downloads in the background; then a bar appears at the top of the toolkit:
-   **"Update available: version X is ready"** with an *Update now* button and
-   *Later*. Nothing restarts until the banker clicks Update (a downloaded update
-   also installs the next time they quit). Data is flushed before the restart.
+- **Windows:** the update downloads in the background; the toolkit shows an
+  "Update available" bar with an **Update now** button. Nothing restarts until the
+  banker clicks it (or quits — a downloaded update installs on quit). Data is untouched.
+- **Mac:** unsigned apps can't replace themselves, so the bar offers **Download update**,
+  which opens the release page; the banker drags the new app over the old one. Once the
+  app is signed with an Apple Developer ID this becomes one-click like Windows.
 
-Seeing who's on what: Management console → Presence & IT admin shows each
-banker's version and platform, with "update pending" flagged against the
-hub's current version. The toolkit shows its own version in the sidebar footer
-(`NMC Toolkit v1.0.0 · desktop`) and in the window title.
-
-Notes: macOS auto-update requires the app to be signed (unsigned builds can
-still be installed by hand). `NMC_NO_UPDATES=1` disables the check for
-development. Browser-version users don't auto-update — they get the new file
-from wherever IT hosts it.
+Requirements: the repository must be **public** (bankers' machines download the
+installers anonymously), and each release must carry `latest.yml` / `latest-mac.yml`
+next to the installers — the workflow does this. If a hub address is set in the
+toolkit, `<hub>/updates/` is used instead of GitHub (for offices that mirror releases).
+Set `NMC_NO_UPDATES=1` to disable the check (dev).
 
 ## Layout
 
