@@ -746,7 +746,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.1.22";
+const TOOLKIT_VERSION = "1.1.23";
 const DEMO = false; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -1277,6 +1277,7 @@ function readAnalysisInputs(){ const c=cur(); if(!c) return;
     saved:c.analysis.saved, anEquity:$("anEquity")?$("anEquity").value:"hel", anDraw:num($("anDraw")?$("anDraw").value:10)||10}; save();
   document.body.classList.toggle("heloc", $("anEquity")&&$("anEquity").value==="heloc"); }
 const todayStr=()=>new Date().toISOString().slice(0,10);
+function aprText(c){ try{ const r=c&&computeAnalysis(c); if(!r||r.tooSmall) return ""; return " APR "+pct(r.apr)+(r.aprEst?" (est. \u2014 rate + 0.25% until costs are entered)":" (from "+money((r.a.anCosts||0)+r.mipAmt)+" in costs)")+"."; }catch(e){ return ""; } }
 function rateSrcText(c){ const s=c&&c.analysis&&c.analysis.rateSrc; if(!c||!c.analysis||c.analysis.anRate==null) return "";
   if(!s) return "Rate: entered earlier (source not recorded).";
   if(s.type==="quote") return "Rate: actual lender quote \u2014 "+(s.lender||"lender")+" "+pct(c.analysis.anRate)+(s.when?" ("+s.when+")":"")+".";
@@ -1389,7 +1390,13 @@ function computeAnalysis(c){
   const piti = c.paymentTotal>0 ? c.paymentTotal : curPay + escrow;   /* a skipped payment is the whole PITI, not just P&I */
   const skipCash = second ? 0 : skipN * piti;
   const curPathInterest = (second?0:curSched.interest) + (roll?dInt:0);
-  return {second,heloc,drawYrs,ioPay,afterDrawPay,curPay,curMonths,curSched,roll,cashOut,streamline,debts,dBal,dPay,dInt,dMonths,dMonthsEst,dMonthsUnknown,dExtra,dNoApr,newP,n,newPay,newSched,outlayNow,saveMo,blended,extra,pw,pwEff,skipCash,skipN,prog,fhaS,mipAmt,escrow,curPathInterest,a};
+  /* APR: the rate that amortizes the amount financed net of prepaid finance charges (closing costs + upfront MIP)
+     at the actual payment. With no costs entered we can't compute it, so the proposal shows note rate + 0.25% (estimate). */
+  const finCharges = (costs||0) + mipAmt;
+  let apr=a.anRate+0.25, aprEst=true;
+  if(finCharges>0 && newP>finCharges && !heloc){ const amt=newP-finCharges; let lo=a.anRate, hi=a.anRate+10;
+    for(let i=0;i<50;i++){ const mid=(lo+hi)/2; if(pmt(amt,mid,n)>newPay) hi=mid; else lo=mid; } apr=(lo+hi)/2; aprEst=false; }
+  return {apr,aprEst,second,heloc,drawYrs,ioPay,afterDrawPay,curPay,curMonths,curSched,roll,cashOut,streamline,debts,dBal,dPay,dInt,dMonths,dMonthsEst,dMonthsUnknown,dExtra,dNoApr,newP,n,newPay,newSched,outlayNow,saveMo,blended,extra,pw,pwEff,skipCash,skipN,prog,fhaS,mipAmt,escrow,curPathInterest,a};
 }
 
 function balanceChart(r){
@@ -1406,7 +1413,7 @@ function balanceChart(r){
    <text x="${W-6}" y="14" font-size="11" text-anchor="end" fill="#5C616E">dashed = minimum payment \u00b7 solid = pay what you pay now</text></svg>`;
 }
 
-function runAnalysis(){ { const n=$("anRateSrc"); if(n){ const t=rateSrcText(cur()); n.textContent=t; n.style.color=/ESTIMATE/.test(t)?"var(--warn)":"var(--muted)"; } }
+function runAnalysis(){ { const n=$("anRateSrc"); if(n){ const t=rateSrcText(cur())+aprText(cur()); n.textContent=t; n.style.color=/ESTIMATE/.test(t)?"var(--warn)":"var(--muted)"; } }
   const c=cur(); const el=$("anResults");
   if(!c){ el.innerHTML=`<div class="panel empty">Pick a client first.</div>`; return; }
   readAnalysisInputs();
@@ -1501,7 +1508,7 @@ function comparisonProposalHTML(c,sel){
   ${items.map(x=>`<div class="optcard${x.sc.id===rec?" rec":""}" style="border:1.5px solid ${x.sc.id===rec?"var(--brand,#A53222)":"#ddd"};border-radius:10px;padding:10px 12px;background:${x.sc.id===rec?"#FBF3F1":"#fff"}">
     ${x.sc.id===rec?`<div style="color:var(--brand,#A53222);font-size:10.5px;font-weight:700;letter-spacing:.04em">\u2605 OUR RECOMMENDATION</div>`:""}
     <h2 style="margin:2px 0 6px;font-size:15px">${esc(x.sc.label)}</h2>
-    <div style="font-size:11px;color:#555;margin-bottom:6px">${pct(x.r.a.anRate)} \u00b7 ${x.r.a.anTerm} years \u00b7 ${money(x.r.newP)}${x.r.second?" second mortgage":""}</div>
+    <div style="font-size:11px;color:#555;margin-bottom:6px">${pct(x.r.a.anRate)} \u00b7 APR ${pct(x.r.apr)}${x.r.aprEst?"*":""} \u00b7 ${x.r.a.anTerm} years \u00b7 ${money(x.r.newP)}${x.r.second?" second mortgage":""}</div>
     <div style="display:flex;gap:22px;margin:2px 0 8px;flex-wrap:wrap">
       <div><div style="font-size:21px;font-weight:700;font-family:Georgia,'Times New Roman',serif;color:#343740">${money(x.r.newPay)}/mo</div><div style="font-size:10.5px;color:#666">${x.r.second?"New second mortgage payment (minimum)":"New mortgage payment (minimum)"}</div></div>
       ${x.r.second?`<div><div style="font-size:21px;font-weight:700;font-family:Georgia,'Times New Roman',serif;color:#343740">${money(x.r.dPay)} \u2192 ${money(x.r.newPay)}</div><div style="font-size:10.5px;color:#666">Debt payments each month</div></div>`
@@ -1514,7 +1521,7 @@ function comparisonProposalHTML(c,sel){
   </div>
   <h2>Side by side</h2>
   ${programMatrix(c,sel,rec)}
-  <div class="hint" style="margin-top:4px">Interest totals include your current debts at today\u2019s minimum payments in every column, so the options are compared apples to apples.${c.escrow>0?" Taxes &amp; insurance escrow (~"+money(c.escrow)+"/mo) continues on any option and is not included above.":""}</div>
+  <div class="hint" style="margin-top:4px">${items.some(x=>x.r.aprEst)?"* APR estimated at the note rate + 0.25% until closing costs are priced; the exact APR comes with the lender\u2019s Loan Estimate. ":""}Interest totals include your current debts at today\u2019s minimum payments in every column, so the options are compared apples to apples.${c.escrow>0?" Taxes &amp; insurance escrow (~"+money(c.escrow)+"/mo) continues on any option and is not included above.":""}</div>
   ${recIt?`<div class="recbox"><b>\u2605 Our recommendation: ${esc(recIt.sc.label)}.</b> ${c.cmp&&c.cmp.why?esc(c.cmp.why):""}</div>`:""}
   <div class="disc">This comparison is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. Figures exclude taxes, insurance, and escrows unless noted. Program eligibility (including FHA Streamline and VA IRRRL) is subject to lender and agency guidelines. ${esc(s.co)} \u00b7 NMLS #2484730 \u00b7 Equal Housing Lender.</div>`;
 }
@@ -1551,11 +1558,13 @@ function proposalSingleHTML(){
   const sideRows = r.second ? `
    <tr><td>Balances owed</td><td class="num">${money(r.dBal)}</td><td class="num">${money(r.newP)} \u2014 one loan${r.cashOut>0?" (includes "+money(r.cashOut)+" cash to you)":""}</td></tr>
    <tr><td>Rate</td><td class="num">${r.blended!=null?pct(r.blended)+" blended":"\u2014"}</td><td class="num">${pct(r.a.anRate)} ${r.heloc?"variable (today's rate)":"fixed"}</td></tr>
+   <tr><td>APR${r.aprEst?" (estimated)":""}</td><td class="num"></td><td class="num">${pct(r.apr)}</td></tr>
    <tr><td>Monthly payments</td><td class="num">${money(r.dPay)}${r.dExtra?" + "+money(r.dExtra)+" extra":""}</td><td class="num">${money(r.newPay)}${r.heloc?" interest-only during the "+r.drawYrs+"-yr draw, then ~"+money(r.afterDrawPay):""}</td></tr>
    <tr><td>Paid off in</td><td class="num">${r.dMonths===Infinity?"never at these payments":isFinite(r.dMonths)&&r.dMonths>0?yrsMo(r.dMonths):"\u2014"}</td><td class="num">${yrsMo(r.n)}${r.extra>0?" (or "+yrsMo(r.pw.months)+" paying what you pay now)":""}</td></tr>
    <tr><td><b>Total monthly</b></td><td class="num"><b>${money(r.outlayNow)}</b></td><td class="num"><b>${money(r.newPay)}</b></td></tr>` : `
    <tr><td>Loan amount</td><td class="num">${money(c.balance)}</td><td class="num">${money(r.newP)}</td></tr>
    <tr><td>Interest rate</td><td class="num">${pct(c.rate)}${r.roll&&r.debts.length?` (blended with debts: ${pct(r.blended)})`:""}</td><td class="num">${pct(r.a.anRate)}${o?` \u2014 ${esc(o.lender)}${o.lock?", "+esc(o.lock)+" lock":""}`:""}</td></tr>
+   <tr><td>APR${r.aprEst?" (estimated)":""}</td><td class="num"></td><td class="num">${pct(r.apr)}</td></tr>
    <tr><td>Term</td><td class="num">${yrsMo(r.curMonths)}</td><td class="num">${r.a.anTerm} years</td></tr>
    <tr><td>Monthly principal &amp; interest</td><td class="num">${money(r.curPay)}</td><td class="num">${money(r.newPay)}</td></tr>
    ${r.roll&&r.dPay?`<tr><td>Monthly debt payments</td><td class="num">${money(r.dPay)}</td><td class="num" style="color:#2E6B4F;font-weight:600">$0</td></tr>
@@ -1589,6 +1598,7 @@ function proposalSingleHTML(){
   <table><thead><tr><th></th><th class="num">Today</th><th class="num">Proposed</th></tr></thead><tbody>${sideRows}</tbody></table>
   ${r.heloc?`<div class="hint" style="margin-top:4px">HELOC rates are variable and can change with the market; the payment shown is interest-only during the draw period and will rise when repayment begins.</div>`:""}
   ${r.escrow?`<div class="hint" style="margin-top:4px">Taxes &amp; insurance escrow (~${money(r.escrow)}/mo) continues on either loan and is not included in the payments above.</div>`:""}
+  ${r.aprEst?`<div class="hint" style="margin-top:4px">APR is estimated at the note rate + 0.25% until closing costs are priced; the exact APR comes with the lender\u2019s Loan Estimate.</div>`:""}
   ${debtRows?`<h2>Debts consolidated at closing</h2><table><thead><tr><th>Debt</th><th class="num">Balance</th><th class="num">APR</th><th class="num">Payment</th><th class="num">After closing</th></tr></thead><tbody>${debtRows}</tbody></table>`:""}
   ${(()=>{ /* the stat strip shows wins only \u2014 anything that isn't a benefit simply isn't shown */
     const wins=[];
@@ -2024,6 +2034,7 @@ function programMatrix(c,snaps,recId){
   ${row("Program",x=>snapLabel(x.sc.inputs,x.r))}
   ${row("New loan",x=>money(x.r.newP)+(x.r.second?" second":""))}
   ${row("Rate \u00b7 term",x=>pct(x.r.a.anRate)+" \u00b7 "+x.r.a.anTerm+" yrs")}
+  ${row("APR",x=>pct(x.r.apr)+(x.r.aprEst?"*":""))}
   ${row("New loan payment (minimum)",x=>money(x.r.newPay)+"/mo"+(x.r.second?" on the second":""))}
   ${comps.some(x=>x.r.second)?row("All mortgage payments (principal &amp; interest)",x=>x.r.second?money(x.r.curPay)+" current mortgage (unchanged) + "+money(x.r.newPay)+" new second = "+money(x.r.curPay+x.r.newPay):money(x.r.newPay)+"/mo"):""}
   ${anyDebts?row("Debts paid off at closing",x=>(x.r.roll||x.r.second)&&x.r.dBal>0?money(x.r.dBal)+" \u2014 "+money(x.r.dPay)+"/mo gone":x.r.streamline?"":"\u2014 debts stay as they are"):""}
