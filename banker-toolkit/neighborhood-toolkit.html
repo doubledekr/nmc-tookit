@@ -760,7 +760,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.3.2";
+const TOOLKIT_VERSION = "1.3.3";
 const DEMO = false; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -1869,7 +1869,7 @@ function renderPropSnaps(){ const c=cur(); const el=$("propSnapList"); if(!el) r
   const rec=c.cmp&&c.cmp.rec; const sel=propSelected(c);
   el.innerHTML = L.map(sc=>{ const r=computeSnap(c,sc); const h=r&&snapHousehold(c,r);
     return `<div class="btnrow" style="margin:4px 0;gap:10px">
-    <label style="margin:0;display:flex;align-items:center;gap:6px;color:var(--ink);font-size:13.5px"><input type="checkbox" style="width:auto" ${sc.onProp?"checked":""} onchange="toggleSnapProp('${sc.id}',this.checked)"> <b>${esc(sc.label)}</b>
+    <label style="margin:0;display:flex;align-items:center;gap:6px;color:var(--ink);font-size:13.5px"><input type="checkbox" style="width:auto" ${sc.onProp?"checked":""} onchange="toggleSnapProp('${sc.id}',this.checked)"> <input type="text" value="${esc(sc.label)}" title="Click to rename \u2014 this is the column heading on a side-by-side" style="font-weight:700;min-width:260px;padding:4px 8px;min-height:30px" onchange="renameSnap('${sc.id}',this.value)">
       <span class="hint">${r?`${pct(sc.inputs.anRate)} \u00b7 ${sc.inputs.anTerm} yrs \u00b7 ${money(r.newP)}${h&&h.save>0?" \u00b7 saves "+money(h.save)+"/mo":""}`:"needs the client\u2019s numbers"}</span></label>
     <span style="flex:1"></span>
     <button class="btn small ${rec===sc.id?"":"ghost "}" onclick="recommendScenario('${sc.id}')">${rec===sc.id?"\u2605 Recommended":"\u2606 Recommend"}</button>
@@ -2232,7 +2232,11 @@ function addSnapScenario(){ const c=cur(); if(!c){ toast("Pick a client first");
   const inputs={}; SNAP_KEYS.forEach(k=>inputs[k]=c.analysis[k]);
   const strip=o=>{ const t=Object.assign({},o); delete t.rateSrc; return JSON.stringify(t); };
   const dup=c.scenarios.find(x=>x.kind==="snap"&&strip(x.inputs)===strip(inputs)); if(dup){ dup.onProp=true; save(); renderProposalPreview(); toast("That exact option is already saved \u2014 it\u2019s checked on the proposal"); return; }
-  const label=snapLabel(inputs,r);
+  let label=snapLabel(inputs,r);
+  /* same product saved twice (a HEL at 20 and at 15 years): tell them apart by term, and by rate if the terms match too */
+  const twins=c.scenarios.filter(x=>x.kind==="snap"&&(x.label===label||x.label.replace(/ \((?:[\d.]+% \u00b7 )?\d+ yr\)$/,"")===label));
+  if(twins.length){ const tag=x=>{ const t=x.anTerm+" yr"; return twins.some(y=>y.inputs.anTerm===inputs.anTerm)&&twins.some(y=>y.inputs.anRate!==inputs.anRate) ? pct(x.anRate)+" \u00b7 "+t : t; };
+    twins.forEach(y=>{ if(!/ \(.*\d+ yr\)$/.test(y.label)) y.label=y.label+" ("+tag(y.inputs)+")"; }); label=label+" ("+tag(inputs)+")"; }
   c.scenarios.push({id:"s"+Date.now()+Math.random().toString(36).slice(2,5), kind:"snap", label, inputs, onProp:true});
   save(); toast("Saved \u201c"+label+"\u201d \u2014 pick it on Client proposal. Change the set-up and save again for another path."); }
 function loadSnap(id){ const c=cur(); const sc=c&&(c.scenarios||[]).find(x=>x.id===id); if(!sc||sc.kind!=="snap") return;
@@ -2338,6 +2342,7 @@ function addScenario(kind){ const c=cur(); if(!c){ toast("Pick a client first");
 function updScenario(id,k,v){ const c=cur(); const sc=c&&(c.scenarios||[]).find(x=>x.id===id); if(!sc) return;
   sc[k]=(k==="label"||k==="kind")?v:(String(v).trim()===""?null:num(v)); if(k==="kind"&&v==="heloc"&&!sc.draw) sc.draw=10; save(); renderCompare(); }
 function delScenario(id){ const c=cur(); if(!c) return; c.scenarios=(c.scenarios||[]).filter(x=>x.id!==id); if(c.cmp&&c.cmp.rec===id) c.cmp.rec=""; save(); renderCompare(); if($("s-proposal").classList.contains("active")) renderProposalPreview(); }
+function renameSnap(id,v){ const c=cur(); const sc=c&&(c.scenarios||[]).find(x=>x.id===id); if(!sc) return; v=String(v||"").trim(); if(v) sc.label=v; save(); const el=$("propPreview"); if(el) el.innerHTML=proposalHTML(); }
 function toggleSnapProp(id,on){ const c=cur(); const sc=c&&(c.scenarios||[]).find(x=>x.id===id); if(!sc) return; sc.onProp=!!on; if(!on&&c.cmp.rec===id) c.cmp.rec=""; save(); renderProposalPreview(); }
 function propSelected(c){ return (c.scenarios||[]).filter(sc=>sc.kind==="snap"&&sc.onProp&&computeSnap(c,sc)); }
 function withAnalysis(c,inputs,fn){ const keep=c.analysis; c.analysis=Object.assign({},keep,inputs); try{ return fn(); } finally{ c.analysis=keep; } }
