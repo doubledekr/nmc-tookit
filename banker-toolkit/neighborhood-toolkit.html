@@ -29,6 +29,7 @@ h1,h2,h3{line-height:1.2}
 aside{
   width:232px;flex:0 0 232px;background:var(--cream-soft);border-right:1px solid var(--line);
   color:var(--ink);display:flex;flex-direction:column;padding:22px 0;
+  position:sticky;top:0;height:100vh;overflow-y:auto;align-self:flex-start;   /* stays put while the page scrolls */
 }
 .wordmark{padding:0 20px 16px;border-bottom:1px solid var(--line);margin-bottom:10px}
 #sideLogo{display:none;max-height:38px;max-width:172px;margin-bottom:4px}
@@ -228,7 +229,7 @@ table.data tr.rec td{background:var(--cream)}
   #app{flex-direction:column}
   aside{width:100%;flex:none;flex-direction:row;flex-wrap:wrap;align-items:center;gap:2px;
     padding:8px 10px;border-right:none;border-bottom:1px solid var(--line);
-    position:sticky;top:0;z-index:50}
+    position:sticky;top:0;z-index:50;height:auto;overflow:visible}
   .wordmark{border:none;padding:4px 10px;margin:0}
   .wordmark img{max-height:30px}
   .wordmark .tag{display:none}
@@ -757,7 +758,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.2.4";
+const TOOLKIT_VERSION = "1.2.5";
 const DEMO = false; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -1820,9 +1821,13 @@ async function renderSheet(kind, snap){ const c=cur();
   const name=title.replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"");
   const {svg,W,H}=buildSheetSVG(html,880);
   const img=new Image(); await new Promise((ok,bad)=>{ img.onload=ok; img.onerror=()=>bad(new Error("render")); img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg); });
-  const scale=2; const cv=document.createElement("canvas"); cv.width=W*scale; cv.height=H*scale;
-  const ctx=cv.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,cv.width,cv.height); ctx.scale(scale,scale); ctx.drawImage(img,0,0);
-  const jpg=await new Promise(res=>cv.toBlob(res,"image/jpeg",0.88)); if(!jpg) throw new Error("canvas");
+  /* texting limit: keep the JPG under ~480 KB. Try full size at good quality, then ease quality, then scale — text stays crisp well below 0.8. */
+  const LIMIT=480*1024;
+  const render=(scale)=>{ const cv=document.createElement("canvas"); cv.width=Math.round(W*scale); cv.height=Math.round(H*scale);
+    const ctx=cv.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,cv.width,cv.height); ctx.scale(scale,scale); ctx.drawImage(img,0,0); return cv; };
+  let cv=render(2), jpg=null;
+  outer: for(const scale of [2,1.75,1.5,1.25]){ if(scale!==2) cv=render(scale);
+    for(const q of [0.88,0.82,0.76,0.7,0.64]){ jpg=await new Promise(res=>cv.toBlob(res,"image/jpeg",q)); if(!jpg) throw new Error("canvas"); if(jpg.size<=LIMIT) break outer; } }
   return {c,r,title,name,cv,jpg}; }
 /* ---- proposal library: a per-client record of every proposal produced ---- */
 /* one library entry per distinct proposal (which saved options are on it + the recommendation); re-exporting the same set-up refreshes that entry instead of adding another */
