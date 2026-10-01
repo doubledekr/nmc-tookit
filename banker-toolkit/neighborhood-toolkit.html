@@ -65,6 +65,7 @@ main{flex:1;padding:28px 32px;max-width:1150px}
 body.mode-fha #debtPanel,body.mode-va #debtPanel{display:none}
 #s-client.fc .cur-loan,#s-client.fc #payHint{display:none}
 body.mode-fc .m-skip,body.mode-fc .m-refi{display:none}.m-fc{display:none}body.mode-fc .m-fc{display:block}body.mode-fc span.m-fc{display:inline}body.mode-fc button.m-fc{display:inline-flex}body.mode-fc .not-fc{display:none}
+.m-noc{display:none}body.mode-second .m-noc{display:block}body.mode-second.noc .m-noc-x{display:block}body.mode-second.noc #debtPanel{display:none}
 #mode-fc{display:none}body.fc-client #mode-fc{display:inline-flex}body.fc-client #mode-fha,body.fc-client #mode-va{opacity:.4;pointer-events:none}
 body.mode-fha .m-skip,body.mode-second .m-skip,body.mode-fha .m-refi,body.mode-va .m-refi,body.mode-second .m-refi,body.mode-fha .m-cash,body.mode-va .m-cash{display:none}
 body:not(.mode-second) .m-second{display:none}
@@ -417,7 +418,8 @@ table.data tr.rec td{background:var(--cream)}
           <div class="field" style="display:none"><label>Program</label><select id="anProgram" onchange="programRules(); runAnalysis()">
             <option value="standard" selected>Standard refinance</option><option value="fha_streamline">FHA Streamline</option><option value="va_irrrl">VA IRRRL</option></select></div>
           <div class="field" id="anMipWrap" style="display:none"><label>Upfront MIP % (financed)</label><input type="number" id="anMip" step="0.01" value="1.75" oninput="runAnalysis()"></div>
-          <div class="field m-fc"><label>Paying extra \u2014 three looks ($/mo)</label><div class="chiprow"><input type="number" id="anX1" step="50" value="100" oninput="runAnalysis()" style="width:84px;flex:1"><input type="number" id="anX2" step="50" value="250" oninput="runAnalysis()" style="width:84px;flex:1"><input type="number" id="anX3" step="50" value="500" oninput="runAnalysis()" style="width:84px;flex:1"></div></div>
+          <div class="field m-noc" style="grid-column:1/-1"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="anNoCompare" style="width:auto" onchange="runAnalysis()"> <b>Cash-out only</b> \u2014 leave the debts alone and skip the comparison; the proposal just shows what the new loan looks like <span class="hint" style="display:inline">(for clients borrowing for savings or a project, not to pay off debt)</span></label></div>
+          <div class="field m-fc m-noc-x"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="anShowExtra" style="width:auto" checked onchange="runAnalysis()"> Show what paying extra looks like <span class="hint" style="display:inline">(three amounts, $/mo \u2014 untick to leave it off the proposal)</span></label><div class="chiprow"><input type="number" id="anX1" step="50" value="100" oninput="runAnalysis()" style="width:84px;flex:1"><input type="number" id="anX2" step="50" value="250" oninput="runAnalysis()" style="width:84px;flex:1"><input type="number" id="anX3" step="50" value="500" oninput="runAnalysis()" style="width:84px;flex:1"></div></div>
           <div class="field"><label>Highlight no prepayment penalty</label><select id="anPrepay" onchange="runAnalysis()"><option value="yes" selected>Yes — it's a benefit</option><option value="no">No</option></select></div>
           <div class="field m-refi"><label>Roll debts into loan?</label><select id="anRoll" onchange="runAnalysis()">
             <option value="yes" selected>Yes — consolidate</option><option value="no">No — mortgage only</option></select></div>
@@ -754,7 +756,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.2.1";
+const TOOLKIT_VERSION = "1.2.3";
 const DEMO = false; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -1289,7 +1291,9 @@ function readAnalysisInputs(){ const c=cur(); if(!c) return;
     anExtra:num($("anExtra")?$("anExtra").value:0)||0, rateSrc:c.analysis.rateSrc,
     anProgram:$("anProgram")?$("anProgram").value:"standard", anMip:num($("anMip")?$("anMip").value:1.75)??1.75, anPrepay:$("anPrepay")?$("anPrepay").value:"yes",
     saved:c.analysis.saved, anEquity:$("anEquity")?$("anEquity").value:"hel", anDraw:num($("anDraw")?$("anDraw").value:10)||10,
-    anX1:num($("anX1")?$("anX1").value:100), anX2:num($("anX2")?$("anX2").value:250), anX3:num($("anX3")?$("anX3").value:500)}; save();
+    anX1:num($("anX1")?$("anX1").value:100), anX2:num($("anX2")?$("anX2").value:250), anX3:num($("anX3")?$("anX3").value:500),
+    anNoCompare:$("anNoCompare")&&$("anNoCompare").checked?"yes":"no", anShowExtra:$("anShowExtra")&&!$("anShowExtra").checked?"no":"yes"}; save();
+  document.body.classList.toggle("noc", !!($("anNoCompare")&&$("anNoCompare").checked));
   document.body.classList.toggle("heloc", $("anEquity")&&$("anEquity").value==="heloc"); }
 const todayStr=()=>new Date().toISOString().slice(0,10);
 function aprText(c){ try{ const r=c&&computeAnalysis(c); if(!r||r.tooSmall) return ""; return " APR "+pct(r.apr)+(r.aprEst?" (est. \u2014 rate + 0.25% until costs are entered)":" (from "+money((r.a.anCosts||0)+r.mipAmt)+" in costs)")+"."; }catch(e){ return ""; } }
@@ -1308,10 +1312,12 @@ function fillAnalysisInputs(){ const c=cur(); const a=c?c.analysis:blankClient()
   $("anCashOut").value=a.anCashOut||0; $("anSkip").value=a.anSkip??1; $("anRoll").value=a.anRoll||"yes";
   $("anLien").value=a.anLien||"refi"; if($("anExtra")) $("anExtra").value=a.anExtra||"";
   if($("anX1")){ $("anX1").value=a.anX1??100; $("anX2").value=a.anX2??250; $("anX3").value=a.anX3??500; }
+  if($("anNoCompare")){ $("anNoCompare").checked=a.anNoCompare==="yes"; document.body.classList.toggle("noc", a.anNoCompare==="yes"); }
+  if($("anShowExtra")) $("anShowExtra").checked=a.anShowExtra!=="no";
   if($("anEquity")){ $("anEquity").value=a.anEquity||"hel"; $("anDraw").value=a.anDraw||10; document.body.classList.toggle("heloc", (a.anEquity||"hel")==="heloc"); }
   if($("anProgram")){ $("anProgram").value=a.anProgram||"standard"; $("anMip").value=a.anMip??1.75; $("anPrepay").value=a.anPrepay||"yes"; programRules(); } applyLienMode(); }
 function setTerm(y){ $("anTerm").value=String(y); runAnalysis(); }
-const MODE_KEYS=["anRate","rateSrc","anTerm","anCosts","anCashOut","anSkip","anRoll","anExtra","anMip","anPrepay","anEquity","anDraw","anX1","anX2","anX3"];
+const MODE_KEYS=["anRate","rateSrc","anTerm","anCosts","anCashOut","anSkip","anRoll","anExtra","anMip","anPrepay","anEquity","anDraw","anX1","anX2","anX3","anNoCompare","anShowExtra"];
 function modeOf(a){ if(a.anLien==="second") return "second"; if(a.anLien==="fc") return "fc"; if(a.anProgram==="fha_streamline") return "fha"; if(a.anProgram==="va_irrrl") return "va"; return "refi"; }
 function setMode(m){ const c=cur(); if(!c){ toast("Pick a client first"); return; } const from=modeOf(c.analysis);
   if(from===m){ applyMode(); return; }
@@ -1368,7 +1374,8 @@ function computeAnalysis(c){
   const prog0=a.anProgram||"standard"; const streamline=(prog0==="fha_streamline"||prog0==="va_irrrl")&&a.anLien!=="second";
   const roll = a.anRoll==="yes" && !streamline;         /* streamlines are rate-and-term only */
   const cashOut = streamline ? 0 : (a.anCashOut||0);
-  const debts = c.debts.filter(d=>d.balance>0);
+  const noc = second && a.anNoCompare==="yes";                 /* HEL cash-out only: debts untouched, no comparison */
+  const debts = noc ? [] : c.debts.filter(d=>d.balance>0);
   const dBal = debts.reduce((s,d)=>s+(d.balance||0),0);
   const dPay = debts.reduce((s,d)=>s+(d.pay||0),0);
   const dInt = debts.reduce((s,d)=>{ const x=debtInterest(d.balance,d.apr||0,d.pay||0); return s+(isFinite(x)?x:d.balance*3); },0);
@@ -1411,8 +1418,8 @@ function computeAnalysis(c){
   const escrow = (!second && !fc && c.escrow>0) ? c.escrow : 0;
   /* free & clear: taxes & insurance get escrowed on the new loan; the extra-payment ladder; LTV against the home value */
   const newEscrow = fc ? Math.round(((c.taxAnnual||0)+(c.insAnnual||0))/12) : 0;
-  const ltv = fc && c.value>0 ? newP/c.value*100 : null;
-  const ladder = fc ? [a.anX1,a.anX2,a.anX3].filter(x=>x>0).map(x=>{ const sc=amort(newP,a.anRate,n,x);
+  const ltv = fc && c.value>0 ? newP/c.value*100 : noc && c.value>0 ? ((c.balance||0)+newP)/c.value*100 : null;
+  const ladder = (fc||noc) && a.anShowExtra!=="no" ? [a.anX1,a.anX2,a.anX3].filter(x=>x>0).map(x=>{ const sc=amort(newP,a.anRate,n,x);
     return {extra:x, pay:newPay+x, months:sc.months, interest:sc.interest, saved:newSched.interest-sc.interest, eff:equivRate(newP,n,sc.interest,a.anRate), rows:sc.rows}; }) : [];
   const piti = c.paymentTotal>0 ? c.paymentTotal : curPay + escrow;   /* a skipped payment is the whole PITI, not just P&I */
   const skipCash = second ? 0 : skipN * piti;
@@ -1423,7 +1430,7 @@ function computeAnalysis(c){
   let apr=a.anRate+0.25, aprEst=true;
   if(finCharges>0 && newP>finCharges && !heloc){ const amt=newP-finCharges; let lo=a.anRate, hi=a.anRate+10;
     for(let i=0;i<50;i++){ const mid=(lo+hi)/2; if(pmt(amt,mid,n)>newPay) hi=mid; else lo=mid; } apr=(lo+hi)/2; aprEst=false; }
-  return {apr,aprEst,fc,newEscrow,ltv,ladder,second,heloc,drawYrs,ioPay,afterDrawPay,curPay,curMonths,curSched,roll,cashOut,streamline,debts,dBal,dPay,dInt,dMonths,dMonthsEst,dMonthsUnknown,dExtra,dNoApr,newP,n,newPay,newSched,outlayNow,saveMo,blended,extra,pw,pwEff,skipCash,skipN,prog,fhaS,mipAmt,escrow,curPathInterest,a};
+  return {apr,aprEst,fc,noc,newEscrow,ltv,ladder,second,heloc,drawYrs,ioPay,afterDrawPay,curPay,curMonths,curSched,roll,cashOut,streamline,debts,dBal,dPay,dInt,dMonths,dMonthsEst,dMonthsUnknown,dExtra,dNoApr,newP,n,newPay,newSched,outlayNow,saveMo,blended,extra,pw,pwEff,skipCash,skipN,prog,fhaS,mipAmt,escrow,curPathInterest,a};
 }
 
 function balanceChart(r){
@@ -1452,7 +1459,7 @@ function runAnalysis(){ { const n=$("anRateSrc"); if(n){ const t=rateSrcText(cur
       : "Need the client's current balance &amp; rate (Client workspace) and a new rate above to run the numbers."}</div>`; return; }
   if(r.tooSmall){ el.innerHTML=`<div class="panel empty">For a second lien, add cash out and/or debts to roll in \u2014 that's what sizes the new loan.</div>`; return; }
   { const lv=$("fcLtv"); if(lv) lv.innerHTML = r.fc ? (r.ltv!=null ? `New loan <b>${money(r.newP)}</b> = <b>${(r.ltv).toFixed(1)}% LTV</b> on ${money(c.value)}${r.ltv>(c.loanType==="VA"?90:80)?` <span style="color:var(--warn)">\u2014 above ${c.loanType==="VA"?"90%":"80%"}: check the program guidelines (some lenders go higher; VA up to 100%)</span>`:""}` : `New loan <b>${money(r.newP)}</b> \u2014 add the home value to check LTV`) : ""; }
-  if(r.fc){ el.innerHTML=fcResultsHTML(c,r); return; }
+  if(r.fc||r.noc){ el.innerHTML=fcResultsHTML(c,r); return; }
   const termCut = isFinite(r.pw.months) ? r.n - r.pw.months : 0;
   const intSavedPW = r.curPathInterest - r.pw.interest;
   el.innerHTML = `
@@ -1500,12 +1507,13 @@ function fcResultsHTML(c,r){
   <div class="panel"><h2>What the cash costs</h2>
     <div class="grid4">
       <div class="stat highlight"><div class="v">${money(r.cashOut)}</div><div class="l">Cash to client at closing${r.roll&&r.dBal>0?` + ${money(r.dBal)} of debts paid off`:""}</div></div>
-      <div class="stat"><div class="v">${money(r.newPay)}</div><div class="l">New P&amp;I / mo (${pct(r.a.anRate)}, ${r.a.anTerm} yr, ${money(r.newP)} loan)</div></div>
-      <div class="stat"><div class="v">${r.newEscrow>0?money(tot):"\u2014"}</div><div class="l">${r.newEscrow>0?`Total with est. taxes &amp; insurance (${money(r.newEscrow)}/mo escrowed)`:"Add annual taxes &amp; insurance on the client to see the full payment"}</div></div>
-      ${r.roll&&r.dPay>0?`<div class="stat green"><div class="v">${money(r.dPay)} \u2192 ${money(r.newPay)}</div><div class="l">Debt payments today \u2192 one mortgage payment${r.saveMo>0?` (${money(r.saveMo)}/mo less going out)`:""}</div></div>`:`<div class="stat"><div class="v">${r.ltv!=null?r.ltv.toFixed(1)+"%":"\u2014"}</div><div class="l">Loan-to-value${c.value?" on "+money(c.value):" \u2014 add the home value"}</div></div>`}
+      <div class="stat"><div class="v">${money(r.newPay)}</div><div class="l">${r.noc?"New home equity loan":"New P&amp;I"} / mo (${pct(r.a.anRate)}, ${r.a.anTerm} yr, ${money(r.newP)} loan)</div></div>
+      ${r.noc?`<div class="stat highlight"><div class="v">Untouched</div><div class="l">${c.balance&&c.rate?`First mortgage stays at ${money(c.balance)} @ ${pct(c.rate)}${c.payment?", "+money(c.payment)+"/mo":""}`:"No first mortgage \u2014 this is a first-lien home equity loan"}; debts left as they are</div></div>`
+      :`<div class="stat"><div class="v">${r.newEscrow>0?money(tot):"\u2014"}</div><div class="l">${r.newEscrow>0?`Total with est. taxes &amp; insurance (${money(r.newEscrow)}/mo escrowed)`:"Add annual taxes &amp; insurance on the client to see the full payment"}</div></div>`}
+      ${r.roll&&r.dPay>0?`<div class="stat green"><div class="v">${money(r.dPay)} \u2192 ${money(r.newPay)}</div><div class="l">Debt payments today \u2192 one mortgage payment${r.saveMo>0?` (${money(r.saveMo)}/mo less going out)`:""}</div></div>`:`<div class="stat"><div class="v">${r.ltv!=null?r.ltv.toFixed(1)+"%":"\u2014"}</div><div class="l">${r.noc?"Combined loan-to-value":"Loan-to-value"}${c.value?" on "+money(c.value):" \u2014 add the home value"}</div></div>`}
     </div>
   </div>
-  <div class="panel"><h2>Pay it off faster</h2>
+  ${r.ladder.length?`<div class="panel"><h2>Pay it off faster</h2>
     <p class="hint" style="margin-bottom:10px">Minimum payment vs. adding ${r.ladder.map(l=>money(l.extra)).join(" / ")} a month. Edit the three amounts above.</p>
     <table class="data"><thead><tr><th></th><th class="num">Minimum</th>${r.ladder.map(l=>`<th class="num">+${money(l.extra)}/mo</th>`).join("")}</tr></thead><tbody>
       <tr><td><b>Monthly P&amp;I</b></td><td class="num">${money(r.newPay)}</td>${r.ladder.map(l=>`<td class="num">${money(l.pay)}</td>`).join("")}</tr>
@@ -1515,7 +1523,7 @@ function fcResultsHTML(c,r){
       <tr><td><b>Effective rate</b></td><td class="num">${pct(r.a.anRate)}</td>${r.ladder.map(l=>`<td class="num">${pct(l.eff)}</td>`).join("")}</tr>
     </tbody></table>
     ${r.extra>0?`<p class="hint" style="margin-top:8px">Pay what they pay now on the debts (${money(r.outlayNow)}/mo): paid off in <b>${yrsMo(r.pw.months)}</b>, effective rate <b>${pct(r.pwEff)}</b>.</p>`:""}
-  </div>`; }
+  </div>`:""}`; }
 
 /* ---------- proposal ---------- */
 function selectedOption(c){ if(!c) return null; return c.options.find(o=>o.id===($("propOption").value||c.selectedOption)) || null; }
@@ -1585,7 +1593,8 @@ function fcProposalHTML(c,r){
   if(r.cashOut>0) benefits.push(`<b>${money(r.cashOut)}</b> in hand at closing \u2014 from equity you already own`);
   if(r.roll&&r.dBal>0) benefits.push(`<b>${money(r.dBal)}</b> of debt paid off at closing \u2014 ${r.debts.length>1?r.debts.length+" payments become one":"that payment is gone"}`);
   if(r.saveMo>0) benefits.push(`<b>${money(r.saveMo)}/month</b> less going out than today\u2019s debt payments`);
-  if(r.ltv!=null) benefits.push(`Borrowing <b>${r.ltv.toFixed(0)}%</b> of your home\u2019s value \u2014 you keep <b>${money(Math.max(0,c.value-r.newP))}</b> of equity`);
+  if(r.noc) benefits.push(`Your current mortgage${c.balance&&c.rate?` (<b>${money(c.payment||0)}/mo at ${pct(c.rate)}</b>)`:""} stays exactly as it is \u2014 this sits behind it`);
+  if(r.ltv!=null) benefits.push(`${r.noc?"Combined, you\u2019d be borrowing":"Borrowing"} <b>${r.ltv.toFixed(0)}%</b> of your home\u2019s value \u2014 you keep <b>${money(Math.max(0,c.value-r.newP-(r.noc?(c.balance||0):0)))}</b> of equity`);
   if(r.ladder.length) benefits.push(`Fixed rate, no prepayment penalty \u2014 add <b>${money(r.ladder[0].extra)}/mo</b> and it\u2019s gone in <b>${yrsMo(r.ladder[0].months)}</b>; add <b>${money(r.ladder[r.ladder.length-1].extra)}</b> and it\u2019s <b>${yrsMo(r.ladder[r.ladder.length-1].months)}</b>`);
   if(r.extra>0&&r.pwEff<r.a.anRate-0.05) benefits.push(`Keep paying what you pay on the debts today (${money(r.outlayNow)}/mo) and the loan is gone in <b>${yrsMo(r.pw.months)}</b> \u2014 an effective rate of <b>${pct(r.pwEff)}</b>`);
   const debtRows=r.roll?r.debts.map(d=>`<tr><td>${esc(d.name)}</td><td class="num">${money(d.balance)}</td><td class="num">${pct(d.apr)}</td><td class="num">${money(d.pay)}</td><td class="num" style="color:#2E6B4F;font-weight:600">Paid off</td></tr>`).join(""):"";
@@ -1595,7 +1604,7 @@ function fcProposalHTML(c,r){
     <div class="lo"><b>${esc(s.loName||"Your Loan Officer")}</b>${s.loNmls?` \u00b7 NMLS #${esc(s.loNmls)}`:""}<br>${esc(s.loPhone||"")}${s.loPhone&&s.loEmail?" \u00b7 ":""}${esc(s.loEmail||"")}<br>Prepared ${new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}</div>
   </div>
   <div class="eyebrow">Putting your equity to work</div>
-  <h1>Home Equity Cash-Out Proposal \u2014 ${esc(c.name)}</h1>
+  <h1>${r.noc?"Home Equity Loan Proposal":"Home Equity Cash-Out Proposal"} \u2014 ${esc(c.name)}</h1>
   <div style="font-size:11.5px;color:#555">${esc(c.address||"")}${c.value?` \u00b7 est. value ${money(c.value)}`:""}</div>
   ${note?`<p class="note">${esc(note)}</p>`:""}
   <h2>What this does for you</h2>
@@ -1603,17 +1612,17 @@ function fcProposalHTML(c,r){
   <div class="statline">
     <div><div class="v">${money(r.cashOut)}</div><div class="l">Cash to you at closing</div></div>
     <div><div class="v">${money(r.newPay)}/mo</div><div class="l">New mortgage payment (P&amp;I, minimum)</div></div>
-    ${r.newEscrow>0?`<div><div class="v">${money(tot)}/mo</div><div class="l">Total with est. taxes &amp; insurance</div></div>`:""}
+    ${!r.noc&&r.newEscrow>0?`<div><div class="v">${money(tot)}/mo</div><div class="l">Total with est. taxes &amp; insurance</div></div>`:""}
     ${r.roll&&r.dBal>0?`<div><div class="v">${money(r.dBal)}</div><div class="l">Debt paid off at closing</div></div>`:""}
   </div>
-  <h2>Your new loan</h2>
+  <h2>${r.noc?"Your new home equity loan":"Your new loan"}</h2>
   <table><tbody>
-   <tr><td>Loan amount</td><td class="num">${money(r.newP)}${r.ltv!=null?` (${r.ltv.toFixed(1)}% of value)`:""}</td></tr>
+   <tr><td>Loan amount</td><td class="num">${money(r.newP)}${r.ltv!=null?` (${r.noc?"combined ":""}${r.ltv.toFixed(1)}% of value)`:""}</td></tr>
    <tr><td>Interest rate</td><td class="num">${pct(r.a.anRate)} fixed</td></tr>
    <tr><td>APR${r.aprEst?" (estimated)":""}</td><td class="num">${pct(r.apr)}</td></tr>
    <tr><td>Term</td><td class="num">${r.a.anTerm} years</td></tr>
    <tr><td>Principal &amp; interest</td><td class="num">${money(r.newPay)}/mo</td></tr>
-   ${r.newEscrow>0?`<tr><td>Est. taxes &amp; insurance (escrowed)</td><td class="num">${money(r.newEscrow)}/mo</td></tr><tr><td><b>Total monthly payment</b></td><td class="num"><b>${money(tot)}/mo</b></td></tr>`:`<tr><td>Taxes &amp; insurance</td><td class="num">escrowed with the payment \u2014 estimate to follow</td></tr>`}
+   ${r.noc?`<tr><td>Your first mortgage</td><td class="num">${c.balance&&c.rate?`unchanged \u2014 ${money(c.balance)} at ${pct(c.rate)}`:"none"}</td></tr>`:r.newEscrow>0?`<tr><td>Est. taxes &amp; insurance (escrowed)</td><td class="num">${money(r.newEscrow)}/mo</td></tr><tr><td><b>Total monthly payment</b></td><td class="num"><b>${money(tot)}/mo</b></td></tr>`:`<tr><td>Taxes &amp; insurance</td><td class="num">escrowed with the payment \u2014 estimate to follow</td></tr>`}
    ${r.a.anCosts>0?`<tr><td>Closing costs (financed)</td><td class="num">${money(r.a.anCosts)}</td></tr>`:""}
   </tbody></table>
   ${r.aprEst?`<div class="hint" style="margin-top:4px">APR is estimated at the note rate + 0.25% until closing costs are priced; the exact APR comes with the lender\u2019s Loan Estimate.</div>`:""}
@@ -1624,7 +1633,7 @@ function fcProposalHTML(c,r){
    <tr><td>Rate</td><td class="num">${r.blended!=null?pct(r.blended)+" blended":"\u2014"}</td><td class="num">${pct(r.a.anRate)} fixed</td></tr>
   </tbody></table>
   <h2>Debts paid off at closing</h2><table><thead><tr><th>Debt</th><th class="num">Balance</th><th class="num">APR</th><th class="num">Payment</th><th class="num">After closing</th></tr></thead><tbody>${debtRows}</tbody></table>`:""}
-  <h2>Pay it off faster</h2>
+  ${r.ladder.length?`<h2>Pay it off faster</h2>
   <p style="font-size:11px;color:#555;margin-bottom:4px">No prepayment penalty \u2014 anything extra goes straight to principal. Here is what a little extra each month does.</p>
   <table><thead><tr><th></th><th class="num">Minimum</th>${r.ladder.map(l=>`<th class="num">+${money(l.extra)}/mo</th>`).join("")}</tr></thead><tbody>
    <tr><td>Monthly P&amp;I</td><td class="num">${money(r.newPay)}</td>${r.ladder.map(l=>`<td class="num">${money(l.pay)}</td>`).join("")}</tr>
@@ -1632,19 +1641,19 @@ function fcProposalHTML(c,r){
    <tr><td>Total interest</td><td class="num">${money(r.newSched.interest)}</td>${r.ladder.map(l=>`<td class="num">${money(l.interest)}</td>`).join("")}</tr>
    <tr><td>Interest you avoid</td><td class="num">\u2014</td>${r.ladder.map(l=>`<td class="num" style="color:#2E6B4F;font-weight:700">${money(l.saved)}</td>`).join("")}</tr>
    <tr><td>What the rate works out to</td><td class="num">${pct(r.a.anRate)}</td>${r.ladder.map(l=>`<td class="num">${pct(l.eff)}</td>`).join("")}</tr>
-  </tbody></table>
+  </tbody></table>`:""}
   <h2>Balance over time</h2>
   <table><thead><tr><th>Year</th><th class="num">Minimum payment</th>${r.ladder.map(l=>`<th class="num">+${money(l.extra)}/mo</th>`).join("")}</tr></thead><tbody>
    ${[1,2,3,5,7,10,15,20,25,30].filter(y=>y<=r.a.anTerm).map(y=>{const m=y*12; const b=(rows)=>rows[m-1]?rows[m-1].bal:0;
      return `<tr><td>Year ${y}</td><td class="num">${money(b(r.newSched.rows))}</td>${r.ladder.map(l=>`<td class="num">${b(l.rows)>0?money(b(l.rows)):"Paid in full"}</td>`).join("")}</tr>`;}).join("")}
   </tbody></table>
-  <div class="disc">This proposal is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. Taxes and insurance are estimates and will be set by the actual escrow analysis. Cash-out eligibility and maximum loan-to-value are subject to lender and program guidelines. ${esc(s.co)} \u00b7 NMLS #2484730 \u00b7 Equal Housing Lender.</div>`;
+  <div class="disc">This proposal is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. ${r.noc?"Figures exclude taxes, insurance, and escrows.":"Taxes and insurance are estimates and will be set by the actual escrow analysis."} Cash-out eligibility and maximum loan-to-value are subject to lender and program guidelines. ${esc(s.co)} \u00b7 NMLS #2484730 \u00b7 Equal Housing Lender.</div>`;
 }
 function proposalSingleHTML(){
   const c=cur(); if(!c) return `<div class="empty">Pick a client.</div>`;
   const r=computeAnalysis(c);
   if(!r||r.tooSmall) return `<div class="empty">Complete the Savings analysis first \u2014 the proposal is built from it.</div>`;
-  if(r.fc) return fcProposalHTML(c,r);
+  if(r.fc||r.noc) return fcProposalHTML(c,r);
   const s=state.settings; const o=selectedOption(c);
   const termCut=isFinite(r.pw.months)?r.n-r.pw.months:0;
   const intSavedPW=r.curPathInterest-r.pw.interest;
@@ -1798,7 +1807,7 @@ function buildSheetSVG(html,W){
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml"><style>${sheetCSS(W).replace(/</g,"\\3c ")}</style>${xhtml}</div></foreignObject></svg>`;
   return {svg,W,H}; }
 function sheetTitle(kind,c,r){ const multi=c&&kind==="proposal"&&propSelected(c).length>=2;
-  return (kind==="compare"||multi?"Your Options":(r&&r.fc?"Cash-Out Proposal":r&&r.second?"Home Equity Proposal":"Savings Proposal"))+(c&&c.name?" \u2014 "+c.name:""); }
+  return (kind==="compare"||multi?"Your Options":(r&&r.fc?"Cash-Out Proposal":r&&r.second?(r.noc?"Home Equity Loan Proposal":"Home Equity Proposal"):"Savings Proposal"))+(c&&c.name?" \u2014 "+c.name:""); }
 async function renderSheet(kind, snap){ const c=cur();
   const html = snap ? snap.html : (kind==="compare" ? compareHTML() : proposalHTML());
   if(html.includes('class="empty"')) throw new Error(kind==="compare"?"Add at least two complete scenarios first":"Finish the analysis first");
@@ -2114,7 +2123,7 @@ const KIND_LBL={hel:"Fixed home equity loan",heloc:"HELOC (interest-only draw)",
 /* ---- program snapshots: a full Savings-analysis set-up saved as one Compare column ---- */
 const SNAP_KEYS=MODE_KEYS.concat(["anLien","anProgram"]);
 function snapLabel(inp,r){ const m=modeOf(inp); if(m==="va") return "VA IRRRL"; if(m==="fha") return "FHA Streamline"; if(m==="fc") return "Free & clear cash-out"+(r&&r.roll&&r.dBal>0?" \u2014 debts paid off":"");
-  if(m==="second") return (r&&r.cashOut>0)?"Home equity loan \u2014 debts paid off + cash":"Home equity loan \u2014 debts paid off";
+  if(m==="second") return (r&&r.noc)?"Home equity loan \u2014 cash out":(r&&r.cashOut>0)?"Home equity loan \u2014 debts paid off + cash":"Home equity loan \u2014 debts paid off";
   return r&&r.roll ? (r.cashOut>0?"Cash-out refi \u2014 debts paid off + cash":"Refi \u2014 debts paid off") : (inp.anCashOut>0? "Cash-out refi":"Rate & term refi"); }
 function computeSnap(c,sc){ if(!sc||sc.kind!=="snap"||!sc.inputs) return null; const t=Object.assign({},c,{analysis:Object.assign({},c.analysis,sc.inputs)}); const r=computeAnalysis(t); return r&&!r.tooSmall?r:null; }
 function applySnap(c,sc){ const a=c.analysis; SNAP_KEYS.forEach(k=>a[k]=sc.inputs[k]); a.saved=a.saved||{}; const m=modeOf(a); a.saved[m]={}; MODE_KEYS.forEach(k=>a.saved[m][k]=a[k]); }
