@@ -345,7 +345,8 @@ table.data tr.rec td{background:var(--cream)}
             <div class="field"><label>Current servicer</label><input type="text" data-f="servicer"></div>
             <div class="field"><label>Loan type</label><select data-f="loanType">
               <option>Conventional</option><option>FHA</option><option>VA</option><option>Jumbo</option><option>DSCR</option><option>Other</option></select></div>
-            <div class="field"><label>Next follow-up</label><input type="date" data-f="followUp"></div>
+            <div class="field"><label>Next follow-up</label><div class="chiprow"><input type="date" data-f="followUp" style="flex:1"><input type="time" data-f="followUpTime" style="width:120px;flex:0 0 120px" title="Optional time"></div></div>
+            <div class="field" style="grid-column:1/-1"><div id="fuActions"></div><div id="fuLog" class="hint" style="margin-top:4px"></div></div>
             <div class="field"><label>Rate alert — tell me when the feed hits (%)</label>
               <div class="chiprow"><input type="number" data-f="targetRate" step="0.125" placeholder="e.g. 6.25" style="width:110px;flex:0 0 110px">
                 <button class="chip" onclick="setTarget(0.5)">½ below</button><button class="chip" onclick="setTarget(0.75)">¾ below</button><button class="chip" onclick="setTarget(1)">1 below</button><button class="chip" onclick="setTarget(null)">clear</button></div></div>
@@ -760,7 +761,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.3.5";
+const TOOLKIT_VERSION = "1.4.0";
 const DEMO = false; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -780,6 +781,29 @@ function applyDispo(c){ if(c.status===S_DONE&&!c.closedAt) c.closedAt=new Date()
   if(c.status==="Needs follow-up"&&!c.followUp) c.followUp=nextBizDay(); }
 function dispo(st){ const c=cur(); if(!c) return; c.status=st; applyDispo(c); save(); fillClientForm(); renderPipeline(); renderClientBar();
   toast(st===S_DONE?"Marked complete \u2014 counts toward this month\u2019s goal":st===S_RATE?"Flagged ineligible \u2014 set the rate they need; the pipeline will light up when the feed gets there":"Disposition: "+st); }
+/* follow-ups are closed with an outcome, logged on the client, and replaced by the next one (or nothing) */
+const FU_OUT={done:"Done \u2014 spoke with them",noanswer:"No answer / left VM",resched:"Rescheduled"};
+let fuPending=null;   /* {id, outcome} waiting for a "next" choice */
+function fuStamp(){ const d=new Date(); return d.toISOString().slice(0,10)+" "+d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}); }
+function fuDateStr(d){ return d.toISOString().slice(0,10); }
+function fuAddDays(n){ const d=new Date(); d.setDate(d.getDate()+n); if(n>0){ while(d.getDay()===0||d.getDay()===6) d.setDate(d.getDate()+1); } return fuDateStr(d); }
+function fuClose(id,outcome){ const c=state.clients.find(x=>x.id===id); if(!c) return;
+  c.log=c.log||[]; c.log.unshift({when:fuStamp(), outcome, due:c.followUp||"", dueTime:c.followUpTime||""}); if(c.log.length>60) c.log.length=60;
+  c.followUp=""; c.followUpTime=""; fuPending={id,outcome}; save(); refreshAll();
+  toast(FU_OUT[outcome]+" \u2014 logged. Pick the next follow-up"+(outcome==="done"?", or none":"")+"."); }
+function fuNext(id,when,time){ const c=state.clients.find(x=>x.id===id); if(!c) return;
+  c.followUp=when||""; c.followUpTime=time||""; if(c.log&&c.log[0]&&!c.log[0].next) c.log[0].next=when||"none";
+  if(when&&c.status!=="Needs follow-up"&&!isDone(c)) c.status="Needs follow-up";
+  fuPending=null; save(); refreshAll(); toast(when?"Next follow-up "+when+(time?" "+time:""):"No further follow-up set"); }
+function fuNextPick(id){ const d=prompt("Next follow-up date (YYYY-MM-DD)", fuAddDays(1)); if(d&&/^\d{4}-\d{2}-\d{2}$/.test(d)) fuNext(id,d,""); }
+function fuNextChips(c){ const id=c.id; const chip=(l,fn)=>`<button class="chip" onclick="${fn}">${l}</button>`;
+  return `<span class="hint">Next:</span> ${chip("Tomorrow",`fuNext('${id}','${fuAddDays(1)}','')`)}${chip("3 days",`fuNext('${id}','${fuAddDays(3)}','')`)}${chip("1 week",`fuNext('${id}','${fuAddDays(7)}','')`)}${chip("Pick a date",`fuNextPick('${id}')`)}${chip("None",`fuNext('${id}','','')`)}`; }
+function fuButtons(c,compact){ const id=c.id; const b=(l,o,cls)=>`<button class="btn ${cls||"ghost "}small" onclick="fuClose('${id}','${o}')">${l}</button>`;
+  if(fuPending&&fuPending.id===id) return `<div class="chiprow" style="align-items:center">${fuNextChips(c)}</div>`;
+  if(!c.followUp) return compact?"":`<div class="chiprow" style="align-items:center"><span class="hint">No follow-up set.</span> ${fuNextChips(c)}</div>`;
+  return `<div class="chiprow" style="align-items:center">${compact?"":`<span class="hint">Follow-up ${esc(c.followUp)}${c.followUpTime?" "+esc(c.followUpTime):""} \u2014 close it:</span>`}${b("\u2713 Done","done","")}${b("No answer","noanswer")}${b("Reschedule","resched")}</div>`; }
+function fuLogHTML(c){ const L=(c.log||[]).slice(0,5); if(!L.length) return "";
+  return `<div class="eyebrow" style="margin-top:6px">Activity</div>`+L.map(e=>`<div>${esc(e.when)} \u2014 ${esc(FU_OUT[e.outcome]||e.outcome)}${e.due?` (was due ${esc(e.due)}${e.dueTime?" "+esc(e.dueTime):""})`:""}${e.next?` \u2192 next ${esc(e.next)}`:""}</div>`).join("")+((c.log||[]).length>5?`<div>\u2026 ${(c.log.length-5)} more</div>`:""); }
 function closedThisMonth(){ const mkey=new Date().toISOString().slice(0,7); return state.clients.filter(c=>!c.quick&&c.status===S_DONE&&(c.closedAt||"").slice(0,7)===mkey); }
 const DEFAULT_SFMAP = {
   name:["name","contact name","full name","borrower","borrower name","account name","opportunity name","client"],
@@ -795,7 +819,7 @@ const DEFAULT_SFMAP = {
   servicer:["servicer","current lender","current servicer","lender"],
   loanType:["loan type","product","loan product","program"]
 };
-const FIELD_LABELS = {name:"Name",phone:"Phone",email:"Email",address:"Address",balance:"Balance",origAmount:"Original loan amount",taxAnnual:"Annual taxes",insAnnual:"Annual insurance",rate:"Rate",payment:"Payment",monthsLeft:"Months left",value:"Home value",fico:"FICO",servicer:"Servicer",loanType:"Loan type",notes:"Notes",paymentTotal:"Total payment (PITI)",escrow:"Escrow",targetRate:"Rate alert",tz:"Time zone"};
+const FIELD_LABELS = {name:"Name",phone:"Phone",email:"Email",address:"Address",balance:"Balance",origAmount:"Original loan amount",taxAnnual:"Annual taxes",insAnnual:"Annual insurance",followUpTime:"Follow-up time",rate:"Rate",payment:"Payment",monthsLeft:"Months left",value:"Home value",fico:"FICO",servicer:"Servicer",loanType:"Loan type",notes:"Notes",paymentTotal:"Total payment (PITI)",escrow:"Escrow",targetRate:"Rate alert",tz:"Time zone"};
 
 let state = {
   clients: [], currentId: null, blocks: [], live: null, rateHistory: [], teamCache: null, templates:{mine:[],company:null,shared:[]}, tools:{}, inbox:[], schema: 4,
@@ -845,6 +869,7 @@ function migrate(){ /* additive only — old saves gain new fields, nothing is e
   if(!Array.isArray(state.templates.shared)) state.templates.shared=[];
   const tpl=blankClient();
   (state.clients||[]).forEach(c=>{ if(STATUS_MIGRATE[c.status]) c.status=STATUS_MIGRATE[c.status]; if(!c.origTerm) c.origTerm=30;
+    if(!Array.isArray(c.log)) c.log=[]; if(c.followUpTime==null) c.followUpTime="";
     (c.debts||[]).forEach(d=>{ if(!d.type) d.type=debtTypeOf(d.name); if(d.extra==null) d.extra=0; if(d.acct==null) d.acct="";
       if(d.apr==null&&DEBT_TYPES[d.type]){ d.apr=DEBT_TYPES[d.type].apr; d.aprEst=true; } else if(d.aprEst==null){ d.aprEst=[24.99,7.5,9.0].includes(d.apr); } });
     if(c.paymentTotal>0&&!(c.payment>0)){ c.payment=c.paymentTotal; c.escrow=0; c.paymentAuto=true; c.payFromTotal=c.payFromTotal||(c.monthsLeft>0||c.origAmount>0?"low":"months"); } for(const k in tpl) if(c[k]===undefined) c[k]=Array.isArray(tpl[k])?[]:tpl[k];
@@ -881,7 +906,7 @@ function debtInterest(bal, apr, pay){ const m=debtMonths(bal,apr,pay); return is
 function cur(){ return state.clients.find(c=>c.id===state.currentId) || null; }
 function blankClient(){ return {id:"c"+Date.now()+Math.floor(Math.random()*999), name:"New client", status:"New lead", quick:false,
   phone:"",email:"",address:"",balance:null,rate:null,payment:null,monthsLeft:null,value:null,fico:null,
-  servicer:"",loanType:"Conventional",followUp:"",notes:"",paymentTotal:null,escrow:null,origAmount:null,origTerm:30,freeClear:false,taxAnnual:null,insAnnual:null,targetRate:null,tz:"",debts:[],debtsTrash:[],options:[],scenarios:[],library:[],prop:{included:[],rec:"",why:""},cmp:{pwypn:false,rec:"",why:"",include:false},
+  servicer:"",loanType:"Conventional",followUp:"",notes:"",paymentTotal:null,escrow:null,origAmount:null,origTerm:30,freeClear:false,taxAnnual:null,insAnnual:null,targetRate:null,tz:"",followUpTime:"",log:[],debts:[],debtsTrash:[],options:[],scenarios:[],library:[],prop:{included:[],rec:"",why:""},cmp:{pwypn:false,rec:"",why:"",include:false},
   analysis:{anRate:null,anTerm:30,anCosts:0,anCashOut:0,anSkip:1,anRoll:"yes",anLien:"refi"}}; }
 function newClient(){ const c=blankClient(); state.clients.unshift(c); state.currentId=c.id; save(); refreshAll(); go("client"); toast("New client added"); }
 function newQuickQuote(){ const c=blankClient(); c.quick=true;
@@ -1014,6 +1039,7 @@ function fillClientForm(){ const c=cur();
     : `<span class="tag-good">In pipeline</span>`);
   ltvHint(); const vs=$("valueSrc"); if(vs) vs.innerHTML=valueSrcText(c);
   const ph=$("payHint"); if(ph) ph.innerHTML=payHintText(c);
+  const fa=$("fuActions"); if(fa) fa.innerHTML=c?fuButtons(c,false):""; const fl=$("fuLog"); if(fl) fl.innerHTML=c?fuLogHTML(c):"";
   const dc=$("dispoChips"); if(dc){ dc.innerHTML = !c ? "" : STATUSES.map(st=>`<button class="chip${c.status===st?" on":""}" ${c.status===st?'style="background:var(--brand);color:#fff;border-color:var(--brand)"':''} onclick="dispo('${st.replace(/'/g,"\\'")}')">${st}</button>`).join("");
     const dh=$("dispoHint"); if(dh) dh.innerHTML = !c ? "" : c.status===S_RATE ? `Needs the market at <b>${c.targetRate>0?pct(c.targetRate):"\u2014 set the rate alert above"}</b> \u2014 they\u2019ll show under \uD83D\uDD25 Hot now when the feed gets there.`
       : c.status===S_DONE ? `Closed ${esc(c.closedAt||"")} \u2014 counted in this month\u2019s goal.` : c.status==="Needs follow-up"&&c.followUp ? `Follow-up ${esc(c.followUp)} \u2014 shows under Follow-ups due on that day.` : ""; }
@@ -1069,7 +1095,7 @@ function renderPipeline(){
     return `<tr><td><b>${esc(c.name)}</b><br><span class="hint">${esc(c.loanType)}${c.servicer?" \u00b7 "+esc(c.servicer):""}</span></td>
     <td><span class="${c.status===S_DONE?"tag-good":c.status==="Lost"?"tag-warn":c.status===S_RATE?"tag-flat":"tag-flat"}">${esc(c.status)}${c.status===S_RATE&&c.targetRate>0?" \u00b7 needs "+pct(c.targetRate):""}</span></td>
     <td class="num">${c.freeClear?'<span class="tag-good">free &amp; clear</span>':money(c.balance)}</td><td class="num">${c.freeClear?"\u2014":pct(c.rate)}</td><td class="num">${c.freeClear?"\u2014":money(c.payment)}</td>
-    <td>${esc(c.followUp||"\u2014")}</td>
+    <td>${esc(c.followUp||"\u2014")}${c.followUpTime?" "+esc(c.followUpTime):""}${(ds.has(c.id)||(fuPending&&fuPending.id===c.id))?`<div style="margin-top:4px">${fuButtons(c,true)}</div>`:""}</td>
     <td>${op?`<span class="${op.tag}">${op.txt}</span>`:""}</td>
     <td><button class="btn small" onclick="pickClient('${c.id}');go('client')">Open</button></td></tr>`;}).join("")+`</tbody></table>`);
 }
