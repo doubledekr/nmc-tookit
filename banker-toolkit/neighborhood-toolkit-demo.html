@@ -754,7 +754,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.2.0";
+const TOOLKIT_VERSION = "1.2.1";
 const DEMO = true; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -1451,7 +1451,7 @@ function runAnalysis(){ { const n=$("anRateSrc"); if(n){ const t=rateSrcText(cur
       ? "Enter the new rate above to run the numbers \u2014 it prefills from the rate feed once the hub is linked, or paste lender pricing and hit Analyze on an option."
       : "Need the client's current balance &amp; rate (Client workspace) and a new rate above to run the numbers."}</div>`; return; }
   if(r.tooSmall){ el.innerHTML=`<div class="panel empty">For a second lien, add cash out and/or debts to roll in \u2014 that's what sizes the new loan.</div>`; return; }
-  { const lv=$("fcLtv"); if(lv) lv.innerHTML = r.fc ? (r.ltv!=null ? `New loan <b>${money(r.newP)}</b> = <b>${(r.ltv).toFixed(1)}% LTV</b> on ${money(c.value)}${r.ltv>(c.loanType==="VA"?90:80)?` <span style="color:var(--warn)">\u2014 above the usual ${c.loanType==="VA"?"90% VA":"80% conventional"} cash-out limit</span>`:""}` : `New loan <b>${money(r.newP)}</b> \u2014 add the home value to check LTV`) : ""; }
+  { const lv=$("fcLtv"); if(lv) lv.innerHTML = r.fc ? (r.ltv!=null ? `New loan <b>${money(r.newP)}</b> = <b>${(r.ltv).toFixed(1)}% LTV</b> on ${money(c.value)}${r.ltv>(c.loanType==="VA"?90:80)?` <span style="color:var(--warn)">\u2014 above ${c.loanType==="VA"?"90%":"80%"}: check the program guidelines (some lenders go higher; VA up to 100%)</span>`:""}` : `New loan <b>${money(r.newP)}</b> \u2014 add the home value to check LTV`) : ""; }
   if(r.fc){ el.innerHTML=fcResultsHTML(c,r); return; }
   const termCut = isFinite(r.pw.months) ? r.n - r.pw.months : 0;
   const intSavedPW = r.curPathInterest - r.pw.interest;
