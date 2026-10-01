@@ -36,3 +36,13 @@ Note: the repo is public, so the guide is publicly reachable (no client data —
 ## Keeping it current
 Version and "What's new" are automatic. Only the explanatory sections are hand-written: when formulas in `computeAnalysis` / `amort` / Tools change, update the matching card in the
 "How the math works" section and the worked example.
+
+## App look, installers, Salesforce bookmark, videos
+- Styled on the toolkit's own frame and tokens; logos in `docs/assets/` (wordmark SVG from the toolkit, icon from the desktop build).
+- **Download buttons** read `releases/latest` and link straight to the newest `.exe` / `.dmg`.
+- **Salesforce bookmark** screen pulls the "Copy lead for NMC" bookmarklet live from `main`'s toolkit HTML
+  (`assets/sf-bookmarklet.txt` is the fallback copy), so it always matches the current app.
+- **Videos:** `VIDEO_FOLDER` and `VIDEOS` at the top of the script in `index.html`.
+  `series:"client"` + `step` → embedded start-to-finish player on Working a client; everything else → Library.
+  Paste each video's SharePoint embed code as `embed`. Viewers need their NMC Microsoft sign-in to play.
+- Quick quote and call blocks are intentionally not covered (off in the app for now).
