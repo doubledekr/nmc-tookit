@@ -1,0 +1,28 @@
+{
+  "name": "nmc-toolkit-bonzo-lab",
+  "productName": "NMC Toolkit Bonzo Lab",
+  "version": "0.1.0",
+  "description": "Test build of the NMC Toolkit with the Send to Bonzo button. Not for bankers.",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "sync": "node scripts/sync.js",
+    "start": "npm run sync && electron .",
+    "mock": "node ../mock-bonzo/server.js",
+    "build:mac": "npm run sync && electron-builder --mac --publish never",
+    "build:win": "npm run sync && electron-builder --win --publish never"
+  },
+  "devDependencies": {
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.neighborhoodmc.toolkit.bonzolab",
+    "productName": "NMC Toolkit Bonzo Lab",
+    "directories": { "output": "dist" },
+    "files": ["main.js", "preload.js", "bonzo-main.js", "app/**/*", "package.json"],
+    "win": { "target": [{ "target": "nsis", "arch": ["x64"] }], "artifactName": "NMC-Bonzo-Lab-Setup-${version}.${ext}" },
+    "mac": { "target": [{ "target": "dmg", "arch": ["universal"] }], "artifactName": "NMC-Bonzo-Lab-${version}.${ext}" },
+    "publish": null
+  }
+}
