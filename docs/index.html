@@ -44,7 +44,25 @@ nav button.active::before{opacity:1}
 .ver-pill{margin:16px 16px 0;background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:11px 13px;font-size:12.5px;color:var(--muted)}
 .ver-pill b{display:block;font-size:17px;color:var(--ink);font-family:var(--serif);font-weight:400}
 .side-foot{margin-top:auto;padding:14px 20px 0;font-size:11.5px;color:var(--muted)}
-main{flex:1;padding:28px 32px 48px;max-width:1150px;min-width:0}
+main{flex:1;padding:28px 32px 48px;min-width:0}
+.mainwrap{display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:28px;align-items:start;max-width:1440px}
+.content{min-width:0}
+.rail{position:sticky;top:20px;max-height:calc(100vh - 40px);overflow-y:auto}
+.rail-card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.rail-cur{display:flex;justify-content:space-between;align-items:baseline;margin:2px 0 12px}
+.rail-cur span{font-size:12.5px;color:var(--muted)}
+.rail-cur b{font-family:var(--serif);font-weight:400;font-size:22px}
+.vlist{list-style:none;border-left:2px solid var(--line);margin-left:5px}
+.vlist li{position:relative;padding:0 0 12px 14px}
+.vlist li::before{content:"";position:absolute;left:-6px;top:5px;width:10px;height:10px;border-radius:50%;background:#fff;border:2px solid #C9C2B4}
+.vlist li.latest::before{background:var(--brand);border-color:var(--brand)}
+.vlist li.hint::before{display:none}
+.vlist .vh{display:flex;justify-content:space-between;gap:8px;font-size:12.5px}
+.vlist .vh b{color:var(--ink)} .vlist li.latest .vh b{color:var(--brand)}
+.vlist .vh span{color:var(--muted)}
+.vlist p{font-size:12.5px;color:var(--muted);line-height:1.45;margin-top:2px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;cursor:pointer}
+.vlist p.full{-webkit-line-clamp:unset;display:block}
+@media (max-width:1180px){ .mainwrap{grid-template-columns:1fr} .rail{position:static;max-height:none} }
 
 /* ===== Screens & components (same classes as the toolkit) ===== */
 .screen{display:none}
@@ -170,7 +188,7 @@ kbd{font-family:var(--sans);font-size:12px;font-weight:600;background:#fff;borde
   .grid3,.grid4{grid-template-columns:1fr}
   details.calc summary{flex-wrap:wrap} details.calc summary span{margin-left:0;text-align:left;width:100%}
 }
-@media print{ aside{display:none} .screen{display:block!important;page-break-after:always} details.calc .body{display:block} }
+@media print{ aside,.rail{display:none} .screen{display:block!important;page-break-after:always} details.calc .body{display:block} }
 </style>
 </head>
 <body>
@@ -183,7 +201,6 @@ kbd{font-family:var(--sans);font-size:12px;font-weight:600;background:#fff;borde
     <div class="prod"><img src="assets/nmc-icon.png" alt="">NMC Toolkit Guide</div>
   </div>
   <nav id="nav">
-    <button data-s="home">Home &amp; what's new</button>
     <button data-s="start">Getting started</button>
     <button data-s="day">Your day</button>
     <button data-s="client">Working a client</button>
@@ -199,32 +216,12 @@ kbd{font-family:var(--sans);font-size:12px;font-weight:600;background:#fff;borde
 </aside>
 
 <main>
-
-<!-- ================= HOME ================= -->
-<section class="screen" id="s-home">
-  <div class="eyebrow">Banker resources</div><h1>NMC Toolkit Guide</h1>
-  <div class="sub">How to get set up, work a client from Salesforce paste to finished proposal, and explain every number on the page with confidence.</div>
-  <div class="tiles">
-    <button class="tile" data-go="start"><b>Install the toolkit</b><span>Download the newest version for Windows or Mac.</span></button>
-    <button class="tile" data-go="salesforce"><b>Salesforce bookmark</b><span>Pull a lead into the toolkit with one click.</span></button>
-    <button class="tile" data-go="client"><b>Working a client</b><span>Paste → parse → analyze → propose, step by step.</span></button>
-    <button class="tile" data-go="math"><b>How the math works</b><span>Every formula behind the analysis and proposal.</span></button>
-    <button class="tile" data-go="videos"><b>Video walkthroughs</b><span>Start-to-finish series and a library of features.</span></button>
-  </div>
-  <div class="panel">
-    <h2>What's new</h2>
-    <p class="hint" style="margin:0 0 10px">Updates itself whenever a new version of the toolkit is published — newest first.</p>
-    <div class="tablewrap"><table class="data">
-      <thead><tr><th style="width:80px">Version</th><th style="width:110px">Date</th><th>What changed</th></tr></thead>
-      <tbody id="newRows"><tr><td colspan="3" class="hint">Loading the latest updates…</td></tr></tbody>
-    </table></div>
-    <div class="btnrow" style="margin-top:12px"><a class="btn ghost small" href="https://github.com/doubledekr/nmc-tookit/releases" target="_blank" rel="noopener">Downloads &amp; full history</a></div>
-  </div>
-</section>
+<div class="mainwrap">
+<div class="content">
 
 <!-- ================= GETTING STARTED ================= -->
 <section class="screen" id="s-start">
-  <div class="eyebrow">First day</div><h1>Getting started</h1>
+  <div class="eyebrow">Start here</div><h1>Getting started with the NMC Toolkit</h1>
   <div class="sub">The toolkit is a desktop app for Windows and Mac. Every calculation, chart, parser and PDF export runs on your own computer — no internet needed for the core work.</div>
   <div class="vidslot" data-for="start"></div>
   <div class="panel">
@@ -243,6 +240,13 @@ kbd{font-family:var(--sans);font-size:12px;font-weight:600;background:#fff;borde
     <li><span class="tnum">5</span><div><h3>Moving from the browser version?</h3><p>Use <b>Settings → Import</b> to bring in an old JSON export. Nothing is lost.</p></div></li>
   </ol></div>
   <div class="note"><b>Off the VPN?</b> Pipeline, client records, analysis and proposals keep working off your local copy. Only shared things (rate pushes, team stats, the template library) pause, and they catch up within a couple of minutes of reconnecting — including uploading anything you did offline.</div>
+  <div class="eyebrow" style="margin-top:8px">Where to next</div>
+  <div class="tiles">
+    <button class="tile" data-go="salesforce"><b>Salesforce bookmark</b><span>Pull a lead into the toolkit with one click.</span></button>
+    <button class="tile" data-go="client"><b>Working a client</b><span>Paste → parse → analyze → propose, step by step.</span></button>
+    <button class="tile" data-go="math"><b>How the math works</b><span>Every formula behind the analysis and proposal.</span></button>
+    <button class="tile" data-go="videos"><b>Video walkthroughs</b><span>Start-to-finish series and a library of features.</span></button>
+  </div>
 </section>
 
 <!-- ================= YOUR DAY ================= -->
@@ -496,9 +500,22 @@ card payoff      = the debt payoff formula above, at the payment they make</div>
   <details class="calc"><summary><b>Why is a debt's payoff marked "estimate"?</b></summary><div class="body"><p>That debt has no APR, so it's treated as interest-free. Add the APR from the credit report for an exact figure.</p></div></details>
   <details class="calc"><summary><b>Why can't I skip a payment or roll in debt on an FHA Streamline?</b></summary><div class="body"><p>Program rules: FHA Streamlines and VA IRRRLs are rate-and-term only, and FHA Streamlines don't skip a payment. The toolkit locks those fields so a proposal can't promise something the program won't do.</p></div></details>
   <details class="calc"><summary><b>Can I quote the effective rate?</b></summary><div class="body"><p>No. It illustrates total interest cost if the client keeps paying what they pay now. The note rate and APR are the quotable numbers.</p></div></details>
-  <details class="calc"><summary><b>How do I get the newest version?</b></summary><div class="body"><p>The app updates itself — look for the Update bar. The <a href="#home">Home</a> screen lists every recent change.</p></div></details>
+  <details class="calc"><summary><b>How do I get the newest version?</b></summary><div class="body"><p>The app updates itself — look for the Update bar. The <b>Toolkit versions</b> sidebar lists every recent change.</p></div></details>
 </section>
 
+</div><!-- /content -->
+
+<aside class="rail" aria-label="Toolkit versions">
+  <div class="rail-card">
+    <div class="eyebrow">Toolkit versions</div>
+    <div class="rail-cur"><span>Current</span><b id="railVer">—</b></div>
+    <a class="btn small" href="#start" style="display:block;text-align:center">Download the app</a>
+    <p class="hint" style="margin-top:10px">Installed copies update themselves. Newest changes first:</p>
+    <ol class="vlist" id="newRows"><li class="hint">Loading…</li></ol>
+    <a class="hint" href="https://github.com/doubledekr/nmc-tookit/releases" target="_blank" rel="noopener" style="display:inline-block;margin-top:10px">Full history ↗</a>
+  </div>
+</aside>
+</div><!-- /mainwrap -->
 </main>
 </div>
 
@@ -542,7 +559,7 @@ var VIDEOS = [
   /* ---------- screens (same behaviour as the toolkit's menu) ---------- */
   var screens=[].map.call(document.querySelectorAll(".screen"),function(s){return s.id.slice(2);});
   function go(s,push){
-    if(screens.indexOf(s)<0) s="home";
+    if(screens.indexOf(s)<0) s="start";
     document.querySelectorAll(".screen").forEach(function(el){el.classList.toggle("active",el.id==="s-"+s);});
     document.querySelectorAll("#nav button").forEach(function(b){b.classList.toggle("active",b.dataset.s===s);});
     if(push!==false && location.hash!=="#"+s) history.replaceState(null,"","#"+s);
@@ -551,7 +568,7 @@ var VIDEOS = [
   document.querySelectorAll("[data-s],[data-go]").forEach(function(b){ b.addEventListener("click",function(){ go(b.dataset.s||b.dataset.go); }); });
   document.addEventListener("click",function(e){ var a=e.target.closest('a[href^="#"]'); if(a){ e.preventDefault(); go(a.getAttribute("href").slice(1)); } });
   window.addEventListener("hashchange",function(){ go(location.hash.slice(1),false); });
-  go(location.hash.slice(1)||"home",false);
+  go(location.hash.slice(1)||"start",false);
 
   /* ---------- videos ---------- */
   function srcOf(v){ var e=(v.embed||"").trim(); if(!e) return ""; var m=/src\s*=\s*["']([^"']+)["']/i.exec(e); return m? m[1].replace(/&amp;/g,"&") : e; }
@@ -638,13 +655,15 @@ var VIDEOS = [
   function render(list){
     if(!list.length){ fail(); return; }
     $("verPill").textContent="v"+list[0].v+" · "+new Date(list[0].d).toLocaleDateString(undefined,{month:"short",day:"numeric"});
+    $("railVer").textContent="v"+list[0].v;
     $("newRows").innerHTML=list.slice(0,SHOW).map(function(x,i){
       var t=esc(x.t); t=t.charAt(0).toUpperCase()+t.slice(1);
-      return '<tr'+(i===0?' class="latest"':'')+'><td><b>v'+esc(x.v)+'</b></td><td>'+fmt(x.d)+'</td><td>'+t+'</td></tr>';
+      return '<li'+(i===0?' class="latest"':'')+'><div class="vh"><b>v'+esc(x.v)+'</b><span>'+fmt(x.d)+'</span></div><p title="Click to expand">'+t+'</p></li>';
     }).join("");
   }
-  function fail(){ $("verPill").textContent="see releases";
-    $("newRows").innerHTML='<tr><td colspan="3">Couldn’t reach GitHub just now — see the <a href="https://github.com/'+REPO+'/releases" target="_blank" rel="noopener">releases page</a>.</td></tr>'; }
+  $("newRows").addEventListener("click",function(e){ var p=e.target.closest("p"); if(p) p.classList.toggle("full"); });
+  function fail(){ $("verPill").textContent="see releases"; $("railVer").textContent="—";
+    $("newRows").innerHTML='<li class="hint">Couldn\u2019t reach GitHub just now \u2014 see the full history below.</li>'; }
   var cached=null; try{ cached=JSON.parse(localStorage.getItem(KEY)||"null"); }catch(e){}
   if(cached && Date.now()-cached.at<TTL){ render(cached.list); return; }
   fetch("https://api.github.com/repos/"+REPO+"/commits?sha=main&per_page=60",{headers:{Accept:"application/vnd.github+json"}})
