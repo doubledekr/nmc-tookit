@@ -342,6 +342,7 @@ table.data tr.rec td{background:var(--cream)}
                 <a class="chip" href="https://tpo.pennymac.com/home-value-estimator" target="_blank" rel="noopener" style="text-decoration:none">Pennymac ↗</a></div>
               <div class="hint" id="valueSrc" style="margin-top:4px"></div></div>
             <div class="field"><label>Credit score</label><input type="number" data-f="fico"></div>
+            <div class="field"><label>Monthly gross income ($) <span class="hint" style="display:inline">(for Rocket Pro pricing)</span></label><input type="number" data-f="income" step="100"></div>
             <div class="field"><label>Current servicer</label><input type="text" data-f="servicer"></div>
             <div class="field"><label>Loan type</label><select data-f="loanType">
               <option>Conventional</option><option>FHA</option><option>VA</option><option>Jumbo</option><option>DSCR</option><option>Other</option></select></div>
@@ -431,6 +432,7 @@ table.data tr.rec td{background:var(--cream)}
         </div>
         <div class="btnrow" style="margin-top:6px">
           <button class="btn ghost" onclick="addSnapScenario()" title="Keep this exact set-up on the client file — pick it on Client proposal, alone or side by side with others">Save this option for the proposal</button>
+          <button class="btn ghost rp-only" onclick="priceInRocketPro()" style="display:none">Price in Rocket Pro ↗</button>
           <button class="btn accent" onclick="go('proposal')">Build proposal →</button>
         </div>
       </div>
@@ -760,7 +762,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.3.5";
+const TOOLKIT_VERSION = "1.3.6-rp.1";
 const DEMO = false; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -822,6 +824,7 @@ const yrsMo = m => { if(m==null||!isFinite(m)) return "\u2014"; const y=Math.flo
 function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),3200); }
 function save(){ writeStore(JSON.stringify(state)); mirrorSeq++; scheduleAutosave(); }
 const DESK = window.nmcDesktop || null;
+if(DESK&&DESK.rocketProFill) document.addEventListener("DOMContentLoaded",()=>document.querySelectorAll(".rp-only").forEach(b=>b.style.display=""));
 function appVersion(){ try{ return (DESK&&DESK.version())||TOOLKIT_VERSION; }catch(e){ return TOOLKIT_VERSION; } }   /* present only inside the desktop app (preload bridge) */
 function readStore(){ if(DESK){ try{ return DESK.readData(); }catch(e){ return null; } } return localStorage.getItem(LS_KEY); }
 function writeStore(json){ if(DESK){ try{ DESK.writeData(json); }catch(e){} } try{ localStorage.setItem(LS_KEY, json); }catch(e){} }
@@ -880,7 +883,7 @@ function debtInterest(bal, apr, pay){ const m=debtMonths(bal,apr,pay); return is
 /* ---------- clients ---------- */
 function cur(){ return state.clients.find(c=>c.id===state.currentId) || null; }
 function blankClient(){ return {id:"c"+Date.now()+Math.floor(Math.random()*999), name:"New client", status:"New lead", quick:false,
-  phone:"",email:"",address:"",balance:null,rate:null,payment:null,monthsLeft:null,value:null,fico:null,
+  phone:"",email:"",address:"",balance:null,rate:null,payment:null,monthsLeft:null,value:null,fico:null,income:null,
   servicer:"",loanType:"Conventional",followUp:"",notes:"",paymentTotal:null,escrow:null,origAmount:null,origTerm:30,freeClear:false,taxAnnual:null,insAnnual:null,targetRate:null,tz:"",debts:[],debtsTrash:[],options:[],scenarios:[],library:[],prop:{included:[],rec:"",why:""},cmp:{pwypn:false,rec:"",why:"",include:false},
   analysis:{anRate:null,anTerm:30,anCosts:0,anCashOut:0,anSkip:1,anRoll:"yes",anLien:"refi"}}; }
 function newClient(){ const c=blankClient(); state.clients.unshift(c); state.currentId=c.id; save(); refreshAll(); go("client"); toast("New client added"); }
@@ -931,7 +934,7 @@ function renderClientBar(){ const bar=$("clientBar"); if(!bar) return; const c=c
     if(c.followUp) facts.push(`<span class="tag-flat">follow-up ${esc(c.followUp)}</span>`);
     if(c.targetRate>0) facts.push(`<span class="${targetHit(c)?"tag-good":"tag-flat"}">alert @ ${pct(c.targetRate)}</span>`);
     { const t=clientTime(c); const tz=clientTz(c); if(t) facts.push(`<span class="tag-flat" title="${esc(tz)}">\uD83D\uDD52 ${t}${tz!=="America/New_York"?" (their time)":""}</span>`); }
-    bar.innerHTML=`<div class="inner"><span class="hint" style="margin:0">Working with</span><span class="who">${esc(c.name)}</span><div class="facts">${facts.join("")}</div><span style="flex:1"></span>${sel}<button class="btn ghost small" onclick="go('client')">Open</button><button class="btn ghost small" onclick="clearClient()" title="Deselect">\u2715 Clear</button></div>`; }
+    bar.innerHTML=`<div class="inner"><span class="hint" style="margin:0">Working with</span><span class="who">${esc(c.name)}</span><div class="facts">${facts.join("")}</div><span style="flex:1"></span>${sel}${DESK&&DESK.rocketProFill?`<button class="btn small" onclick="priceInRocketPro()" title="Open Rocket Pro and fill a new pricing scenario for this client">Price in Rocket Pro \u2197</button>`:""}<button class="btn ghost small" onclick="go('client')">Open</button><button class="btn ghost small" onclick="clearClient()" title="Deselect">\u2715 Clear</button></div>`; }
   const g=$("gClientPicker"); if(g){ g.innerHTML = state.clients.length ? `<option value="" ${!state.currentId?"selected":""}>\u2014 choose a client \u2014</option>`+state.clients.map(x=>`<option value="${x.id}" ${x.id===state.currentId?"selected":""}>${x.quick?"\u26A1 ":""}${esc(x.name)}</option>`).join("") : `<option value="">\u2014 no clients yet \u2014</option>`; }
 }
 /* P&I vs escrow: bankers usually know the total payment; we split it automatically from balance/rate/term */
@@ -1218,6 +1221,36 @@ function useOptionRate(id){ const c=cur(); if(!c) return; const o=c.options.find
   c.analysis.anRate=o.rate; c.analysis.rateSrc={type:"quote",lender:o.lender,when:todayStr()}; c.selectedOption=id; save(); $("anRate").value=o.rate; go("analysis"); runAnalysis(); }
 function optionLoanAmt(c){ const a=c.analysis||{}; const roll=a.anRoll==="yes"; const dSum=(c.debts||[]).reduce((s,d)=>s+(d.balance||0),0);
   return Math.round((c.balance||0)+(a.anCosts||0)+(a.anCashOut||0)+(roll?dSum:0)); }
+/* ---------- Rocket Pro autofill (desktop app only) ----------
+   Turns the open client into the plain facts Rocket Pro's "Create a Scenario" form asks for. The desktop
+   shell (rocketpro.js) knows Rocket's field names; this only decides the numbers. Nothing is submitted —
+   the banker reviews the filled form and clicks Continue themselves. */
+function rocketProPayload(c){ const a=c.analysis||{}; const debts=c.debts||[];
+  const mode=modeOf(a); const roll=a.anRoll==="yes"; const streamline=mode==="fha"||mode==="va";
+  const isSecond=d=>/heloc|home equity|2nd|second mort/i.test((d.name||"")+" "+(d.type||""));
+  const seconds=debts.filter(isSecond); const others=debts.filter(d=>!isSecond(d));
+  const debtSum=others.reduce((s,d)=>s+(d.balance||0),0);
+  const cashOut=!streamline&&((a.anCashOut||0)>0||(roll&&debts.length>0));
+  const lien=mode==="second"?"second":mode==="fc"?"fc":"refi";
+  const amount=lien==="second" ? Math.round((a.anCosts||0)+(a.anCashOut||0)+(roll?debtSum:0)) : optionLoanAmt(c);
+  const zip=((c.address||"").match(/\b(\d{5})(?:-\d{4})?\s*$/)||(c.address||"").match(/\b(\d{5})\b(?!.*\b\d{5}\b)/)||[])[1]||"";
+  const d=new Date();
+  return { name:c.name, fico:c.fico, income:c.income,
+    monthlyDebt: roll ? 0 : others.reduce((s,x)=>s+(x.pay||0),0),   /* debts rolled into the new loan are paid off */
+    zip, purpose: cashOut?"cashout":"rateterm", loanType:c.loanType, lien,
+    value:c.value, amount, firstBalance:c.balance,
+    taxes: c.taxAnnual>0 ? c.taxAnnual/12 : null, hoi: c.insAnnual>0 ? c.insAnnual/12 : null,
+    hasSecond: seconds.length>0, payoffSecond: roll, secondBalance: seconds.reduce((s,x)=>s+(x.balance||0),0)||null,
+    scenarioName: (()=>{ const tag=` ${d.getMonth()+1}/${d.getDate()}`; const nm=String(c.name||"Client").trim();   /* Rocket Pro caps names at 25 characters */
+      return (nm.length+tag.length<=25 ? nm : nm.slice(0,25-tag.length).trim())+tag; })() };
+}
+async function priceInRocketPro(){ const c=cur(); if(!c){ toast("Pick a client first"); return; }
+  if(!(DESK&&DESK.rocketProFill)){ toast("Rocket Pro autofill works in the NMC Toolkit desktop app"); return; }
+  const p=rocketProPayload(c); const missing=[];
+  if(!p.fico) missing.push("credit score"); if(!p.zip) missing.push("ZIP (in the address)"); if(!p.value) missing.push("home value"); if(!p.income) missing.push("monthly income");
+  try{ await DESK.rocketProFill(p); }catch(e){ toast("Couldn\u2019t open Rocket Pro"); return; }
+  toast(missing.length ? "Opening Rocket Pro \u2014 add these there: "+missing.join(", ") : "Opening Rocket Pro \u2014 sign in if asked; the scenario fills itself");
+}
 function renderSavedOptions(){
   const c=cur(); const el=$("priceSaved"); if(!el) return;
   if(!c||!c.options.length){ el.innerHTML=`<div class="empty">No pricing saved yet for this client — paste a rate stack above.</div>`; return; }

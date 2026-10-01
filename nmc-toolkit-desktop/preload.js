@@ -15,5 +15,6 @@ contextBridge.exposeInMainWorld("nmcDesktop", {
   checkUpdates: () => ipcRenderer.invoke("update:check"),
   installUpdate: () => ipcRenderer.invoke("update:install"),
   openReleases: () => ipcRenderer.invoke("update:openReleases"),
+  rocketProFill: (payload) => ipcRenderer.invoke("rocketpro:fill", payload),   /* opens Rocket Pro and fills a new pricing scenario */
   onUpdateStatus: (fn) => ipcRenderer.on("update:status", (e, s) => fn(s)),
 });

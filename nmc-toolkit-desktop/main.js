@@ -3,6 +3,7 @@
    so a banker's pipeline is self-contained with the app and survives updates. */
 const { app, BrowserWindow, ipcMain, dialog, shell, Menu } = require("electron");
 const fs = require("fs"), path = require("path"), os = require("os");
+const rocketPro = require("./rocketpro");   /* Rocket Pro pricing-scenario autofill (test branch) */
 
 /* ---- where data lives ----
    Portable mode: a folder named "data" next to the executable (create it to turn this on) —
@@ -51,6 +52,7 @@ ipcMain.handle("data:pickAndRead", async () => {
   const r = await dialog.showOpenDialog({ title: "Import a previous toolkit file", filters: [{ name: "Toolkit export", extensions: ["json"] }], properties: ["openFile"] });
   if (r.canceled || !r.filePaths[0]) return null; try { return fs.readFileSync(r.filePaths[0], "utf8"); } catch (e) { return null; } });
 ipcMain.handle("app:version", () => app.getVersion());
+ipcMain.handle("rocketpro:fill", (e, payload) => rocketPro.open(payload));
 
 /* ---- updates straight from GitHub Releases (no server needed) ----
    electron-builder writes the GitHub feed (package.json → build.publish) into the app. On launch and every
@@ -106,7 +108,7 @@ app.whenReady().then(() => {
   Menu.setApplicationMenu(Menu.buildFromTemplate([
     { label: "NMC Toolkit", submenu: [{ role: "reload" }, { role: "toggleDevTools" }, { type: "separator" }, { role: "quit" }] },
     { role: "editMenu" }, { role: "viewMenu" }, { role: "windowMenu" } ]));
-  createWindow(); setupUpdates();
+  rocketPro.init(dataDir()); createWindow(); setupUpdates();
   app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
 app.on("before-quit", flushWrites);

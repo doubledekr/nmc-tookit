@@ -84,3 +84,19 @@ scripts/         sync-html.js
 The toolkit HTML has no Electron code in it. It checks `window.nmcDesktop` at
 startup: present → data goes through the bridge; absent → browser storage as
 before. The same file serves the browser, the intranet, and the app.
+
+## Rocket Pro autofill (test branch `test/rocketpro-autofill`)
+
+**Price in Rocket Pro ↗** (client bar, and next to *Build proposal* on the analysis screen) opens
+app.rocketpro.com in its own window and fills a new pricing scenario from the open client:
+credit score, monthly income and debts, ZIP (Rocket fills state and county), refi purpose
+(cash-out when cash or debts are rolled in), Wholesale channel, loan type, value, loan amount
+(same amount as the proposal), monthly taxes and insurance, Lender Paid compensation,
+2nd-mortgage questions, and a scenario name (Rocket's 25-character limit).
+
+- Each banker signs in to Rocket Pro once in that window; the sign-in is saved in its own session.
+- Nothing is ever submitted: a banner lists what was filled and anything to finish by hand, and
+  the banker clicks **Continue** on Rocket Pro. **Fill again** on the banner re-runs the fill.
+- Rocket's field names live only in `rocketpro.js` — update that file if Rocket changes the form.
+- Pushes to `test/*` branches build installers (Actions → the run → Artifacts) without publishing
+  a release, so installed copies on `main` are never updated to a test build.

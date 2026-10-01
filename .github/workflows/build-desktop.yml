@@ -2,7 +2,7 @@ name: Build desktop app
 
 on:
   push:
-    branches: [main]
+    branches: [main, "test/**"]   # test/* branches build installers (Actions → run → Artifacts) but never publish a release
     paths:
       - "nmc-toolkit-desktop/**"
       - "banker-toolkit/neighborhood-toolkit.html"
@@ -54,6 +54,7 @@ jobs:
 
   release:
     needs: build
+    if: github.ref == 'refs/heads/main'   # only main updates the installed copies
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

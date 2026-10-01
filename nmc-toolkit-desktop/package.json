@@ -33,6 +33,7 @@
     "files": [
       "main.js",
       "preload.js",
+      "rocketpro.js",
       "app/**/*",
       "package.json"
     ],
