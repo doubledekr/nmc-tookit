@@ -492,7 +492,7 @@ Discover 6,100 190 24.9"></textarea>
         <div class="grid3">
           <div class="field"><label>Client</label><select id="propClientPicker" onchange="pickClient(this.value)"></select></div>
           <div class="field" style="display:none"><label>Pricing option on proposal</label><select id="propOption" onchange="renderProposalPreview()"></select></div>
-          <div class="field" style="align-self:end"><div class="btnrow"><button class="btn" onclick="copyImage('proposal')">Copy proposal</button><button class="btn ghost" onclick="emailImage('proposal')">Email</button><button class="btn ghost" onclick="exportImage('proposal')">Save image</button><button class="btn ghost" onclick="exportPDF()">PDF</button><button class="btn ghost" onclick="librarySave('proposal')">Save to library</button><button class="btn ghost" id="propSaveOpt" onclick="addSnapScenario(); renderProposalPreview()" title="Keep this proposal's set-up as a saved option, so it can sit side by side with others">Save as an option</button></div></div>
+          <div class="field" style="align-self:end"><div class="btnrow"><button class="btn" onclick="copyImage('proposal')">Copy proposal</button><button class="btn ghost" onclick="emailImage('proposal')">Email</button><button class="btn ghost" onclick="exportImage('proposal')">Save image</button><button class="btn ghost" onclick="exportPDF()">PDF</button><button class="btn ghost" onclick="librarySave('proposal')">Save to library</button><button class="btn ghost" id="propSaveOpt" onclick="addSnapScenario(); renderProposalPreview()" title="Keep this proposal's set-up as a saved option, so it can sit side by side with others">Save as an option</button><button class="btn ghost" onclick="librarySave('proposal'); markSentLatest('text')" title="Logs this proposal as sent by text (Email marks itself automatically)">Mark sent by text</button></div></div>
         </div>
         <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="propAmort" style="width:auto" checked onchange="setPropAmort(this.checked)"> Include the year-by-year amortization table on the proposal</label></div>
         <div class="field"><label>Personal note to client (optional)</label><textarea id="propNote" style="min-height:60px;font-family:inherit" oninput="renderProposalPreview()" placeholder="e.g. Maria — here's the consolidation option we walked through on Tuesday."></textarea></div>
@@ -761,7 +761,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.4.0";
+const TOOLKIT_VERSION = "1.4.1";
 const DEMO = true; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -782,7 +782,7 @@ function applyDispo(c){ if(c.status===S_DONE&&!c.closedAt) c.closedAt=new Date()
 function dispo(st){ const c=cur(); if(!c) return; c.status=st; applyDispo(c); save(); fillClientForm(); renderPipeline(); renderClientBar();
   toast(st===S_DONE?"Marked complete \u2014 counts toward this month\u2019s goal":st===S_RATE?"Flagged ineligible \u2014 set the rate they need; the pipeline will light up when the feed gets there":"Disposition: "+st); }
 /* follow-ups are closed with an outcome, logged on the client, and replaced by the next one (or nothing) */
-const FU_OUT={done:"Done \u2014 spoke with them",noanswer:"No answer / left VM",resched:"Rescheduled"};
+const FU_OUT={done:"Done \u2014 spoke with them",noanswer:"No answer / left VM",resched:"Rescheduled",sent:"Proposal sent"};
 let fuPending=null;   /* {id, outcome} waiting for a "next" choice */
 function fuStamp(){ const d=new Date(); return d.toISOString().slice(0,10)+" "+d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}); }
 function fuDateStr(d){ return d.toISOString().slice(0,10); }
@@ -803,7 +803,7 @@ function fuButtons(c,compact){ const id=c.id; const b=(l,o,cls)=>`<button class=
   if(!c.followUp) return compact?"":`<div class="chiprow" style="align-items:center"><span class="hint">No follow-up set.</span> ${fuNextChips(c)}</div>`;
   return `<div class="chiprow" style="align-items:center">${compact?"":`<span class="hint">Follow-up ${esc(c.followUp)}${c.followUpTime?" "+esc(c.followUpTime):""} \u2014 close it:</span>`}${b("\u2713 Done","done","")}${b("No answer","noanswer")}${b("Reschedule","resched")}</div>`; }
 function fuLogHTML(c){ const L=(c.log||[]).slice(0,5); if(!L.length) return "";
-  return `<div class="eyebrow" style="margin-top:6px">Activity</div>`+L.map(e=>`<div>${esc(e.when)} \u2014 ${esc(FU_OUT[e.outcome]||e.outcome)}${e.due?` (was due ${esc(e.due)}${e.dueTime?" "+esc(e.dueTime):""})`:""}${e.next?` \u2192 next ${esc(e.next)}`:""}</div>`).join("")+((c.log||[]).length>5?`<div>\u2026 ${(c.log.length-5)} more</div>`:""); }
+  return `<div class="eyebrow" style="margin-top:6px">Activity</div>`+L.map(e=>`<div>${esc(e.when)} \u2014 ${esc(FU_OUT[e.outcome]||e.outcome)}${e.note?" \u2014 "+esc(e.note):""}${e.due?` (was due ${esc(e.due)}${e.dueTime?" "+esc(e.dueTime):""})`:""}${e.next?` \u2192 next ${esc(e.next)}`:""}</div>`).join("")+((c.log||[]).length>5?`<div>\u2026 ${(c.log.length-5)} more</div>`:""); }
 function closedThisMonth(){ const mkey=new Date().toISOString().slice(0,7); return state.clients.filter(c=>!c.quick&&c.status===S_DONE&&(c.closedAt||"").slice(0,7)===mkey); }
 const DEFAULT_SFMAP = {
   name:["name","contact name","full name","borrower","borrower name","account name","opportunity name","client"],
@@ -872,6 +872,7 @@ function migrate(){ /* additive only — old saves gain new fields, nothing is e
     if(!Array.isArray(c.log)) c.log=[]; if(c.followUpTime==null) c.followUpTime="";
     (c.debts||[]).forEach(d=>{ if(!d.type) d.type=debtTypeOf(d.name); if(d.extra==null) d.extra=0; if(d.acct==null) d.acct="";
       if(d.apr==null&&DEBT_TYPES[d.type]){ d.apr=DEBT_TYPES[d.type].apr; d.aprEst=true; } else if(d.aprEst==null){ d.aprEst=[24.99,7.5,9.0].includes(d.apr); } });
+    if(c.proposalSent==null){ const sent=(c.library||[]).filter(x=>x&&x.sent); c.proposalSent=sent.length?sent.map(x=>x.sent.when.slice(0,10)).sort().pop():""; c.proposalsSent=sent.length; }
     if(c.paymentTotal>0&&!(c.payment>0)){ c.payment=c.paymentTotal; c.escrow=0; c.paymentAuto=true; c.payFromTotal=c.payFromTotal||(c.monthsLeft>0||c.origAmount>0?"low":"months"); } for(const k in tpl) if(c[k]===undefined) c[k]=Array.isArray(tpl[k])?[]:tpl[k];
    c.analysis=Object.assign({}, tpl.analysis, c.analysis||{});
    c.debts=c.debts||[]; c.options=c.options||[]; c.scenarios=c.scenarios||[];
@@ -954,6 +955,7 @@ function renderClientBar(){ const bar=$("clientBar"); if(!bar) return; const c=c
     else if(c.balance) facts.push(`<span class="tag-flat">${money(c.balance)}${c.rate?" @ "+pct(c.rate):""}</span>`);
     if(c.payment) facts.push(`<span class="tag-flat">${money(c.payment)}/mo P&amp;I${c.escrow?" + "+money(c.escrow)+" escrow":""}</span>`);
     if(c.followUp) facts.push(`<span class="tag-flat">follow-up ${esc(c.followUp)}</span>`);
+    if(c.proposalSent) facts.push(`<span class="tag-good">proposal sent ${esc(c.proposalSent)}</span>`);
     if(c.targetRate>0) facts.push(`<span class="${targetHit(c)?"tag-good":"tag-flat"}">alert @ ${pct(c.targetRate)}</span>`);
     { const t=clientTime(c); const tz=clientTz(c); if(t) facts.push(`<span class="tag-flat" title="${esc(tz)}">\uD83D\uDD52 ${t}${tz!=="America/New_York"?" (their time)":""}</span>`); }
     bar.innerHTML=`<div class="inner"><span class="hint" style="margin:0">Working with</span><span class="who">${esc(c.name)}</span><div class="facts">${facts.join("")}</div><span style="flex:1"></span>${sel}<button class="btn ghost small" onclick="go('client')">Open</button><button class="btn ghost small" onclick="clearClient()" title="Deselect">\u2715 Clear</button></div>`; }
@@ -1079,10 +1081,11 @@ function renderPipeline(){
   const hs=new Set(al.hot.map(c=>c.id)), ds=new Set(al.due.map(c=>c.id)), ws=new Set(al.watch.map(c=>c.id));
   const chips=$("pipeChips"); if(chips){
     const chip=(v,l,n)=>`<button class="btn small ${pipeView===v?"":"ghost "}" onclick="setPipeView('${v}')">${l}${n!=null?" ("+n+")":""}</button>`;
-    chips.innerHTML=chip("all","All")+chip("hot","\uD83D\uDD25 Hot now",al.hot.length)+chip("due","Follow-ups due",al.due.length)+chip("watch","Watching",al.watch.length); }
+    const sentN=state.clients.filter(c=>!c.quick&&c.proposalSent&&!isDone(c)).length;
+    chips.innerHTML=chip("all","All")+chip("hot","\uD83D\uDD25 Hot now",al.hot.length)+chip("due","Follow-ups due",al.due.length)+chip("watch","Watching",al.watch.length)+chip("sent","Proposal sent",sentN); }
   const f=filt.value;
   const rows=state.clients.filter(c=>!c.quick && (!f||c.status===f) &&
-    (pipeView==="all" || (pipeView==="hot"&&hs.has(c.id)) || (pipeView==="due"&&ds.has(c.id)) || (pipeView==="watch"&&ws.has(c.id))));
+    (pipeView==="all" || (pipeView==="hot"&&hs.has(c.id)) || (pipeView==="due"&&ds.has(c.id)) || (pipeView==="watch"&&ws.has(c.id)) || (pipeView==="sent"&&c.proposalSent&&!isDone(c))));
   const bar=(al.hot.length||al.due.length)?`<div style="background:var(--cream);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.8">\uD83D\uDD14 ${al.hot.length?`<b>${al.hot.length} hot right now:</b> ${al.hot.map(c=>`<a href="#" onclick="pickClient('${c.id}');go('analysis');return false" style="color:var(--brand);font-weight:600">${esc(c.name)}</a>`).join(", ")}. `:""}${al.due.length?`<b>${al.due.length} follow-up${al.due.length===1?"":"s"} due:</b> ${al.due.map(c=>`<a href="#" onclick="pickClient('${c.id}');go('client');return false" style="color:var(--ink)">${esc(c.name)}</a>`).join(", ")}.`:""}</div>`:"";
   const inbox=(state.inbox||[]);
   const ib = inbox.length? `<div style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px">
@@ -1093,7 +1096,7 @@ function renderPipeline(){
   `<table class="data"><thead><tr><th>Client</th><th>Status</th><th class="num">Balance</th><th class="num">Rate</th><th class="num">P&amp;I</th><th>Follow-up</th><th>Opportunity</th><th></th></tr></thead><tbody>`+
   rows.map(c=>{ const op=opportunity(c);
     return `<tr><td><b>${esc(c.name)}</b><br><span class="hint">${esc(c.loanType)}${c.servicer?" \u00b7 "+esc(c.servicer):""}</span></td>
-    <td><span class="${c.status===S_DONE?"tag-good":c.status==="Lost"?"tag-warn":c.status===S_RATE?"tag-flat":"tag-flat"}">${esc(c.status)}${c.status===S_RATE&&c.targetRate>0?" \u00b7 needs "+pct(c.targetRate):""}</span></td>
+    <td><span class="${c.status===S_DONE?"tag-good":c.status==="Lost"?"tag-warn":c.status===S_RATE?"tag-flat":"tag-flat"}">${esc(c.status)}${c.status===S_RATE&&c.targetRate>0?" \u00b7 needs "+pct(c.targetRate):""}</span>${c.proposalSent?`<br><span class="tag-good" style="margin-top:3px">proposal sent ${esc(c.proposalSent)}${c.proposalsSent>1?" ("+c.proposalsSent+")":""}</span>`:""}</td>
     <td class="num">${c.freeClear?'<span class="tag-good">free &amp; clear</span>':money(c.balance)}</td><td class="num">${c.freeClear?"\u2014":pct(c.rate)}</td><td class="num">${c.freeClear?"\u2014":money(c.payment)}</td>
     <td>${esc(c.followUp||"\u2014")}${c.followUpTime?" "+esc(c.followUpTime):""}${(ds.has(c.id)||(fuPending&&fuPending.id===c.id))?`<div style="margin-top:4px">${fuButtons(c,true)}</div>`:""}</td>
     <td>${op?`<span class="${op.tag}">${op.txt}</span>`:""}</td>
@@ -1963,9 +1966,16 @@ function libSnap(id){ const c=cur(); return c&&c.library.find(x=>x.id===id); }
 function renderLibrary(){ const el=$("propLibrary"); if(!el) return; const c=cur(); const L=(c&&c.library)||[];
   const th=$("propLibTitle"); if(th) th.textContent = c ? c.name+"\u2019s proposal library" : "Proposal library";
   el.innerHTML = !L.length ? `<div class="empty">Nothing saved yet. Every proposal you copy, email, print, or save is kept here for this client automatically \u2014 or click Save to library.</div>` :
-  `<table class="data"><thead><tr><th>Saved</th><th>Proposal</th><th></th></tr></thead><tbody>`+L.map(e=>`<tr><td class="hint" style="white-space:nowrap">${esc(e.when)}</td><td><b>${esc(e.title)}</b> <span class="hint">\u00b7 ${e.kind==="compare"?"comparison":"proposal"} \u00b7 v${esc(e.version||"")}</span></td>
+  `<table class="data"><thead><tr><th>Saved</th><th>Proposal</th><th>Status</th><th></th></tr></thead><tbody>`+L.map(e=>`<tr><td class="hint" style="white-space:nowrap">${esc(e.when)}</td><td><b>${esc(e.title)}</b> <span class="hint">\u00b7 ${e.kind==="compare"?"comparison":"proposal"} \u00b7 v${esc(e.version||"")}</span></td>
+   <td style="white-space:nowrap">${e.sent?`<span class="tag-good" title="${esc(e.sent.when)}">Sent ${esc(e.sent.how)} ${esc(e.sent.when.slice(0,10))}</span> <button class="btn ghost small" title="Clear" onclick="libSent('${e.id}',null)">\u2715</button>`:`<span class="hint">not sent</span> <button class="chip" onclick="libSent('${e.id}','text')">Sent by text</button><button class="chip" onclick="libSent('${e.id}','email')">by email</button><button class="chip" onclick="libSent('${e.id}','other')">other</button>`}</td>
    <td><div class="btnrow" style="gap:6px;flex-wrap:nowrap"><button class="btn ghost small" onclick="libraryView('${e.id}')">View</button><button class="btn small" onclick="copyImage('${e.kind}','${e.id}')">Copy</button><button class="btn ghost small" onclick="exportImage('${e.kind}','${e.id}')">Save image</button><button class="btn ghost small" onclick="emailImage('${e.kind}','${e.id}')">Email</button><button class="btn ghost small" onclick="exportSnapPDF('${e.id}')">PDF</button><button class="btn ghost small" title="Remove" onclick="libraryDel('${e.id}')">\u2715</button></div></td></tr>`).join("")+`</tbody></table>`; }
 function exportSnapPDF(id){ const e=libSnap(id); if(!e) return; printAs(e.title, e.html); }
+/* proposal sent status: on the library entry, mirrored to the client (latest) and the activity log */
+function libSent(id,how){ const c=cur(); const e=c&&c.library.find(x=>x.id===id); if(!e) return;
+  if(!how){ delete e.sent; } else { e.sent={how,when:fuStamp()}; c.log=c.log||[]; c.log.unshift({when:e.sent.when, outcome:"sent", note:e.title+" by "+how}); if(c.log.length>60) c.log.length=60; }
+  const last=c.library.filter(x=>x.sent).sort((a,b)=>b.sent.when.localeCompare(a.sent.when))[0]; c.proposalSent=last?last.sent.when.slice(0,10):""; c.proposalsSent=c.library.filter(x=>x.sent).length;
+  save(); renderLibrary(); renderPipeline(); renderClientBar(); const fl=$("fuLog"); if(fl) fl.innerHTML=fuLogHTML(c); if(how) toast("Marked sent by "+how); }
+function markSentLatest(how){ const c=cur(); if(!c||!c.library.length) return; libSent(c.library[0].id,how); }
 /* copy the rendered proposal straight to the clipboard: paste into a text, an email, Teams — no file involved */
 async function copyImage(kind, snapId){
   toast("Rendering\u2026");
@@ -1994,6 +2004,7 @@ function emailBodyFor(c,r,kind){ const s=state.settings; const first=c&&c.name? 
 async function emailImage(kind, snapId){
   toast("Building the image\u2026");
   try{ const {c,r,title,name,cv,jpg}=await renderSheet(kind, snapId?libSnap(snapId):null);
+    if(c){ const e=snapId?libSnap(snapId):c.library[0]; if(e&&!e.sent) libSent(e.id,"email"); }
     const to=(c&&c.email)||"";                                   /* client email auto-filled when it's on file */
     const mailto="mailto:"+encodeURIComponent(to)+"?subject="+encodeURIComponent(title)+"&body="+encodeURIComponent(emailBodyFor(c,r,kind));
     const file=new File([jpg],name+".jpg",{type:"image/jpeg"});
