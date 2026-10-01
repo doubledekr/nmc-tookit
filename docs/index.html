@@ -1,0 +1,340 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NMC Toolkit Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,500;0,600;1,400&family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand:#A53222; --brand-deep:#7C2519;
+  --accent:#DDE4F4; --accent-soft:#EDF1FA;
+  --cream:#EDE3D2; --cream-soft:#F7F1E6;
+  --ink:#343740; --muted:#5C616E;
+  --paper:#FBF8F2; --panel:#FFFFFF; --line:#E5E0D5;
+  --good:#2E6B4F; --good-soft:#E4EFE8; --warn:#8F3223; --warn-soft:#F6E3DE;
+  --serif:"Lora",Georgia,"Times New Roman",serif;
+  --sans:"Montserrat","Segoe UI","Helvetica Neue",Arial,sans-serif;
+  --radius:14px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--sans);background:var(--paper);color:var(--ink);font-size:15px;line-height:1.6}
+a{color:var(--brand)}
+.wrap{max-width:980px;margin:0 auto;padding:0 16px}
+header.top{background:var(--brand);color:#fff;padding:32px 0 28px}
+header.top .eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.85;font-weight:600}
+header.top h1{font-family:var(--serif);font-weight:600;font-size:clamp(28px,5vw,40px);line-height:1.15;margin:6px 0 10px}
+header.top p{max-width:640px;opacity:.95}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.badge{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);border-radius:999px;padding:4px 12px;font-size:12.5px;font-weight:500}
+.badge a{color:#fff}
+nav.toc{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line)}
+nav.toc .wrap{display:flex;gap:4px;overflow-x:auto;padding-top:8px;padding-bottom:8px;scrollbar-width:none}
+nav.toc a{white-space:nowrap;text-decoration:none;color:var(--muted);font-size:13px;font-weight:600;padding:6px 10px;border-radius:8px}
+nav.toc a:hover{background:var(--cream-soft);color:var(--brand)}
+section{padding:36px 0 8px}
+h2{font-family:var(--serif);font-weight:600;font-size:26px;color:var(--brand-deep);margin-bottom:6px}
+h2 + .lede{color:var(--muted);margin-bottom:18px;max-width:700px}
+h3{font-size:15.5px;font-weight:700;margin:0 0 6px}
+p + p{margin-top:10px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px 18px 16px}
+.card p,.card li{font-size:14px}
+.card ul,.card ol{padding-left:18px}
+.card li + li{margin-top:4px}
+.steps{counter-reset:s;list-style:none;padding:0}
+.steps > li{counter-increment:s;position:relative;padding:14px 16px 14px 58px;background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:10px}
+.steps > li::before{content:counter(s);position:absolute;left:16px;top:14px;width:28px;height:28px;border-radius:50%;background:var(--brand);color:#fff;font-weight:700;font-size:14px;display:grid;place-items:center}
+.steps p{font-size:14px}
+.calc{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);margin-bottom:12px;overflow:hidden}
+.calc summary{cursor:pointer;list-style:none;padding:14px 18px;font-weight:700;display:flex;justify-content:space-between;gap:12px;align-items:baseline}
+.calc summary::-webkit-details-marker{display:none}
+.calc summary::after{content:"+";color:var(--brand);font-size:20px;line-height:1}
+.calc[open] summary::after{content:"\2013"}
+.calc summary small{font-weight:500;color:var(--muted);font-size:12.5px;margin-left:auto;text-align:right}
+.calc .body{padding:0 18px 16px;font-size:14px}
+.formula{font-family:Consolas,"SF Mono",Menlo,monospace;font-size:13px;background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 12px;margin:10px 0;overflow-x:auto;white-space:pre}
+.note{background:var(--cream-soft);border-left:4px solid var(--brand);border-radius:8px;padding:10px 14px;font-size:13.5px;margin-top:10px}
+.good{background:var(--good-soft);border-left-color:var(--good)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:700}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tablebox{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow-x:auto}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:14px 0}
+.stat{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.stat .v{font-family:var(--serif);font-size:24px;font-weight:600;color:var(--brand-deep)}
+.stat.g .v{color:var(--good)}
+.stat .l{font-size:12.5px;color:var(--muted)}
+.tag{display:inline-block;font-size:12px;font-weight:700;border-radius:999px;padding:2px 10px}
+.tag.good{background:var(--good-soft);color:var(--good)}
+.tag.flat{background:var(--accent-soft);color:#3c4a6b}
+.tag.warn{background:var(--warn-soft);color:var(--warn)}
+footer{margin-top:40px;padding:24px 0 40px;border-top:1px solid var(--line);color:var(--muted);font-size:13px}
+@media (max-width:560px){ .calc summary{flex-wrap:wrap} .calc summary small{margin-left:0;text-align:left;width:100%} }
+@media print{ nav.toc{display:none} .calc{break-inside:avoid} details.calc > .body{display:block} }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="eyebrow">Neighborhood Mortgage Company · Banker resources</div>
+    <h1>NMC Banker Toolkit — how to use it, and how it does the math</h1>
+    <p>Everything a banker needs to get set up, work a client from Salesforce paste to finished proposal, and explain every number on the page with confidence.</p>
+    <div class="badges">
+      <span class="badge" id="verBadge">Current version: checking…</span>
+      <span class="badge"><a href="https://github.com/doubledekr/nmc-tookit/releases" target="_blank" rel="noopener">Download &amp; release notes</a></span>
+      <span class="badge">Questions: Dave Maxwell</span>
+    </div>
+  </div>
+</header>
+
+<nav class="toc"><div class="wrap">
+  <a href="#start">Getting started</a>
+  <a href="#day">Your day</a>
+  <a href="#client">Working a client</a>
+  <a href="#math">How the math works</a>
+  <a href="#example">Worked example</a>
+  <a href="#alerts">Pipeline alerts</a>
+  <a href="#data">Your data</a>
+  <a href="#faq">FAQ</a>
+</div></nav>
+
+<main class="wrap">
+
+<!-- ============ GETTING STARTED ============ -->
+<section id="start">
+  <h2>Getting started</h2>
+  <p class="lede">The toolkit is a desktop app (Windows and Mac). Every calculation, chart, parser and PDF export runs on your own computer — no internet needed for the core work.</p>
+  <ol class="steps">
+    <li><h3>Install the app</h3><p>IT or Dave installs it for you. It updates itself: when a new version is out you'll see an <b>Update</b> bar — click it, or it installs the next time you quit.</p></li>
+    <li><h3>Fill in the welcome card</h3><p>Your name, NMLS #, direct line and email. These print on every proposal and tag your call stats. The NMC main line (844-210-3644) is built in.</p></li>
+    <li><h3>Set your save file and the home office</h3><p><b>Settings → Your save file &amp; the home office.</b> Pick your save folder and paste the hub address IT gives you. A green dot means the hub is reachable. You do this once — after that saving, rate updates, team numbers and templates are automatic.</p></li>
+    <li><h3>Moving from the browser version?</h3><p>Use <b>Settings → Import</b> to bring in an old JSON export. Nothing is lost.</p></li>
+  </ol>
+  <div class="note"><b>Off the VPN?</b> Pipeline, client records, analysis, proposals and call-block logging all keep working off your local copy. Only shared things (rate pushes, team stats, the template library) pause, and they catch up on their own within a couple of minutes of reconnecting — including uploading anything you did offline.</div>
+</section>
+
+<!-- ============ YOUR DAY ============ -->
+<section id="day">
+  <h2>Your day in the toolkit</h2>
+  <p class="lede">The screens, in the order most bankers use them.</p>
+  <div class="grid">
+    <div class="card"><h3>Pipeline</h3><p>The bell bar shows who's hot right now and which follow-ups are due. Filter with <b>Hot now</b>, <b>Follow-ups due</b> or <b>Watching</b>. When a rate push opens a streamline window you get a notification with names.</p></div>
+    <div class="card"><h3>Call blocks</h3><p>Standard day: 9:00–10:30, 11:00–12:30, lunch, 1:30–3:00, 3:00–4:30 follow-ups. Start a block and tap the counters: <b>1</b> no answer / wrong info, <b>2</b> not interested, <b>3</b> interested / following up. Ending a block pushes your stats to the team table.</p></div>
+    <div class="card"><h3>Tools</h3><p>The mid-call calculator deck — no client record needed. <i>Current vs new</i>, rate ladder, break-even, skipped-payment cash, cash available from the home, and how long a card takes at its minimum. <b>Turn into a quick quote</b> hands it to the full analysis.</p></div>
+    <div class="card"><h3>Quick quote</h3><p>Full analysis and PDF without adding a lead to your pipeline. Promote it later if it turns into a real file.</p></div>
+    <div class="card"><h3>Scripts &amp; templates</h3><p>Company texts, intros and emails published by leadership show up automatically. Save your own; share the good ones and leadership can promote them company-wide.</p></div>
+    <div class="card"><h3>My desk</h3><p>Your info, save-file status, today's rates with the 10-yr Treasury direction and rate history, and your month: loans closed, volume, folder pace, pipeline counts.</p></div>
+  </div>
+</section>
+
+<!-- ============ WORKING A CLIENT ============ -->
+<section id="client">
+  <h2>Working a client, start to finish</h2>
+  <p class="lede">Paste → parse → analyze → propose. About two minutes once you've done it a few times.</p>
+  <ol class="steps">
+    <li><h3>Paste the Salesforce record</h3><p>Copy the client's NMC Salesforce profile, paste it in, hit <b>Parse</b>. You get a current → new preview of every field; check what you want and <b>Apply</b>. Debts in the record merge into the debt list by name. SSN, DOB, age and marital status are refused and never stored.</p></li>
+    <li><h3>Confirm the current loan</h3><p>Balance, rate and months remaining drive everything. If you only have the original amount, the toolkit back-solves months remaining (see the math below). Add home value for LTV.</p></li>
+    <li><h3>Paste lender pricing</h3><p>Paste a lender's rate stack; the parser reads rate, price or points, and lock period. Save the options you'd offer, then click one to use its rate in the analysis.</p></li>
+    <li><h3>Add debts</h3><p>Paste a credit report or a free-text list. For each line the largest number is read as the balance, the next as the payment, and a percent (or a decimal under 60) as the APR. APR is optional, but adding it makes the blended rate and interest numbers exact.</p></li>
+    <li><h3>Run the savings analysis</h3><p>Pick the program (Standard, FHA Streamline, VA IRRRL), term, costs, skipped payments, and whether to roll debts in. Use <b>Second lien (HELOAN)</b> to leave the first mortgage alone, or <b>Free &amp; clear</b> for a home with no mortgage.</p></li>
+    <li><h3>Compare (optional)</h3><p>Build side-by-sides of refi vs. home-equity options, and hit <b>Recommend</b> on your pick.</p></li>
+    <li><h3>Send the proposal</h3><p>Check the programs to include, write one line on why you recommend it (it prints in a highlighted box), then <b>Copy proposal</b> — it lands on your clipboard as an image to paste into a text or email. Email, Save image and PDF are there too. Every version you send is kept in that client's <b>proposal library</b> with how it was sent.</p></li>
+  </ol>
+  <div class="note good"><b>House rule:</b> a line only appears on a client-facing proposal if it's a true benefit for that client's numbers. If the new loan costs more interest than staying put, "interest saved" simply doesn't show.</div>
+</section>
+
+<!-- ============ MATH ============ -->
+<section id="math">
+  <h2>How the toolkit calculates</h2>
+  <p class="lede">Every number on the analysis screen and the proposal comes from the same handful of formulas — nothing is hand-entered. Open any one to see exactly how it works. In the formulas, <code>r</code> is the monthly rate (annual rate ÷ 12 ÷ 100) and <code>n</code> is the number of months.</p>
+
+  <details class="calc"><summary>Monthly payment (principal &amp; interest) <small>used everywhere</small></summary><div class="body">
+    <p>The standard fixed-rate mortgage payment.</p>
+    <div class="formula">payment = P × r ÷ (1 − (1 + r)^−n)</div>
+    <p>P is the loan amount. At a 0% rate it's simply P ÷ n. Taxes and insurance are not in this number — escrow is handled separately where it matters (see skipped payments).</p>
+  </div></details>
+
+  <details class="calc"><summary>Amortization schedule <small>payoff time &amp; total interest</small></summary><div class="body">
+    <p>The toolkit walks the loan month by month:</p>
+    <div class="formula">interest this month  = balance × r
+principal this month = payment + extra − interest
+new balance          = balance − principal</div>
+    <p>It repeats until the balance hits zero, totaling the interest along the way. Any <b>extra</b> goes straight to principal. If a payment doesn't cover the month's interest, the result is "never pays off." This schedule is the source of every "paid off in" and "total interest" figure and the balance chart.</p>
+  </div></details>
+
+  <details class="calc"><summary>Months remaining from the original loan <small>when Salesforce has no term left</small></summary><div class="body">
+    <p>From the original amount, current balance and rate, the toolkit works out how far into the schedule the client is. It assumes a 30-year original term unless you set another.</p>
+    <div class="formula">P0 = payment on the original amount over N months
+k  = ln((P0 − balance × r) ÷ (P0 − original × r)) ÷ ln(1 + r)
+months left = N − k</div>
+  </div></details>
+
+  <details class="calc"><summary>Debt payoff time &amp; interest <small>cards, autos, personal loans</small></summary><div class="body">
+    <p>How long each debt takes at what the client pays today (minimum plus any extra they already send), and what that costs in interest:</p>
+    <div class="formula">months   = −ln(1 − balance × r ÷ payment) ÷ ln(1 + r)
+interest = payment × months − balance</div>
+    <p>If the payment doesn't cover the monthly interest, it never pays off. If a debt has no APR, months are counted as balance ÷ payment (interest-free, so a floor) and the result is labeled an estimate.</p>
+  </div></details>
+
+  <details class="calc"><summary>New loan amount <small>what's being financed</small></summary><div class="body">
+    <div class="formula">new loan = current balance + closing costs + upfront MIP + cash out + debts rolled in</div>
+    <ul>
+      <li><b>Second lien (HELOAN):</b> starts from zero — the first mortgage is untouched — so it's just debts paid off + cash out + costs.</li>
+      <li><b>FHA Streamline:</b> costs are lender-paid ($0); upfront MIP (1.75% of balance by default, editable) is financed; no debt roll-in or cash out.</li>
+      <li><b>VA IRRRL:</b> rate-and-term only; no debt roll-in or cash out.</li>
+    </ul>
+  </div></details>
+
+  <details class="calc"><summary>Monthly savings <small>"money out the door"</small></summary><div class="body">
+    <div class="formula">out the door today = current P&amp;I + debt minimums + extras they already pay (debts being rolled in)
+monthly savings    = out the door today − new P&amp;I</div>
+    <p>For a second lien, the first mortgage payment stays the same on both sides, so it's left out of the comparison.</p>
+  </div></details>
+
+  <details class="calc"><summary>Blended rate <small>what their money really costs today</small></summary><div class="body">
+    <p>A balance-weighted average of the mortgage rate and the APRs on the debts being consolidated:</p>
+    <div class="formula">blended = (mortgage bal × rate + Σ debt bal × APR) ÷ (mortgage bal + Σ debt bal)</div>
+    <p>Only debts with a known APR are included. This is the number the new single rate is compared against ("one 6.25% loan replaces an 8.32% blended rate").</p>
+  </div></details>
+
+  <details class="calc"><summary>Pay what you pay now <small>the double-amortization play</small></summary><div class="body">
+    <p>If the client keeps sending the same total they send today, the difference between that and the new payment goes to principal every month:</p>
+    <div class="formula">extra to principal = monthly savings
+schedule           = amortize(new loan, new rate, term, extra)</div>
+    <p>That gives the payoff time ("mortgage-free in 16 yrs 2 mo") and the interest actually paid. You can also set a custom extra (say $500) and the toolkit shows the payoff with the rest pocketed.</p>
+  </div></details>
+
+  <details class="calc"><summary>Effective rate <small>"6.25% on paper, 3.36% in practice"</small></summary><div class="body">
+    <p>The rate a normal loan of the same amount and term would need to cost the same total interest the client actually pays with the extra. Found by searching (bisection) between 0% and the note rate:</p>
+    <div class="formula">find rate x such that  interest(amortize(new loan, x, term)) = interest actually paid with extra</div>
+    <p>It's an illustration of total interest cost, not a quoted rate or an APR.</p>
+  </div></details>
+
+  <details class="calc"><summary>Interest saved <small>only shown when it's real</small></summary><div class="body">
+    <div class="formula">today's path = interest left on the current mortgage + interest the debts cost at today's payments
+interest saved = today's path − interest on the new loan</div>
+    <p>Shown on the proposal only if positive.</p>
+  </div></details>
+
+  <details class="calc"><summary>Skipped payments <small>cash that stays in the account</small></summary><div class="body">
+    <div class="formula">skipped cash = number of payments skipped × full PITI</div>
+    <p>A skipped payment is the whole payment including escrow, not just P&amp;I — the toolkit uses the total payment from the record, or P&amp;I + escrow. Not offered on FHA Streamlines, free &amp; clear loans, or seconds. The Tools card caps it at 2 months.</p>
+  </div></details>
+
+  <details class="calc"><summary>APR <small>Reg Z-style estimate</small></summary><div class="body">
+    <p>The rate that pays off the amount financed <i>net of</i> prepaid finance charges (closing costs + upfront MIP) at the actual monthly payment:</p>
+    <div class="formula">find APR such that  payment(new loan − finance charges, APR, n) = new payment</div>
+    <p>With no costs entered, it can't be computed, so the proposal shows note rate + 0.25% and labels it an estimate.</p>
+  </div></details>
+
+  <details class="calc"><summary>LTV, cash available, and Max cash <small>equity math</small></summary><div class="body">
+    <div class="formula">LTV            = balance ÷ home value
+cash available = home value × max LTV − what's owed
+Max cash (80%) = home value × 0.80 − costs − debts rolled in   (rounded down to $1,000)</div>
+    <p>LTV at or under 80% is flagged as conventional cash-out territory; over 97% as above standard limits.</p>
+  </div></details>
+
+  <details class="calc"><summary>Break-even, rate ladder, card payoff <small>Tools deck</small></summary><div class="body">
+    <div class="formula">break-even months = closing costs ÷ monthly savings
+rate ladder      = P&amp;I at the center rate and every ⅛% for four steps up and down
+card payoff      = debt payoff formula above, at the payment they make</div>
+  </div></details>
+</section>
+
+<!-- ============ EXAMPLE ============ -->
+<section id="example">
+  <h2>Worked example</h2>
+  <p class="lede">Run through the toolkit's own formulas. Use it to sanity-check your numbers or to train new bankers.</p>
+  <div class="tablebox"><table>
+    <thead><tr><th>Input</th><th class="num">Value</th></tr></thead>
+    <tbody>
+      <tr><td>Current mortgage</td><td class="num">$280,000 at 7.25%, 330 months left</td></tr>
+      <tr><td>Credit cards being consolidated</td><td class="num">$18,000 at 24.99%, paying $540/mo</td></tr>
+      <tr><td>New loan</td><td class="num">6.25%, 30-year, $6,000 costs, debts rolled in</td></tr>
+    </tbody>
+  </table></div>
+  <div class="tablebox" style="margin-top:12px"><table>
+    <thead><tr><th>Step</th><th class="num">Result</th></tr></thead>
+    <tbody>
+      <tr><td>Current P&amp;I</td><td class="num">$1,960</td></tr>
+      <tr><td>Out the door today ($1,960 + $540)</td><td class="num">$2,500</td></tr>
+      <tr><td>New loan amount ($280,000 + $6,000 + $18,000)</td><td class="num">$304,000</td></tr>
+      <tr><td>New P&amp;I</td><td class="num">$1,872</td></tr>
+      <tr><td>Monthly savings</td><td class="num">$628</td></tr>
+      <tr><td>Blended rate today</td><td class="num">8.32%</td></tr>
+      <tr><td>Cards alone at $540/mo</td><td class="num">4 yrs 10 mo, $13,039 interest</td></tr>
+      <tr><td>APR (costs entered)</td><td class="num">6.44%</td></tr>
+      <tr><td>Pay what you pay now — paid off in</td><td class="num">16 yrs 2 mo</td></tr>
+      <tr><td>Interest that way vs. today's path ($379,913)</td><td class="num">$178,808</td></tr>
+      <tr><td>Effective rate</td><td class="num">3.36%</td></tr>
+    </tbody>
+  </table></div>
+  <div class="stats">
+    <div class="stat"><div class="v">$628/mo</div><div class="l">less going out than today</div></div>
+    <div class="stat"><div class="v">8.32% → 6.25%</div><div class="l">blended rate to one rate</div></div>
+    <div class="stat g"><div class="v">3.36%</div><div class="l">effective rate, paying what they pay now</div></div>
+    <div class="stat g"><div class="v">$201,105</div><div class="l">interest saved vs. today's path</div></div>
+  </div>
+  <div class="note"><b>Say it like this:</b> "Right now you're sending $2,500 a month across the mortgage and the cards at a blended 8.32%. Keep sending that same $2,500 to the new loan and it's 6.25% on paper but 3.36% in practice — paid off in about 16 years."</div>
+</section>
+
+<!-- ============ ALERTS ============ -->
+<section id="alerts">
+  <h2>Pipeline alerts and the rate feed</h2>
+  <p class="lede">Leadership publishes rates from the rate desk; every toolkit picks them up automatically and re-checks every client.</p>
+  <div class="tablebox"><table>
+    <thead><tr><th>Tag</th><th>When it shows</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag good">Rate alert hit</span></td><td>You set a target rate for the client and the feed rate is at or below it.</td></tr>
+      <tr><td><span class="tag flat">Waiting for target</span></td><td>Target set, not reached yet — shows how much more drop is needed.</td></tr>
+      <tr><td><span class="tag good">Streamline window</span></td><td>Feed rate for their program is <b>0.50% or more</b> below their current rate.</td></tr>
+      <tr><td><span class="tag flat">Watching</span></td><td>Market is below their rate but by less than 0.50% — shows the remaining gap.</td></tr>
+      <tr><td><span class="tag warn">Follow-up due</span></td><td>The follow-up date is today or past.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note">The 10-yr Treasury on My desk is for <b>direction only</b> — when it falls meaningfully, lender pricing usually follows. It is never shown to clients as a rate.</div>
+</section>
+
+<!-- ============ DATA ============ -->
+<section id="data">
+  <h2>Your data</h2>
+  <div class="grid">
+    <div class="card"><h3>Where it lives</h3><p>Your save file on your computer is the source of truth. It's mirrored to the home-office hub as a backup whenever the hub is reachable, so a dead laptop doesn't lose your pipeline — IT can restore your last mirror.</p></div>
+    <div class="card"><h3>What's never collected</h3><p>SSN, date of birth, age and marital status are never captured, stored or sent anywhere — the Salesforce parser refuses those fields.</p></div>
+    <div class="card"><h3>What the office sees</h3><p>Call-block counts, your month's numbers, and a once-a-minute "online" heartbeat (name and timestamp only). Mirrored save files require IT's admin token to open.</p></div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section id="faq">
+  <h2>FAQ</h2>
+  <details class="calc"><summary>Why doesn't my payment match the servicer's statement?</summary><div class="body"><p>The toolkit's P&amp;I excludes escrow. Enter the client's actual P&amp;I if you have it — it overrides the calculated one — and enter the total payment so skipped-payment cash uses the full PITI.</p></div></details>
+  <details class="calc"><summary>Why is a debt's payoff marked "estimate"?</summary><div class="body"><p>That debt has no APR, so it's treated as interest-free. Add the APR from the credit report for an exact figure.</p></div></details>
+  <details class="calc"><summary>Why can't I skip a payment or roll in debt on an FHA Streamline?</summary><div class="body"><p>Program rules: FHA Streamlines and VA IRRRLs are rate-and-term only, and FHA Streamlines don't skip a payment. The toolkit locks those fields so a proposal can't promise something the program won't do.</p></div></details>
+  <details class="calc"><summary>Is the effective rate something I can quote?</summary><div class="body"><p>No. It illustrates total interest cost if the client keeps paying what they pay now. The note rate and APR are the quotable numbers.</p></div></details>
+  <details class="calc"><summary>How do I get the newest version?</summary><div class="body"><p>The app updates itself — look for the Update bar. Release notes are on the <a href="https://github.com/doubledekr/nmc-tookit/releases" target="_blank" rel="noopener">releases page</a>.</p></div></details>
+</section>
+
+<footer>
+  NMC Banker Toolkit guide · Neighborhood Mortgage Company · Main office 844-210-3644<br>
+  This page is published from the toolkit's code repository and updates whenever a new version is released. For internal banker use; examples are illustrations, not loan offers.
+</footer>
+</main>
+
+<script>
+/* Show the latest released version; falls back quietly if GitHub can't be reached */
+(function(){
+  var b=document.getElementById("verBadge");
+  fetch("https://api.github.com/repos/doubledekr/nmc-tookit/releases/latest",{headers:{Accept:"application/vnd.github+json"}})
+    .then(function(r){ if(!r.ok) throw 0; return r.json(); })
+    .then(function(j){ var d=j.published_at? new Date(j.published_at).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}):"";
+      b.textContent="Current version: "+(j.tag_name||j.name||"—")+(d?" · "+d:""); })
+    .catch(function(){ b.textContent="Toolkit v1.4.1"; });
+})();
+</script>
+</body>
+</html>
