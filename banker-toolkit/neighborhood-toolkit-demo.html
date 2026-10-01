@@ -760,7 +760,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.3.4";
+const TOOLKIT_VERSION = "1.3.5";
 const DEMO = true; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -1632,7 +1632,7 @@ function optionWins(c,r,h){ /* benefits only, for the side-by-side proposal */
   const p=snapPW(c,r,h);
   if(p) w.push(`<b>Keep paying what you pay today</b> (${money(h.today)}/mo) and put the difference toward the loan: ${r.second?"the new loan is paid off":"you\u2019re mortgage-free"} in <b>${yrsMo(p.months)}</b>${p.cut>0?" \u2014 "+yrsMo(p.cut)+" sooner":""}${p.saved>0?`, and you pay <b>${money(p.saved)}</b> less interest than staying where you are`:""}`);
   if(p&&p.eff<r.a.anRate-0.05) w.push(`Done that way, the loan costs you interest like a <b>${pct(p.eff)}</b> loan, even though the rate on paper is ${pct(r.a.anRate)}`);
-  if(r.roll&&r.debts.length&&r.blended!=null&&r.a.anRate<r.blended) w.push(`One <b>${pct(r.a.anRate)}</b> loan replaces a <b>${pct(r.blended)}</b> blended rate across your mortgage and debts`);
+  if(r.roll&&r.debts.length&&r.blended!=null&&r.a.anRate<r.blended) w.push(r.second?`One <b>${pct(r.a.anRate)}</b> loan replaces a <b>${pct(r.blended)}</b> blended APR on those debts`:`One <b>${pct(r.a.anRate)}</b> loan replaces a <b>${pct(r.blended)}</b> blended rate across your mortgage and debts`);
   if(!r.second&&!r.fc&&c.rate>r.a.anRate) w.push(`Rate goes from ${pct(c.rate)} to <b>${pct(r.a.anRate)}</b>`);
   if(r.fc&&r.ladder.length) w.push(`Add <b>${money(r.ladder[0].extra)}/mo</b> and it\u2019s paid off in <b>${yrsMo(r.ladder[0].months)}</b>${r.ladder.length>1?`; add ${money(r.ladder[r.ladder.length-1].extra)} and it\u2019s ${yrsMo(r.ladder[r.ladder.length-1].months)}`:""}`);
   return w; }
