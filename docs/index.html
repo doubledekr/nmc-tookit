@@ -458,6 +458,7 @@ card payoff      = the debt payoff formula above, at the payment they make</div>
 <section class="screen" id="s-alerts">
   <div class="eyebrow">Rate feed</div><h1>Pipeline alerts</h1>
   <div class="sub">Leadership publishes rates from the rate desk; every toolkit picks them up automatically and re-checks every client.</div>
+  <div class="vidslot" data-for="alerts"></div>
   <div class="panel"><div class="tablewrap"><table class="data">
     <thead><tr><th style="width:200px">Tag</th><th>When it shows</th></tr></thead>
     <tbody>
@@ -538,17 +539,21 @@ card payoff      = the debt payoff formula above, at the payment they make</div>
    ===================================================================== */
 var VIDEO_FOLDER = "https://neighborhoodmc-my.sharepoint.com/:f:/p/dave_m/IgAlFKXmaGmLSJN0rFLHLcP8AY7tAMOsbtcy_Ke4uKbMbz8?e=AlPgON";
 var VIDEOS = [
-  /* Start to finish — working a client
-  { series:"client", step:1, title:"Paste the Salesforce lead", length:"2:10", embed:'<iframe src="https://…/embed.aspx?…"></iframe>', url:"https://…" },
-  { series:"client", step:2, title:"Confirm the loan and debts", length:"", embed:"", url:"" },
-  { series:"client", step:3, title:"Run the savings analysis",   length:"", embed:"", url:"" },
-  { series:"client", step:4, title:"Compare options",            length:"", embed:"", url:"" },
-  { series:"client", step:5, title:"Send the proposal",          length:"", embed:"", url:"" },
-  */
-  /* Library — other functions
+  /* Start to finish — working a client (paste each video's SharePoint embed code into embed:"") */
+  { series:"client", step:1, title:"Setup — your details", length:"0:23", screen:"start", embed:"", url:"" },
+  { series:"client", step:2, title:"New client from Salesforce", length:"0:27", screen:"salesforce", embed:"", url:"" },
+  { series:"client", step:3, title:"Client workspace — dispositions & follow-ups", length:"0:23", screen:"day", embed:"", url:"" },
+  { series:"client", step:4, title:"Debts from a credit report", length:"0:24", embed:"", url:"" },
+  { series:"client", step:5, title:"Savings analysis (VA IRRRL, pay-what-you-pay-now, custom extra, save option)", length:"0:36", screen:"math", embed:"", url:"" },
+  { series:"client", step:6, title:"A second option — refi with debts rolled in", length:"0:21", embed:"", url:"" },
+  { series:"client", step:7, title:"Client proposal — single, side-by-side, star/notes, library, mark sent", length:"0:42", embed:"", url:"" },
+  { series:"client", step:8, title:"Pipeline", length:"0:17", screen:"alerts", embed:"", url:"" },
+  { series:"client", step:9, title:"Scripts & templates", length:"0:16", screen:"day", embed:"", url:"" },
+  { series:"client", step:10, title:"Free & clear cash-out", length:"0:27", screen:"math", embed:"", url:"" },
+  { series:"client", step:11, title:"Wrap-up", length:"0:13", embed:"", url:"" },
+
+  /* Library — other functions, e.g.
   { title:"Installing the toolkit", length:"", embed:"", url:"", screen:"start" },
-  { title:"The Salesforce bookmark", length:"", embed:"", url:"", screen:"salesforce" },
-  { title:"Tools deck: current vs new", length:"", embed:"", url:"", screen:"day" },
   */
 ];
 
@@ -574,7 +579,7 @@ var VIDEOS = [
   function srcOf(v){ var e=(v.embed||"").trim(); if(!e) return ""; var m=/src\s*=\s*["']([^"']+)["']/i.exec(e); return m? m[1].replace(/&amp;/g,"&") : e; }
   function frame(v){ var src=srcOf(v);
     return src ? '<div class="player"><iframe src="'+esc(src)+'" title="'+esc(v.title)+'" allow="autoplay; fullscreen" allowfullscreen loading="lazy"></iframe></div>'
-               : '<div class="soon"><div><b>'+esc(v.title)+'</b>Video coming soon</div></div>'; }
+               : '<div class="soon"><div><b>'+esc(v.title)+'</b>'+((v.url||VIDEO_FOLDER)?'<a class="btn small" style="margin-top:10px" href="'+esc(v.url||VIDEO_FOLDER)+'" target="_blank" rel="noopener">Watch in SharePoint</a>':'Video coming soon')+'</div></div>'; }
   function openBtn(v){ var u=v.url||(srcOf(v)?"":""); return u? '<a class="btn ghost small" href="'+esc(u)+'" target="_blank" rel="noopener">Open in SharePoint</a>' : ""; }
   var folderBtn = VIDEO_FOLDER ? '<a class="btn" href="'+esc(VIDEO_FOLDER)+'" target="_blank" rel="noopener">Open the video folder</a>' : "";
   $("folderBtn").innerHTML = folderBtn;
@@ -582,10 +587,12 @@ var VIDEOS = [
 
   /* start-to-finish series on Working a client */
   var series=VIDEOS.filter(function(v){return v.series==="client";}).sort(function(a,b){return (a.step||0)-(b.step||0);});
+  var secs=series.reduce(function(t,v){ var m=/^(\d+):(\d\d)$/.exec(v.length||""); return t+(m?(+m[1])*60+(+m[2]):0); },0);
+  var seriesTotal = series.length? series.length+' short videos'+(secs?' · '+Math.floor(secs/60)+' min '+(secs%60)+' s total':'')+'. ' : '';
   function playSeries(i){ var v=series[i];
     $("seriesPlayer").innerHTML=frame(v);
     [].forEach.call($("seriesList").querySelectorAll("button"),function(b,k){ b.classList.toggle("on",k===i); });
-    $("seriesHint").innerHTML=(v.url?'Trouble playing? <a href="'+esc(v.url)+'" target="_blank" rel="noopener">Open this video in SharePoint</a>. ':"")+(i<series.length-1?'Next up: <b>'+esc(series[i+1].title)+'</b>':""); }
+    $("seriesHint").innerHTML=seriesTotal+(v.url?'Trouble playing? <a href="'+esc(v.url)+'" target="_blank" rel="noopener">Open this video in SharePoint</a>. ':"")+(i<series.length-1?'Next up: <b>'+esc(series[i+1].title)+'</b>':""); }
   if(series.length){
     $("seriesList").innerHTML=series.map(function(v,i){ return '<li><button data-i="'+i+'"><span class="tnum">'+(v.step||i+1)+'</span><span><b>'+esc(v.title)+'</b>'+(v.length?'<span class="len">'+esc(v.length)+'</span>':"")+'</span></button></li>'; }).join("");
     $("seriesList").addEventListener("click",function(e){ var b=e.target.closest("button"); if(b) playSeries(+b.dataset.i); });
@@ -608,8 +615,8 @@ var VIDEOS = [
   /* "Watch" chips on other screens */
   document.querySelectorAll(".vidslot").forEach(function(slot){
     slot.innerHTML=VIDEOS.filter(function(v){return v.screen===slot.dataset.for;}).map(function(v){
-      var i=lib.indexOf(v); return '<a class="vidchip" href="#videos" data-lib="'+i+'">Watch: '+esc(v.title)+(v.length?' · '+esc(v.length):'')+'</a>'; }).join(""); });
-  document.addEventListener("click",function(e){ var c=e.target.closest("a.vidchip"); if(!c) return; e.preventDefault(); e.stopPropagation(); go("videos"); var i=+c.dataset.lib; if(i>=0) playLib(i); },true);
+      var i=lib.indexOf(v), k=series.indexOf(v); return '<a class="vidchip" href="#videos" data-lib="'+i+'" data-step="'+k+'">Watch: '+esc(v.title)+(v.length?' · '+esc(v.length):'')+'</a>'; }).join(""); });
+  document.addEventListener("click",function(e){ var c=e.target.closest("a.vidchip"); if(!c) return; e.preventDefault(); e.stopPropagation(); var k=+c.dataset.step; if(k>=0){ go("client"); playSeries(k); document.getElementById("seriesPanel").scrollIntoView({block:"start"}); return; } go("videos"); var i=+c.dataset.lib; if(i>=0) playLib(i); },true);
 
   /* ---------- latest installers (cached 30 min) ---------- */
   (function(){
