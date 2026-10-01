@@ -758,7 +758,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.2.5";
+const TOOLKIT_VERSION = "1.2.6";
 const DEMO = true; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -1261,6 +1261,9 @@ function parseDebts(){
     const pay=rest.length? Math.min(...rest) : null;
     rows.push({name, balance, apr:pcts.length?pcts[0]:null, pay});
   });
+  /* same creditor more than once (two Capital One cards): keep every line and number them */
+  { const seen={}; rows.forEach(d=>{ const k=d.name.trim().toLowerCase(); seen[k]=(seen[k]||0)+1; });
+    const cnt={}; rows.forEach(d=>{ const k=d.name.trim().toLowerCase(); if(seen[k]>1){ cnt[k]=(cnt[k]||0)+1; d.name=d.name.trim()+" "+cnt[k]; } }); }
   lastDebts=rows;
   $("debtParsed").innerHTML = !rows.length ? `<div class="empty">No amounts found \u2014 one debt per line with the balance on it.</div>` :
    `<table class="data"><thead><tr><th></th><th>Debt</th><th class="num">Balance</th><th class="num">Payment</th><th class="num">APR</th></tr></thead><tbody>`+
@@ -1269,8 +1272,14 @@ function parseDebts(){
 }
 function addParsedDebts(){ const c=cur(); if(!c){ toast("Pick a client first"); return; } let n=0;
   let u=0; document.querySelectorAll("#debtParsed [data-di]").forEach(cb=>{ if(!cb.checked) return; const d=lastDebts[+cb.dataset.di];
-    const ex=c.debts.find(x=>x.name.trim().toLowerCase()===d.name.trim().toLowerCase());
-    if(ex){ ex.balance=d.balance; if(d.pay!=null) ex.pay=d.pay; if(d.apr!=null) ex.apr=d.apr; u++; } else { c.debts.push(Object.assign({},d)); n++; } });
+    const baseOf=x=>String(x||"").trim().replace(/\s+\d+$/,"").toLowerCase(); const base=baseOf(d.name);
+    /* update an existing row only when it's clearly the same account (same creditor and a balance within 2%); otherwise it's another card from the same bank */
+    const ex=c.debts.find(x=>baseOf(x.name)===base && Math.abs((x.balance||0)-d.balance)<=Math.max(50,d.balance*0.02));
+    if(ex){ ex.balance=d.balance; if(d.pay!=null) ex.pay=d.pay; if(d.apr!=null) ex.apr=d.apr; u++; }
+    else { const same=c.debts.filter(x=>baseOf(x.name)===base); let name=d.name.trim();
+      if(same.length){ const nums=same.map(x=>+(String(x.name).match(/\s(\d+)$/)||[0,1])[1]); name=d.name.trim().replace(/\s+\d+$/,"")+" "+(Math.max(...nums)+1);
+        if(same.length===1&&!/\s\d+$/.test(same[0].name)) same[0].name=same[0].name.trim()+" 1"; }   /* first one gets a number too, so they read as a set */
+      c.debts.push(Object.assign({},d,{name})); n++; } });
   save(); renderDebts(); runAnalysis(); $("debtParsed").innerHTML=""; $("debtPaste").value="";
   toast((n?n+" added":"")+(n&&u?", ":"")+(u?u+" updated with the new numbers":"")||"Nothing selected"); }
 function renderDebts(){
