@@ -86,6 +86,18 @@ function createWindow(){
     backgroundColor: "#FBF8F2", icon: path.join(__dirname, "build", "icon.png"),
     webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: false } });
   win.loadFile(path.join(__dirname, "app", "neighborhood-toolkit.html"));
+  /* right-click menu: cut / copy / paste / select all in any field, copy on any selected text */
+  win.webContents.on("context-menu", (e, p) => {
+    const items = [];
+    if (p.isEditable) {
+      items.push({ role: "undo" }, { role: "redo" }, { type: "separator" }, { role: "cut", enabled: p.editFlags.canCut }, { role: "copy", enabled: p.editFlags.canCopy }, { role: "paste", enabled: p.editFlags.canPaste }, { type: "separator" }, { role: "selectAll" });
+    } else if (p.selectionText && p.selectionText.trim()) {
+      items.push({ role: "copy" });
+    } else if (p.linkURL) {
+      items.push({ label: "Copy link", click: () => require("electron").clipboard.writeText(p.linkURL) });
+    }
+    if (items.length) Menu.buildFromTemplate(items).popup({ window: win });
+  });
   win.webContents.setWindowOpenHandler(({ url }) => { shell.openExternal(url); return { action: "deny" }; });   /* Pennymac link etc. open in the system browser */
   win.on("close", flushWrites);
   return win;
