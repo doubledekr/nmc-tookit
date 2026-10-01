@@ -3,10 +3,21 @@
 `docs/index.html` is the banker-facing guide (how to use the toolkit + how it calculates).
 It is styled with the toolkit's brand tokens, so it matches neighborhoodmc.com and the app.
 
-## Auto-updating via GitHub Pages
-1. Repo Settings → Pages → Source: deploy from a branch → `main` / `/docs`.
-2. The guide is served at `https://doubledekr.github.io/nmc-tookit/` and republishes on every push to `main`.
-3. The header's version badge reads the latest GitHub release live.
+## This branch is the docs branch — never merge it into main
+`main` is the live toolkit. The guide lives only on `docs/teams-guide`, and Pages serves it from here.
+
+## Hosting via GitHub Pages
+1. Repo Settings → Pages → Source: deploy from a branch → `docs/teams-guide` / `/docs`.
+2. The guide is served at `https://doubledekr.github.io/nmc-tookit/`. Pushes to this branch republish it.
+
+## How it stays current with toolkit releases (no Action needed)
+GitHub only runs release- or schedule-triggered Actions from workflow files on `main`, so a workflow on
+this branch could never fire on a new release. Instead the page updates itself in the viewer's browser:
+- the header badge shows the newest version, and
+- "What's new" lists the latest version commits on `main` (any first line shaped `v1.4.2: what changed`).
+
+So the existing habit — commit to main with a `vX.Y.Z: ...` message — is all it takes. Results are cached
+for 30 minutes per viewer to stay well under GitHub's anonymous API limit.
 
 > Modern SharePoint does not render uploaded .html files and strips custom HTML from pages,
 > so the guide is hosted on Pages and shown inside Teams/SharePoint.
@@ -23,5 +34,5 @@ runs it once (replace `YOURTENANT`); site owners then pick it under Settings →
 Note: the repo is public, so the guide is publicly reachable (no client data — formulas and workflow only).
 
 ## Keeping it current
-When formulas in `computeAnalysis` / `amort` / Tools change, update the matching card in the
+Version and "What's new" are automatic. Only the explanatory sections are hand-written: when formulas in `computeAnalysis` / `amort` / Tools change, update the matching card in the
 "How the math works" section and the worked example.

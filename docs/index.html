@@ -92,6 +92,7 @@ footer{margin-top:40px;padding:24px 0 40px;border-top:1px solid var(--line);colo
 </header>
 
 <nav class="toc"><div class="wrap">
+  <a href="#new">What's new</a>
   <a href="#start">Getting started</a>
   <a href="#day">Your day</a>
   <a href="#client">Working a client</a>
@@ -103,6 +104,17 @@ footer{margin-top:40px;padding:24px 0 40px;border-top:1px solid var(--line);colo
 </div></nav>
 
 <main class="wrap">
+
+<!-- ============ WHAT'S NEW (live from GitHub) ============ -->
+<section id="new">
+  <h2>What's new</h2>
+  <p class="lede">The latest toolkit updates. This list updates by itself whenever a new version is published — newest first.</p>
+  <div class="tablebox"><table>
+    <thead><tr><th style="width:90px">Version</th><th style="width:110px">Date</th><th>What changed</th></tr></thead>
+    <tbody id="newRows"><tr><td colspan="3" style="color:var(--muted)">Loading the latest updates…</td></tr></tbody>
+  </table></div>
+  <p style="font-size:13px;color:var(--muted);margin-top:8px">Full history and downloads: <a href="https://github.com/doubledekr/nmc-tookit/releases" target="_blank" rel="noopener">releases page</a>.</p>
+</section>
 
 <!-- ============ GETTING STARTED ============ -->
 <section id="start">
@@ -326,14 +338,35 @@ card payoff      = debt payoff formula above, at the payment they make</div>
 </main>
 
 <script>
-/* Show the latest released version; falls back quietly if GitHub can't be reached */
+/* Live version + "What's new", read from the toolkit's version commits on main ("v1.4.1: ...").
+   Cached for 30 minutes per viewer so a busy office stays well under GitHub's anonymous limit. */
 (function(){
-  var b=document.getElementById("verBadge");
-  fetch("https://api.github.com/repos/doubledekr/nmc-tookit/releases/latest",{headers:{Accept:"application/vnd.github+json"}})
+  var REPO="doubledekr/nmc-tookit", KEY="nmcGuideNews", TTL=30*60*1000, SHOW=10;
+  var badge=document.getElementById("verBadge"), rows=document.getElementById("newRows");
+  function esc(t){ return String(t).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];}); }
+  function fmt(d){ return new Date(d).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}); }
+  function render(list){
+    if(!list.length){ fail(); return; }
+    badge.textContent="Current version: v"+list[0].v+" · "+fmt(list[0].d);
+    rows.innerHTML=list.slice(0,SHOW).map(function(x,i){
+      var txt=esc(x.t); txt=txt.charAt(0).toUpperCase()+txt.slice(1);
+      return '<tr'+(i===0?' style="background:var(--cream-soft)"':'')+'><td><b>v'+esc(x.v)+'</b></td><td class="num" style="text-align:left">'+fmt(x.d)+'</td><td>'+txt+'</td></tr>';
+    }).join("");
+  }
+  function fail(){ badge.textContent="Toolkit v1.4.1";
+    rows.innerHTML='<tr><td colspan="3">Couldn’t reach GitHub just now — see the <a href="https://github.com/'+REPO+'/releases" target="_blank" rel="noopener">releases page</a>.</td></tr>'; }
+  var cached=null; try{ cached=JSON.parse(localStorage.getItem(KEY)||"null"); }catch(e){}
+  if(cached && Date.now()-cached.at<TTL){ render(cached.list); return; }
+  fetch("https://api.github.com/repos/"+REPO+"/commits?sha=main&per_page=60",{headers:{Accept:"application/vnd.github+json"}})
     .then(function(r){ if(!r.ok) throw 0; return r.json(); })
-    .then(function(j){ var d=j.published_at? new Date(j.published_at).toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"}):"";
-      b.textContent="Current version: "+(j.tag_name||j.name||"—")+(d?" · "+d:""); })
-    .catch(function(){ b.textContent="Toolkit v1.4.1"; });
+    .then(function(j){
+      var seen={}, list=[];
+      j.forEach(function(c){ var line=(c.commit.message||"").split("\n")[0]; var m=line.match(/^v(\d+\.\d+\.\d+)\s*:\s*(.+)$/);
+        if(m && !seen[m[1]]){ seen[m[1]]=1; list.push({v:m[1], t:m[2], d:c.commit.committer.date}); } });
+      try{ localStorage.setItem(KEY, JSON.stringify({at:Date.now(), list:list})); }catch(e){}
+      render(list);
+    })
+    .catch(function(){ if(cached) render(cached.list); else fail(); });
 })();
 </script>
 </body>
