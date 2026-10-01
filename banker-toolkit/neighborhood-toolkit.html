@@ -318,12 +318,12 @@ table.data tr.rec td{background:var(--cream)}
           <div class="grid2">
             <div class="field"><label>Full name</label><input type="text" data-f="name"></div>
             <div class="field"><label>Status</label><select data-f="status"></select></div>
-            <div class="field" style="grid-column:1/-1"><label>Disposition <span class="hint" style="display:inline">(one click \u2014 Complete counts toward the monthly goal)</span></label>
+            <div class="field" style="grid-column:1/-1"><label>Disposition <span class="hint" style="display:inline">(one click — Complete counts toward the monthly goal)</span></label>
               <div class="chiprow" id="dispoChips"></div><div class="hint" id="dispoHint" style="margin-top:4px"></div></div>
             <div class="field"><label>Phone</label><input type="tel" data-f="phone"></div>
             <div class="field"><label>Email</label><input type="email" data-f="email"></div>
             <div class="field" style="grid-column:1/-1"><label>Property address</label><input type="text" data-f="address"></div>
-            <div class="field" style="grid-column:1/-1"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" data-f="freeClear" style="width:auto"> Owns the home <b>free and clear</b> (no mortgage) <span class="hint" style="display:inline">\u2014 hides the current-loan fields; home value is what matters</span></label></div>
+            <div class="field" style="grid-column:1/-1"><label style="display:block;cursor:pointer;line-height:1.5"><input type="checkbox" data-f="freeClear" style="width:auto;vertical-align:middle;margin-right:6px">Owns the home <b>free and clear</b> (no mortgage) <span class="hint" style="display:inline">— hides the current-loan fields; home value is what matters</span></label></div>
             <div class="field cur-loan"><label>Current loan balance ($)</label><input type="number" data-f="balance" step="1000"></div>
             <div class="field cur-loan"><label>Original loan amount ($) <span class="hint" style="display:inline">(lets the app work out P&amp;I and months remaining)</span></label>
               <div class="chiprow"><input type="number" data-f="origAmount" step="1000" style="flex:1"><select data-f="origTerm" style="width:96px;flex:0 0 96px" title="Original term"><option value="30">30 yr</option><option value="20">20 yr</option><option value="15">15 yr</option><option value="10">10 yr</option></select></div></div>
@@ -334,7 +334,7 @@ table.data tr.rec td{background:var(--cream)}
             <div class="hint" id="payHint" style="grid-column:1/-1;margin-top:-4px"></div>
             <div class="field cur-loan"><label>Months remaining <span class="hint" style="display:inline">(auto from the original amount, or from P&amp;I if you type it, or the Salesforce close date)</span></label><input type="number" data-f="monthsLeft"></div>
             <div class="field"><label>Est. annual property taxes ($) <span class="hint" style="display:inline">(for new-loan escrow estimates)</span></label><input type="number" data-f="taxAnnual" step="100"></div>
-            <div class="field"><label>Est. annual homeowner\u2019s insurance ($)</label><input type="number" data-f="insAnnual" step="100"></div>
+            <div class="field"><label>Est. annual homeowner’s insurance ($)</label><input type="number" data-f="insAnnual" step="100"></div>
             <div class="field"><label>Est. home value ($)</label>
               <div class="chiprow"><input type="number" data-f="value" step="5000" style="flex:1;min-width:120px">
                 <button class="chip" onclick="fetchAVM()" title="Ask the hub's AVM provider for this address">Estimate value</button>
@@ -359,7 +359,7 @@ table.data tr.rec td{background:var(--cream)}
           <div class="field"><textarea id="sfPaste" placeholder="Copy the record from Salesforce and paste the whole thing here — labels, values, everything."></textarea></div>
           <div class="btnrow">
             <button class="btn" onclick="parseSF()">Parse paste</button><button class="btn ghost" onclick="pasteFromClipboard()">Paste from clipboard &amp; parse</button>
-            <span class="hint">Recognizes "Label: value" lines plus phones, emails, rates and dollar amounts. Tune the label map in Settings.</span>
+            <span class="hint">Recognizes the Salesforce lead fields plus phones, emails, rates and dollar amounts. SSN, birthdate, age and marital status are never captured.</span>
           </div>
           <div id="sfPreview" style="margin-top:12px"></div>
         </div>
@@ -419,8 +419,8 @@ table.data tr.rec td{background:var(--cream)}
           <div class="field" style="display:none"><label>Program</label><select id="anProgram" onchange="programRules(); runAnalysis()">
             <option value="standard" selected>Standard refinance</option><option value="fha_streamline">FHA Streamline</option><option value="va_irrrl">VA IRRRL</option></select></div>
           <div class="field" id="anMipWrap" style="display:none"><label>Upfront MIP % (financed)</label><input type="number" id="anMip" step="0.01" value="1.75" oninput="runAnalysis()"></div>
-          <div class="field m-noc" style="grid-column:1/-1"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="anNoCompare" style="width:auto" onchange="runAnalysis()"> <b>Cash-out only</b> \u2014 leave the debts alone and skip the comparison; the proposal just shows what the new loan looks like <span class="hint" style="display:inline">(for clients borrowing for savings or a project, not to pay off debt)</span></label></div>
-          <div class="field m-fc m-noc-x"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="anShowExtra" style="width:auto" checked onchange="runAnalysis()"> Show what paying extra looks like <span class="hint" style="display:inline">(three amounts, $/mo \u2014 untick to leave it off the proposal)</span></label><div class="chiprow"><input type="number" id="anX1" step="50" value="100" oninput="runAnalysis()" style="width:84px;flex:1"><input type="number" id="anX2" step="50" value="250" oninput="runAnalysis()" style="width:84px;flex:1"><input type="number" id="anX3" step="50" value="500" oninput="runAnalysis()" style="width:84px;flex:1"></div></div>
+          <div class="field m-noc" style="grid-column:1/-1"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="anNoCompare" style="width:auto" onchange="runAnalysis()"> <b>Cash-out only</b> — leave the debts alone and skip the comparison; the proposal just shows what the new loan looks like <span class="hint" style="display:inline">(for clients borrowing for savings or a project, not to pay off debt)</span></label></div>
+          <div class="field m-fc m-noc-x"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="anShowExtra" style="width:auto" checked onchange="runAnalysis()"> Show what paying extra looks like <span class="hint" style="display:inline">(three amounts, $/mo — untick to leave it off the proposal)</span></label><div class="chiprow"><input type="number" id="anX1" step="50" value="100" oninput="runAnalysis()" style="width:84px;flex:1"><input type="number" id="anX2" step="50" value="250" oninput="runAnalysis()" style="width:84px;flex:1"><input type="number" id="anX3" step="50" value="500" oninput="runAnalysis()" style="width:84px;flex:1"></div></div>
           <div class="field"><label>Highlight no prepayment penalty</label><select id="anPrepay" onchange="runAnalysis()"><option value="yes" selected>Yes — it's a benefit</option><option value="no">No</option></select></div>
           <div class="field m-refi"><label>Roll debts into loan?</label><select id="anRoll" onchange="runAnalysis()">
             <option value="yes" selected>Yes — consolidate</option><option value="no">No — mortgage only</option></select></div>
@@ -683,7 +683,7 @@ Discover 6,100 190 24.9"></textarea>
               <div class="eyebrow" style="font-size:11px">Desktop app</div>
               <div class="hint" id="deskPath" style="margin:4px 0 8px"></div>
               <div class="btnrow"><button class="btn ghost small" onclick="DESK.openDataFolder()">Open data folder</button>
-                <button class="btn ghost small" onclick="DESK.checkUpdates().then(ok=>toast(ok?'Checking the hub for updates\u2026':'Link the hub first \u2014 updates come from it'))">Check for updates</button>
+                <button class="btn ghost small" onclick="DESK.checkUpdates().then(ok=>toast(ok?'Checking the hub for updates\u2026':'Link the hub first — updates come from it'))">Check for updates</button>
                 <button class="btn ghost small" onclick="importOldDesktop()">Import a previous toolkit file (.json)</button></div>
               <div id="deskFound" style="margin-top:8px"></div>
             </div>
@@ -701,7 +701,7 @@ Discover 6,100 190 24.9"></textarea>
           <div>
             <div class="eyebrow" style="font-size:11px">Home office hub</div>
             <div class="field" style="margin-top:4px"><label>Hub address (from IT)</label><input type="url" id="setHub" placeholder="https://hub.neighborhoodmc.com" onchange="saveSettingsFromUI(true)"></div>
-            <div class="field"><label>Access key (from IT \u2014 needed when the hub is reachable from the internet)</label><input type="password" id="setHubKey" placeholder="leave blank on the office network if IT says so" onchange="saveSettingsFromUI(true)"></div>
+            <div class="field"><label>Access key (from IT — needed when the hub is reachable from the internet)</label><input type="password" id="setHubKey" placeholder="leave blank on the office network if IT says so" onchange="saveSettingsFromUI(true)"></div>
             <div class="hint" id="hubStatus" style="margin-bottom:4px"></div>
             <div class="hint" id="mirrorStatus" style="margin-bottom:8px"></div>
             <div class="btnrow">
@@ -758,7 +758,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.2.6";
+const TOOLKIT_VERSION = "1.2.7";
 const DEMO = false; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
