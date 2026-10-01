@@ -490,6 +490,7 @@ Discover 6,100 190 24.9"></textarea>
           <div class="field" style="display:none"><label>Pricing option on proposal</label><select id="propOption" onchange="renderProposalPreview()"></select></div>
           <div class="field" style="align-self:end"><div class="btnrow"><button class="btn" onclick="copyImage('proposal')">Copy proposal</button><button class="btn ghost" onclick="emailImage('proposal')">Email</button><button class="btn ghost" onclick="exportImage('proposal')">Save image</button><button class="btn ghost" onclick="exportPDF()">PDF</button><button class="btn ghost" onclick="librarySave('proposal')">Save to library</button><button class="btn ghost" id="propSaveOpt" onclick="addSnapScenario(); renderProposalPreview()" title="Keep this proposal's set-up as a saved option, so it can sit side by side with others">Save as an option</button></div></div>
         </div>
+        <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="propAmort" style="width:auto" checked onchange="setPropAmort(this.checked)"> Include the year-by-year amortization table on the proposal</label></div>
         <div class="field"><label>Personal note to client (optional)</label><textarea id="propNote" style="min-height:60px;font-family:inherit" oninput="renderProposalPreview()" placeholder="e.g. Maria — here's the consolidation option we walked through on Tuesday."></textarea></div>
         <div class="field"><label>Saved options from Savings analysis <span class="hint" style="display:inline">(check one for a single proposal, two or more for a side-by-side · ★ marks your recommendation)</span></label><div id="propSnapList"></div></div>
         <div class="field" id="propCmpWhyWrap" style="display:none"><label>Banker notes on the recommendation (prints on the side-by-side)</label><textarea id="propCmpWhy" style="min-height:50px;font-family:inherit" oninput="setCmpWhy(this.value); const el=$('propPreview'); if(el) el.innerHTML=proposalHTML();" placeholder="e.g. The cash-out frees up the most each month and clears the cards for good; the IRRRL is the lighter-touch option if you'd rather leave the balance alone."></textarea></div>
@@ -756,7 +757,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.2.3";
+const TOOLKIT_VERSION = "1.2.4";
 const DEMO = true; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -1642,11 +1643,11 @@ function fcProposalHTML(c,r){
    <tr><td>Interest you avoid</td><td class="num">\u2014</td>${r.ladder.map(l=>`<td class="num" style="color:#2E6B4F;font-weight:700">${money(l.saved)}</td>`).join("")}</tr>
    <tr><td>What the rate works out to</td><td class="num">${pct(r.a.anRate)}</td>${r.ladder.map(l=>`<td class="num">${pct(l.eff)}</td>`).join("")}</tr>
   </tbody></table>`:""}
-  <h2>Balance over time</h2>
+  ${(c.prop&&c.prop.amort===false)?"":`  <h2>Balance over time</h2>
   <table><thead><tr><th>Year</th><th class="num">Minimum payment</th>${r.ladder.map(l=>`<th class="num">+${money(l.extra)}/mo</th>`).join("")}</tr></thead><tbody>
    ${[1,2,3,5,7,10,15,20,25,30].filter(y=>y<=r.a.anTerm).map(y=>{const m=y*12; const b=(rows)=>rows[m-1]?rows[m-1].bal:0;
      return `<tr><td>Year ${y}</td><td class="num">${money(b(r.newSched.rows))}</td>${r.ladder.map(l=>`<td class="num">${b(l.rows)>0?money(b(l.rows)):"Paid in full"}</td>`).join("")}</tr>`;}).join("")}
-  </tbody></table>
+  </tbody></table>`}
   <div class="disc">This proposal is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. ${r.noc?"Figures exclude taxes, insurance, and escrows.":"Taxes and insurance are estimates and will be set by the actual escrow analysis."} Cash-out eligibility and maximum loan-to-value are subject to lender and program guidelines. ${esc(s.co)} \u00b7 NMLS #2484730 \u00b7 Equal Housing Lender.</div>`;
 }
 function proposalSingleHTML(){
@@ -1738,13 +1739,13 @@ function proposalSingleHTML(){
     if(r.extra>0&&r.pwEff<r.a.anRate-0.05&&wins.length<4) wins.push(`<div><div class="v">${pct(r.pwEff)}</div><div class="l">Effective rate paying what you pay now</div></div>`);
     if(r.roll&&r.debts.length&&wins.length<4) wins.push(`<div><div class="v">${money(r.dBal)}</div><div class="l">Debt paid off at closing</div></div>`);
     return wins.length? `<div class="statline">${wins.slice(0,5).join("")}</div>` : ""; })()}
-  <h2>Pay what you pay now \u2014 amortization snapshot</h2>
+  ${(c.prop&&c.prop.amort===false)?"":`  <h2>Pay what you pay now \u2014 amortization snapshot</h2>
   <p style="font-size:11px;color:#555;margin-bottom:4px">Keep your familiar ${money(r.outlayNow)}/month; the extra ${money(r.extra)} attacks principal directly.</p>
   <table><thead><tr><th>Year</th><th class="num">Balance \u2014 minimum payment</th><th class="num">Balance \u2014 pay what you pay now</th></tr></thead><tbody>
    ${[1,2,3,5,7,10,15,20,25,30].filter(y=>y<=r.a.anTerm).map(y=>{const m=y*12;
      const b1=r.newSched.rows[m-1]?r.newSched.rows[m-1].bal:0; const b2=r.pw.rows[m-1]?r.pw.rows[m-1].bal:0;
      return `<tr><td>Year ${y}</td><td class="num">${money(b1)}</td><td class="num">${b2>0?money(b2):"Paid in full"}</td></tr>`;}).join("")}
-  </tbody></table>
+  </tbody></table>`}
   <div class="disc">This proposal is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. Figures exclude taxes, insurance, and escrows unless noted; skipped-payment amounts reflect standard refinance timing and any escrow refund comes from your current servicer. Consolidating short-term debt into a mortgage or home equity loan may increase the total interest paid on that debt over the life of the loan and converts unsecured debt into debt secured by your home. All loans subject to credit approval. Equal Housing Opportunity. ${esc(s.footer)}${s.loNmls?` \u00b7 Loan Officer NMLS #${esc(s.loNmls)}`:""}</div>`;
 }
 function toggleInclude(id,on){ const c=cur(); if(!c) return; const P=c.prop;
@@ -1768,7 +1769,9 @@ function renderPropOptions(){ const c=cur(); const el=$("propOptsList"); if(!el)
   const ww=$("propWhyWrap"); if(ww){ ww.style.display=P.rec?"block":"none";
     const wt=$("propWhy"); if(wt&&document.activeElement!==wt) wt.value=P.why||""; }
 }
+function setPropAmort(on){ const c=cur(); if(!c) return; c.prop.amort=!!on; save(); const el=$("propPreview"); if(el) el.innerHTML=proposalHTML(); }
 function renderPropSnaps(){ const c=cur(); const el=$("propSnapList"); if(!el) return;
+  { const cb=$("propAmort"); if(cb) cb.checked=!(c&&c.prop&&c.prop.amort===false); }
   const L=c?(c.scenarios||[]).filter(x=>x.kind==="snap"):[];
   if(!c||!L.length){ el.innerHTML=`<div class="hint">Nothing saved yet \u2014 click <b>Save as an option</b> above (or <b>Save this option for the proposal</b> on Savings analysis). Save two or more and check them here for a side-by-side. Until then the proposal follows whatever is on the analysis screen.</div>`; const w=$("propCmpWhyWrap"); if(w) w.style.display="none"; const so=$("propSaveOpt"); if(so) so.style.display=""; return; }
   const rec=c.cmp&&c.cmp.rec; const sel=propSelected(c);
