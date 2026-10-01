@@ -28,7 +28,7 @@ function stepsFor(p){
   const S = [], money = v => v == null || !isFinite(v) ? null : Math.round(v);
   const add = (s) => { if (s.v !== null && s.v !== undefined && s.v !== "") S.push(s); };
   add({ k: "in", name: "ficoScore", label: "FICO score", v: money(p.fico) });
-  add({ k: "in", name: "monthlyIncome", label: "Monthly income", v: money(p.income) });
+  add({ k: "in", name: "monthlyIncome", label: p.incomeIsDefault ? "Monthly income ($15,000 placeholder — no income in the toolkit)" : "Monthly income", v: money(p.income), flag: !!p.incomeIsDefault });
   add({ k: "in", name: "monthlyDebt", label: "Monthly debt", v: money(p.monthlyDebt) });
   add({ k: "in", name: "zipCode", label: "ZIP code", v: p.zip, wait: 1500 });            /* fills State + County by itself */
   add({ k: "radio", q: "Does the client rent at their present address", label: "Rents at present address", v: "No" });
@@ -93,6 +93,7 @@ function pageFill(steps, name){
     }
     banner(`<b>NMC Toolkit</b> — filled ${filled.length} fields for ${who}.` +
       (skipped.length ? `<br><span style="color:#b45309">Fill these yourself: ${skipped.map(esc).join(", ")}</span>` : "") +
+      steps.filter(s => s.flag && filled.includes(s.label)).map(s => `<br><span style="color:#b45309">${esc(s.label)}</span>`).join("") +
       `<br><b>Check everything</b>, then click <b>Continue</b> on Rocket Pro. Nothing has been submitted.` +
       `<div style="margin-top:8px;display:flex;gap:8px"><button id="nmc-again">Fill again</button><button id="nmc-close">Hide</button></div>`, !skipped.length);
     document.getElementById("nmc-again").onclick = () => window.__nmcFill();

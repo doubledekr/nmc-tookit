@@ -762,7 +762,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.3.6-rp.1";
+const TOOLKIT_VERSION = "1.3.6-rp.2";
 const DEMO = false; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -1235,7 +1235,8 @@ function rocketProPayload(c){ const a=c.analysis||{}; const debts=c.debts||[];
   const amount=lien==="second" ? Math.round((a.anCosts||0)+(a.anCashOut||0)+(roll?debtSum:0)) : optionLoanAmt(c);
   const zip=((c.address||"").match(/\b(\d{5})(?:-\d{4})?\s*$/)||(c.address||"").match(/\b(\d{5})\b(?!.*\b\d{5}\b)/)||[])[1]||"";
   const d=new Date();
-  return { name:c.name, fico:c.fico, income:c.income,
+  const RP_INCOME_DEFAULT=15000;   /* placeholder when the toolkit has no income (fine for VA/FHA streamlines) — flagged on the Rocket Pro banner */
+  return { name:c.name, fico:c.fico, income: c.income>0 ? c.income : RP_INCOME_DEFAULT, incomeIsDefault: !(c.income>0),
     monthlyDebt: roll ? 0 : others.reduce((s,x)=>s+(x.pay||0),0),   /* debts rolled into the new loan are paid off */
     zip, purpose: cashOut?"cashout":"rateterm", loanType:c.loanType, lien,
     value:c.value, amount, firstBalance:c.balance,
@@ -1247,7 +1248,7 @@ function rocketProPayload(c){ const a=c.analysis||{}; const debts=c.debts||[];
 async function priceInRocketPro(){ const c=cur(); if(!c){ toast("Pick a client first"); return; }
   if(!(DESK&&DESK.rocketProFill)){ toast("Rocket Pro autofill works in the NMC Toolkit desktop app"); return; }
   const p=rocketProPayload(c); const missing=[];
-  if(!p.fico) missing.push("credit score"); if(!p.zip) missing.push("ZIP (in the address)"); if(!p.value) missing.push("home value"); if(!p.income) missing.push("monthly income");
+  if(!p.fico) missing.push("credit score"); if(!p.zip) missing.push("ZIP (in the address)"); if(!p.value) missing.push("home value");
   try{ await DESK.rocketProFill(p); }catch(e){ toast("Couldn\u2019t open Rocket Pro"); return; }
   toast(missing.length ? "Opening Rocket Pro \u2014 add these there: "+missing.join(", ") : "Opening Rocket Pro \u2014 sign in if asked; the scenario fills itself");
 }
