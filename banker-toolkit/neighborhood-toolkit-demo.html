@@ -1249,7 +1249,7 @@ function renderPipeline(){
   const inbox=(state.inbox||[]);
   const ib = inbox.length? `<div style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px">
     <b>New from Salesforce (${inbox.length})</b>
-    ${inbox.map(it=>`<div class="btnrow" style="margin-top:6px"><span><b>${esc(it.fields.name)}</b>${it.fields.balance?` \u00b7 ${money(num(it.fields.balance))}`:""}${it.fields.rate?` @ ${pct(num(it.fields.rate))}`:""}${it.fields.leadStatus?` \u00b7 ${esc(it.fields.leadStatus)}`:""}${it.source==="chrome-extension"?` <span class="tag-flat">via Chrome</span>`:""}</span><span style="flex:1"></span>
+    ${inbox.map(it=>`<div class="btnrow" style="margin-top:6px"><span><b>${esc(it.fields.name)}</b>${it.fields.balance?` \u00b7 ${money(num(it.fields.balance))}`:""}${it.fields.rate?` @ ${pct(num(it.fields.rate))}`:""}${it.fields.leadStatus?` \u00b7 ${esc(it.fields.leadStatus)}`:""}${it.source==="chrome-extension"?` <span class="tag-flat">via Chrome${it.pairs?" \u00b7 "+it.pairs+" fields read, "+Object.keys(it.fields||{}).length+" recognized":""}</span>`:""}</span><span style="flex:1"></span>
       <button class="btn small" onclick="importInbox('${it.id}')">Import</button><button class="btn ghost small" onclick="ackInbox('${it.id}')">Ignore</button></div>`).join("")}</div>` : "";
   $("pipeTable").innerHTML = ib + bar + seasonBar + rwBar + (!rows.length ? `<div class="empty">${pipeView!=="all"?"Nothing in this view right now \u2014 that can change with the next rate push.":"No pipeline clients yet. Add one, paste a Salesforce record, or load the samples in Settings."}</div>` :
   `<table class="data"><thead><tr><th>Client</th><th>Status</th><th class="num">Balance</th><th class="num">Rate</th><th class="num">P&amp;I</th><th>Follow-up</th><th>Opportunity</th><th></th></tr></thead><tbody>`+
@@ -2687,9 +2687,10 @@ function sfIncoming(p){ if(!p||!p.text) return;
   const F=(lastSF&&lastSF.fields)||{}; const debts=(lastSF&&lastSF.debts)||[];
   const id="ext"+Date.now().toString(36);
   state.inbox=(state.inbox||[]).filter(x=>!(x.source==="chrome-extension"&&x.fields&&F.name&&x.fields.name===F.name));   /* resend replaces */
-  state.inbox.unshift({id, fields:F, debts, text:p.text, when:p.when||new Date().toISOString(), source:"chrome-extension", url:p.url||""});
+  const pairs = p.pairs>0 ? p.pairs : Math.max(0, Math.floor(((p.text.split("----- page text -----")[0]||"").trim().split(/\n/).length)/2));
+  state.inbox.unshift({id, fields:F, debts, text:p.text, pairs, when:p.when||new Date().toISOString(), source:"chrome-extension", url:p.url||""});
   save(); go("pipeline"); renderPipeline(); renderExtStatus();
-  toast("From Salesforce: "+(F.name||"lead")+" \u2014 at the top of your Pipeline"); }
+  toast("From Salesforce: "+(F.name||"lead")+" \u2014 "+pairs+" fields read, "+Object.keys(F).length+" recognized. Top of your Pipeline."); }
 function renderExtStatus(){ const el=$("extStatus"), ep=$("extPath"); if(!el||!DESK||!DESK.sfStatus) return;
   let st=null; try{ st=DESK.sfStatus(); }catch(e){}
   el.innerHTML = !st ? "" : st.listening ? `<span class="tag-good">Listening for the extension on 127.0.0.1:${st.port}</span>${st.lastAt?` \u00b7 last lead received ${new Date(st.lastAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}`:" \u00b7 nothing received yet"}` : `<span class="tag-warn">Listener couldn\u2019t start on port ${st.port}</span> \u2014 another program may be using it`;

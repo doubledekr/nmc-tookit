@@ -42,15 +42,19 @@
     t.textContent=msg; t.style.cssText='position:fixed;left:50%;bottom:72px;transform:translateX(-50%);background:'+(ok?'#23242B':'#8F3223')+';color:#fff;padding:10px 16px;border-radius:8px;font:13.5px system-ui,sans-serif;z-index:2147483647;box-shadow:0 6px 20px rgba(0,0,0,.25);max-width:70vw';
     clearTimeout(t._h); t._h=setTimeout(()=>t.remove(), 4000); }
 
-  function send(){ const h=harvestPage();
-    if(!h.text||h.text.length<40){ toast('Nothing to read here — open a lead or contact record first.', false); return; }
-    toast('Sending '+h.pairs+' fields to the NMC toolkit…', true);
-    chrome.runtime.sendMessage({type:'nmc:send', text:h.text, url:location.href, title:document.title}, res=>{
-      if(chrome.runtime.lastError){ toast('Extension error: '+chrome.runtime.lastError.message, false); return; }
-      if(res&&res.ok) toast('Sent to the NMC toolkit — it’s at the top of your Pipeline as New from Salesforce.', true);
-      else if(res&&res.copied) toast('Toolkit app isn’t running — copied to the clipboard instead. Use Paste from clipboard & parse.', false);
-      else toast('Couldn’t reach the toolkit app'+(res&&res.error?': '+res.error:'')+'. Is NMC Toolkit open?', false);
-    });
+  /* Lightning collapses sections (and the bookmarklet is usually clicked after the banker scrolled around): open them first */
+  function expandSections(){ let n=0; try{ document.querySelectorAll('button.slds-section__title-action[aria-expanded="false"], .slds-section:not(.slds-is-open) .slds-section__title-action, button[aria-expanded="false"].test-id__section-header-button').forEach(b=>{ try{ b.click(); n++; }catch(e){} }); }catch(e){} return n; }
+  function readLead(){ const opened=expandSections(); return new Promise(res=>setTimeout(()=>{ const h=harvestPage(); h.opened=opened; res(h); }, opened?500:0)); }
+  function send(cb){ readLead().then(h=>{
+    if(!h.text||h.text.length<40){ toast('Nothing to read here \u2014 open a lead or contact record first.', false); if(cb) cb({ok:false,pairs:0,error:'nothing to read'}); return; }
+    toast('Read '+h.pairs+' fields'+(h.opened?' (opened '+h.opened+' section'+(h.opened===1?'':'s')+')':'')+' \u2014 sending to the NMC toolkit\u2026', true);
+    chrome.runtime.sendMessage({type:'nmc:send', text:h.text, url:location.href, title:document.title, pairs:h.pairs}, res=>{
+      if(chrome.runtime.lastError){ toast('Extension error: '+chrome.runtime.lastError.message, false); if(cb) cb({ok:false,pairs:h.pairs,error:chrome.runtime.lastError.message}); return; }
+      if(res&&res.ok) toast('Sent '+h.pairs+' fields to the NMC toolkit \u2014 top of your Pipeline as New from Salesforce.', true);
+      else if(res&&res.copied) toast('Toolkit app isn\u2019t running \u2014 copied '+h.pairs+' fields to the clipboard instead. Use Paste from clipboard & parse.', false);
+      else toast('Couldn\u2019t reach the toolkit app'+(res&&res.error?': '+res.error:'')+'. Is NMC Toolkit open?', false);
+      if(cb) cb(Object.assign({pairs:h.pairs,chars:h.text.length},res||{}));
+    }); });
   }
 
   function isRecordPage(){ return /\/lightning\/r\/|\/lightning\/o\/|\/\w{15,18}(\/view)?(\?|$)/.test(location.href); }
@@ -63,7 +67,7 @@
   if(TOP){ ensureButton(); setInterval(ensureButton, 1500); }
 
   chrome.runtime.onMessage.addListener((msg, sender, reply)=>{
-    if(msg&&msg.type==='nmc:harvest'&&TOP){ const h=harvestPage(); reply(h); return true; }
-    if(msg&&msg.type==='nmc:sendNow'&&TOP){ send(); reply({started:true}); return true; }
+    if(msg&&msg.type==='nmc:harvest'&&TOP){ readLead().then(h=>reply(h)); return true; }
+    if(msg&&msg.type==='nmc:sendNow'&&TOP){ send(r=>reply(r)); return true; }
   });
 })();

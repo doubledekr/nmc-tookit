@@ -29,7 +29,7 @@ async function copyViaTab(tabId, text){
 chrome.runtime.onMessage.addListener((msg, sender, reply) => {
   if(msg && msg.type === "nmc:send"){
     (async () => {
-      const res = await postToApp({ text: msg.text, url: msg.url, title: msg.title, when: new Date().toISOString(), source: "chrome-extension" });
+      const res = await postToApp({ text: msg.text, url: msg.url, title: msg.title, pairs: msg.pairs||0, when: new Date().toISOString(), source: "chrome-extension" });
       if(res.ok){ await chrome.storage.local.set({ lastSent: { when: Date.now(), title: msg.title } }); reply(res); return; }
       const copied = sender.tab ? await copyViaTab(sender.tab.id, msg.text) : false;
       reply({ ok:false, copied, error: res.error });
