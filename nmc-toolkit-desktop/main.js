@@ -32,6 +32,9 @@ function flushWrites(){ if (pendingWrite) { clearTimeout(pendingWrite); pendingW
 function findOldExports(){
   const home = os.homedir(); const spots = ["Downloads", "Desktop", "Documents", "OneDrive/Desktop", "OneDrive/Documents"];
   const out = [];
+  /* the live app's own data file (beta builds keep a separate folder, so this is how clients come across) */
+  try { const live = path.join(path.dirname(app.getPath("userData")), "NMC Toolkit", "nmc-toolkit-data.json");
+    if (live !== DATA_FILE() && fs.existsSync(live)) { const st = fs.statSync(live); out.push({ name: "Live NMC Toolkit data (nmc-toolkit-data.json)", path: live, where: "NMC Toolkit app", when: st.mtime.toISOString().slice(0, 10), mtime: st.mtimeMs + 1e12 }); } } catch (e) {}
   for (const s of spots){ const dir = path.join(home, s); let names = []; try { names = fs.readdirSync(dir); } catch (e) { continue; }
     for (const n of names){ if (!/nmc-toolkit-.*\.json$/i.test(n)) continue;
       try { const st = fs.statSync(path.join(dir, n)); out.push({ name: n, path: path.join(dir, n), where: s, when: st.mtime.toISOString().slice(0, 10), mtime: st.mtimeMs }); } catch (e) {} } }
