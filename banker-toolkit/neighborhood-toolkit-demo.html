@@ -1279,7 +1279,21 @@ const SF_NMC={ "name":"name","email":"email","phone":"phone","phone +":"phone","
   "balance of open ccs":"ccBal","# of open ccs":"ccCount","monthly payment of revolving debt(s)":"ccPay","cc payment":"ccPay2",
   "balance of auto loan(s)":"autoBal","payment of auto loan(s)":"autoPay","hel balance":"helBal","hel monthly payment":"helPay",
   "total loan(s) balance":"instBal","# of loans":"loanCount","total installment debt payments":"instPay",
-  "occupancy br":"occupancy","email #2":"email2" };
+  "occupancy br":"occupancy","email #2":"email2",
+  /* fields the Chrome extension reads straight from the Salesforce record */
+  "current mortgage balance":"balance","current loan balance":"balance","first mortgage interest rate":"rate","current rate":"rate",
+  "monthly payment of 1st mortgage":"paymentTotalAlt","current monthly payment":"paymentTotalAlt",
+  "estimated monthly p and i":"payment","current p & i":"payment","current p &amp; i":"payment",
+  "annual tax amount":"taxAnnual","current property tax - monthly":"taxMonthly","current hazard insurance - monthly":"insMonthly","current mortgage insurance payment":"miMonthly",
+  "original balance of 1st mortgage":"origAmount","first mortgage loan amount":"origAmount","original loan amount":"origAmount","initial balance of recent mortgage":"origAmount",
+  "loan term":"origTermYears","current loan term (months)":"origTermMonths","close date of 1st mortgage":"closeDate",
+  "first mortgage loan type":"mortType","current loan type":"mortType","va eligible?":"vaElig","military?":"military","current lender":"servicer",
+  "appraisal value":"value","ltv":"ltv","equity":"equity",
+  "current balance of 2nd mortgage":"secondBal","2nd mortgage interest rate":"secondRate","monthly payment of 2nd mortgage":"secondPay","second mortgage servicer":"secondServicer","2nd mortgage loan type":"secondType",
+  "heloc balance":"helocBal","heloc payment":"helocPay","heloc credit limit":"helocLimit","revolving debt payment":"ccPay3","total installment debt":"instBal2",
+  "total monthly debt":"totalDebtPay","dti":"dti","refi or purchase":"purpose","transaction type":"txType","target rate":"rateToBeat","cash out amount":"cashOut",
+  "call back date":"callBack","market watch":"marketWatch","proposed rate":"propRate","proposed pi":"propPI","proposed piti":"propPITI","proposed loan amount":"propAmt","chosen lender":"chosenLender",
+  "first name":"firstName","last name":"lastName","mobile phone":"phone","street":"street","city":"city","state":"state","zip":"zip" };
 /* never captured, never previewed, never stored */
 const SF_NEVER=["ssn","social security","social security number","birthdate","date of birth","dob","age","marital status"];
 const SF_NOISE=/^(tabs|\*.*|client details.*|client information|i\.p\.a\.c\.t\.?|-{2,})$/i;
@@ -1316,10 +1330,20 @@ function parseSFText(text){
   const em=(raw.email||"").match(/[\w.+-]+@[\w-]+\.[\w.]+/)||safe.match(/[\w.+-]+@[\w-]+\.[\w.]+/); if(em) found.email=em[0];
   const ph=(raw.phone||"").match(/(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/)||safe.match(/(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/); if(ph) found.phone=ph[0].trim();
   const n=v=>v==null||v===""?null:num(v);
+  if(!raw.name && (raw.firstName||raw.lastName)) found.name=titleCase(((raw.firstName||"")+" "+(raw.lastName||"")).trim());
+  if(!raw.address && raw.street) found.address=[raw.street, raw.city, [raw.state, raw.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ");
   found.balance = n(raw.balance) ?? n(raw.balanceAlt) ?? n(raw.balanceAlt2);
   if(n(raw.balanceAlt2)>0 && found.balance>0 && n(raw.balanceAlt2)>found.balance) found.origAmount=n(raw.balanceAlt2);
   found.rate=n(raw.rate); if(found.rate!=null && found.rate>25) found.rate=null;
-  found.payment=n(raw.payment); found.paymentTotal=n(raw.paymentTotal); found.value=n(raw.value); found.fico=n(raw.fico);
+  found.payment=n(raw.payment); found.paymentTotal=n(raw.paymentTotal) ?? n(raw.paymentTotalAlt); found.value=n(raw.value); found.fico=n(raw.fico);
+  if(found.payment>0 && found.paymentTotal>0 && found.payment>=found.paymentTotal) delete found.payment;   /* a "P&I" that equals the total is really the total */
+  /* taxes & insurance straight from the record: annual figures for the client, and today's escrow when the pieces are there */
+  const taxA = n(raw.taxAnnual) ?? (n(raw.taxMonthly)!=null ? Math.round(n(raw.taxMonthly)*12) : null); if(taxA>0) found.taxAnnual=taxA;
+  if(n(raw.insMonthly)>0) found.insAnnual=Math.round(n(raw.insMonthly)*12);
+  { const esc_=(n(raw.taxMonthly)||(taxA>0?taxA/12:0))+(n(raw.insMonthly)||0)+(n(raw.miMonthly)||0); if(esc_>0 && (n(raw.taxMonthly)>0||n(raw.insMonthly)>0)) found.escrow=Math.round(esc_); }
+  if(n(raw.origAmount)>0 && !(found.origAmount>0)) found.origAmount=n(raw.origAmount);
+  { const yrs=n(raw.origTermYears), mos=n(raw.origTermMonths); const t = yrs>0 ? (yrs>60? Math.round(yrs/12) : Math.round(yrs)) : mos>0 ? Math.round(mos/12) : null; if(t&&[10,15,20,25,30,40].includes(t)) found.origTerm=t; }
+  if(raw.closeDate && raw.monthsLeft==null){ const d=new Date(raw.closeDate); if(!isNaN(d)){ const since=Math.max(0,Math.round((Date.now()-d.getTime())/2629800000)); const term=(found.origTerm||30)*12; if(since<term) found.monthsLeft=term-since; } }
   if(raw.servicer) found.servicer=raw.servicer; if(raw.address) found.address=raw.address;
   const src=(raw.leadSource||"")+" "+(raw.mortType||"")+" "+(raw.loanType||"");
   if(/fha/i.test(src)) found.loanType="FHA"; else if(/\bva\b/i.test(src)) found.loanType="VA"; else if(/jumbo/i.test(src)) found.loanType="Jumbo"; else if(raw.leadSource||raw.loanType) found.loanType="Conventional";
@@ -1328,17 +1352,26 @@ function parseSFText(text){
   const noteBits=[]; if(raw.leadStatus) noteBits.push("Lead status: "+raw.leadStatus); if(raw.closeDate) noteBits.push("Closed "+raw.closeDate);
   if(raw.purpose) noteBits.push(raw.purpose); if(n(raw.rateToBeat)) noteBits.push("Rate to beat "+raw.rateToBeat);
   if(n(raw.loanCount)) noteBits.push(raw.loanCount+" loans on credit"+(n(raw.instBal)?", "+money(n(raw.instBal))+" total":""));
+  if(/^(yes|true)$/i.test(raw.vaElig||"")||/^(yes|true)$/i.test(raw.military||"")) noteBits.push("VA eligible");
+  if(n(raw.cashOut)>0) noteBits.push("Wants "+money(n(raw.cashOut))+" cash out");
+  if(raw.txType) noteBits.push(raw.txType); if(n(raw.dti)>0) noteBits.push("DTI "+String(raw.dti).replace(/%?$/,"%"));
+  if(n(raw.ltv)>0) noteBits.push("LTV "+String(raw.ltv).replace(/%?$/,"%")); if(raw.callBack) noteBits.push("Call back "+raw.callBack);
+  if(n(raw.propRate)>0) noteBits.push("Previously quoted "+String(raw.propRate).replace(/%?$/,"%")+(n(raw.propPI)?" / "+money(n(raw.propPI))+" P&I":"")+(raw.chosenLender?" ("+raw.chosenLender+")":""));
+  if(/^(yes|true)$/i.test(raw.marketWatch||"")) noteBits.push("On Salesforce market watch");
   if(noteBits.length) found.notes=noteBits.join(" \u00b7 ");
   const debts=[];
   if(n(raw.ccBal)>0) debts.push({name:"Credit cards"+(n(raw.ccCount)?" ("+raw.ccCount+" open)":""), type:"card", acct:"", extra:0, balance:n(raw.ccBal), apr:24.99, aprEst:true, pay:n(raw.ccPay)??n(raw.ccPay2)??null});
   if(n(raw.autoBal)>0) debts.push({name:"Auto loan(s)", type:"auto", acct:"", extra:0, balance:n(raw.autoBal), apr:7.5, aprEst:true, pay:n(raw.autoPay)});
   if(n(raw.helBal)>0) debts.push({name:"Home equity loan", type:"heloc", acct:"", extra:0, balance:n(raw.helBal), apr:9.0, aprEst:true, pay:n(raw.helPay)});
+  if(n(raw.helocBal)>0 && !(n(raw.helBal)>0 && Math.abs(n(raw.helBal)-n(raw.helocBal))<1)) debts.push({name:"HELOC"+(n(raw.helocLimit)?" (limit "+money(n(raw.helocLimit))+")":""), type:"heloc", acct:"", extra:0, balance:n(raw.helocBal), apr:9.0, aprEst:true, pay:n(raw.helocPay)});
+  if(n(raw.secondBal)>0) debts.push({name:"2nd mortgage"+(raw.secondServicer?" \u2014 "+raw.secondServicer:""), type:"heloc", acct:"", extra:0, balance:n(raw.secondBal), apr:n(raw.secondRate)>0?n(raw.secondRate):9.0, aprEst:!(n(raw.secondRate)>0), pay:n(raw.secondPay)});
+  if(n(raw.instBal2)>0 && !(n(raw.instBal)>0)) debts.push({name:"Installment loan(s)", type:"installment", acct:"", extra:0, balance:n(raw.instBal2), apr:11, aprEst:true, pay:n(raw.instPay)});
   Object.keys(found).forEach(k=>{ if(found[k]==null||found[k]==="") delete found[k]; });
   lastSF={fields:found, debts};
   const keys=Object.keys(found); const cc=null;   /* a paste never targets the selected client */
   const digits=v=>String(v||"").replace(/\D/g,"").slice(-10);
   const dup=state.clients.find(x=>!x.quick&&((found.phone&&digits(x.phone)&&digits(x.phone)===digits(found.phone))||(found.email&&x.email&&x.email.toLowerCase()===found.email.toLowerCase())));
-  const fmt=(k,v)=> ["balance","payment","paymentTotal","escrow","value"].includes(k)? money(v) : k==="rate"||k==="targetRate"? pct(v) : esc(v);
+  const fmt=(k,v)=> ["balance","payment","paymentTotal","escrow","value","origAmount","taxAnnual","insAnnual"].includes(k)? money(v) : k==="rate"||k==="targetRate"? pct(v) : esc(v);
   const mlNote = raw.monthsSince && raw.monthsLeft==null ? `<div class="hint">Months left assumes a 30-year term from \u201cMonths Since Close Date\u201d \u2014 adjust in the details if it was a 15 or 20.</div>` : "";
   const fcHint = (found.balance==null||found.balance===0) ? `<div class="hint" style="margin-bottom:6px">No mortgage balance on this lead \u2014 if the home is paid off, tick <b>Owns the home free and clear</b> on the client after creating it.</div>` : "";
   const hdr = fcHint + (dup ? `<div style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:13px"><b>${esc(dup.name)}</b> is already in your pipeline with this ${found.phone&&digits(dup.phone)===digits(found.phone)?"phone number":"email"}. <button class="btn small" onclick="pickClient('${dup.id}'); go('client'); toast('Opened '+${JSON.stringify(dup.name)})">Open ${esc(dup.name)}</button> <button class="btn ghost small" onclick="applySFTo('${dup.id}')">Update ${esc(dup.name.split(/[ ,&]/)[0])} with this paste</button></div>` : "");

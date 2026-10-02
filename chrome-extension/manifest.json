@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "NMC Toolkit — Send lead from Salesforce",
   "description": "Adds a “Send to NMC toolkit” button to Salesforce lead pages. Reads the open lead and hands it to the NMC Toolkit desktop app on this computer.",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
