@@ -65,6 +65,10 @@ main{flex:1;padding:28px 32px;max-width:1150px}
 .modebtn.on{border-color:var(--brand);background:var(--cream-soft);box-shadow:inset 0 0 0 1px var(--brand)}
 body.mode-fha #debtPanel,body.mode-va #debtPanel{display:none}
 #s-client.fc .cur-loan,#s-client.fc #payHint{display:none}
+.loancheck{border-radius:10px;padding:10px 14px;font-size:12.5px;line-height:1.55;background:#F1F6F1;border:1px solid #CFE0D2}
+.loancheck.warn{background:#FFF8EC;border-color:#E8CFA0}
+.loancheck .t{font-weight:700;margin-bottom:4px}.loancheck.warn .t{color:var(--warn)}.loancheck.ok .t{color:#2E6B4F}
+.loancheck ul{margin:0 0 0 18px;padding:0}.loancheck li{margin:2px 0}
 body.mode-fc .m-skip,body.mode-fc .m-refi{display:none}.m-fc{display:none}body.mode-fc .m-fc{display:block}body.mode-fc span.m-fc{display:inline}body.mode-fc button.m-fc{display:inline-flex}body.mode-fc .not-fc{display:none}
 #debtTable table{table-layout:auto}#debtTable td:first-child input{min-width:170px}#debtTable select{min-width:120px}#debtTable input.num{width:96px;min-width:96px}#debtTable td:nth-child(3) input{width:120px}
 .m-noc{display:none}body.mode-second .m-noc{display:block}body.mode-second.noc .m-noc-x{display:block}body.mode-second.noc #debtPanel{display:none}
@@ -335,6 +339,7 @@ table.data tr.rec td{background:var(--cream)}
             <div class="field cur-loan"><label>Escrow — taxes &amp; insurance <span class="hint" style="display:inline">(auto = total minus P&amp;I)</span></label><input type="number" data-f="escrow" step="10"></div>
             <div class="hint" id="payHint" style="grid-column:1/-1;margin-top:-4px"></div>
             <div class="field cur-loan"><label>Months remaining <span class="hint" style="display:inline">(auto from the original amount, or from P&amp;I if you type it, or the Salesforce close date)</span></label><input type="number" data-f="monthsLeft"></div>
+            <div id="loanCheck" class="cur-loan" style="grid-column:1/-1"></div>
             <div class="field"><label>Est. annual property taxes ($) <span class="hint" style="display:inline">(for new-loan escrow estimates)</span></label><input type="number" data-f="taxAnnual" step="100"></div>
             <div class="field"><label>Est. annual homeowner’s insurance ($)</label><input type="number" data-f="insAnnual" step="100"></div>
             <div class="field"><label>Est. home value ($)</label>
@@ -762,7 +767,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.5.1";
+const TOOLKIT_VERSION = "1.5.2";
 const DEMO = false; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -969,6 +974,67 @@ function monthsFromOrig(c){ if(!(c.origAmount>0&&c.balance>0&&c.rate>0&&c.origAm
   const N=(+c.origTerm||30)*12;   /* 30 years unless the banker says otherwise */
   const i=c.rate/1200, P=pmt(c.origAmount,c.rate,N); const num=P-c.balance*i, den=P-c.origAmount*i; if(!(num>0&&den>0)) return null;
   const k=Math.log(num/den)/Math.log(1+i); if(!isFinite(k)||k<0||k>N-1) return null; return {monthsLeft:Math.max(1,N-Math.round(k)), pi:P}; }
+/* Loan check: do balance, rate, months, P&I and total agree? If not, say what would make them agree, with numbers,
+   so the banker can tell a stale rate from an APR, a PITI typed as P&I, a balance that includes a second lien, or a client who doesn't escrow. */
+function impliedRate(B,P,n){ if(!(B>0&&P>0&&n>0)||P*n<=B) return null; let lo=0,hi=30; for(let i=0;i<60;i++){ const m=(lo+hi)/2; if(pmt(B,m,n)>P) hi=m; else lo=m; } return (lo+hi)/2; }
+function loanCheck(c){
+  if(!c||c.freeClear) return {status:"none",lines:[]};
+  const B=c.balance, r=c.rate, P=c.payment, T=c.paymentTotal, E=c.escrow;
+  if(!(B>0&&r>0)) return {status:"none",lines:[]};
+  const lines=[]; let status="ok";
+  const warn=h=>{ status="warn"; lines.push(h); }; const note=h=>lines.push(h);
+  const io=B*r/1200;
+  const fromPay = !(c.monthsLeft>0) && P>io+0.01;   /* months blank but P&I typed: the term comes from the P&I, so there's nothing to compare it against */
+  const n = c.monthsLeft>0 ? c.monthsLeft : fromPay ? Math.max(1,Math.round(debtMonths(B,r,P))) : 360;
+  const nSrc = c.monthsLeft>0 ? (c.monthsLeftAuto?"worked out from the original amount":"as entered") : fromPay ? "worked out from the P&amp;I" : "30 years assumed";
+  const need=pmt(B,r,n);
+  const fmtRate=x=>x==null?"\u2014":pct(Math.round(x*8)/8);   /* nearest eighth, the way rates are quoted */
+  const alt=(gapP)=>{ /* what each single input would have to be for the P&I to fit */
+    const ir=impliedRate(B,gapP,n), ib=gapP/pmt(1,r,n);
+    return `For ${money(gapP)} to be the P&amp;I: rate about <b>${fmtRate(ir)}</b> on ${money(B)}, or balance about <b>${money(ib)}</b> at ${pct(r)}, or ${yrsMo(n)} is wrong (${gapP>io?yrsMo(debtMonths(B,r,gapP)):"no term works \u2014 payment is under the interest"} at ${pct(r)}).`; };
+  /* --- P&I entered --- */
+  if(P>0){
+    if(P<=io+0.01){
+      warn(`<b>P&amp;I ${money(P)} doesn\u2019t cover the interest.</b> ${money(B)} at ${pct(r)} costs ${money(io)}/mo in interest alone, so the loan would never pay down \u2014 the balance, the rate or the P&amp;I is wrong. ${alt(P)}`);
+      if(T>0&&T>P) note(`The total payment (${money(T)}) is bigger than this P&amp;I, so ${money(P)} isn\u2019t a PITI typed in the wrong box.`);
+    } else if(fromPay){
+      note(`${money(P)} at ${pct(r)} on ${money(B)} pays off in <b>${yrsMo(n)}</b> \u2014 that\u2019s what the analysis uses for months remaining${n>360?" (longer than 30 years: the rate may be an APR, or the balance includes something else)":""}.`);
+      if(n>372) status="warn";
+    } else {
+      const gap=P-need, pctGap=gap/need;
+      if(Math.abs(pctGap)<=0.03) note(`<b>P&amp;I checks out.</b> ${money(B)} at ${pct(r)} over ${yrsMo(n)} (${nSrc}) needs about ${money(need)}; ${money(P)} is within ${Math.abs(Math.round(gap))>0?money(Math.abs(gap)):"a dollar"}.`);
+      else if(pctGap>0){
+        warn(`<b>P&amp;I ${money(P)} is ${money(gap)} more than this loan needs</b> (${money(B)} at ${pct(r)} over ${yrsMo(n)}, ${nSrc} = ${money(need)}).`);
+        if(gap>=150){ note(`Most likely it <b>includes taxes &amp; insurance</b> \u2014 that would make escrow about ${money(gap)}${T>0&&Math.abs(T-P)<1?", and the total matches it exactly":T>0?", though the total entered is "+money(T):""}. If so, put ${money(P)} in Total payment and leave P&amp;I blank (or type the real P&amp;I of about ${money(need)}).`); }
+        note(alt(P));
+      } else {
+        warn(`<b>P&amp;I ${money(P)} is ${money(-gap)} less than this loan needs</b> (${money(B)} at ${pct(r)} over ${yrsMo(n)}, ${nSrc} = ${money(need)}).`);
+        const ir=impliedRate(B,P,n);
+        if(ir!=null && r-ir>0.15 && r-ir<0.6) note(`A gap that size is usually <b>APR vs note rate</b>: ${money(P)} fits a note rate of about <b>${fmtRate(ir)}</b> \u2014 ${pct(r)} may be the APR off a disclosure or a stale Salesforce rate. Check the statement or Closing Disclosure.`);
+        if(P-io<Math.max(60,P*0.04)) note(`${money(P)} is barely above interest-only (${money(io)}) \u2014 could be an interest-only or 40-year product, or a payment from a buydown period.`);
+        if(c.monthsLeft>0 && c.monthsLeft<=330){ const n40=pmt(B,r,c.monthsLeft+120); if(Math.abs(P-n40)/n40<0.03) note(`It matches a <b>40-year</b> amortization (${money(n40)}) \u2014 ask whether this was a modification or 40-year loan.`); }
+        note(alt(P));
+      }
+    }
+  }
+  /* --- total entered --- */
+  if(T>0){
+    const pi = P>0 ? P : need;
+    const esc_ = T-pi;
+    if(T<pi-1 && !(P>0)) warn(`<b>Total payment ${money(T)} is below the P&amp;I this loan needs</b> (${money(need)} for ${money(B)} at ${pct(r)} over ${yrsMo(n)}). Either the total is just P&amp;I and the rate/balance is off (${money(T)} fits about ${pct(impliedRate(B,T,n)||0)}), or the balance includes a second lien or HELOC.`);
+    else if(!(P>0) && esc_>=0 && esc_<60) note(`<b>Total ${money(T)} is essentially the P&amp;I</b> (${money(need)} needed) \u2014 this client probably <b>doesn\u2019t escrow</b>; taxes &amp; insurance are paid outside the payment. Leave escrow blank, or type them as escrow if you want them in the cash-flow picture.`);
+    else if(!(P>0) && esc_>=60) note(`With P&amp;I blank, escrow is read as total minus the ${money(need)} the loan needs = <b>${money(esc_)}/mo</b>${esc_>T*0.45?" \u2014 that\u2019s "+Math.round(esc_/T*100)+"% of the payment, which is high; months remaining or the rate may be off, understating today\u2019s P&amp;I":""}.`);
+    if(P>0 && E>0 && Math.abs(P+E-T)>2) warn(`P&amp;I ${money(P)} + escrow ${money(E)} = ${money(P+E)}, but the total is ${money(T)} (${money(Math.abs(T-P-E))} ${T>P+E?"more":"less"}). One of the three is off \u2014 the proposal uses the total as today\u2019s PITI.`);
+    if(P>0 && !(E>0) && Math.abs(T-P)<1) note(`<b>Total equals P&amp;I</b> \u2014 either this client <b>doesn\u2019t escrow</b> (taxes &amp; insurance paid on their own), or the PITI was typed into both boxes.`);
+    else if(P>0 && !(E>0) && T-P>0 && T-P<60) note(`Total and P&amp;I are within ${money(T-P)} \u2014 this client probably <b>doesn\u2019t escrow</b>.`);
+  }
+  /* --- months --- */
+  if(!(c.monthsLeft>0)){ if(P>0&&P>io) note(`Months remaining is blank \u2014 the analysis works it out from the P&amp;I (${yrsMo(debtMonths(B,r,P))} at ${pct(r)}).`); else warn(`<b>Months remaining is blank</b> \u2014 30 years is assumed. Type it, or the original loan amount and the app works it out.`); }
+  else if(c.origAmount>0 && c.origAmount>B){ const m=monthsFromOrig(c); if(m && Math.abs(m.monthsLeft-c.monthsLeft)>6) note(`Original amount ${money(c.origAmount)} at ${pct(r)} over ${c.origTerm||30} years would leave ${yrsMo(m.monthsLeft)}, but months remaining says ${yrsMo(c.monthsLeft)}. (Extra principal paid along the way would explain it.)`); }
+  return {status,lines};
+}
+function loanCheckHTML(c){ const k=loanCheck(c); if(k.status==="none"||!k.lines.length) return "";
+  return `<div class="loancheck ${k.status}"><div class="t">${k.status==="warn"?"\u26A0 Loan check \u2014 something doesn\u2019t add up":"\u2713 Loan check"}</div><ul>${k.lines.map(l=>`<li>${l}</li>`).join("")}</ul></div>`; }
 function payHintText(c){ if(!c) return "";
   if(!c.autoPay){ const bits=[]; if(c.paymentTotal>0) bits.push("total "+money(c.paymentTotal)); if(c.payment>0) bits.push("P&amp;I "+money(c.payment)); if(c.escrow>0) bits.push("escrow "+money(c.escrow));
     return bits.length? "Entered by hand: "+bits.join(" \u00b7 ")+". Proposals compare total payments (PITI); if escrow is blank it\u2019s estimated as total minus P&amp;I." : "Type the total payment, P&amp;I and escrow from the statement \u2014 or tick auto-calculate."; }
@@ -1036,7 +1102,7 @@ function bindClientFields(){
       normalizePayment(c,f);
       if(f==="value") c.valueSrc={type:"manual",when:todayStr()};
       ["payment","escrow","paymentTotal","monthsLeft","origAmount"].forEach(k=>{ if(k!==f){ const o=document.querySelector(`#s-client [data-f="${k}"]`); if(o) o.value=c[k]==null?"":c[k]; } });
-      { const ph=$("payHint"); if(ph) ph.innerHTML=payHintText(c); }
+      { const ph=$("payHint"); if(ph) ph.innerHTML=payHintText(c); const lc=$("loanCheck"); if(lc) lc.innerHTML=loanCheckHTML(c); }
       save(); if(f==="name") renderPickers(); renderPipeline(); ltvHint(); renderClientBar(); });
   });
 }
@@ -1049,7 +1115,7 @@ function fillClientForm(){ const c=cur();
     ? `<span class="tag-warn">Not in pipeline</span> <button class="btn small" onclick="promoteQuick()">Save to pipeline</button>`
     : `<span class="tag-good">In pipeline</span>`);
   ltvHint(); const vs=$("valueSrc"); if(vs) vs.innerHTML=valueSrcText(c);
-  const ph=$("payHint"); if(ph) ph.innerHTML=payHintText(c);
+  const ph=$("payHint"); if(ph) ph.innerHTML=payHintText(c); { const lc=$("loanCheck"); if(lc) lc.innerHTML=loanCheckHTML(c); }
   const fa=$("fuActions"); if(fa) fa.innerHTML=c?fuButtons(c,false):""; const fl=$("fuLog"); if(fl) fl.innerHTML=c?fuLogHTML(c):"";
   const dc=$("dispoChips"); if(dc){ dc.innerHTML = !c ? "" : STATUSES.map(st=>`<button class="chip${c.status===st?" on":""}" ${c.status===st?'style="background:var(--brand);color:#fff;border-color:var(--brand)"':''} onclick="dispo('${st.replace(/'/g,"\\'")}')">${st}</button>`).join("");
     const dh=$("dispoHint"); if(dh) dh.innerHTML = !c ? "" : c.status===S_RATE ? `Needs the market at <b>${c.targetRate>0?pct(c.targetRate):"\u2014 set the rate alert above"}</b> \u2014 they\u2019ll show under \uD83D\uDD25 Hot now when the feed gets there.`
@@ -1482,18 +1548,16 @@ function computeAnalysis(c){
   const warnings=[];                                           /* input sanity checks, shown on the analysis page only */
   const hasCur = !fc && c.balance>0 && c.rate>0;
   const payAmortizes = hasCur && c.payment>0 && c.payment > c.balance*c.rate/1200 + 0.01;
-  if(hasCur && c.payment>0 && !payAmortizes) warnings.push(`The P&amp;I entered (${money(c.payment)}) doesn\u2019t even cover the interest on ${money(c.balance)} at ${pct(c.rate)} \u2014 it\u2019s ignored; the scheduled payment is used instead.`);
+  if(hasCur){ const k=loanCheck(c); if(k.status==="warn") k.lines.forEach(l=>warnings.push(l)); }
+  if(hasCur && c.payment>0 && !payAmortizes) warnings.push(`Because that P&amp;I doesn\u2019t cover the interest, the analysis ignores it and uses the scheduled payment instead.`);
   /* months remaining: typed > worked out from the typed P&I > 30 years assumed (flagged) */
   let curMonths, curMonthsSrc="typed";
   if(c.monthsLeft>0) curMonths=c.monthsLeft;
   else if(payAmortizes){ const m=debtMonths(c.balance,c.rate,c.payment); curMonths=isFinite(m)?Math.max(1,Math.round(m)):360; curMonthsSrc="payment"; }
-  else { curMonths=360; curMonthsSrc="assumed"; if(hasCur) warnings.push(`No months remaining entered \u2014 assuming 30 years left. That understates today\u2019s P&amp;I and overstates interest savings. Enter months left (or the original loan amount) on the client.`); }
+  else { curMonths=360; curMonthsSrc="assumed"; if(hasCur && !warnings.some(w=>/30 years is assumed/.test(w))) warnings.push(`No months remaining entered \u2014 assuming 30 years left. That understates today\u2019s P&amp;I and overstates interest savings.`); }
   const curPay = hasCur ? (payAmortizes ? c.payment : pmt(c.balance, c.rate, curMonths)) : 0;
   const curSched = hasCur ? amort(c.balance, c.rate, curMonths, 0, payAmortizes ? c.payment : null) : {interest:0, months:0, pay:0, points:[[0,0]], rows:[]};
-  if(hasCur && payAmortizes && c.monthsLeft>0){ const need=pmt(c.balance,c.rate,c.monthsLeft);
-    if(c.payment > need*1.10) warnings.push(`The P&amp;I entered (${money(c.payment)}) is well above what ${money(c.balance)} at ${pct(c.rate)} over ${yrsMo(c.monthsLeft)} needs (about ${money(need)}). If that figure includes taxes &amp; insurance, put it in Total payment and leave P&amp;I blank \u2014 otherwise today\u2019s payment and the savings are overstated.`);
-    else if(c.payment < need*0.90) warnings.push(`The P&amp;I entered (${money(c.payment)}) is well below what ${money(c.balance)} at ${pct(c.rate)} over ${yrsMo(c.monthsLeft)} needs (about ${money(need)}) \u2014 check the balance, rate or months left.`); }
-  if(hasCur && c.payment>0 && c.paymentTotal>0 && c.payment>=c.paymentTotal) warnings.push(`P&amp;I (${money(c.payment)}) is the same as or more than the total payment (${money(c.paymentTotal)}) \u2014 one of them is probably the PITI.`);
+
   const prog0=a.anProgram||"standard"; const streamline=(prog0==="fha_streamline"||prog0==="va_irrrl")&&a.anLien!=="second";
   const roll = a.anRoll==="yes" && !streamline;         /* streamlines are rate-and-term only */
   const cashOut = streamline ? 0 : (a.anCashOut||0);
