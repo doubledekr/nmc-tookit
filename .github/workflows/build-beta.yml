@@ -1,0 +1,81 @@
+name: Build beta app
+
+# Runs on the `beta` branch only. Produces "NMC Toolkit Beta" installers and posts them as a GitHub
+# *pre-release* (tag v<version>-beta.<run>). The live app ignores pre-releases, so the team is never
+# offered a beta; bankers on the beta install it by hand from the releases page.
+
+on:
+  push:
+    branches: [beta]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            script: build:mac
+            artifact: NMC-Toolkit-Beta-mac
+            glob: |
+              nmc-toolkit-desktop/dist/*.dmg
+              nmc-toolkit-desktop/dist/*.zip
+          - os: windows-latest
+            script: build:win
+            artifact: NMC-Toolkit-Beta-windows
+            glob: |
+              nmc-toolkit-desktop/dist/*.exe
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: nmc-toolkit-desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: nmc-toolkit-desktop/package-lock.json
+      - run: npm ci
+      - run: node scripts/beta.js ${{ github.run_number }}
+      - run: npm run ${{ matrix.script }}
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: ${{ matrix.glob }}
+          if-no-files-found: error
+
+  prerelease:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: out
+      - id: v
+        run: echo "version=$(node -p "require('./nmc-toolkit-desktop/package.json').version")-beta.${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.v.outputs.version }}
+          name: NMC Toolkit Beta ${{ steps.v.outputs.version }}
+          prerelease: true
+          make_latest: false
+          body: |
+            **Beta build** — installs side by side with the live NMC Toolkit as "NMC Toolkit Beta", with its own data file.
+            The live app is not affected and will not offer this version. Built from commit ${{ github.sha }}.
+
+            What's in this beta: the Chrome extension (one-click "Send to NMC toolkit" from Salesforce) —
+            see Settings → Desktop app → Chrome extension inside the beta for the 3-step install.
+
+            - **Windows:** `NMC-Toolkit-Beta-Setup-*.exe` — unsigned, so SmartScreen may show "unrecognized app" → More info → Run anyway.
+            - **Mac:** `NMC-Toolkit-Beta-*.dmg` — unsigned, so the first open is right-click → Open.
+
+            To bring your clients across: Settings → Desktop app → "Import a previous toolkit file" and pick the live app's data file (Settings → Open data folder in the live app).
+          files: out/**/*

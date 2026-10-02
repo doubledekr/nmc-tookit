@@ -3257,6 +3257,7 @@ if(state.settings.brand==="#0E3A5D"||state.settings.brand==="#7E2318") state.set
 if(state.settings.accent==="#D98E2B") state.settings.accent="#DDE4F4";
 if(DEMO){ document.body.classList.add("demo"); const bn=$("demoBanner"); if(bn) bn.style.display="block"; }
 { const v=$("verTag"); if(v) v.innerHTML="<b>NMC Toolkit v"+esc(appVersion())+"</b>"+(DESK?" \u00b7 desktop":" \u00b7 browser")+"<br>"; }
+if(/-beta\./.test(appVersion())){ const bn=$("updBanner"); if(bn){ bn.style.display="block"; bn.innerHTML=`<b>Beta build</b> \u2014 this is the test version with the Chrome extension. It keeps its own data file and never updates itself; newer betas are posted on the <a href="#" onclick="DESK&&DESK.openReleases();return false">releases page</a>.`; } }
 if(DESK){ DESK.setHub(apiBase()||""); DESK.onUpdateStatus(s=>{ const b=$("updBanner"); if(!b) return;
     b.style.display="block"; b.innerHTML = s.state==="ready"
       ? `<div class="btnrow"><span><b>Update available:</b> version ${esc(s.version)} is ready. Everything you\u2019re working on is saved \u2014 update whenever you have a moment.</span><span style="flex:1"></span><button class="btn small" onclick="DESK.installUpdate()">Update now</button><button class="btn ghost small" onclick="this.closest('#updBanner').style.display='none'">Later</button></div>`

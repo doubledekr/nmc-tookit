@@ -61,7 +61,8 @@ ipcMain.handle("app:version", () => app.getVersion());
    offers the download page instead. Set NMC_NO_UPDATES=1 to disable (dev). */
 const RELEASES_URL = "https://github.com/doubledekr/nmc-tookit/releases/latest";
 let updater = null, updateFeed = null, mainWin = null, pendingVersion = null;
-function setupUpdates(){ if (process.env.NMC_NO_UPDATES) return;
+const IS_BETA = /-beta\./.test(app.getVersion());   /* beta builds never auto-update; newer betas are downloaded by hand from the releases page */
+function setupUpdates(){ if (process.env.NMC_NO_UPDATES || IS_BETA) return;
   try { updater = require("electron-updater").autoUpdater; } catch (e) { return; }
   updater.autoDownload = process.platform !== "darwin";   /* Mac: unsigned → can't self-install; just announce */
   updater.autoInstallOnAppQuit = true; updater.allowDowngrade = false; updater.allowPrerelease = false;
@@ -105,7 +106,7 @@ function startSfListener(){
 ipcMain.on("sf:statusSync", e => { e.returnValue = { listening: !!sfServer && sfServer.listening, port: SF_PORT, lastAt: sfLastAt }; });
 ipcMain.handle("sf:openExtensionFolder", () => { const p = path.join(process.resourcesPath || __dirname, "chrome-extension"); const alt = path.join(__dirname, "..", "chrome-extension"); return shell.openPath(fs.existsSync(p) ? p : alt); });
 ipcMain.on("sf:extensionPathSync", e => { const p = path.join(process.resourcesPath || __dirname, "chrome-extension"); const alt = path.join(__dirname, "..", "chrome-extension"); e.returnValue = fs.existsSync(p) ? p : alt; });
-ipcMain.handle("update:openReleases", () => { shell.openExternal(RELEASES_URL); return true; });
+ipcMain.handle("update:openReleases", () => { shell.openExternal(IS_BETA ? "https://github.com/doubledekr/nmc-tookit/releases" : RELEASES_URL); return true; });
 ipcMain.handle("update:install", () => { if (!updater) return false; flushWrites(); setTimeout(() => updater.quitAndInstall(false, true), 300); return true; });
 
 function createWindow(){
