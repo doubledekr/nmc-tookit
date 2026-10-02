@@ -329,6 +329,7 @@ table.data tr.rec td{background:var(--cream)}
             <div class="field cur-loan"><label>Original loan amount ($) <span class="hint" style="display:inline">(lets the app work out P&amp;I and months remaining)</span></label>
               <div class="chiprow"><input type="number" data-f="origAmount" step="1000" style="flex:1"><select data-f="origTerm" style="width:96px;flex:0 0 96px" title="Original term"><option value="30">30 yr</option><option value="20">20 yr</option><option value="15">15 yr</option><option value="10">10 yr</option></select></div></div>
             <div class="field cur-loan"><label>Current rate (%)</label><input type="number" data-f="rate" step="0.125"></div>
+            <div class="field cur-loan" style="grid-column:1/-1"><label style="display:block;cursor:pointer;line-height:1.5"><input type="checkbox" data-f="autoPay" style="width:auto;vertical-align:middle;margin-right:6px">Auto-calculate P&amp;I and escrow from the balance, rate and months <span class="hint" style="display:inline">\u2014 off by default; type the real numbers from the statement</span></label></div>
             <div class="field cur-loan"><label>Total monthly payment (PITI)</label><input type="number" data-f="paymentTotal" step="10" placeholder="what they actually pay"></div>
             <div class="field cur-loan"><label>P&amp;I <span class="hint" style="display:inline">(auto from balance, rate, months — or from the total)</span></label><input type="number" data-f="payment" step="10" placeholder="auto"></div>
             <div class="field cur-loan"><label>Escrow — taxes &amp; insurance <span class="hint" style="display:inline">(auto = total minus P&amp;I)</span></label><input type="number" data-f="escrow" step="10"></div>
@@ -761,7 +762,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.4.1";
+const TOOLKIT_VERSION = "1.5.0";
 const DEMO = false; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -819,7 +820,7 @@ const DEFAULT_SFMAP = {
   servicer:["servicer","current lender","current servicer","lender"],
   loanType:["loan type","product","loan product","program"]
 };
-const FIELD_LABELS = {name:"Name",phone:"Phone",email:"Email",address:"Address",balance:"Balance",origAmount:"Original loan amount",taxAnnual:"Annual taxes",insAnnual:"Annual insurance",followUpTime:"Follow-up time",rate:"Rate",payment:"Payment",monthsLeft:"Months left",value:"Home value",fico:"FICO",servicer:"Servicer",loanType:"Loan type",notes:"Notes",paymentTotal:"Total payment (PITI)",escrow:"Escrow",targetRate:"Rate alert",tz:"Time zone"};
+const FIELD_LABELS = {name:"Name",phone:"Phone",email:"Email",address:"Address",balance:"Balance",autoPay:"Auto-calc payments",origAmount:"Original loan amount",taxAnnual:"Annual taxes",insAnnual:"Annual insurance",followUpTime:"Follow-up time",rate:"Rate",payment:"Payment",monthsLeft:"Months left",value:"Home value",fico:"FICO",servicer:"Servicer",loanType:"Loan type",notes:"Notes",paymentTotal:"Total payment (PITI)",escrow:"Escrow",targetRate:"Rate alert",tz:"Time zone"};
 
 let state = {
   clients: [], currentId: null, blocks: [], live: null, rateHistory: [], teamCache: null, templates:{mine:[],company:null,shared:[]}, tools:{}, inbox:[], schema: 4,
@@ -869,7 +870,7 @@ function migrate(){ /* additive only — old saves gain new fields, nothing is e
   if(!Array.isArray(state.templates.shared)) state.templates.shared=[];
   const tpl=blankClient();
   (state.clients||[]).forEach(c=>{ if(STATUS_MIGRATE[c.status]) c.status=STATUS_MIGRATE[c.status]; if(!c.origTerm) c.origTerm=30;
-    if(!Array.isArray(c.log)) c.log=[]; if(c.followUpTime==null) c.followUpTime="";
+    if(!Array.isArray(c.log)) c.log=[]; if(c.followUpTime==null) c.followUpTime=""; if(c.autoPay==null) c.autoPay=false;
     (c.debts||[]).forEach(d=>{ if(!d.type) d.type=debtTypeOf(d.name); if(d.extra==null) d.extra=0; if(d.acct==null) d.acct="";
       if(d.apr==null&&DEBT_TYPES[d.type]){ d.apr=DEBT_TYPES[d.type].apr; d.aprEst=true; } else if(d.aprEst==null){ d.aprEst=[24.99,7.5,9.0].includes(d.apr); } });
     if(c.proposalSent==null){ const sent=(c.library||[]).filter(x=>x&&x.sent); c.proposalSent=sent.length?sent.map(x=>x.sent.when.slice(0,10)).sort().pop():""; c.proposalsSent=sent.length; }
@@ -907,7 +908,7 @@ function debtInterest(bal, apr, pay){ const m=debtMonths(bal,apr,pay); return is
 function cur(){ return state.clients.find(c=>c.id===state.currentId) || null; }
 function blankClient(){ return {id:"c"+Date.now()+Math.floor(Math.random()*999), name:"New client", status:"New lead", quick:false,
   phone:"",email:"",address:"",balance:null,rate:null,payment:null,monthsLeft:null,value:null,fico:null,
-  servicer:"",loanType:"Conventional",followUp:"",notes:"",paymentTotal:null,escrow:null,origAmount:null,origTerm:30,freeClear:false,taxAnnual:null,insAnnual:null,targetRate:null,tz:"",followUpTime:"",log:[],debts:[],debtsTrash:[],options:[],scenarios:[],library:[],prop:{included:[],rec:"",why:""},cmp:{pwypn:false,rec:"",why:"",include:false},
+  servicer:"",loanType:"Conventional",followUp:"",notes:"",paymentTotal:null,escrow:null,autoPay:false,origAmount:null,origTerm:30,freeClear:false,taxAnnual:null,insAnnual:null,targetRate:null,tz:"",followUpTime:"",log:[],debts:[],debtsTrash:[],options:[],scenarios:[],library:[],prop:{included:[],rec:"",why:""},cmp:{pwypn:false,rec:"",why:"",include:false},
   analysis:{anRate:null,anTerm:30,anCosts:0,anCashOut:0,anSkip:1,anRoll:"yes",anLien:"refi"}}; }
 function newClient(){ const c=blankClient(); state.clients.unshift(c); state.currentId=c.id; save(); refreshAll(); go("client"); toast("New client added"); }
 function newQuickQuote(){ const c=blankClient(); c.quick=true;
@@ -969,11 +970,19 @@ function monthsFromOrig(c){ if(!(c.origAmount>0&&c.balance>0&&c.rate>0&&c.origAm
   const i=c.rate/1200, P=pmt(c.origAmount,c.rate,N); const num=P-c.balance*i, den=P-c.origAmount*i; if(!(num>0&&den>0)) return null;
   const k=Math.log(num/den)/Math.log(1+i); if(!isFinite(k)||k<0||k>N-1) return null; return {monthsLeft:Math.max(1,N-Math.round(k)), pi:P}; }
 function payHintText(c){ if(!c) return "";
+  if(!c.autoPay){ const bits=[]; if(c.paymentTotal>0) bits.push("total "+money(c.paymentTotal)); if(c.payment>0) bits.push("P&amp;I "+money(c.payment)); if(c.escrow>0) bits.push("escrow "+money(c.escrow));
+    return bits.length? "Entered by hand: "+bits.join(" \u00b7 ")+". Proposals compare total payments (PITI); if escrow is blank it\u2019s estimated as total minus P&amp;I." : "Type the total payment, P&amp;I and escrow from the statement \u2014 or tick auto-calculate."; }
   if(c.paymentTotal>0&&c.paymentAuto&&c.payFromTotal) return `<span style="color:var(--warn)">Using the <b>${money(c.paymentTotal)} total</b> as the current payment, escrow 0 \u2014 P&amp;I couldn\u2019t be separated ${c.payFromTotal==="months"?"without the original loan amount or months remaining":"because the payment is lower than the P&amp;I this balance and rate would need (the balance may cover more than one loan)"}. Fine for an estimate; type the P&amp;I if you have it.</span>`;
   if(c.payment>0&&!c.paymentAuto) return `P&amp;I as typed${c.paymentTotal>0?` \u00b7 escrow = ${money(c.paymentTotal)} \u2212 ${money(c.payment)}`:""}.`;
   if(c.payment>0&&c.paymentAuto) return `P&amp;I estimated from ${c.origAmount>0?"the original loan amount":"balance, rate and "+(c.monthsLeft||360)+" months remaining"}${c.paymentTotal>0?` \u00b7 escrow = total \u2212 P&amp;I`:""}. Type the P&amp;I if you have it.`;
   return ""; }
 function normalizePayment(c,changed){
+  if(changed==="autoPay"&&c.autoPay){ changed="paymentTotal"; c.paymentAuto=true; }   /* turning it on: recompute from the numbers, replacing typed values */
+  if(!c.autoPay){   /* default: the banker types P&I, escrow and total from the statement; nothing is derived */
+    if(changed==="monthsLeft") c.monthsLeftAuto=false;
+    if(["payment","escrow","paymentTotal"].includes(changed)){ c.paymentAuto=false; c.payFromTotal=false; }
+    if(["origAmount","origTerm","balance","rate"].includes(changed) && (!c.monthsLeft||c.monthsLeftAuto)){ const m=monthsFromOrig(c); if(m){ c.monthsLeft=m.monthsLeft; c.monthsLeftAuto=true; } }   /* months only, never the payment */
+    return; }
   if(changed==="origTerm") c.monthsLeftAuto=true;   /* changing the term re-solves months */
   if(["origAmount","origTerm","balance","rate","paymentTotal"].includes(changed) && (!c.monthsLeft||c.monthsLeftAuto)){ const m=monthsFromOrig(c);
     if(m){ c.monthsLeft=m.monthsLeft; c.monthsLeftAuto=true; if(!c.payment||c.paymentAuto){ c.payment=Math.round(m.pi); c.paymentAuto=true; } } }
@@ -1528,6 +1537,11 @@ function computeAnalysis(c){
   const ladder = (fc||noc) && a.anShowExtra!=="no" ? [a.anX1,a.anX2,a.anX3].filter(x=>x>0).map(x=>{ const sc=amort(newP,a.anRate,n,x);
     return {extra:x, pay:newPay+x, months:sc.months, interest:sc.interest, saved:newSched.interest-sc.interest, eff:equivRate(newP,n,sc.interest,a.anRate), rows:sc.rows}; }) : [];
   const piti = c.paymentTotal>0 ? c.paymentTotal : curPay + escrow;   /* a skipped payment is the whole PITI, not just P&I */
+  /* total payment comparison: taxes & insurance ride along on the new loan (escrow typed, else total minus P&I) */
+  const escrowEst = (second||fc) ? 0 : (c.escrow>0 ? c.escrow : (c.paymentTotal>0 && curPay>0 ? Math.max(0,Math.round(c.paymentTotal-curPay)) : 0));
+  const escrowIsEst = !(second||fc) && !(c.escrow>0) && escrowEst>0;
+  const pitiNow = (!fc && (c.paymentTotal>0 || curPay>0)) ? (c.paymentTotal>0 ? c.paymentTotal : curPay+escrowEst) : 0;
+  const pitiNew = second ? pitiNow + newPay : fc ? newPay + newEscrow : newPay + escrowEst;
   const skipCash = second ? 0 : skipN * piti;
   const curPathInterest = (second?0:curSched.interest) + (roll?dInt:0);
   /* APR: the rate that amortizes the amount financed net of prepaid finance charges (closing costs + upfront MIP)
@@ -1536,7 +1550,7 @@ function computeAnalysis(c){
   let apr=a.anRate+0.25, aprEst=true;
   if(finCharges>0 && newP>finCharges && !heloc){ const amt=newP-finCharges; let lo=a.anRate, hi=a.anRate+10;
     for(let i=0;i<50;i++){ const mid=(lo+hi)/2; if(pmt(amt,mid,n)>newPay) hi=mid; else lo=mid; } apr=(lo+hi)/2; aprEst=false; }
-  return {apr,aprEst,fc,noc,newEscrow,ltv,ladder,cust,second,heloc,drawYrs,ioPay,afterDrawPay,curPay,curMonths,curSched,roll,cashOut,streamline,debts,dBal,dPay,dInt,dMonths,dMonthsEst,dMonthsUnknown,dExtra,dNoApr,newP,n,newPay,newSched,outlayNow,saveMo,blended,extra,pw,pwEff,skipCash,skipN,prog,fhaS,mipAmt,escrow,curPathInterest,a};
+  return {apr,aprEst,fc,noc,newEscrow,ltv,ladder,cust,escrowEst,escrowIsEst,pitiNow,pitiNew,second,heloc,drawYrs,ioPay,afterDrawPay,curPay,curMonths,curSched,roll,cashOut,streamline,debts,dBal,dPay,dInt,dMonths,dMonthsEst,dMonthsUnknown,dExtra,dNoApr,newP,n,newPay,newSched,outlayNow,saveMo,blended,extra,pw,pwEff,skipCash,skipN,prog,fhaS,mipAmt,escrow,curPathInterest,a};
 }
 
 function balanceChart(r){
@@ -1575,6 +1589,7 @@ function runAnalysis(){ { const n=$("anRateSrc"); if(n){ const t=rateSrcText(cur
       <div class="stat"><div class="v">${money(r.outlayNow)}</div><div class="l">${r.second?"Debt payments today / mo":"Paying now / mo"+(r.roll&&r.dPay?" (mortgage "+money(r.curPay)+" + debts "+money(r.dPay)+(r.dExtra?" + "+money(r.dExtra)+" extra":"")+")":"")}</div></div>
       <div class="stat"><div class="v">${money(r.newPay)}</div><div class="l">${r.heloc?"HELOC payment during the "+r.drawYrs+"-yr draw (interest-only, variable)":r.second?"New home equity loan":"New P&amp;I"} / mo (${pct(r.a.anRate)}, ${r.a.anTerm} yr, ${money(r.newP)} loan)${r.heloc?" \u00b7 then ~"+money(r.afterDrawPay)+"/mo":""}${r.escrow?` \u00b7 ~${money(r.newPay+r.escrow)} with escrow`:""}</div></div>
       <div class="stat green"><div class="v">${money(r.saveMo)}</div><div class="l">Monthly cash-flow savings</div></div>
+      ${r.pitiNow>0?`<div class="stat" style="grid-column:1/-1;background:var(--cream-soft)"><div class="v" style="font-size:18px">${money(r.pitiNow)} \u2192 ${money(r.pitiNew)}</div><div class="l"><b>Total mortgage payment with taxes &amp; insurance (PITI)</b>, today \u2192 proposed${r.second?" (first mortgage PITI + new loan)":""}${r.escrowIsEst?" \u00b7 escrow estimated as total minus P&amp;I":""}${r.pitiNow-r.pitiNew>0?` \u00b7 <b>${money(r.pitiNow-r.pitiNew)}/mo lower</b>`:""}</div></div>`:""}
       ${r.second
         ? `<div class="stat highlight"><div class="v">Untouched</div><div class="l">Their ${pct(c.rate)} first mortgage stays exactly as-is</div></div>`
         : r.fhaS ? `<div class="stat highlight"><div class="v">Lender-paid</div><div class="l">FHA Streamline \u2014 no origination fee, closing costs paid by the lender; ${money(r.mipAmt)} upfront MIP financed</div></div>`
@@ -1697,7 +1712,7 @@ function comparisonProposalHTML(c,sel){
   <h2>Side by side</h2>
   ${programMatrix(c,sel,rec)}
   ${(()=>{ const all=[]; items.forEach(x=>(x.r.debts||[]).forEach(d=>{ if(d.aprEst&&d.apr>0&&!all.some(y=>y.name===d.name)) all.push(d); })); return all.length?`<div class="hint" style="margin-top:4px">APR${all.length>1?"s":""} on ${all.map(d=>esc(d.name)).join(", ")} estimated at typical rates for that kind of debt; statements will show the exact figures.</div>`:""; })()}
-  <div class="hint" style="margin-top:4px">${items.some(x=>x.r.aprEst)?"* APR estimated at the note rate + 0.25% until closing costs are priced; the exact APR comes with the lender\u2019s Loan Estimate. ":""}Interest totals include your current debts at today\u2019s minimum payments in every column, so the options are compared apples to apples.${c.escrow>0?" Taxes &amp; insurance escrow (~"+money(c.escrow)+"/mo) continues on any option and is not included above.":""}</div>
+  <div class="hint" style="margin-top:4px">${items.some(x=>x.r.escrowIsEst)?"* Taxes &amp; insurance estimated as today\u2019s total payment minus P&amp;I. ":""}${items.some(x=>x.r.aprEst)?"* APR estimated at the note rate + 0.25% until closing costs are priced; the exact APR comes with the lender\u2019s Loan Estimate. ":""}Interest totals include your current debts at today\u2019s minimum payments in every column, so the options are compared apples to apples.${c.escrow>0?" Taxes &amp; insurance escrow (~"+money(c.escrow)+"/mo) continues on any option and is not included above.":""}</div>
   ${recIt?`<div class="recbox"><b>\u2605 Our recommendation: ${esc(recIt.sc.label)}.</b> ${c.cmp&&c.cmp.why?esc(c.cmp.why):""}</div>`:""}
   <div class="disc">This comparison is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. Figures exclude taxes, insurance, and escrows unless noted. Program eligibility (including FHA Streamline and VA IRRRL) is subject to lender and agency guidelines. ${esc(s.co)} \u00b7 NMLS #2484730 \u00b7 Equal Housing Lender.</div>`;
 }
@@ -1800,11 +1815,13 @@ function proposalSingleHTML(){
    <tr><td>APR${r.aprEst?" (estimated)":""}</td><td class="num"></td><td class="num">${pct(r.apr)}</td></tr>
    <tr><td>Monthly payments</td><td class="num">${money(r.dPay)}${r.dExtra?" + "+money(r.dExtra)+" extra":""}</td><td class="num">${money(r.newPay)}${r.heloc?" interest-only during the "+r.drawYrs+"-yr draw, then ~"+money(r.afterDrawPay):""}</td></tr>
    <tr><td>Paid off in</td><td class="num">${r.dMonths===Infinity?"never at these payments":isFinite(r.dMonths)&&r.dMonths>0?yrsMo(r.dMonths):"\u2014"}</td><td class="num">${yrsMo(r.n)}${r.extra>0?" (or "+yrsMo(r.pw.months)+" paying what you pay now)":""}</td></tr>
-   <tr><td><b>Total monthly</b></td><td class="num"><b>${money(r.outlayNow)}</b></td><td class="num"><b>${money(r.newPay)}</b></td></tr>` : `
+   <tr><td><b>Total monthly</b></td><td class="num"><b>${money(r.outlayNow)}</b></td><td class="num"><b>${money(r.newPay)}</b></td></tr>
+   ${r.pitiNow>0?`<tr><td>Mortgage payment with taxes &amp; insurance (PITI) + this loan</td><td class="num">${money(r.pitiNow)}</td><td class="num">${money(r.pitiNew)}</td></tr>`:""}` : `
    <tr><td>Loan amount</td><td class="num">${money(c.balance)}</td><td class="num">${money(r.newP)}</td></tr>
    <tr><td>Interest rate</td><td class="num">${pct(c.rate)}${r.roll&&r.debts.length?` (blended with debts: ${pct(r.blended)})`:""}</td><td class="num">${pct(r.a.anRate)}${o?` \u2014 ${esc(o.lender)}${o.lock?", "+esc(o.lock)+" lock":""}`:""}</td></tr>
    <tr><td>APR${r.aprEst?" (estimated)":""}</td><td class="num"></td><td class="num">${pct(r.apr)}</td></tr>
    <tr><td>Term</td><td class="num">${yrsMo(r.curMonths)}</td><td class="num">${r.a.anTerm} years</td></tr>
+   ${r.pitiNow>0?`<tr><td><b>Total monthly payment (PITI)</b>${r.escrowIsEst?' <span style="color:#777;font-weight:400">escrow est.</span>':""}</td><td class="num"><b>${money(r.pitiNow)}</b></td><td class="num"><b>${money(r.pitiNew)}</b></td></tr>`:""}
    <tr><td>Monthly principal &amp; interest</td><td class="num">${money(r.curPay)}</td><td class="num">${money(r.newPay)}</td></tr>
    ${r.roll&&r.dPay?`<tr><td>Monthly debt payments</td><td class="num">${money(r.dPay)}</td><td class="num" style="color:#2E6B4F;font-weight:600">$0</td></tr>
    <tr><td><b>Total monthly outlay</b></td><td class="num"><b>${money(r.outlayNow)}</b></td><td class="num"><b>${money(r.newPay)}</b></td></tr>`:""}`;
@@ -1836,12 +1853,13 @@ function proposalSingleHTML(){
   <h2>Your numbers, side by side</h2>
   <table><thead><tr><th></th><th class="num">Today</th><th class="num">Proposed</th></tr></thead><tbody>${sideRows}</tbody></table>
   ${r.heloc?`<div class="hint" style="margin-top:4px">HELOC rates are variable and can change with the market; the payment shown is interest-only during the draw period and will rise when repayment begins.</div>`:""}
-  ${r.escrow?`<div class="hint" style="margin-top:4px">Taxes &amp; insurance escrow (~${money(r.escrow)}/mo) continues on either loan and is not included in the payments above.</div>`:""}
+  ${r.escrowEst>0?`<div class="hint" style="margin-top:4px">Taxes &amp; insurance (~${money(r.escrowEst)}/mo${r.escrowIsEst?", estimated as total minus P&amp;I":""}) continue on either loan and are included in the PITI line; the actual escrow is set at closing.</div>`:""}
   ${r.aprEst?`<div class="hint" style="margin-top:4px">APR is estimated at the note rate + 0.25% until closing costs are priced; the exact APR comes with the lender\u2019s Loan Estimate.</div>`:""}
   ${debtRows?`<h2>Debts consolidated at closing</h2><table><thead><tr><th>Debt</th><th class="num">Balance</th><th class="num">APR</th><th class="num">Payment</th><th class="num">After closing</th></tr></thead><tbody>${debtRows}</tbody></table>${aprEstNote(r)}`:""}
   ${(()=>{ /* the stat strip shows wins only \u2014 anything that isn't a benefit simply isn't shown */
     const wins=[];
     wins.push(`<div><div class="v">${money(r.newPay)}/mo</div><div class="l">${r.second?"New second mortgage payment (minimum)":r.heloc?"Payment during the draw":"New mortgage payment (P&amp;I, minimum)"}</div></div>`);
+    if(!r.second&&r.pitiNow>0) wins.push(`<div><div class="v">${money(r.pitiNew)}/mo</div><div class="l">Total with taxes &amp; insurance (vs ${money(r.pitiNow)} today)</div></div>`);
     if(r.saveMo>0) wins.push(`<div><div class="v">${money(r.saveMo)}</div><div class="l">Monthly savings</div></div>`);
     if(!r.second&&r.skipCash>0) wins.push(`<div><div class="v">${money(r.skipCash)}</div><div class="l">Cash kept from skipped payment${r.a.anSkip===1?"":"s"}</div></div>`);
     if(r.second){ const sooner=isFinite(r.dMonths)&&r.dMonths>0 ? r.dMonths-r.pw.months : null;
@@ -2301,6 +2319,7 @@ function programMatrix(c,snaps,recId){
   ${row("Rate \u00b7 term",x=>pct(x.r.a.anRate)+" \u00b7 "+x.r.a.anTerm+" yrs")}
   ${row("APR",x=>pct(x.r.apr)+(x.r.aprEst?"*":""))}
   ${row("New loan payment (minimum)",x=>money(x.r.newPay)+"/mo"+(x.r.second?" on the second":""))}
+  ${comps.some(x=>x.r.pitiNow>0)?row("Mortgage payment with taxes &amp; insurance (PITI): today \u2192 new",x=>x.r.pitiNow>0?money(x.r.pitiNow)+" \u2192 "+money(x.r.pitiNew)+(x.r.escrowIsEst?"*":""):"\u2014"):""}
   ${comps.some(x=>x.r.second)?row("All mortgage payments (principal &amp; interest)",x=>x.r.second?money(x.r.curPay)+" current mortgage (unchanged) + "+money(x.r.newPay)+" new second = "+money(x.r.curPay+x.r.newPay):money(x.r.newPay)+"/mo"):""}
   ${anyDebts?row("Debts paid off at closing",x=>(x.r.roll||x.r.second)&&x.r.dBal>0?money(x.r.dBal)+" \u2014 "+money(x.r.dPay)+"/mo gone":x.r.streamline?"":"\u2014 debts stay as they are"):""}
   ${row("What goes out each month today (mortgage + debts)",x=>money(x.h.today))}
