@@ -216,8 +216,8 @@ nav button.soon{opacity:.42;cursor:not-allowed}nav button.soon small{font-size:9
 #printSheet th,#propPreview th{background:var(--cream);color:var(--ink);padding:6px 8px;text-align:left;font-weight:700;border-bottom:2px solid var(--brand)}
 #printSheet th.num,#propPreview th.num{text-align:right}
 #printSheet td,#propPreview td{padding:5px 8px;border-bottom:1px solid #E2DCCF}
-#printSheet .statline,#propPreview .statline{display:flex;gap:10px;margin:12px 0}
-#printSheet .statline div,#propPreview .statline div{flex:1;background:var(--cream-soft);border:1px solid #E2DCCF;border-radius:10px;padding:10px 12px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+#printSheet .statline,#propPreview .statline{display:flex;flex-wrap:wrap;gap:10px;margin:12px 0}
+#printSheet .statline>div,#propPreview .statline>div{flex:1 1 28%;min-width:28%;background:var(--cream-soft);border:1px solid #E2DCCF;border-radius:10px;padding:10px 12px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
 #printSheet .statline .v,#propPreview .statline .v{font-family:var(--serif);font-size:17px;font-weight:400;color:var(--brand)}
 #printSheet .statline .l,#propPreview .statline .l{font-size:10.5px;color:#666}
 #printSheet .recbox,#propPreview .recbox{background:var(--cream-soft);border:1px solid #E2DCCF;border-left:4px solid var(--brand);border-radius:8px;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:10px 12px;margin:10px 0;font-size:11.5px;line-height:1.6}
@@ -252,7 +252,7 @@ table.data tr.rec td{background:var(--cream)}
   .btn,input:not([type=checkbox]):not([type=radio]),select{min-height:44px} /* comfortable touch targets */
   table.data{min-width:560px} /* scrolls inside the panel instead of crushing columns */
   #propPreview .statline{flex-wrap:wrap}
-  #propPreview .statline div{flex:1 1 45%}
+  #propPreview .statline>div{flex:1 1 45%}
   #propPreview .brandbar{flex-wrap:wrap;gap:8px}
   #propPreview .brandbar .lo{text-align:left}
 }
@@ -424,7 +424,7 @@ table.data tr.rec td{background:var(--cream)}
           <div class="field" id="anMipWrap" style="display:none"><label>Upfront MIP % (financed)</label><input type="number" id="anMip" step="0.01" value="1.75" oninput="runAnalysis()"></div>
           <div class="field m-noc" style="grid-column:1/-1"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="anNoCompare" style="width:auto" onchange="runAnalysis()"> <b>Cash-out only</b> — leave the debts alone and skip the comparison; the proposal just shows what the new loan looks like <span class="hint" style="display:inline">(for clients borrowing for savings or a project, not to pay off debt)</span></label></div>
           <div class="field m-fc m-noc-x"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="anShowExtra" style="width:auto" checked onchange="runAnalysis()"> Show what paying extra looks like <span class="hint" style="display:inline">(three amounts, $/mo — untick to leave it off the proposal)</span></label><div class="chiprow"><input type="number" id="anX1" step="50" value="100" oninput="runAnalysis()" style="width:84px;flex:1"><input type="number" id="anX2" step="50" value="250" oninput="runAnalysis()" style="width:84px;flex:1"><input type="number" id="anX3" step="50" value="500" oninput="runAnalysis()" style="width:84px;flex:1"></div></div>
-          <div class="field not-fc"><label>Custom extra to the new loan ($/mo, optional) <span class="hint" style="display:inline">\u2014 e.g. pay $500 extra and pocket the rest of the savings</span></label><input type="number" id="anCustom" step="50" placeholder="0" oninput="runAnalysis()"></div>
+          <div class="field not-fc"><label>Custom extra to the new loan ($/mo, optional) <span class="hint" style="display:inline">— e.g. pay $500 extra and pocket the rest of the savings</span></label><input type="number" id="anCustom" step="50" placeholder="0" oninput="runAnalysis()"></div>
           <div class="field"><label>Highlight no prepayment penalty</label><select id="anPrepay" onchange="runAnalysis()"><option value="yes" selected>Yes — it's a benefit</option><option value="no">No</option></select></div>
           <div class="field m-refi"><label>Roll debts into loan?</label><select id="anRoll" onchange="runAnalysis()">
             <option value="yes" selected>Yes — consolidate</option><option value="no">No — mortgage only</option></select></div>
@@ -762,7 +762,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.5.0";
+const TOOLKIT_VERSION = "1.5.1";
 const DEMO = true; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -839,7 +839,7 @@ let pollTimer = null, lastSF = null, lastPricing = null;
 /* ---------- utils ---------- */
 const $ = id => document.getElementById(id);
 const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-const money = v => (v==null||isNaN(v)) ? "\u2014" : "$" + Math.round(v).toLocaleString("en-US");
+const money = v => (v==null||isNaN(v)||!isFinite(v)) ? "\u2014" : "$" + Math.round(v).toLocaleString("en-US");
 const pct = v => (v==null||isNaN(v)) ? "\u2014" : Number(v).toFixed(3).replace(/0+$/,"").replace(/\.$/,"") + "%";
 const num = v => { const n = parseFloat(String(v).replace(/[$,%\s]/g,"")); return isNaN(n)?null:n; };
 const yrsMo = m => { if(m==null||!isFinite(m)) return "\u2014"; const y=Math.floor(m/12), r=Math.round(m%12);
@@ -1479,9 +1479,21 @@ function computeAnalysis(c){
   const a=c.analysis; if(!a.anRate) return null;
   const second = a.anLien==="second"; const fc = a.anLien==="fc";          /* fc: new first mortgage on a free & clear home */
   if(!second && !fc && (!c.balance||!c.rate)) return null;    /* consolidation-only works without a first mortgage */
-  const curMonths = c.monthsLeft || 360;
-  const curPay = !fc && c.balance&&c.rate ? (c.payment || pmt(c.balance, c.rate, curMonths)) : 0;
-  const curSched = !fc && c.balance&&c.rate ? amort(c.balance, c.rate, curMonths, 0, c.payment||null) : {interest:0, months:0, pay:0, points:[[0,0]], rows:[]};
+  const warnings=[];                                           /* input sanity checks, shown on the analysis page only */
+  const hasCur = !fc && c.balance>0 && c.rate>0;
+  const payAmortizes = hasCur && c.payment>0 && c.payment > c.balance*c.rate/1200 + 0.01;
+  if(hasCur && c.payment>0 && !payAmortizes) warnings.push(`The P&amp;I entered (${money(c.payment)}) doesn\u2019t even cover the interest on ${money(c.balance)} at ${pct(c.rate)} \u2014 it\u2019s ignored; the scheduled payment is used instead.`);
+  /* months remaining: typed > worked out from the typed P&I > 30 years assumed (flagged) */
+  let curMonths, curMonthsSrc="typed";
+  if(c.monthsLeft>0) curMonths=c.monthsLeft;
+  else if(payAmortizes){ const m=debtMonths(c.balance,c.rate,c.payment); curMonths=isFinite(m)?Math.max(1,Math.round(m)):360; curMonthsSrc="payment"; }
+  else { curMonths=360; curMonthsSrc="assumed"; if(hasCur) warnings.push(`No months remaining entered \u2014 assuming 30 years left. That understates today\u2019s P&amp;I and overstates interest savings. Enter months left (or the original loan amount) on the client.`); }
+  const curPay = hasCur ? (payAmortizes ? c.payment : pmt(c.balance, c.rate, curMonths)) : 0;
+  const curSched = hasCur ? amort(c.balance, c.rate, curMonths, 0, payAmortizes ? c.payment : null) : {interest:0, months:0, pay:0, points:[[0,0]], rows:[]};
+  if(hasCur && payAmortizes && c.monthsLeft>0){ const need=pmt(c.balance,c.rate,c.monthsLeft);
+    if(c.payment > need*1.10) warnings.push(`The P&amp;I entered (${money(c.payment)}) is well above what ${money(c.balance)} at ${pct(c.rate)} over ${yrsMo(c.monthsLeft)} needs (about ${money(need)}). If that figure includes taxes &amp; insurance, put it in Total payment and leave P&amp;I blank \u2014 otherwise today\u2019s payment and the savings are overstated.`);
+    else if(c.payment < need*0.90) warnings.push(`The P&amp;I entered (${money(c.payment)}) is well below what ${money(c.balance)} at ${pct(c.rate)} over ${yrsMo(c.monthsLeft)} needs (about ${money(need)}) \u2014 check the balance, rate or months left.`); }
+  if(hasCur && c.payment>0 && c.paymentTotal>0 && c.payment>=c.paymentTotal) warnings.push(`P&amp;I (${money(c.payment)}) is the same as or more than the total payment (${money(c.paymentTotal)}) \u2014 one of them is probably the PITI.`);
   const prog0=a.anProgram||"standard"; const streamline=(prog0==="fha_streamline"||prog0==="va_irrrl")&&a.anLien!=="second";
   const roll = a.anRoll==="yes" && !streamline;         /* streamlines are rate-and-term only */
   const cashOut = streamline ? 0 : (a.anCashOut||0);
@@ -1489,7 +1501,11 @@ function computeAnalysis(c){
   const debts = noc ? [] : c.debts.filter(d=>d.balance>0);
   const dBal = debts.reduce((s,d)=>s+(d.balance||0),0);
   const dPay = debts.reduce((s,d)=>s+(d.pay||0),0);
-  const dInt = debts.reduce((s,d)=>{ const x=debtInterest(d.balance,d.apr||0,(d.pay||0)+(d.extra||0)); return s+(isFinite(x)?x:d.balance*3); },0);
+  const horizon=(a.anTerm||30)*12;
+  const dNeverOff = debts.filter(d=>(d.pay||0)+(d.extra||0)>0 && !isFinite(debtInterest(d.balance,d.apr||0,(d.pay||0)+(d.extra||0))));
+  /* a debt whose payment never covers its interest: count what they'd pay over the new loan's term (all of it interest, balance never falls) */
+  const dInt = debts.reduce((s,d)=>{ const p=(d.pay||0)+(d.extra||0); const x=debtInterest(d.balance,d.apr||0,p); return s+(isFinite(x)?x:p*horizon); },0);
+  if(dNeverOff.length) warnings.push(`${dNeverOff.map(d=>esc(d.name||"A debt")).join(", ")}: the payment doesn\u2019t cover the interest, so the balance never falls. Its interest is counted over the next ${a.anTerm||30} years; check the APR and payment.`);
   const dExtraPer = debts.reduce((s,d)=>s+(d.extra||0),0);      /* what they already pay above the minimums, per debt */
   /* longest payoff at today's minimums. No APR on a debt: count it interest-free (a floor) and flag the result as an estimate; no payment: unknown */
   const dMonths = debts.length ? Math.max(...debts.map(d=>{ const p=(d.pay||0)+(d.extra||0); return p>0 ? (d.apr>0?debtMonths(d.balance,d.apr,p):Math.ceil(d.balance/p)) : 0; })) : 0;
@@ -1543,6 +1559,10 @@ function computeAnalysis(c){
   const pitiNow = (!fc && (c.paymentTotal>0 || curPay>0)) ? (c.paymentTotal>0 ? c.paymentTotal : curPay+escrowEst) : 0;
   const pitiNew = second ? pitiNow + newPay : fc ? newPay + newEscrow : newPay + escrowEst;
   const skipCash = second ? 0 : skipN * piti;
+  if(escrowIsEst && c.paymentTotal>0 && escrowEst > c.paymentTotal*0.4) warnings.push(`Estimated escrow (${money(escrowEst)}) is ${Math.round(escrowEst/c.paymentTotal*100)}% of the total payment \u2014 that usually means today\u2019s P&amp;I is understated (months remaining or P&amp;I missing). Type the escrow or P&amp;I from the statement.`);
+  /* all-in monthly: mortgage PITI plus the debts that get rolled in, today vs proposed (debts gone) */
+  const allInNow = pitiNow>0 ? pitiNow + (roll?dPay+dExtra:0) : 0;
+  const allInNew = pitiNow>0 ? pitiNew : 0;
   const curPathInterest = (second?0:curSched.interest) + (roll?dInt:0);
   /* APR: the rate that amortizes the amount financed net of prepaid finance charges (closing costs + upfront MIP)
      at the actual payment. With no costs entered we can't compute it, so the proposal shows note rate + 0.25% (estimate). */
@@ -1550,7 +1570,9 @@ function computeAnalysis(c){
   let apr=a.anRate+0.25, aprEst=true;
   if(finCharges>0 && newP>finCharges && !heloc){ const amt=newP-finCharges; let lo=a.anRate, hi=a.anRate+10;
     for(let i=0;i<50;i++){ const mid=(lo+hi)/2; if(pmt(amt,mid,n)>newPay) hi=mid; else lo=mid; } apr=(lo+hi)/2; aprEst=false; }
-  return {apr,aprEst,fc,noc,newEscrow,ltv,ladder,cust,escrowEst,escrowIsEst,pitiNow,pitiNew,second,heloc,drawYrs,ioPay,afterDrawPay,curPay,curMonths,curSched,roll,cashOut,streamline,debts,dBal,dPay,dInt,dMonths,dMonthsEst,dMonthsUnknown,dExtra,dNoApr,newP,n,newPay,newSched,outlayNow,saveMo,blended,extra,pw,pwEff,skipCash,skipN,prog,fhaS,mipAmt,escrow,curPathInterest,a};
+  const intSavedPW = isFinite(pw.interest) ? curPathInterest - pw.interest : 0;
+  const intSavedMin = curPathInterest - newSched.interest;
+  return {warnings,curMonthsSrc,allInNow,allInNew,intSavedPW,intSavedMin,dNeverOff,apr,aprEst,fc,noc,newEscrow,ltv,ladder,cust,escrowEst,escrowIsEst,pitiNow,pitiNew,second,heloc,drawYrs,ioPay,afterDrawPay,curPay,curMonths,curSched,roll,cashOut,streamline,debts,dBal,dPay,dInt,dMonths,dMonthsEst,dMonthsUnknown,dExtra,dNoApr,newP,n,newPay,newSched,outlayNow,saveMo,blended,extra,pw,pwEff,skipCash,skipN,prog,fhaS,mipAmt,escrow,curPathInterest,a};
 }
 
 function balanceChart(r){
@@ -1581,15 +1603,16 @@ function runAnalysis(){ { const n=$("anRateSrc"); if(n){ const t=rateSrcText(cur
   { const lv=$("fcLtv"); if(lv) lv.innerHTML = r.fc ? (r.ltv!=null ? `New loan <b>${money(r.newP)}</b> = <b>${(r.ltv).toFixed(1)}% LTV</b> on ${money(c.value)}${r.ltv>(c.loanType==="VA"?90:80)?` <span style="color:var(--warn)">\u2014 above ${c.loanType==="VA"?"90%":"80%"}: check the program guidelines (some lenders go higher; VA up to 100%)</span>`:""}` : `New loan <b>${money(r.newP)}</b> \u2014 add the home value to check LTV`) : ""; }
   if(r.fc||r.noc){ el.innerHTML=fcResultsHTML(c,r); return; }
   const termCut = isFinite(r.pw.months) ? r.n - r.pw.months : 0;
-  const intSavedPW = r.curPathInterest - r.pw.interest;
+  const intSavedPW = r.intSavedPW;
   el.innerHTML = `
+  ${r.warnings.length?`<div class="panel" style="border-left:4px solid var(--warn);background:#FFF8EC"><h2 style="color:var(--warn)">Check these inputs</h2><ul style="margin:4px 0 0 18px;font-size:13px;line-height:1.6">${r.warnings.map(x=>`<li>${x}</li>`).join("")}</ul></div>`:""}
   <div class="panel"><h2>${r.second?"Your debts today vs one loan":"Today vs proposed"}</h2>
     <div class="grid4">
       ${r.second?`<div class="stat" style="grid-column:1/-1;background:var(--cream-soft)"><div class="l" style="font-size:13px"><b>Debt consolidation \u2014 second mortgage.</b> ${c.balance&&c.rate?`First mortgage untouched: ${money(c.balance)} at ${pct(c.rate)}${c.payment?", "+money(c.payment)+"/mo":""}. `:""}Today: ${r.debts.length} debt${r.debts.length===1?"":"s"}, ${money(r.dBal)} owed, ${money(r.dPay)}/mo${r.blended!=null?" at "+pct(r.blended)+" blended":""}${isFinite(r.dMonths)&&r.dMonths>0?", paid off in "+yrsMo(r.dMonths)+" at today\u2019s minimums":r.dMonths===Infinity?", never paid off at today\u2019s minimums":""}. Proposed: one ${money(r.newP)} home equity loan at ${pct(r.a.anRate)} over ${r.a.anTerm} years.</div></div>`:""}
       <div class="stat"><div class="v">${money(r.outlayNow)}</div><div class="l">${r.second?"Debt payments today / mo":"Paying now / mo"+(r.roll&&r.dPay?" (mortgage "+money(r.curPay)+" + debts "+money(r.dPay)+(r.dExtra?" + "+money(r.dExtra)+" extra":"")+")":"")}</div></div>
       <div class="stat"><div class="v">${money(r.newPay)}</div><div class="l">${r.heloc?"HELOC payment during the "+r.drawYrs+"-yr draw (interest-only, variable)":r.second?"New home equity loan":"New P&amp;I"} / mo (${pct(r.a.anRate)}, ${r.a.anTerm} yr, ${money(r.newP)} loan)${r.heloc?" \u00b7 then ~"+money(r.afterDrawPay)+"/mo":""}${r.escrow?` \u00b7 ~${money(r.newPay+r.escrow)} with escrow`:""}</div></div>
       <div class="stat green"><div class="v">${money(r.saveMo)}</div><div class="l">Monthly cash-flow savings</div></div>
-      ${r.pitiNow>0?`<div class="stat" style="grid-column:1/-1;background:var(--cream-soft)"><div class="v" style="font-size:18px">${money(r.pitiNow)} \u2192 ${money(r.pitiNew)}</div><div class="l"><b>Total mortgage payment with taxes &amp; insurance (PITI)</b>, today \u2192 proposed${r.second?" (first mortgage PITI + new loan)":""}${r.escrowIsEst?" \u00b7 escrow estimated as total minus P&amp;I":""}${r.pitiNow-r.pitiNew>0?` \u00b7 <b>${money(r.pitiNow-r.pitiNew)}/mo lower</b>`:""}</div></div>`:""}
+      ${r.pitiNow>0?`<div class="stat" style="grid-column:1/-1;background:var(--cream-soft)"><div class="v" style="font-size:18px">${money(r.allInNow)} \u2192 ${money(r.allInNew)}</div><div class="l"><b>${r.roll&&r.dPay?"All-in monthly (mortgage PITI + debt payments), today \u2192 proposed (debts gone)":"Total mortgage payment with taxes &amp; insurance (PITI), today \u2192 proposed"}</b>${r.second?" (first mortgage PITI + new loan)":""}${r.roll&&r.dPay?` \u00b7 mortgage PITI alone ${money(r.pitiNow)} \u2192 ${money(r.pitiNew)}`:""}${r.escrowIsEst?" \u00b7 escrow estimated as total minus P&amp;I":""}${r.allInNow-r.allInNew>0?` \u00b7 <b>${money(r.allInNow-r.allInNew)}/mo lower</b>`:""}</div></div>`:""}
       ${r.second
         ? `<div class="stat highlight"><div class="v">Untouched</div><div class="l">Their ${pct(c.rate)} first mortgage stays exactly as-is</div></div>`
         : r.fhaS ? `<div class="stat highlight"><div class="v">Lender-paid</div><div class="l">FHA Streamline \u2014 no origination fee, closing costs paid by the lender; ${money(r.mipAmt)} upfront MIP financed</div></div>`
@@ -1609,7 +1632,8 @@ function runAnalysis(){ { const n=$("anRateSrc"); if(n){ const t=rateSrcText(cur
       <div class="stat green"><div class="v">${yrsMo(r.pw.months)}</div><div class="l">Loan paid off in (vs ${yrsMo(r.n)} minimum${r.second&&isFinite(r.dMonths)&&r.dMonths>0?"; debts today would take "+yrsMo(r.dMonths):""})</div></div>
       <div class="stat green"><div class="v">${yrsMo(termCut)}</div><div class="l">Term cut</div></div>
       <div class="stat green"><div class="v">${money(r.newSched.interest-r.pw.interest)}</div><div class="l">Interest saved vs minimum payments on new loan</div></div>
-      <div class="stat green"><div class="v">${money(intSavedPW)}</div><div class="l">Interest saved vs staying put${r.roll?" (incl. debts)":""}</div></div>
+      <div class="stat green"><div class="v">${money(intSavedPW)}</div><div class="l">Interest saved vs staying put${r.roll&&r.debts.length?" (today\u2019s mortgage + debts)":" (today\u2019s mortgage)"}</div></div>
+      <div class="stat" style="grid-column:1/-1;background:var(--cream-soft)"><div class="l" style="font-size:12.5px">How the interest math works: today\u2019s path = the interest left on the current mortgage${r.curMonthsSrc==="assumed"?" (30 years assumed)":r.curMonthsSrc==="payment"?" (months worked out from the P&amp;I entered)":""} (${money(r.curSched.interest)})${r.roll&&r.debts.length?` + what the debts cost at today\u2019s payments (${money(r.dInt)})`:""} = <b>${money(r.curPathInterest)}</b>. The new loan costs ${money(r.newSched.interest)} at the minimum payment${r.intSavedMin<0?` (<b>${money(-r.intSavedMin)} more</b> than staying put \u2014 a fresh ${r.a.anTerm}-year term always does; the savings come from paying what you pay now)`:` (${money(r.intSavedMin)} less than staying put)`}, and ${money(r.pw.interest)} paying what you pay now.</div></div>
     </div>
     ${r.cust?`<div class="grid4" style="margin-top:10px">
       <div class="stat" style="grid-column:1/-1;background:var(--cream-soft)"><div class="l" style="font-size:13px"><b>Or a set extra of ${money(r.cust.extra)}/mo</b> (${money(r.cust.pay)} total): paid off in <b>${yrsMo(r.cust.months)}</b> (${yrsMo(r.cust.cut)} sooner), <b>${money(r.curPathInterest-r.cust.interest)}</b> less interest than staying put, effective rate <b>${pct(r.cust.eff)}</b>${r.cust.pocket>0?` \u2014 and <b>${money(r.cust.pocket)}/mo</b> of the savings stays in their pocket`:""}.</div></div>
@@ -1785,7 +1809,7 @@ function proposalSingleHTML(){
   if(r.fc||r.noc) return fcProposalHTML(c,r);
   const s=state.settings; const o=selectedOption(c);
   const termCut=isFinite(r.pw.months)?r.n-r.pw.months:0;
-  const intSavedPW=r.curPathInterest-r.pw.interest;
+  const intSavedPW=r.intSavedPW;
   const benefits=[];
   /* consolidation proposals stay about the debts; the header line notes the first mortgage is unchanged */
   if(r.second&&r.dMonths===Infinity) benefits.push(`At today\u2019s minimum payments these balances <b>never pay off</b> \u2014 the consolidation loan gives them an end date of <b>${yrsMo(r.pw.months<r.n?r.pw.months:r.n)}</b>`);
@@ -1820,11 +1844,12 @@ function proposalSingleHTML(){
    <tr><td>Loan amount</td><td class="num">${money(c.balance)}</td><td class="num">${money(r.newP)}</td></tr>
    <tr><td>Interest rate</td><td class="num">${pct(c.rate)}${r.roll&&r.debts.length?` (blended with debts: ${pct(r.blended)})`:""}</td><td class="num">${pct(r.a.anRate)}${o?` \u2014 ${esc(o.lender)}${o.lock?", "+esc(o.lock)+" lock":""}`:""}</td></tr>
    <tr><td>APR${r.aprEst?" (estimated)":""}</td><td class="num"></td><td class="num">${pct(r.apr)}</td></tr>
-   <tr><td>Term</td><td class="num">${yrsMo(r.curMonths)}</td><td class="num">${r.a.anTerm} years</td></tr>
-   ${r.pitiNow>0?`<tr><td><b>Total monthly payment (PITI)</b>${r.escrowIsEst?' <span style="color:#777;font-weight:400">escrow est.</span>':""}</td><td class="num"><b>${money(r.pitiNow)}</b></td><td class="num"><b>${money(r.pitiNew)}</b></td></tr>`:""}
+   <tr><td>Term remaining</td><td class="num">${r.curMonthsSrc==="assumed"?"about ":""}${yrsMo(r.curMonths)}</td><td class="num">${r.a.anTerm} years</td></tr>
    <tr><td>Monthly principal &amp; interest</td><td class="num">${money(r.curPay)}</td><td class="num">${money(r.newPay)}</td></tr>
-   ${r.roll&&r.dPay?`<tr><td>Monthly debt payments</td><td class="num">${money(r.dPay)}</td><td class="num" style="color:#2E6B4F;font-weight:600">$0</td></tr>
-   <tr><td><b>Total monthly outlay</b></td><td class="num"><b>${money(r.outlayNow)}</b></td><td class="num"><b>${money(r.newPay)}</b></td></tr>`:""}`;
+   ${r.pitiNow>0?`<tr><td>Taxes &amp; insurance (escrow)${r.escrowIsEst?' <span style="color:#777">est.</span>':""}</td><td class="num">${money(r.escrowEst)}</td><td class="num">${money(r.escrowEst)}</td></tr>
+   <tr><td>${r.roll&&r.dPay?"Mortgage payment with taxes &amp; insurance (PITI)":"<b>Total monthly payment (PITI)</b>"}</td><td class="num">${r.roll&&r.dPay?money(r.pitiNow):"<b>"+money(r.pitiNow)+"</b>"}</td><td class="num">${r.roll&&r.dPay?money(r.pitiNew):"<b>"+money(r.pitiNew)+"</b>"}</td></tr>`:""}
+   ${r.roll&&r.dPay?`<tr><td>Monthly debt payments${r.dExtra?" (incl. "+money(r.dExtra)+" extra)":""}</td><td class="num">${money(r.dPay+r.dExtra)}</td><td class="num" style="color:#2E6B4F;font-weight:600">$0</td></tr>
+   <tr><td><b>Total going out each month</b></td><td class="num"><b>${money(r.pitiNow>0?r.allInNow:r.outlayNow)}</b></td><td class="num"><b>${money(r.pitiNow>0?r.allInNew:r.newPay)}</b></td></tr>`:""}`;
   return `
   <div class="brandbar">
     <div><img src="${s.logo||NMC_LOGO}" alt="${esc(s.co)}">
@@ -1859,17 +1884,19 @@ function proposalSingleHTML(){
   ${(()=>{ /* the stat strip shows wins only \u2014 anything that isn't a benefit simply isn't shown */
     const wins=[];
     wins.push(`<div><div class="v">${money(r.newPay)}/mo</div><div class="l">${r.second?"New second mortgage payment (minimum)":r.heloc?"Payment during the draw":"New mortgage payment (P&amp;I, minimum)"}</div></div>`);
-    if(!r.second&&r.pitiNow>0) wins.push(`<div><div class="v">${money(r.pitiNew)}/mo</div><div class="l">Total with taxes &amp; insurance (vs ${money(r.pitiNow)} today)</div></div>`);
+    if(!r.second&&r.pitiNow>0) wins.push(r.roll&&r.dPay
+      ? `<div><div class="v">${money(r.allInNew)}/mo</div><div class="l">Total going out, taxes &amp; insurance included, debts gone (vs ${money(r.allInNow)} today)</div></div>`
+      : `<div><div class="v">${money(r.pitiNew)}/mo</div><div class="l">Total with taxes &amp; insurance (vs ${money(r.pitiNow)} today)</div></div>`);
     if(r.saveMo>0) wins.push(`<div><div class="v">${money(r.saveMo)}</div><div class="l">Monthly savings</div></div>`);
-    if(!r.second&&r.skipCash>0) wins.push(`<div><div class="v">${money(r.skipCash)}</div><div class="l">Cash kept from skipped payment${r.a.anSkip===1?"":"s"}</div></div>`);
     if(r.second){ const sooner=isFinite(r.dMonths)&&r.dMonths>0 ? r.dMonths-r.pw.months : null;
       if(r.extra>0&&sooner>0) wins.push(`<div><div class="v">${yrsMo(r.pw.months)}</div><div class="l">Debt-free paying what you pay now (vs ${yrsMo(r.dMonths)} today)</div></div>`);
       else if(r.extra>0&&r.dMonths===Infinity) wins.push(`<div><div class="v">${yrsMo(r.pw.months)}</div><div class="l">Debt-free paying what you pay now (never, at today\u2019s minimums)</div></div>`); }
     else if(termCut>0) wins.push(`<div><div class="v">${yrsMo(termCut)}</div><div class="l">Sooner payoff if you pay what you pay now</div></div>`);
-    if(intSavedPW>0) wins.push(`<div><div class="v">${money(intSavedPW)}</div><div class="l">Interest saved vs today's path</div></div>`);
-    if(r.extra>0&&r.pwEff<r.a.anRate-0.05&&wins.length<4) wins.push(`<div><div class="v">${pct(r.pwEff)}</div><div class="l">Effective rate paying what you pay now</div></div>`);
-    if(r.roll&&r.debts.length&&wins.length<4) wins.push(`<div><div class="v">${money(r.dBal)}</div><div class="l">Debt paid off at closing</div></div>`);
-    return wins.length? `<div class="statline">${wins.slice(0,5).join("")}</div>` : ""; })()}
+    if(intSavedPW>0) wins.push(`<div><div class="v">${money(intSavedPW)}</div><div class="l">Interest saved paying what you pay now (vs today\u2019s ${r.roll&&r.debts.length?"mortgage + debts":"mortgage"})</div></div>`);
+    if(!r.second&&r.skipCash>0) wins.push(`<div><div class="v">${money(r.skipCash)}</div><div class="l">Cash kept from skipped payment${r.skipN===1?"":"s"}</div></div>`);
+    if(r.extra>0&&r.pwEff<r.a.anRate-0.05&&wins.length<6) wins.push(`<div><div class="v">${pct(r.pwEff)}</div><div class="l">Effective rate paying what you pay now</div></div>`);
+    if(r.roll&&r.debts.length&&wins.length<6) wins.push(`<div><div class="v">${money(r.dBal)}</div><div class="l">Debt paid off at closing</div></div>`);
+    return wins.length? `<div class="statline">${wins.slice(0,6).join("")}</div>` : ""; })()}
   ${r.cust?`<h2>Three ways to pay it</h2>
   <table><thead><tr><th></th><th class="num">Minimum payment</th><th class="num">Extra ${money(r.cust.extra)}/mo</th><th class="num">Pay what you pay now</th></tr></thead><tbody>
    <tr><td>Monthly payment</td><td class="num">${money(r.newPay)}</td><td class="num">${money(r.cust.pay)}</td><td class="num">${money(r.outlayNow)}</td></tr>
@@ -2296,14 +2323,16 @@ function addSnapScenario(){ const c=cur(); if(!c){ toast("Pick a client first");
   save(); toast("Saved \u201c"+label+"\u201d \u2014 pick it on Client proposal. Change the set-up and save again for another path."); }
 function loadSnap(id){ const c=cur(); const sc=c&&(c.scenarios||[]).find(x=>x.id===id); if(!sc||sc.kind!=="snap") return;
   applySnap(c,sc); save(); fillAnalysisInputs(); applyMode(); go("analysis"); runAnalysis(); toast("Loaded \u201c"+sc.label+"\u201d into the analysis \u2014 edit, then save it again"); }
-function snapHousehold(c,r){ const dPay=(c.debts||[]).filter(d=>d.balance>0).reduce((s,d)=>s+(d.pay||0),0); const first=r.curPay||0;
-  const today=first+dPay; const now = r.second ? first+r.newPay : r.newPay+(r.roll?0:dPay);
-  const todayInt=(r.curSched?r.curSched.interest:0)+(r.dInt||0);
-  const newInt = r.second ? (r.curSched?r.curSched.interest:0)+r.newSched.interest : r.newSched.interest+(r.roll?0:(r.dInt||0));
+function snapHousehold(c,r){ const live=(c.debts||[]).filter(d=>d.balance>0); const dPay=live.reduce((s,d)=>s+(d.pay||0)+(d.extra||0),0); const first=r.curPay||0;
+  /* debts that stay (not rolled, or a cash-out-only HEL) cost the same on both sides */
+  const dIntAll = live.reduce((s,d)=>{ const p=(d.pay||0)+(d.extra||0); const x=debtInterest(d.balance,d.apr||0,p); return s+(isFinite(x)?x:p*(r.n||360)); },0);
+  const today=first+dPay; const now = r.second ? first+r.newPay+(r.noc?dPay:0) : r.newPay+(r.roll?0:dPay);
+  const todayInt=(r.curSched?r.curSched.interest:0)+dIntAll;
+  const newInt = r.second ? (r.curSched?r.curSched.interest:0)+r.newSched.interest+(r.noc?dIntAll:0) : r.newSched.interest+(r.roll?0:dIntAll);
   return {today,now,save:today-now,dPay,todayInt,newInt}; }
 /* pay-what-you-pay-now on the household view: keep today's total outlay, the difference attacks the new loan */
 function snapPW(c,r,h){ if(!(r.extra>0)||!r.pw||!isFinite(r.pw.months)) return null;
-  const newInt = r.second ? (r.curSched?r.curSched.interest:0)+r.pw.interest : r.pw.interest+(r.roll?0:(r.dInt||0));
+  const newInt = h.newInt - r.newSched.interest + r.pw.interest;   /* same household, accelerated new loan */
   return {extra:r.extra, months:r.pw.months, eff:r.pwEff, newInt, saved:h.todayInt-newInt, cut:r.n-r.pw.months}; }
 function programMatrix(c,snaps,recId){
   const comps=snaps.map(sc=>({sc,r:computeSnap(c,sc)})).filter(x=>x.r).map(x=>Object.assign(x,{h:snapHousehold(c,x.r)})).map(x=>Object.assign(x,{p:snapPW(c,x.r,x.h)}));
@@ -2320,6 +2349,7 @@ function programMatrix(c,snaps,recId){
   ${row("APR",x=>pct(x.r.apr)+(x.r.aprEst?"*":""))}
   ${row("New loan payment (minimum)",x=>money(x.r.newPay)+"/mo"+(x.r.second?" on the second":""))}
   ${comps.some(x=>x.r.pitiNow>0)?row("Mortgage payment with taxes &amp; insurance (PITI): today \u2192 new",x=>x.r.pitiNow>0?money(x.r.pitiNow)+" \u2192 "+money(x.r.pitiNew)+(x.r.escrowIsEst?"*":""):"\u2014"):""}
+  ${comps.some(x=>x.r.pitiNow>0&&x.r.roll&&x.r.dPay>0)?row("All-in with debt payments: today \u2192 new (debts gone)",x=>x.r.pitiNow>0&&x.r.roll&&x.r.dPay>0?money(x.r.allInNow)+" \u2192 "+money(x.r.allInNew):"\u2014"):""}
   ${comps.some(x=>x.r.second)?row("All mortgage payments (principal &amp; interest)",x=>x.r.second?money(x.r.curPay)+" current mortgage (unchanged) + "+money(x.r.newPay)+" new second = "+money(x.r.curPay+x.r.newPay):money(x.r.newPay)+"/mo"):""}
   ${anyDebts?row("Debts paid off at closing",x=>(x.r.roll||x.r.second)&&x.r.dBal>0?money(x.r.dBal)+" \u2014 "+money(x.r.dPay)+"/mo gone":x.r.streamline?"":"\u2014 debts stay as they are"):""}
   ${row("What goes out each month today (mortgage + debts)",x=>money(x.h.today))}
