@@ -69,6 +69,7 @@ body.mode-fha #debtPanel,body.mode-va #debtPanel{display:none}
 .loancheck.warn{background:#FFF8EC;border-color:#E8CFA0}
 .loancheck .t{font-weight:700;margin-bottom:4px}.loancheck.warn .t{color:var(--warn)}.loancheck.ok .t{color:#2E6B4F}
 .loancheck ul{margin:0 0 0 18px;padding:0}.loancheck li{margin:2px 0}
+#s-client input.flagged{border-color:#D9A441;box-shadow:0 0 0 3px #F6E7C4;background:#FFFDF7}
 body.mode-fc .m-skip,body.mode-fc .m-refi{display:none}.m-fc{display:none}body.mode-fc .m-fc{display:block}body.mode-fc span.m-fc{display:inline}body.mode-fc button.m-fc{display:inline-flex}body.mode-fc .not-fc{display:none}
 #debtTable table{table-layout:auto}#debtTable td:first-child input{min-width:170px}#debtTable select{min-width:120px}#debtTable input.num{width:96px;min-width:96px}#debtTable td:nth-child(3) input{width:120px}
 .m-noc{display:none}body.mode-second .m-noc{display:block}body.mode-second.noc .m-noc-x{display:block}body.mode-second.noc #debtPanel{display:none}
@@ -356,6 +357,7 @@ table.data tr.rec td{background:var(--cream)}
             <div class="field"><label>Rate alert — tell me when the feed hits (%)</label>
               <div class="chiprow"><input type="number" data-f="targetRate" step="0.125" placeholder="e.g. 6.25" style="width:110px;flex:0 0 110px">
                 <button class="chip" onclick="setTarget(0.5)">½ below</button><button class="chip" onclick="setTarget(0.75)">¾ below</button><button class="chip" onclick="setTarget(1)">1 below</button><button class="chip" onclick="setTarget(null)">clear</button></div></div>
+            <div class="field"><label>Seasoning \u2014 eligible on <span class="hint" style="display:inline">(heads-up a few days before)</span></label><div class="chiprow"><input type="date" data-f="seasonDate" style="flex:1"><button class="chip" onclick="setSeason(6)">6 mo</button><button class="chip" onclick="setSeason(12)">12 mo</button><button class="chip" onclick="setSeason(null)">clear</button></div><div class="hint" id="seasonHint" style="margin-top:4px"></div></div>
             <div class="field"><label>Client time zone <span class="hint" style="display:inline">(NMC is Eastern)</span></label><select data-f="tz">
               <option value="">Auto from phone / address</option><option value="America/New_York">Eastern</option><option value="America/Chicago">Central</option><option value="America/Denver">Mountain</option><option value="America/Phoenix">Arizona (no DST)</option><option value="America/Los_Angeles">Pacific</option><option value="America/Anchorage">Alaska</option><option value="Pacific/Honolulu">Hawaii</option></select></div>
             <div class="field" style="grid-column:1/-1"><label>Notes</label><textarea data-f="notes" style="min-height:70px;font-family:inherit"></textarea></div>
@@ -718,6 +720,7 @@ Discover 6,100 190 24.9"></textarea>
             </div>
             <div class="hint" id="feedStatus" style="margin-top:6px"></div>
             <div class="field" style="margin-top:8px;max-width:220px"><label>Monthly folder goal</label><input type="number" id="setGoal" placeholder="15" onchange="saveSettingsFromUI()"></div>
+            <div class="field" style="margin-top:8px;max-width:220px"><label>Seasoning heads-up (days before)</label><input type="number" id="setSeasonLead" placeholder="7" onchange="saveSettingsFromUI()"></div>
             <input type="hidden" id="setFeed"><input type="checkbox" id="setPoll" style="display:none"><input type="hidden" id="setReport"><input type="hidden" id="setTeam">
           </div>
         </div>
@@ -825,7 +828,7 @@ const DEFAULT_SFMAP = {
   servicer:["servicer","current lender","current servicer","lender"],
   loanType:["loan type","product","loan product","program"]
 };
-const FIELD_LABELS = {name:"Name",phone:"Phone",email:"Email",address:"Address",balance:"Balance",autoPay:"Auto-calc payments",origAmount:"Original loan amount",taxAnnual:"Annual taxes",insAnnual:"Annual insurance",followUpTime:"Follow-up time",rate:"Rate",payment:"Payment",monthsLeft:"Months left",value:"Home value",fico:"FICO",servicer:"Servicer",loanType:"Loan type",notes:"Notes",paymentTotal:"Total payment (PITI)",escrow:"Escrow",targetRate:"Rate alert",tz:"Time zone"};
+const FIELD_LABELS = {name:"Name",phone:"Phone",email:"Email",address:"Address",balance:"Balance",autoPay:"Auto-calc payments",origAmount:"Original loan amount",taxAnnual:"Annual taxes",insAnnual:"Annual insurance",followUpTime:"Follow-up time",rate:"Rate",payment:"Payment",monthsLeft:"Months left",value:"Home value",fico:"FICO",servicer:"Servicer",loanType:"Loan type",notes:"Notes",paymentTotal:"Total payment (PITI)",escrow:"Escrow",targetRate:"Rate alert",seasonDate:"Seasoning date",tz:"Time zone"};
 
 let state = {
   clients: [], currentId: null, blocks: [], live: null, rateHistory: [], teamCache: null, templates:{mine:[],company:null,shared:[]}, tools:{}, inbox:[], schema: 4,
@@ -913,7 +916,7 @@ function debtInterest(bal, apr, pay){ const m=debtMonths(bal,apr,pay); return is
 function cur(){ return state.clients.find(c=>c.id===state.currentId) || null; }
 function blankClient(){ return {id:"c"+Date.now()+Math.floor(Math.random()*999), name:"New client", status:"New lead", quick:false,
   phone:"",email:"",address:"",balance:null,rate:null,payment:null,monthsLeft:null,value:null,fico:null,
-  servicer:"",loanType:"Conventional",followUp:"",notes:"",paymentTotal:null,escrow:null,autoPay:false,origAmount:null,origTerm:30,freeClear:false,taxAnnual:null,insAnnual:null,targetRate:null,tz:"",followUpTime:"",log:[],debts:[],debtsTrash:[],options:[],scenarios:[],library:[],prop:{included:[],rec:"",why:""},cmp:{pwypn:false,rec:"",why:"",include:false},
+  servicer:"",loanType:"Conventional",followUp:"",seasonDate:"",notes:"",paymentTotal:null,escrow:null,autoPay:false,origAmount:null,origTerm:30,freeClear:false,taxAnnual:null,insAnnual:null,targetRate:null,tz:"",followUpTime:"",log:[],debts:[],debtsTrash:[],options:[],scenarios:[],library:[],prop:{included:[],rec:"",why:""},cmp:{pwypn:false,rec:"",why:"",include:false},
   analysis:{anRate:null,anTerm:30,anCosts:0,anCashOut:0,anSkip:1,anRoll:"yes",anLien:"refi"}}; }
 function newClient(){ const c=blankClient(); state.clients.unshift(c); state.currentId=c.id; save(); refreshAll(); go("client"); toast("New client added"); }
 function newQuickQuote(){ const c=blankClient(); c.quick=true;
@@ -978,11 +981,11 @@ function monthsFromOrig(c){ if(!(c.origAmount>0&&c.balance>0&&c.rate>0&&c.origAm
    so the banker can tell a stale rate from an APR, a PITI typed as P&I, a balance that includes a second lien, or a client who doesn't escrow. */
 function impliedRate(B,P,n){ if(!(B>0&&P>0&&n>0)||P*n<=B) return null; let lo=0,hi=30; for(let i=0;i<60;i++){ const m=(lo+hi)/2; if(pmt(B,m,n)>P) hi=m; else lo=m; } return (lo+hi)/2; }
 function loanCheck(c){
-  if(!c||c.freeClear) return {status:"none",lines:[]};
+  if(!c||c.freeClear) return {status:"none",lines:[],fields:new Set()};
   const B=c.balance, r=c.rate, P=c.payment, T=c.paymentTotal, E=c.escrow;
-  if(!(B>0&&r>0)) return {status:"none",lines:[]};
-  const lines=[]; let status="ok";
-  const warn=h=>{ status="warn"; lines.push(h); }; const note=h=>lines.push(h);
+  if(!(B>0&&r>0)) return {status:"none",lines:[],fields:new Set()};
+  const lines=[]; let status="ok"; const fields=new Set();
+  const warn=(h,...fs)=>{ status="warn"; lines.push(h); fs.forEach(f=>fields.add(f)); }; const note=h=>lines.push(h);
   const io=B*r/1200;
   const fromPay = !(c.monthsLeft>0) && P>io+0.01;   /* months blank but P&I typed: the term comes from the P&I, so there's nothing to compare it against */
   const n = c.monthsLeft>0 ? c.monthsLeft : fromPay ? Math.max(1,Math.round(debtMonths(B,r,P))) : 360;
@@ -995,20 +998,20 @@ function loanCheck(c){
   /* --- P&I entered --- */
   if(P>0){
     if(P<=io+0.01){
-      warn(`<b>P&amp;I ${money(P)} doesn\u2019t cover the interest.</b> ${money(B)} at ${pct(r)} costs ${money(io)}/mo in interest alone, so the loan would never pay down \u2014 the balance, the rate or the P&amp;I is wrong. ${alt(P)}`);
+      warn(`<b>P&amp;I ${money(P)} doesn\u2019t cover the interest.</b> ${money(B)} at ${pct(r)} costs ${money(io)}/mo in interest alone, so the loan would never pay down \u2014 the balance, the rate or the P&amp;I is wrong. ${alt(P)}`,"balance","rate","payment");
       if(T>0&&T>P) note(`The total payment (${money(T)}) is bigger than this P&amp;I, so ${money(P)} isn\u2019t a PITI typed in the wrong box.`);
     } else if(fromPay){
       note(`${money(P)} at ${pct(r)} on ${money(B)} pays off in <b>${yrsMo(n)}</b> \u2014 that\u2019s what the analysis uses for months remaining${n>360?" (longer than 30 years: the rate may be an APR, or the balance includes something else)":""}.`);
-      if(n>372) status="warn";
+      if(n>372){ status="warn"; fields.add("rate"); fields.add("balance"); }
     } else {
       const gap=P-need, pctGap=gap/need;
       if(Math.abs(pctGap)<=0.03) note(`<b>P&amp;I checks out.</b> ${money(B)} at ${pct(r)} over ${yrsMo(n)} (${nSrc}) needs about ${money(need)}; ${money(P)} is within ${Math.abs(Math.round(gap))>0?money(Math.abs(gap)):"a dollar"}.`);
       else if(pctGap>0){
-        warn(`<b>P&amp;I ${money(P)} is ${money(gap)} more than this loan needs</b> (${money(B)} at ${pct(r)} over ${yrsMo(n)}, ${nSrc} = ${money(need)}).`);
+        warn(`<b>P&amp;I ${money(P)} is ${money(gap)} more than this loan needs</b> (${money(B)} at ${pct(r)} over ${yrsMo(n)}, ${nSrc} = ${money(need)}).`,"payment",gap>=150?"paymentTotal":"rate");
         if(gap>=150){ note(`Most likely it <b>includes taxes &amp; insurance</b> \u2014 that would make escrow about ${money(gap)}${T>0&&Math.abs(T-P)<1?", and the total matches it exactly":T>0?", though the total entered is "+money(T):""}. If so, put ${money(P)} in Total payment and leave P&amp;I blank (or type the real P&amp;I of about ${money(need)}).`); }
         note(alt(P));
       } else {
-        warn(`<b>P&amp;I ${money(P)} is ${money(-gap)} less than this loan needs</b> (${money(B)} at ${pct(r)} over ${yrsMo(n)}, ${nSrc} = ${money(need)}).`);
+        warn(`<b>P&amp;I ${money(P)} is ${money(-gap)} less than this loan needs</b> (${money(B)} at ${pct(r)} over ${yrsMo(n)}, ${nSrc} = ${money(need)}).`,"rate","balance","payment");
         const ir=impliedRate(B,P,n);
         if(ir!=null && r-ir>0.15 && r-ir<0.6) note(`A gap that size is usually <b>APR vs note rate</b>: ${money(P)} fits a note rate of about <b>${fmtRate(ir)}</b> \u2014 ${pct(r)} may be the APR off a disclosure or a stale Salesforce rate. Check the statement or Closing Disclosure.`);
         if(P-io<Math.max(60,P*0.04)) note(`${money(P)} is barely above interest-only (${money(io)}) \u2014 could be an interest-only or 40-year product, or a payment from a buydown period.`);
@@ -1021,18 +1024,21 @@ function loanCheck(c){
   if(T>0){
     const pi = P>0 ? P : need;
     const esc_ = T-pi;
-    if(T<pi-1 && !(P>0)) warn(`<b>Total payment ${money(T)} is below the P&amp;I this loan needs</b> (${money(need)} for ${money(B)} at ${pct(r)} over ${yrsMo(n)}). Either the total is just P&amp;I and the rate/balance is off (${money(T)} fits about ${pct(impliedRate(B,T,n)||0)}), or the balance includes a second lien or HELOC.`);
+    if(T<pi-1 && !(P>0)) warn(`<b>Total payment ${money(T)} is below the P&amp;I this loan needs</b> (${money(need)} for ${money(B)} at ${pct(r)} over ${yrsMo(n)}). Either the total is just P&amp;I and the rate/balance is off (${money(T)} fits about ${pct(impliedRate(B,T,n)||0)}), or the balance includes a second lien or HELOC.`,"paymentTotal","rate","balance");
     else if(!(P>0) && esc_>=0 && esc_<60) note(`<b>Total ${money(T)} is essentially the P&amp;I</b> (${money(need)} needed) \u2014 this client probably <b>doesn\u2019t escrow</b>; taxes &amp; insurance are paid outside the payment. Leave escrow blank, or type them as escrow if you want them in the cash-flow picture.`);
     else if(!(P>0) && esc_>=60) note(`With P&amp;I blank, escrow is read as total minus the ${money(need)} the loan needs = <b>${money(esc_)}/mo</b>${esc_>T*0.45?" \u2014 that\u2019s "+Math.round(esc_/T*100)+"% of the payment, which is high; months remaining or the rate may be off, understating today\u2019s P&amp;I":""}.`);
-    if(P>0 && E>0 && Math.abs(P+E-T)>2) warn(`P&amp;I ${money(P)} + escrow ${money(E)} = ${money(P+E)}, but the total is ${money(T)} (${money(Math.abs(T-P-E))} ${T>P+E?"more":"less"}). One of the three is off \u2014 the proposal uses the total as today\u2019s PITI.`);
+    if(P>0 && E>0 && Math.abs(P+E-T)>2) warn(`P&amp;I ${money(P)} + escrow ${money(E)} = ${money(P+E)}, but the total is ${money(T)} (${money(Math.abs(T-P-E))} ${T>P+E?"more":"less"}). One of the three is off \u2014 the proposal uses the total as today\u2019s PITI.`,"payment","escrow","paymentTotal");
     if(P>0 && !(E>0) && Math.abs(T-P)<1) note(`<b>Total equals P&amp;I</b> \u2014 either this client <b>doesn\u2019t escrow</b> (taxes &amp; insurance paid on their own), or the PITI was typed into both boxes.`);
     else if(P>0 && !(E>0) && T-P>0 && T-P<60) note(`Total and P&amp;I are within ${money(T-P)} \u2014 this client probably <b>doesn\u2019t escrow</b>.`);
   }
   /* --- months --- */
-  if(!(c.monthsLeft>0)){ if(P>0&&P>io) note(`Months remaining is blank \u2014 the analysis works it out from the P&amp;I (${yrsMo(debtMonths(B,r,P))} at ${pct(r)}).`); else warn(`<b>Months remaining is blank</b> \u2014 30 years is assumed. Type it, or the original loan amount and the app works it out.`); }
+  if(!(c.monthsLeft>0)){ if(P>0&&P>io) note(`Months remaining is blank \u2014 the analysis works it out from the P&amp;I (${yrsMo(debtMonths(B,r,P))} at ${pct(r)}).`); else warn(`<b>Months remaining is blank</b> \u2014 30 years is assumed. Type it, or the original loan amount and the app works it out.`,"monthsLeft"); }
   else if(c.origAmount>0 && c.origAmount>B){ const m=monthsFromOrig(c); if(m && Math.abs(m.monthsLeft-c.monthsLeft)>6) note(`Original amount ${money(c.origAmount)} at ${pct(r)} over ${c.origTerm||30} years would leave ${yrsMo(m.monthsLeft)}, but months remaining says ${yrsMo(c.monthsLeft)}. (Extra principal paid along the way would explain it.)`); }
-  return {status,lines};
+  return {status,lines,fields};
 }
+/* amber outline on the inputs a finding points at \u2014 flags only, nothing is changed */
+function flagLoanFields(c){ const k=c?loanCheck(c):{fields:new Set()};
+  document.querySelectorAll("#s-client [data-f]").forEach(el=>el.classList.toggle("flagged", k.fields.has(el.dataset.f))); }
 function loanCheckHTML(c){ const k=loanCheck(c); if(k.status==="none"||!k.lines.length) return "";
   return `<div class="loancheck ${k.status}"><div class="t">${k.status==="warn"?"\u26A0 Loan check \u2014 something doesn\u2019t add up":"\u2713 Loan check"}</div><ul>${k.lines.map(l=>`<li>${l}</li>`).join("")}</ul></div>`; }
 function payHintText(c){ if(!c) return "";
@@ -1089,6 +1095,16 @@ async function fetchAVM(){ const c=cur(); if(!c){ toast("Pick a client first"); 
     c.value=j.value; c.valueSrc={type:"avm",source:j.source,asOf:j.asOf,low:j.low,high:j.high,confidence:j.confidence}; save(); fillClientForm(); ltvHint(); renderClientBar();
     toast("Value set to "+money(j.value)+" from "+(j.source||"the AVM"));
   }catch(e){ if(vs) vs.textContent="Hub unreachable \u2014 try again when connected, or use the Pennymac link."; } }
+/* seasoning: N months from today (or from the Salesforce close date when it's on file) */
+function setSeason(months){ const c=cur(); if(!c) return;
+  if(months==null){ c.seasonDate=""; } else { const d=new Date(); d.setMonth(d.getMonth()+months); c.seasonDate=d.toISOString().slice(0,10); }
+  save(); fillClientForm(); renderPipeline(); toast(c.seasonDate?"Seasoning date set \u2014 "+c.seasonDate:"Seasoning date cleared"); }
+const seasonLead=()=>+(state.settings.seasonLead)||7;
+function seasonDays(c){ if(!c.seasonDate) return null; const t=new Date(); t.setHours(0,0,0,0); const d=new Date(c.seasonDate+"T00:00:00"); return Math.round((d-t)/86400000); }
+function seasonInfo(c){ const n=seasonDays(c); if(n==null||isDone(c)) return null;
+  if(n<=0) return {tag:"tag-good", txt:"\uD83D\uDCC5 Seasoned "+(n===0?"today":Math.abs(n)+" day"+(n===-1?"":"s")+" ago")+" \u2014 eligible, follow up", due:true};
+  if(n<=seasonLead()) return {tag:"tag-warn", txt:"\uD83D\uDCC5 Seasons in "+n+" day"+(n===1?"":"s")+" ("+c.seasonDate+") \u2014 line up the follow-up", due:true};
+  return {tag:"tag-flat", txt:"\uD83D\uDCC5 Seasons "+c.seasonDate, due:false}; }
 function setTarget(delta){ const c=cur(); if(!c) return; c.targetRate = delta==null? null : (c.rate? +(c.rate-delta).toFixed(3) : null);
   save(); fillClientForm(); renderPipeline(); toast(c.targetRate? "Alert set for "+pct(c.targetRate) : "Rate alert cleared"); }
 function bindClientFields(){
@@ -1102,7 +1118,7 @@ function bindClientFields(){
       normalizePayment(c,f);
       if(f==="value") c.valueSrc={type:"manual",when:todayStr()};
       ["payment","escrow","paymentTotal","monthsLeft","origAmount"].forEach(k=>{ if(k!==f){ const o=document.querySelector(`#s-client [data-f="${k}"]`); if(o) o.value=c[k]==null?"":c[k]; } });
-      { const ph=$("payHint"); if(ph) ph.innerHTML=payHintText(c); const lc=$("loanCheck"); if(lc) lc.innerHTML=loanCheckHTML(c); }
+      { const ph=$("payHint"); if(ph) ph.innerHTML=payHintText(c); const lc=$("loanCheck"); if(lc) lc.innerHTML=loanCheckHTML(c); flagLoanFields(c); }
       save(); if(f==="name") renderPickers(); renderPipeline(); ltvHint(); renderClientBar(); });
   });
 }
@@ -1115,7 +1131,8 @@ function fillClientForm(){ const c=cur();
     ? `<span class="tag-warn">Not in pipeline</span> <button class="btn small" onclick="promoteQuick()">Save to pipeline</button>`
     : `<span class="tag-good">In pipeline</span>`);
   ltvHint(); const vs=$("valueSrc"); if(vs) vs.innerHTML=valueSrcText(c);
-  const ph=$("payHint"); if(ph) ph.innerHTML=payHintText(c); { const lc=$("loanCheck"); if(lc) lc.innerHTML=loanCheckHTML(c); }
+  const ph=$("payHint"); if(ph) ph.innerHTML=payHintText(c); { const lc=$("loanCheck"); if(lc) lc.innerHTML=loanCheckHTML(c); flagLoanFields(c); }
+  { const sh=$("seasonHint"); if(sh){ const si=c?seasonInfo(c):null; sh.innerHTML = si ? `<span class="${si.tag}">${si.txt}</span>` : ""; } }
   const fa=$("fuActions"); if(fa) fa.innerHTML=c?fuButtons(c,false):""; const fl=$("fuLog"); if(fl) fl.innerHTML=c?fuLogHTML(c):"";
   const dc=$("dispoChips"); if(dc){ dc.innerHTML = !c ? "" : STATUSES.map(st=>`<button class="chip${c.status===st?" on":""}" ${c.status===st?'style="background:var(--brand);color:#fff;border-color:var(--brand)"':''} onclick="dispo('${st.replace(/'/g,"\\'")}')">${st}</button>`).join("");
     const dh=$("dispoHint"); if(dh) dh.innerHTML = !c ? "" : c.status===S_RATE ? `Needs the market at <b>${c.targetRate>0?pct(c.targetRate):"\u2014 set the rate alert above"}</b> \u2014 they\u2019ll show under \uD83D\uDD25 Hot now when the feed gets there.`
@@ -1128,8 +1145,17 @@ function ltvHint(){ const c=cur(); const el=$("clientLtv"); if(!c||!c.balance||!
 /* ---------- pipeline ---------- */
 function feedRateFor(c){ if(!state.rates||!state.rates.rates) return null;
   const r=state.rates.rates; return r[c.loanType] ?? r["Conventional"] ?? Object.values(r)[0] ?? null; }
+const rateDrop=c=>(c.targetRate>0&&c.rate>0)?+(c.rate-c.targetRate).toFixed(3):null;   /* how far the market has to move for this client */
+const onRateWatch=c=>!c.quick&&!isDone(c)&&c.targetRate>0;
+function rateWatchList(){ return state.clients.filter(onRateWatch).sort((a,b)=>(rateDrop(a)??9)-(rateDrop(b)??9)); }
+function rateWatchText(){ const L=rateWatchList(); if(!L.length) return "";
+  return `Rate watch \u2014 ${L.length} client${L.length===1?"":"s"} waiting on a drop (${new Date().toLocaleDateString("en-US")})\n`+L.map(c=>{ const d=rateDrop(c);
+    return `\u2022 ${c.name}: ${c.loanType}${c.balance?", "+money(c.balance):""}${c.rate?", now "+pct(c.rate):""} \u2192 needs ${pct(c.targetRate)}${d!=null?" ("+d.toFixed(3).replace(/0+$/,"").replace(/\.$/,"")+" lower)":""}${c.seasonDate?", seasoned "+c.seasonDate:""}`; }).join("\n"); }
+function copyRateWatch(){ const t=rateWatchText(); if(!t){ toast("No one is on rate watch"); return; }
+  (navigator.clipboard&&navigator.clipboard.writeText ? navigator.clipboard.writeText(t) : Promise.reject()).then(()=>toast("Rate-watch list copied"),()=>prompt("Copy this:",t)); }
 function opportunity(c){ const fr=feedRateFor(c);
   if(targetHit(c)) return {tag:"tag-good", txt:"Rate alert hit \u2014 feed "+pct(fr)+" \u2264 target "+pct(c.targetRate)};
+  if(c.targetRate>0 && fr==null){ const d=rateDrop(c); return {tag:"tag-flat", txt:"\u23F3 Waiting for "+pct(c.targetRate)+(d!=null?" \u2014 "+pct(d)+" below their rate":"")}; }
   if(c.targetRate>0 && fr!=null) return {tag:"tag-flat", txt:"Waiting for "+pct(c.targetRate)+" \u2014 "+(fr-c.targetRate).toFixed(3)+"% more drop needed"};
   if(fr!=null && c.rate!=null && c.rate-fr>=0.5) return {tag:"tag-good", txt:"Streamline window \u2014 market is "+(c.rate-fr).toFixed(2)+"% below their rate"};
   if(fr!=null && c.rate!=null && c.rate-fr>0 && c.rate-fr<0.5) return {tag:"tag-flat", txt:"Watching \u2014 "+(0.5-(c.rate-fr)).toFixed(2)+"% more drop needed"};
@@ -1144,34 +1170,39 @@ function pipeAlerts(){
   const hotSet=new Set(eligibleIds());
   const hot=state.clients.filter(c=>act(c)&&hotSet.has(c.id));
   const due=state.clients.filter(c=>act(c)&&c.followUp&&c.followUp<=today);
+  const season=state.clients.filter(c=>act(c)&&(seasonInfo(c)||{}).due).sort((a,b)=>seasonDays(a)-seasonDays(b));
+  const ratewatch=rateWatchList();
   const watch=state.clients.filter(c=>{ if(!act(c)||hotSet.has(c.id)) return false; const fr=feedRateFor(c);
     if(c.targetRate>0&&fr!=null) return true;
     return fr!=null&&c.rate!=null&&c.rate-fr>0&&c.rate-fr<0.5; });
-  return {hot,due,watch};
+  return {hot,due,watch,season,ratewatch};
 }
 function renderPipeline(){
   const filt=$("pipeFilter"); if(filt.options.length<=1)
     STATUSES.forEach(s=>{const o=document.createElement("option");o.textContent=s;filt.appendChild(o);});
   const al=pipeAlerts();
-  const hs=new Set(al.hot.map(c=>c.id)), ds=new Set(al.due.map(c=>c.id)), ws=new Set(al.watch.map(c=>c.id));
+  const hs=new Set(al.hot.map(c=>c.id)), ds=new Set(al.due.map(c=>c.id)), ws=new Set(al.watch.map(c=>c.id)), ss=new Set(al.season.map(c=>c.id)), rs=new Set(al.ratewatch.map(c=>c.id));
   const chips=$("pipeChips"); if(chips){
     const chip=(v,l,n)=>`<button class="btn small ${pipeView===v?"":"ghost "}" onclick="setPipeView('${v}')">${l}${n!=null?" ("+n+")":""}</button>`;
     const sentN=state.clients.filter(c=>!c.quick&&c.proposalSent&&!isDone(c)).length;
-    chips.innerHTML=chip("all","All")+chip("hot","\uD83D\uDD25 Hot now",al.hot.length)+chip("due","Follow-ups due",al.due.length)+chip("watch","Watching",al.watch.length)+chip("sent","Proposal sent",sentN); }
+    chips.innerHTML=chip("all","All")+chip("hot","\uD83D\uDD25 Hot now",al.hot.length)+chip("due","Follow-ups due",al.due.length)+chip("ratewatch","\u23F3 Rate watch",al.ratewatch.length)+chip("season","\uD83D\uDCC5 Seasoning",al.season.length)+(al.watch.length?chip("watch","Watching",al.watch.length):"")+chip("sent","Proposal sent",sentN); }
   const f=filt.value;
   const rows=state.clients.filter(c=>!c.quick && (!f||c.status===f) &&
-    (pipeView==="all" || (pipeView==="hot"&&hs.has(c.id)) || (pipeView==="due"&&ds.has(c.id)) || (pipeView==="watch"&&ws.has(c.id)) || (pipeView==="sent"&&c.proposalSent&&!isDone(c))));
+    (pipeView==="all" || (pipeView==="hot"&&hs.has(c.id)) || (pipeView==="due"&&ds.has(c.id)) || (pipeView==="watch"&&ws.has(c.id)) || (pipeView==="ratewatch"&&rs.has(c.id)) || (pipeView==="season"&&ss.has(c.id)) || (pipeView==="sent"&&c.proposalSent&&!isDone(c))))
+    .sort((a,b)=> pipeView==="ratewatch" ? (rateDrop(a)??9)-(rateDrop(b)??9) : pipeView==="season" ? seasonDays(a)-seasonDays(b) : 0);
   const bar=(al.hot.length||al.due.length)?`<div style="background:var(--cream);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.8">\uD83D\uDD14 ${al.hot.length?`<b>${al.hot.length} hot right now:</b> ${al.hot.map(c=>`<a href="#" onclick="pickClient('${c.id}');go('analysis');return false" style="color:var(--brand);font-weight:600">${esc(c.name)}</a>`).join(", ")}. `:""}${al.due.length?`<b>${al.due.length} follow-up${al.due.length===1?"":"s"} due:</b> ${al.due.map(c=>`<a href="#" onclick="pickClient('${c.id}');go('client');return false" style="color:var(--ink)">${esc(c.name)}</a>`).join(", ")}.`:""}</div>`:"";
+  const seasonBar = al.season.length && pipeView!=="season" ? `<div style="background:var(--cream);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.8">\uD83D\uDCC5 <b>Seasoning:</b> ${al.season.map(c=>{ const n=seasonDays(c); return `<a href="#" onclick="pickClient('${c.id}');go('client');return false" style="color:var(--brand);font-weight:600">${esc(c.name)}</a> <span class="hint">(${n<=0?"eligible now":"in "+n+" day"+(n===1?"":"s")})</span>`; }).join(", ")} \u2014 <a href="#" onclick="setPipeView('season');return false">view</a></div>` : "";
+  const rwBar = pipeView==="ratewatch" ? `<div class="btnrow" style="background:var(--cream);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px"><span>\u23F3 <b>${al.ratewatch.length}</b> waiting on a rate drop, smallest drop first \u2014 paste this list to capital markets when the market moves.</span><span style="flex:1"></span><button class="btn small" onclick="copyRateWatch()">Copy list</button></div>` : "";
   const inbox=(state.inbox||[]);
   const ib = inbox.length? `<div style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px">
     <b>New from Salesforce (${inbox.length})</b>
     ${inbox.map(it=>`<div class="btnrow" style="margin-top:6px"><span><b>${esc(it.fields.name)}</b>${it.fields.balance?` \u00b7 ${money(num(it.fields.balance))}`:""}${it.fields.rate?` @ ${pct(num(it.fields.rate))}`:""}${it.fields.leadStatus?` \u00b7 ${esc(it.fields.leadStatus)}`:""}</span><span style="flex:1"></span>
       <button class="btn small" onclick="importInbox('${it.id}')">Import</button><button class="btn ghost small" onclick="ackInbox('${it.id}')">Ignore</button></div>`).join("")}</div>` : "";
-  $("pipeTable").innerHTML = ib + bar + (!rows.length ? `<div class="empty">${pipeView!=="all"?"Nothing in this view right now \u2014 that can change with the next rate push.":"No pipeline clients yet. Add one, paste a Salesforce record, or load the samples in Settings."}</div>` :
+  $("pipeTable").innerHTML = ib + bar + seasonBar + rwBar + (!rows.length ? `<div class="empty">${pipeView!=="all"?"Nothing in this view right now \u2014 that can change with the next rate push.":"No pipeline clients yet. Add one, paste a Salesforce record, or load the samples in Settings."}</div>` :
   `<table class="data"><thead><tr><th>Client</th><th>Status</th><th class="num">Balance</th><th class="num">Rate</th><th class="num">P&amp;I</th><th>Follow-up</th><th>Opportunity</th><th></th></tr></thead><tbody>`+
   rows.map(c=>{ const op=opportunity(c);
     return `<tr><td><b>${esc(c.name)}</b><br><span class="hint">${esc(c.loanType)}${c.servicer?" \u00b7 "+esc(c.servicer):""}</span></td>
-    <td><span class="${c.status===S_DONE?"tag-good":c.status==="Lost"?"tag-warn":c.status===S_RATE?"tag-flat":"tag-flat"}">${esc(c.status)}${c.status===S_RATE&&c.targetRate>0?" \u00b7 needs "+pct(c.targetRate):""}</span>${c.proposalSent?`<br><span class="tag-good" style="margin-top:3px">proposal sent ${esc(c.proposalSent)}${c.proposalsSent>1?" ("+c.proposalsSent+")":""}</span>`:""}</td>
+    <td><span class="${c.status===S_DONE?"tag-good":c.status==="Lost"?"tag-warn":c.status===S_RATE?"tag-flat":"tag-flat"}">${esc(c.status)}</span>${c.targetRate>0&&!isDone(c)?`<br><span class="${targetHit(c)?"tag-good":"tag-flat"}" style="margin-top:3px" title="Rate watch">\u23F3 needs ${pct(c.targetRate)}${rateDrop(c)!=null?" (\u2212"+pct(rateDrop(c))+")":""}</span>`:""}${(()=>{ const si=seasonInfo(c); return si?`<br><span class="${si.tag}" style="margin-top:3px">${si.txt.replace(/ \u2014 .*$/,"")}</span>`:""; })()}${c.proposalSent?`<br><span class="tag-good" style="margin-top:3px">proposal sent ${esc(c.proposalSent)}${c.proposalsSent>1?" ("+c.proposalsSent+")":""}</span>`:""}</td>
     <td class="num">${c.freeClear?'<span class="tag-good">free &amp; clear</span>':money(c.balance)}</td><td class="num">${c.freeClear?"\u2014":pct(c.rate)}</td><td class="num">${c.freeClear?"\u2014":money(c.payment)}</td>
     <td>${esc(c.followUp||"\u2014")}${c.followUpTime?" "+esc(c.followUpTime):""}${(ds.has(c.id)||(fuPending&&fuPending.id===c.id))?`<div style="margin-top:4px">${fuButtons(c,true)}</div>`:""}</td>
     <td>${op?`<span class="${op.tag}">${op.txt}</span>`:""}</td>
@@ -2297,7 +2328,7 @@ function shade(hex,f){ const m=hex.replace("#",""); if(m.length!==6) return hex;
 function fillSettingsUI(){ const s=state.settings;
   $("setLoName").value=s.loName; $("setLoNmls").value=s.loNmls;
   $("setLoPhone").value=s.loPhone; $("setLoEmail").value=s.loEmail; $("setFeed").value=s.feedUrl; $("setPoll").checked=!!s.poll;
-  $("setReport").value=s.reportUrl||""; $("setGoal").value=s.folderGoal||15; $("setTeam").value=s.teamUrl||"";
+  $("setReport").value=s.reportUrl||""; $("setGoal").value=s.folderGoal||15; if($("setSeasonLead")) $("setSeasonLead").value=s.seasonLead||7; $("setTeam").value=s.teamUrl||"";
   if($("setHub")) $("setHub").value=s.hub||""; if($("setHubKey")) $("setHubKey").value=s.hubKey||""; updateHubStatus(); updateMirrorStatus();
   const ed=$("sfMapEditor"); if(ed) ed.innerHTML=Object.keys(DEFAULT_SFMAP).map(f=>
    `<div class="field"><label>${FIELD_LABELS[f]}</label><input type="text" data-map="${f}" value="${esc((s.sfMap[f]||[]).join(", "))}"></div>`).join("");
@@ -2305,7 +2336,7 @@ function fillSettingsUI(){ const s=state.settings;
 function saveSettingsFromUI(announce){ const s=state.settings;
   s.loName=$("setLoName").value; s.loNmls=$("setLoNmls").value; s.loPhone=$("setLoPhone").value; s.loEmail=$("setLoEmail").value;
   s.feedUrl=$("setFeed").value.trim(); s.poll=$("setPoll").checked;
-  s.reportUrl=$("setReport").value.trim(); s.folderGoal=num($("setGoal").value)||15; s.teamUrl=$("setTeam").value.trim();
+  s.reportUrl=$("setReport").value.trim(); s.folderGoal=num($("setGoal").value)||15; if($("setSeasonLead")) s.seasonLead=num($("setSeasonLead").value)||7; s.teamUrl=$("setTeam").value.trim();
   const hub=$("setHub")? $("setHub").value.trim().replace(/\/+$/,"") : (s.hub||"");
   const key=$("setHubKey")? $("setHubKey").value.trim() : (s.hubKey||""); const keyChanged=key!==(s.hubKey||""); s.hubKey=key;
   const hubChanged = hub!==(s.hub||"") || keyChanged; s.hub=hub;
