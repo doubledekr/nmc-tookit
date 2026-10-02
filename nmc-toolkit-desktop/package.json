@@ -25,7 +25,7 @@
   "build": {
     "appId": "com.neighborhoodmc.toolkit",
     "productName": "NMC Toolkit",
-    "copyright": "© Neighborhood Mortgage Company",
+    "copyright": "\u00a9 Neighborhood Mortgage Company",
     "directories": {
       "output": "dist",
       "buildResources": "build"
@@ -84,6 +84,15 @@
       "owner": "doubledekr",
       "repo": "nmc-tookit",
       "releaseType": "release"
-    }
+    },
+    "extraResources": [
+      {
+        "from": "../chrome-extension",
+        "to": "chrome-extension",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ]
   }
 }

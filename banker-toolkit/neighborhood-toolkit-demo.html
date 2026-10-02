@@ -706,6 +706,17 @@ Discover 6,100 190 24.9"></textarea>
                 <button class="btn ghost small" onclick="DESK.checkUpdates().then(ok=>toast(ok?'Checking the hub for updates\u2026':'Link the hub first — updates come from it'))">Check for updates</button>
                 <button class="btn ghost small" onclick="importOldDesktop()">Import a previous toolkit file (.json)</button></div>
               <div id="deskFound" style="margin-top:8px"></div>
+              <div id="extBox" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">
+                <div class="eyebrow" style="font-size:11px">Chrome extension (test) — one-click send from Salesforce</div>
+                <div class="hint" id="extStatus" style="margin:4px 0 8px"></div>
+                <ol class="hint" style="margin:0 0 8px 18px;line-height:1.7">
+                  <li>In Chrome open <b>chrome://extensions</b> and switch on <b>Developer mode</b> (top right).</li>
+                  <li>Click <b>Load unpacked</b> and pick the folder below.</li>
+                  <li>Open any Salesforce lead — a red <b>Send to NMC toolkit</b> button appears bottom-right. Click it; the lead lands at the top of your Pipeline.</li>
+                </ol>
+                <div class="btnrow"><code id="extPath" class="hint" style="flex:1;word-break:break-all"></code><button class="btn ghost small" onclick="DESK.openExtensionFolder()">Open extension folder</button></div>
+                <p class="hint" style="margin:6px 0 0">Updates: the folder is replaced with each toolkit update — restart Chrome to pick it up. Nothing leaves this computer; the extension talks to the app on 127.0.0.1 only.</p>
+              </div>
             </div>
             <div class="eyebrow" style="font-size:11px">Local save file</div>
             <p class="hint" style="margin:4px 0 8px">Everything you do saves on this computer, instantly, with or without a connection. Pick a folder and it also writes <b>nmc-toolkit-you.json</b> and <b>call-blocks-you.csv</b> there (Chrome/Edge) — a local folder or the mapped NMC drive.</p>
@@ -1238,7 +1249,7 @@ function renderPipeline(){
   const inbox=(state.inbox||[]);
   const ib = inbox.length? `<div style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px">
     <b>New from Salesforce (${inbox.length})</b>
-    ${inbox.map(it=>`<div class="btnrow" style="margin-top:6px"><span><b>${esc(it.fields.name)}</b>${it.fields.balance?` \u00b7 ${money(num(it.fields.balance))}`:""}${it.fields.rate?` @ ${pct(num(it.fields.rate))}`:""}${it.fields.leadStatus?` \u00b7 ${esc(it.fields.leadStatus)}`:""}</span><span style="flex:1"></span>
+    ${inbox.map(it=>`<div class="btnrow" style="margin-top:6px"><span><b>${esc(it.fields.name)}</b>${it.fields.balance?` \u00b7 ${money(num(it.fields.balance))}`:""}${it.fields.rate?` @ ${pct(num(it.fields.rate))}`:""}${it.fields.leadStatus?` \u00b7 ${esc(it.fields.leadStatus)}`:""}${it.source==="chrome-extension"?` <span class="tag-flat">via Chrome</span>`:""}</span><span style="flex:1"></span>
       <button class="btn small" onclick="importInbox('${it.id}')">Import</button><button class="btn ghost small" onclick="ackInbox('${it.id}')">Ignore</button></div>`).join("")}</div>` : "";
   $("pipeTable").innerHTML = ib + bar + seasonBar + rwBar + (!rows.length ? `<div class="empty">${pipeView!=="all"?"Nothing in this view right now \u2014 that can change with the next rate push.":"No pipeline clients yet. Add one, paste a Salesforce record, or load the samples in Settings."}</div>` :
   `<table class="data"><thead><tr><th>Client</th><th>Status</th><th class="num">Balance</th><th class="num">Rate</th><th class="num">P&amp;I</th><th>Follow-up</th><th>Opportunity</th><th></th></tr></thead><tbody>`+
@@ -2670,6 +2681,19 @@ function bmDone(){ bmInstalled(); $("bmModal").style.display="none"; toast("Book
 function bmLater(){ $("bmModal").style.display="none"; }
 function bmCopyCode(){ const src=$("sfBmLink"); const code=src?decodeURIComponent(src.getAttribute("href")):""; if(!code) return;
   (navigator.clipboard&&navigator.clipboard.writeText ? navigator.clipboard.writeText(code) : Promise.reject()).then(()=>toast("Bookmark code copied \u2014 paste it as the bookmark\u2019s URL"),()=>prompt("Copy this:",code)); }
+/* Chrome extension → desktop listener → here: parse like a paste, drop it in the Pipeline inbox, and open the preview */
+function sfIncoming(p){ if(!p||!p.text) return;
+  try{ parseSFText(p.text); }catch(e){ toast("Couldn\u2019t read that Salesforce page"); return; }
+  const F=(lastSF&&lastSF.fields)||{}; const debts=(lastSF&&lastSF.debts)||[];
+  const id="ext"+Date.now().toString(36);
+  state.inbox=(state.inbox||[]).filter(x=>!(x.source==="chrome-extension"&&x.fields&&F.name&&x.fields.name===F.name));   /* resend replaces */
+  state.inbox.unshift({id, fields:F, debts, text:p.text, when:p.when||new Date().toISOString(), source:"chrome-extension", url:p.url||""});
+  save(); go("pipeline"); renderPipeline(); renderExtStatus();
+  toast("From Salesforce: "+(F.name||"lead")+" \u2014 at the top of your Pipeline"); }
+function renderExtStatus(){ const el=$("extStatus"), ep=$("extPath"); if(!el||!DESK||!DESK.sfStatus) return;
+  let st=null; try{ st=DESK.sfStatus(); }catch(e){}
+  el.innerHTML = !st ? "" : st.listening ? `<span class="tag-good">Listening for the extension on 127.0.0.1:${st.port}</span>${st.lastAt?` \u00b7 last lead received ${new Date(st.lastAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}`:" \u00b7 nothing received yet"}` : `<span class="tag-warn">Listener couldn\u2019t start on port ${st.port}</span> \u2014 another program may be using it`;
+  if(ep){ let p=""; try{ p=DESK.extensionPath()||""; }catch(e){} ep.textContent=p; } }
 function maybeBmUpdate(){ const v=state.settings.bmVersion; if(v && v!==BOOKMARKLET_VERSION) showBmModal(false); }
 function maybeSetup(){ const s=state.settings; if(!s.loName && !s.setupDone){ const m=$("setupModal"); if(m) m.style.display="flex"; } }
 function saveSetup(){ const s=state.settings;
@@ -2995,17 +3019,17 @@ async function fetchInbox(){ const b=apiBase(); if(!b) return; const s=state.set
   try{ const r=await fetch(b+"/api/inbox?email="+encodeURIComponent(s.loEmail||"")+"&name="+encodeURIComponent(s.loName||""),{cache:"no-store"});
     if(!r.ok) return; const j=await r.json(); const items=(j&&j.items)||[];
     const fresh=items.filter(it=>!(state.inbox||[]).some(x=>x.id===it.id));
-    state.inbox=items; save(); if($("s-pipeline")&&$("s-pipeline").classList.contains("active")) renderPipeline();
+    state.inbox=(state.inbox||[]).filter(x=>x.source==="chrome-extension").concat(items); save(); if($("s-pipeline")&&$("s-pipeline").classList.contains("active")) renderPipeline();
     if(fresh.length) toast("New from Salesforce: "+fresh.map(x=>x.fields.name).join(", ")+" \u2014 see Pipeline");
   }catch(e){} }
-async function ackInbox(id){ state.inbox=(state.inbox||[]).filter(x=>x.id!==id); save(); renderPipeline();
+async function ackInbox(id){ const it=(state.inbox||[]).find(x=>x.id===id); state.inbox=(state.inbox||[]).filter(x=>x.id!==id); save(); renderPipeline(); if(it&&it.source==="chrome-extension") return;
   const b=apiBase(); if(!b) return; const s=state.settings;
   try{ await fetch(b+"/api/inbox/ack",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,email:s.loEmail||"",name:s.loName||""})}); }catch(e){} }
 function importInbox(id){ const it=(state.inbox||[]).find(x=>x.id===id); if(!it) return; const F=it.fields;
   const em=(F.email||"").toLowerCase(); const nm=(F.name||"").toLowerCase();
   const match=state.clients.find(c=>!c.quick && em && (c.email||"").toLowerCase()===em) || state.clients.find(c=>!c.quick && nm && (c.name||"").toLowerCase()===nm);
   state.currentId = match? match.id : null;
-  save(); refreshAll(); go("client"); const text=recordToSFText(F); $("sfPaste").value=text; parseSFText(text);
+  save(); refreshAll(); go("client"); const text=it.text||recordToSFText(F); $("sfPaste").value=text; parseSFText(text);
   ackInbox(id);
   toast(match? "Salesforce record loaded \u2014 changed fields are checked; apply when ready" : "New record \u2014 review, then \u201cCreate new client from this\u201d"); }
 async function heartbeat(){ const nm=state.settings.loName||"Banker";
@@ -3240,6 +3264,7 @@ if(DESK){ DESK.setHub(apiBase()||""); DESK.onUpdateStatus(s=>{ const b=$("updBan
       ? `<div class="btnrow"><span><b>Update available:</b> version ${esc(s.version)}. Download the new installer and drag it over the app \u2014 your data stays put.</span><span style="flex:1"></span><button class="btn small" onclick="DESK.openReleases&&DESK.openReleases()">Download update</button><button class="btn ghost small" onclick="this.closest('#updBanner').style.display='none'">Later</button></div>`
       : "<b>Downloading update</b> to version "+esc(s.version)+" in the background\u2026"; });
   document.body.classList.add("desktop"); const b=$("deskBox"); if(b) b.style.display="block";
+  if(DESK.onSfIncoming) DESK.onSfIncoming(sfIncoming); renderExtStatus();
   const p=$("deskPath"); if(p) p.innerHTML="Your data saves automatically to <b>"+esc(DESK.dataPath())+"</b> \u2014 self-contained with the app, no browser involved. Version "+esc(DESK.version()||"")+".";
   (async()=>{ try{ const found=await DESK.findOldExports(); const el=$("deskFound"); if(!el||!found||!found.length) return;
     el.innerHTML='<div class="hint" style="margin-bottom:4px">Previous toolkit files found on this computer:</div>'+found.slice(0,6).map(f=>`<div class="btnrow" style="margin:3px 0"><span class="hint" style="flex:1">${esc(f.name)} <span style="opacity:.7">\u00b7 ${esc(f.where)} \u00b7 ${esc(f.when)}</span></span><button class="btn small" onclick="importFromPath(${JSON.stringify(f.path).replace(/"/g,"&quot;")})">Import</button></div>`).join("");

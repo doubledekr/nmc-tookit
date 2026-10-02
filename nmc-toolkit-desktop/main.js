@@ -78,6 +78,33 @@ function checkUpdates(){ if (!updater) return;
 ipcMain.on("update:setHub", (e, hub) => { hub = String(hub || "").replace(/\/+$/, ""); const feed = hub ? hub + "/updates/" : null;
   if (feed !== updateFeed) { updateFeed = feed; checkUpdates(); } });
 ipcMain.handle("update:check", () => { checkUpdates(); return true; });
+/* ---- local listener for the Chrome extension: http://127.0.0.1:<port>/sf (POST a harvested lead) and /ping ----
+   Bound to loopback only, so nothing outside this computer can reach it. */
+const http = require("http");
+const SF_PORT = +(process.env.NMC_SF_PORT || 47831);
+let sfServer = null, sfLastAt = 0;
+function startSfListener(){
+  if (sfServer) return;
+  sfServer = http.createServer((req, res) => {
+    const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type", "Access-Control-Allow-Methods": "POST, GET, OPTIONS" };
+    if (req.method === "OPTIONS") { res.writeHead(204, cors); res.end(); return; }
+    if (req.method === "GET" && req.url.startsWith("/ping")) { res.writeHead(200, Object.assign({ "Content-Type": "application/json" }, cors)); res.end(JSON.stringify({ ok: true, app: "nmc-toolkit", version: app.getVersion(), lastAt: sfLastAt })); return; }
+    if (req.method === "POST" && req.url.startsWith("/sf")) {
+      let body = ""; req.on("data", c => { body += c; if (body.length > 2e6) req.destroy(); });
+      req.on("end", () => { let j = null; try { j = JSON.parse(body); } catch (e) {}
+        if (!j || typeof j.text !== "string") { res.writeHead(400, cors); res.end("bad payload"); return; }
+        sfLastAt = Date.now();
+        if (mainWin && !mainWin.isDestroyed()) { mainWin.webContents.send("sf:incoming", { text: j.text, url: j.url || "", title: j.title || "", when: j.when || new Date().toISOString(), source: j.source || "chrome-extension" }); if (mainWin.isMinimized()) mainWin.restore(); mainWin.focus(); }
+        res.writeHead(200, Object.assign({ "Content-Type": "application/json" }, cors)); res.end(JSON.stringify({ ok: true, version: app.getVersion() })); });
+      return; }
+    res.writeHead(404, cors); res.end();
+  });
+  sfServer.on("error", e => { console.error("SF listener failed on port " + SF_PORT + ": " + e.message); sfServer = null; });
+  sfServer.listen(SF_PORT, "127.0.0.1");
+}
+ipcMain.on("sf:statusSync", e => { e.returnValue = { listening: !!sfServer && sfServer.listening, port: SF_PORT, lastAt: sfLastAt }; });
+ipcMain.handle("sf:openExtensionFolder", () => { const p = path.join(process.resourcesPath || __dirname, "chrome-extension"); const alt = path.join(__dirname, "..", "chrome-extension"); return shell.openPath(fs.existsSync(p) ? p : alt); });
+ipcMain.on("sf:extensionPathSync", e => { const p = path.join(process.resourcesPath || __dirname, "chrome-extension"); const alt = path.join(__dirname, "..", "chrome-extension"); e.returnValue = fs.existsSync(p) ? p : alt; });
 ipcMain.handle("update:openReleases", () => { shell.openExternal(RELEASES_URL); return true; });
 ipcMain.handle("update:install", () => { if (!updater) return false; flushWrites(); setTimeout(() => updater.quitAndInstall(false, true), 300); return true; });
 
@@ -106,7 +133,7 @@ app.whenReady().then(() => {
   Menu.setApplicationMenu(Menu.buildFromTemplate([
     { label: "NMC Toolkit", submenu: [{ role: "reload" }, { role: "toggleDevTools" }, { type: "separator" }, { role: "quit" }] },
     { role: "editMenu" }, { role: "viewMenu" }, { role: "windowMenu" } ]));
-  createWindow(); setupUpdates();
+  createWindow(); setupUpdates(); startSfListener();
   app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
 app.on("before-quit", flushWrites);
