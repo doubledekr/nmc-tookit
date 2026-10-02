@@ -779,7 +779,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.5.4";
+const TOOLKIT_VERSION = "1.5.5";
 const DEMO = true; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -898,7 +898,8 @@ function migrate(){ /* additive only — old saves gain new fields, nothing is e
     (c.debts||[]).forEach(d=>{ if(!d.type) d.type=debtTypeOf(d.name); if(d.extra==null) d.extra=0; if(d.acct==null) d.acct="";
       if(d.apr==null&&DEBT_TYPES[d.type]){ d.apr=DEBT_TYPES[d.type].apr; d.aprEst=true; } else if(d.aprEst==null){ d.aprEst=[24.99,7.5,9.0].includes(d.apr); } });
     if(c.proposalSent==null){ const sent=(c.library||[]).filter(x=>x&&x.sent); c.proposalSent=sent.length?sent.map(x=>x.sent.when.slice(0,10)).sort().pop():""; c.proposalsSent=sent.length; }
-    if(c.paymentTotal>0&&!(c.payment>0)){ c.payment=c.paymentTotal; c.escrow=0; c.paymentAuto=true; c.payFromTotal=c.payFromTotal||(c.monthsLeft>0||c.origAmount>0?"low":"months"); } for(const k in tpl) if(c[k]===undefined) c[k]=Array.isArray(tpl[k])?[]:tpl[k];
+    /* older versions copied the total into P&I with escrow 0 \u2014 put it back: the total stays, P&I and escrow are never guessed from it */
+    if(c.paymentTotal>0&&c.payment>0&&c.paymentAuto&&c.payFromTotal&&Math.abs(c.payment-c.paymentTotal)<1){ c.payment=null; c.escrow=null; c.paymentAuto=false; c.payFromTotal=false; } for(const k in tpl) if(c[k]===undefined) c[k]=Array.isArray(tpl[k])?[]:tpl[k];
    c.analysis=Object.assign({}, tpl.analysis, c.analysis||{});
    c.debts=c.debts||[]; c.options=c.options||[]; c.scenarios=c.scenarios||[];
    c.prop=Object.assign({included:[],rec:"",why:""}, c.prop||{});
@@ -1061,9 +1062,9 @@ function loanCheckHTML(c){ const k=loanCheck(c); if(k.status==="none"||!k.lines.
 function payHintText(c){ if(!c) return "";
   if(!c.autoPay){ const bits=[]; if(c.paymentTotal>0) bits.push("total "+money(c.paymentTotal)); if(c.payment>0) bits.push("P&amp;I "+money(c.payment)); if(c.escrow>0) bits.push("escrow "+money(c.escrow));
     return bits.length? "Entered by hand: "+bits.join(" \u00b7 ")+". Proposals compare total payments (PITI); if escrow is blank it\u2019s estimated as total minus P&amp;I." : "Type the total payment, P&amp;I and escrow from the statement \u2014 or tick auto-calculate."; }
-  if(c.paymentTotal>0&&c.paymentAuto&&c.payFromTotal) return `<span style="color:var(--warn)">Using the <b>${money(c.paymentTotal)} total</b> as the current payment, escrow 0 \u2014 P&amp;I couldn\u2019t be separated ${c.payFromTotal==="months"?"without the original loan amount or months remaining":"because the payment is lower than the P&amp;I this balance and rate would need (the balance may cover more than one loan)"}. Fine for an estimate; type the P&amp;I if you have it.</span>`;
+  if(c.paymentTotal>0&&c.paymentAuto&&c.payFromTotal&&!(c.payment>0)) return `<span style="color:var(--warn)">P&amp;I and escrow left blank \u2014 they can\u2019t be estimated ${c.payFromTotal==="months"?"without the original loan amount or months remaining":"because the payment is lower than the P&amp;I this balance and rate would need (the balance may cover more than one loan)"}. Fine for an estimate; type the P&amp;I if you have it.</span>`;
   if(c.payment>0&&!c.paymentAuto) return `P&amp;I as typed${c.paymentTotal>0?` \u00b7 escrow = ${money(c.paymentTotal)} \u2212 ${money(c.payment)}`:""}.`;
-  if(c.payment>0&&c.paymentAuto) return `P&amp;I estimated from ${c.origAmount>0?"the original loan amount":"balance, rate and "+(c.monthsLeft||360)+" months remaining"}${c.paymentTotal>0?` \u00b7 escrow = total \u2212 P&amp;I`:""}. Type the P&amp;I if you have it.`;
+  if(c.payment>0&&c.paymentAuto) return `<span style="color:var(--warn)">Estimated:</span> P&amp;I ${money(c.payment)} from ${c.origAmount>0?"the original loan amount":"balance, rate and "+(c.monthsLeft||360)+" months remaining"}${c.paymentTotal>0&&c.escrow!=null?` \u00b7 escrow ${money(c.escrow)} = total \u2212 P&amp;I`:""}. Confirm against the statement; type the real P&amp;I if you have it.`;
   return ""; }
 function normalizePayment(c,changed){
   if(changed==="autoPay"&&c.autoPay){ changed="paymentTotal"; c.paymentAuto=true; }   /* turning it on: recompute from the numbers, replacing typed values */
@@ -1083,7 +1084,7 @@ function normalizePayment(c,changed){
     if(c.paymentTotal>0){
       if(manualPI){ c.escrow=Math.max(0,Math.round(c.paymentTotal-c.payment)); }                         /* typed P&I wins; escrow is the rest */
       else if(pi&&reliable&&c.paymentTotal>pi+1){ c.payment=Math.round(pi); c.escrow=Math.round(c.paymentTotal-pi); c.paymentAuto=true; c.payFromTotal=false; }   /* anything above P&I is taxes & insurance */
-      else { c.payment=c.paymentTotal; c.escrow=0; c.paymentAuto=true; c.payFromTotal = !reliable ? "months" : "low"; }   /* can't separate P&I: the whole payment is the starting point — it's an estimate */
+      else { c.payment=null; c.escrow=null; c.paymentAuto=true; c.payFromTotal = !reliable ? "months" : "low"; }   /* can't separate P&I: leave both blank and say why; the total is never copied into P&I */
     }
     else if(pi&&reliable&&!manualPI){ c.payment=Math.round(pi); c.paymentAuto=true; }
     else if(!manualPI&&!reliable){ c.payment=null; c.paymentAuto=true; }
@@ -1477,8 +1478,8 @@ function renderCreditParsed(rows){
    `</tbody></table><div class="btnrow" style="margin-top:8px"><button class="btn small" onclick="addParsedDebts()">Add checked debts</button><span class="hint">Everything with a balance is checked; untick what they\u2019re keeping.</span></div>`; }
 function crType(i,t){ const d=lastDebts[i]; if(!d) return; d.type=t; d.apr=(DEBT_TYPES[t]||DEBT_TYPES.other).apr; d.aprEst=true; renderCreditParsed(lastDebts); }
 function crUseMortgage(i){ const c=cur(); const d=lastDebts[i]; if(!c||!d) return;
-  c.balance=d.balance; c.payment=d.pay||null; c.paymentAuto=false; if(d.high>d.balance) c.origAmount=d.high; if(d.term>0&&d.opened){ const ms=Math.max(0,Math.round((Date.now()-new Date(d.opened).getTime())/2629800000)); c.monthsLeft=Math.max(1,d.term-ms); c.monthsLeftAuto=true; }
-  if(c.paymentTotal>0&&c.payment>0) c.escrow=Math.max(0,Math.round(c.paymentTotal-c.payment)); save(); refreshAll(); toast("Current mortgage set from the credit report: "+money(d.balance)+(d.pay?" / "+money(d.pay)+" per mo":"")+" \u2014 check the rate on the Client workspace"); }
+  c.balance=d.balance; if(d.pay>0&&!(c.paymentTotal>0)) c.paymentTotal=d.pay;   /* the bureau's scheduled payment is usually the full PITI */ if(d.high>d.balance) c.origAmount=d.high; if(d.term>0&&d.opened){ const ms=Math.max(0,Math.round((Date.now()-new Date(d.opened).getTime())/2629800000)); c.monthsLeft=Math.max(1,d.term-ms); c.monthsLeftAuto=true; }
+  normalizePayment(c,"balance"); save(); refreshAll(); toast("Current mortgage set from the credit report: "+money(d.balance)+(d.pay?" / "+money(d.pay)+" per mo as the total payment":"")+" \u2014 check the rate and P&amp;I on the Client workspace"); }
 function addParsedDebts(){ const c=cur(); if(!c){ toast("Pick a client first"); return; } let n=0;
   let u=0; document.querySelectorAll("#debtParsed [data-di]").forEach(cb=>{ if(!cb.checked) return; const d=lastDebts[+cb.dataset.di];
     const baseOf=x=>String(x||"").trim().replace(/\s+\d+$/,"").toLowerCase(); const base=baseOf(d.name);
@@ -1677,6 +1678,7 @@ function computeAnalysis(c){
   const pitiNow = (!fc && (c.paymentTotal>0 || curPay>0)) ? (c.paymentTotal>0 ? c.paymentTotal : curPay+escrowEst) : 0;
   const pitiNew = second ? pitiNow + newPay : fc ? newPay + newEscrow : newPay + escrowEst;
   const skipCash = second ? 0 : skipN * piti;
+  if(escrowIsEst && curMonthsSrc==="assumed") warnings.push(`Escrow is estimated as the total minus a P&amp;I that assumes 30 years left (${money(escrowEst)}/mo) \u2014 unreliable until months remaining or the original amount is entered.`);
   if(escrowIsEst && c.paymentTotal>0 && escrowEst > c.paymentTotal*0.4) warnings.push(`Estimated escrow (${money(escrowEst)}) is ${Math.round(escrowEst/c.paymentTotal*100)}% of the total payment \u2014 that usually means today\u2019s P&amp;I is understated (months remaining or P&amp;I missing). Type the escrow or P&amp;I from the statement.`);
   /* all-in monthly: mortgage PITI plus the debts that get rolled in, today vs proposed (debts gone) */
   const allInNow = pitiNow>0 ? pitiNow + (roll?dPay+dExtra:0) : 0;
