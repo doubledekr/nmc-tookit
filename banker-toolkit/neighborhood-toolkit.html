@@ -703,7 +703,7 @@ Discover 6,100 190 24.9"></textarea>
               <div class="eyebrow" style="font-size:11px">Desktop app</div>
               <div class="hint" id="deskPath" style="margin:4px 0 8px"></div>
               <div class="btnrow"><button class="btn ghost small" onclick="DESK.openDataFolder()">Open data folder</button>
-                <button class="btn ghost small" onclick="DESK.checkUpdates().then(ok=>toast(ok?'Checking the hub for updates\u2026':'Link the hub first — updates come from it'))">Check for updates</button>
+                <button class="btn ghost small" onclick="DESK.checkUpdates().then(r=>toast(!r||r.state==='off'?'Updates are off in this build':r.state==='available'?'Update available: v'+r.version+' \u2014 see the bar at the top':r.state==='current'?'Up to date \u2014 v'+r.version:'Couldn\u2019t check right now'+(r.error?': '+r.error:'')))">Check for updates</button>
                 <button class="btn ghost small" onclick="importOldDesktop()">Import a previous toolkit file (.json)</button></div>
               <div id="deskFound" style="margin-top:8px"></div>
               <div id="extBox" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">

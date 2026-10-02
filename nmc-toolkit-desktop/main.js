@@ -75,13 +75,15 @@ function setupUpdates(){ if (process.env.NMC_NO_UPDATES || IS_BETA) return;
   updater.on("update-downloaded", info => {   /* no dialog, no countdown: the toolkit shows a bar with an Update button */
     if (mainWin) mainWin.webContents.send("update:status", { state: "ready", version: info.version }); });
   setTimeout(checkUpdates, 8000);
-  setInterval(checkUpdates, 30 * 60 * 1000);
+  setInterval(checkUpdates, 5 * 60 * 1000);   /* a release reaches every running app within five minutes */
 }
-function checkUpdates(){ if (!updater) return;
-  try { if (updateFeed) updater.setFeedURL({ provider: "generic", url: updateFeed }); updater.checkForUpdates().catch(() => {}); } catch (e) {} }
+function checkUpdates(){ if (!updater) return Promise.resolve({ state: "off" });
+  try { if (updateFeed) updater.setFeedURL({ provider: "generic", url: updateFeed });
+    return updater.checkForUpdates().then(r => ({ state: r && r.updateInfo && r.updateInfo.version !== app.getVersion() ? "available" : "current", version: r && r.updateInfo ? r.updateInfo.version : app.getVersion() })).catch(e => ({ state: "error", error: String(e && e.message || e) })); }
+  catch (e) { return Promise.resolve({ state: "error", error: String(e && e.message || e) }); } }
 ipcMain.on("update:setHub", (e, hub) => { hub = String(hub || "").replace(/\/+$/, ""); const feed = hub ? hub + "/updates/" : null;
   if (feed !== updateFeed) { updateFeed = feed; checkUpdates(); } });
-ipcMain.handle("update:check", () => { checkUpdates(); return true; });
+ipcMain.handle("update:check", () => checkUpdates());
 /* ---- local listener for the Chrome extension: http://127.0.0.1:<port>/sf (POST a harvested lead) and /ping ----
    Bound to loopback only, so nothing outside this computer can reach it. */
 const http = require("http");
