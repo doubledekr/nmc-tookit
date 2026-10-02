@@ -736,7 +736,7 @@ Discover 6,100 190 24.9"></textarea>
         <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
           <div class="eyebrow" style="font-size:11px">Pulling clients from Salesforce</div>
           <p class="hint" style="margin:4px 0 6px"><b>With the hub:</b> ask IT to add the \u201cSend to NMC toolkit\u201d button to the Salesforce lead page. Click it on any open lead and that client shows up at the top of your Pipeline as <b>New from Salesforce</b> the moment you switch back here.</p>
-          <p class="hint" style="margin:0 0 6px"><b>Without the hub:</b> drag this to your bookmarks bar (re-drag it after each toolkit update), click it on an open lead, then use <b>Paste from clipboard &amp; parse</b> on the Client workspace. It reads every field on the lead — including sections Salesforce hides from a plain copy: <a class="btn ghost small" style="text-decoration:none" href="javascript:(function(){%0Avar pairs=[],seen={},QSA,DQSA,TC,IT,SR,fr;%0Atry{fr=document.createElement('iframe');fr.style.display='none';document.documentElement.appendChild(fr);var W=fr.contentWindow;%0AQSA=W.Element.prototype.querySelectorAll;DQSA=W.Document.prototype.querySelectorAll;%0ATC=Object.getOwnPropertyDescriptor(W.Node.prototype,'textContent').get;IT=Object.getOwnPropertyDescriptor(W.HTMLElement.prototype,'innerText').get;SR=Object.getOwnPropertyDescriptor(W.Element.prototype,'shadowRoot').get;}catch(e){}%0Afunction qs(root,sel){try{if(QSA&&root.nodeType===1)return QSA.call(root,sel);if(DQSA&&root.nodeType===9)return DQSA.call(root,sel);}catch(e){}try{return root.querySelectorAll(sel);}catch(e){return [];}}%0Afunction tc(el){try{return TC.call(el)||'';}catch(e){return el.textContent||'';}}%0Afunction it(el){try{return IT.call(el)||'';}catch(e){return el.innerText||'';}}%0Avar JUNK='button, .slds-assistive-text, [class*=&quot;inline-edit&quot;], lightning-helptext, lightning-static-map, iframe, svg, script, style';%0Afunction fallback(el){var c=el.cloneNode(true);qs(c,JUNK).forEach(function(b){b.remove();});qs(c,'div, li, p, br, tr').forEach(function(d){d.parentNode.insertBefore(document.createTextNode('%5Cn'),d);});return tc(c);}%0Afunction vis(el){try{if(el.checkVisibility)return el.checkVisibility();return el.getClientRects().length>0;}catch(e){return true;}}%0Afunction lines(el){var t=it(el);if(!t||!t.trim())t=fallback(el);return t.split(/%5Cn+/).map(function(s){return s.replace(/%5Cs+/g,' ').trim();}).filter(function(s){return s&&!/%5E(Edit|Help)%5Cs/.test(s);});}%0Afunction harvest(root){%0A  qs(root,'[data-target-selection-name%5E=&quot;sfdc:RecordField&quot;], .slds-form-element, records-record-layout-item').forEach(function(fe){%0A    if(fe.getAttribute&&fe.getAttribute('data-target-selection-name')&&qs(fe,'[data-target-selection-name%5E=&quot;sfdc:RecordField&quot;]').length)return;%0A    var lab=qs(fe,'.test-id__field-label, .slds-form-element__label, label')[0];%0A    var val=qs(fe,'.test-id__field-value, .slds-form-element__static, .slds-form-element__control')[0];%0A    if(!lab||!val||!vis(fe))return;%0A    var l=(lines(lab)[0]||'').replace(/[:*]+%24/,'').trim();if(!l)return;%0A    var v=lines(val).filter(function(s){return s!==l;}).join(', ');%0A    var k=l+'|'+v;if(!seen[k]){seen[k]=1;pairs.push(l+'%5Cn'+v);}%0A  });%0A  qs(root,'*').forEach(function(el){var s=null;try{s=SR?SR.call(el):el.shadowRoot;}catch(e){}if(s)harvest(s);if(el.tagName==='IFRAME'&&el!==fr){try{if(el.contentDocument)harvest(el.contentDocument);}catch(e){}}});%0A}%0Aharvest(document);%0Avar raw=it(document.body);%0Aif(fr)fr.remove();%0Avar text=pairs.length?pairs.join('%5Cn')+'%5Cn%5Cn----- page text -----%5Cn'+raw:raw;%0Afunction done(){alert('Copied '+pairs.length+' fields for the NMC toolkit. Switch to it and click &quot;Paste from clipboard & parse&quot;.');}%0Aif(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done,function(){prompt('Copy this:',text);});}%0Aelse{prompt('Copy this:',text);}%0A})();" onclick="return false" title="Drag me to your bookmarks bar">Copy lead for NMC</a></p>
+          <p class="hint" style="margin:0 0 6px"><b>Without the hub:</b> drag this to your bookmarks bar (re-drag it after each toolkit update), click it on an open lead, then use <b>Paste from clipboard &amp; parse</b> on the Client workspace. It reads every field on the lead — including sections Salesforce hides from a plain copy: <a id="sfBmLink" class="btn ghost small" style="text-decoration:none" draggable="true" ondragstart="bmInstalled()" onclick="bmInstalled();return false" href="javascript:(function(){%0Avar pairs=[],seen={},QSA,DQSA,TC,IT,SR,fr;%0Atry{fr=document.createElement('iframe');fr.style.display='none';document.documentElement.appendChild(fr);var W=fr.contentWindow;%0AQSA=W.Element.prototype.querySelectorAll;DQSA=W.Document.prototype.querySelectorAll;%0ATC=Object.getOwnPropertyDescriptor(W.Node.prototype,'textContent').get;IT=Object.getOwnPropertyDescriptor(W.HTMLElement.prototype,'innerText').get;SR=Object.getOwnPropertyDescriptor(W.Element.prototype,'shadowRoot').get;}catch(e){}%0Afunction qs(root,sel){try{if(QSA&&root.nodeType===1)return QSA.call(root,sel);if(DQSA&&root.nodeType===9)return DQSA.call(root,sel);}catch(e){}try{return root.querySelectorAll(sel);}catch(e){return [];}}%0Afunction tc(el){try{return TC.call(el)||'';}catch(e){return el.textContent||'';}}%0Afunction it(el){try{return IT.call(el)||'';}catch(e){return el.innerText||'';}}%0Avar JUNK='button, .slds-assistive-text, [class*=&quot;inline-edit&quot;], lightning-helptext, lightning-static-map, iframe, svg, script, style';%0Afunction fallback(el){var c=el.cloneNode(true);qs(c,JUNK).forEach(function(b){b.remove();});qs(c,'div, li, p, br, tr').forEach(function(d){d.parentNode.insertBefore(document.createTextNode('%5Cn'),d);});return tc(c);}%0Afunction vis(el){try{if(el.checkVisibility)return el.checkVisibility();return el.getClientRects().length>0;}catch(e){return true;}}%0Afunction lines(el){var t=it(el);if(!t||!t.trim())t=fallback(el);return t.split(/%5Cn+/).map(function(s){return s.replace(/%5Cs+/g,' ').trim();}).filter(function(s){return s&&!/%5E(Edit|Help)%5Cs/.test(s);});}%0Afunction harvest(root){%0A  qs(root,'[data-target-selection-name%5E=&quot;sfdc:RecordField&quot;], .slds-form-element, records-record-layout-item').forEach(function(fe){%0A    if(fe.getAttribute&&fe.getAttribute('data-target-selection-name')&&qs(fe,'[data-target-selection-name%5E=&quot;sfdc:RecordField&quot;]').length)return;%0A    var lab=qs(fe,'.test-id__field-label, .slds-form-element__label, label')[0];%0A    var val=qs(fe,'.test-id__field-value, .slds-form-element__static, .slds-form-element__control')[0];%0A    if(!lab||!val||!vis(fe))return;%0A    var l=(lines(lab)[0]||'').replace(/[:*]+%24/,'').trim();if(!l)return;%0A    var v=lines(val).filter(function(s){return s!==l;}).join(', ');%0A    var k=l+'|'+v;if(!seen[k]){seen[k]=1;pairs.push(l+'%5Cn'+v);}%0A  });%0A  qs(root,'*').forEach(function(el){var s=null;try{s=SR?SR.call(el):el.shadowRoot;}catch(e){}if(s)harvest(s);if(el.tagName==='IFRAME'&&el!==fr){try{if(el.contentDocument)harvest(el.contentDocument);}catch(e){}}});%0A}%0Aharvest(document);%0Avar raw=it(document.body);%0Aif(fr)fr.remove();%0Avar text=pairs.length?pairs.join('%5Cn')+'%5Cn%5Cn----- page text -----%5Cn'+raw:raw;%0Afunction done(){alert('Copied '+pairs.length+' fields for the NMC toolkit. Switch to it and click &quot;Paste from clipboard & parse&quot;.');}%0Aif(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done,function(){prompt('Copy this:',text);});}%0Aelse{prompt('Copy this:',text);}%0A})();" onclick="return false" title="Drag me to your bookmarks bar">Copy lead for NMC</a> <span id="bmStatus" class="hint" style="display:inline"></span> <button class="btn ghost small" onclick="showBmModal(true)">How to update the bookmark</button></p>
         </div>
         <p class="hint" style="margin-top:10px">Linking the hub turns on live rates, team stats, the template library, and a server backup of this save file. No VPN or offline? Everything core keeps working from your local copy and catches up on its own.</p>
       </div>
@@ -756,6 +756,23 @@ Discover 6,100 190 24.9"></textarea>
   </main>
 </div>
 
+<div id="bmModal" style="display:none;position:fixed;inset:0;background:rgba(35,36,43,.45);z-index:60;align-items:center;justify-content:center">
+  <div class="panel" style="max-width:520px;width:92%;margin:0">
+    <div class="eyebrow">Salesforce bookmark</div>
+    <h2 style="font-family:var(--serif);font-size:20px;margin-bottom:4px" id="bmTitle">The “Copy lead for NMC” bookmark was updated</h2>
+    <p class="hint" style="margin:0 0 12px" id="bmIntro">Browsers don’t let an app change your bookmarks for you, so this takes one drag. Your old bookmark keeps working until you replace it, but it won’t pick up the fixes.</p>
+    <ol style="margin:0 0 12px 18px;font-size:13.5px;line-height:1.7">
+      <li>Show your bookmarks bar if it’s hidden (<b>Ctrl+Shift+B</b>, Mac <b>⌘+Shift+B</b>).</li>
+      <li>Drag this button onto the bar: <a id="bmModalLink" class="btn small" style="text-decoration:none" draggable="true" ondragstart="bmInstalled()" onclick="bmInstalled();return false" href="#">Copy lead for NMC</a></li>
+      <li>Delete the old <b>Copy lead for NMC</b> bookmark (right-click it → Delete) so there’s only one.</li>
+    </ol>
+    <p class="hint" style="margin:0 0 12px">Can’t drag? <button class="btn ghost small" onclick="bmCopyCode()">Copy the bookmark code</button> then right-click the old bookmark → Edit and paste it over the URL.</p>
+    <div class="btnrow">
+      <button class="btn" onclick="bmDone()">Done — it’s updated</button>
+      <button class="btn ghost" onclick="bmLater()">Remind me next time</button>
+    </div>
+  </div>
+</div>
 <div id="setupModal" style="display:none;position:fixed;inset:0;background:rgba(35,36,43,.45);z-index:60;align-items:center;justify-content:center">
   <div class="panel" style="max-width:440px;width:92%;margin:0">
     <div class="eyebrow">Welcome to the toolkit</div>
@@ -779,7 +796,8 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.5.5";
+const TOOLKIT_VERSION = "1.5.6";
+const BOOKMARKLET_VERSION = "2";   /* bump this whenever the Salesforce bookmarklet code changes — bankers get a one-time "re-drag it" walkthrough */
 const DEMO = true; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -2640,6 +2658,19 @@ function exportComparePDF(){ const html=compareHTML(); if(html.includes('class="
   const c=cur(); libraryAdd("compare", html, sheetTitle("compare",c,null)); printAs("Loan Options Comparison"+(c&&c.name?" \u2014 "+c.name:""), html); }
 
 /* ---------- first-run banker setup ---------- */
+/* Salesforce bookmarklet versioning: the code lives in the Settings link; when BOOKMARKLET_VERSION moves past what the banker installed, walk them through re-dragging it */
+function bmInstalled(){ state.settings.bmVersion=BOOKMARKLET_VERSION; save(); renderBmStatus(); }
+function renderBmStatus(){ const el=$("bmStatus"); if(!el) return; const v=state.settings.bmVersion;
+  el.innerHTML = !v ? "" : v===BOOKMARKLET_VERSION ? `<span class="tag-good">bookmark v${esc(v)} — current</span>` : `<span class="tag-warn">bookmark v${esc(v)} installed — v${BOOKMARKLET_VERSION} needs a re-drag</span>`; }
+function showBmModal(manual){ const m=$("bmModal"); if(!m) return; const a=$("bmModalLink"), src=$("sfBmLink"); if(a&&src) a.href=src.getAttribute("href");
+  const t=$("bmTitle"), i=$("bmIntro"); if(manual){ t.textContent="Add or update the \u201cCopy lead for NMC\u201d bookmark"; i.textContent="Browsers don\u2019t let an app add bookmarks for you, so this takes one drag. If you already have the bookmark, dragging the new one replaces the code; delete the older copy afterwards."; }
+  else { t.textContent="The \u201cCopy lead for NMC\u201d bookmark was updated"; i.textContent="Browsers don\u2019t let an app change your bookmarks for you, so this takes one drag. Your old bookmark keeps working until you replace it, but it won\u2019t pick up the fixes."; }
+  m.style.display="flex"; }
+function bmDone(){ bmInstalled(); $("bmModal").style.display="none"; toast("Bookmark marked current \u2014 v"+BOOKMARKLET_VERSION); }
+function bmLater(){ $("bmModal").style.display="none"; }
+function bmCopyCode(){ const src=$("sfBmLink"); const code=src?decodeURIComponent(src.getAttribute("href")):""; if(!code) return;
+  (navigator.clipboard&&navigator.clipboard.writeText ? navigator.clipboard.writeText(code) : Promise.reject()).then(()=>toast("Bookmark code copied \u2014 paste it as the bookmark\u2019s URL"),()=>prompt("Copy this:",code)); }
+function maybeBmUpdate(){ const v=state.settings.bmVersion; if(v && v!==BOOKMARKLET_VERSION) showBmModal(false); }
 function maybeSetup(){ const s=state.settings; if(!s.loName && !s.setupDone){ const m=$("setupModal"); if(m) m.style.display="flex"; } }
 function saveSetup(){ const s=state.settings;
   s.loName=$("suName").value.trim(); s.loNmls=$("suNmls").value.trim();
@@ -3230,7 +3261,7 @@ if(DEMO && state.clients.length===0 && !seededFlag){
   seedDemo(); try{ localStorage.setItem("nmc_demo_seeded","1"); }catch(e){}
 }
 if(!state.currentId && state.clients.length) state.currentId=state.clients[0].id;
-bindClientFields(); applyBrandCss(); fillSettingsUI(); updateRatePill(); refreshAll(); setupPolling(); maybeSetup(); initAutosave();
+bindClientFields(); applyBrandCss(); fillSettingsUI(); updateRatePill(); refreshAll(); setupPolling(); maybeSetup(); renderBmStatus(); maybeBmUpdate(); initAutosave();
 if(DEMO){ try{ sampleTeam(); }catch(e){} }
 if(state.settings.poll && state.settings.feedUrl) fetchRates();
 
