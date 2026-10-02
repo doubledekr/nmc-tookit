@@ -334,7 +334,7 @@ table.data tr.rec td{background:var(--cream)}
             <div class="field cur-loan"><label>Original loan amount ($) <span class="hint" style="display:inline">(lets the app work out P&amp;I and months remaining)</span></label>
               <div class="chiprow"><input type="number" data-f="origAmount" step="1000" style="flex:1"><select data-f="origTerm" style="width:96px;flex:0 0 96px" title="Original term"><option value="30">30 yr</option><option value="20">20 yr</option><option value="15">15 yr</option><option value="10">10 yr</option></select></div></div>
             <div class="field cur-loan"><label>Current rate (%)</label><input type="number" data-f="rate" step="0.125"></div>
-            <div class="field cur-loan" style="grid-column:1/-1"><label style="display:block;cursor:pointer;line-height:1.5"><input type="checkbox" data-f="autoPay" style="width:auto;vertical-align:middle;margin-right:6px">Auto-calculate P&amp;I and escrow from the balance, rate and months <span class="hint" style="display:inline">\u2014 off by default; type the real numbers from the statement</span></label></div>
+            <div class="field cur-loan" style="grid-column:1/-1"><label style="display:block;cursor:pointer;line-height:1.5"><input type="checkbox" data-f="autoPay" style="width:auto;vertical-align:middle;margin-right:6px">Auto-calculate P&amp;I and escrow from the balance, rate and months <span class="hint" style="display:inline">— off by default; type the real numbers from the statement</span></label></div>
             <div class="field cur-loan"><label>Total monthly payment (PITI)</label><input type="number" data-f="paymentTotal" step="10" placeholder="what they actually pay"></div>
             <div class="field cur-loan"><label>P&amp;I <span class="hint" style="display:inline">(auto from balance, rate, months — or from the total)</span></label><input type="number" data-f="payment" step="10" placeholder="auto"></div>
             <div class="field cur-loan"><label>Escrow — taxes &amp; insurance <span class="hint" style="display:inline">(auto = total minus P&amp;I)</span></label><input type="number" data-f="escrow" step="10"></div>
@@ -357,7 +357,7 @@ table.data tr.rec td{background:var(--cream)}
             <div class="field"><label>Rate alert — tell me when the feed hits (%)</label>
               <div class="chiprow"><input type="number" data-f="targetRate" step="0.125" placeholder="e.g. 6.25" style="width:110px;flex:0 0 110px">
                 <button class="chip" onclick="setTarget(0.5)">½ below</button><button class="chip" onclick="setTarget(0.75)">¾ below</button><button class="chip" onclick="setTarget(1)">1 below</button><button class="chip" onclick="setTarget(null)">clear</button></div></div>
-            <div class="field"><label>Seasoning \u2014 eligible on <span class="hint" style="display:inline">(heads-up a few days before)</span></label><div class="chiprow"><input type="date" data-f="seasonDate" style="flex:1"><button class="chip" onclick="setSeason(6)">6 mo</button><button class="chip" onclick="setSeason(12)">12 mo</button><button class="chip" onclick="setSeason(null)">clear</button></div><div class="hint" id="seasonHint" style="margin-top:4px"></div></div>
+            <div class="field"><label>Seasoning — eligible on <span class="hint" style="display:inline">(heads-up a few days before)</span></label><div class="chiprow"><input type="date" data-f="seasonDate" style="flex:1"><button class="chip" onclick="setSeason(6)">6 mo</button><button class="chip" onclick="setSeason(12)">12 mo</button><button class="chip" onclick="setSeason(null)">clear</button></div><div class="hint" id="seasonHint" style="margin-top:4px"></div></div>
             <div class="field"><label>Client time zone <span class="hint" style="display:inline">(NMC is Eastern)</span></label><select data-f="tz">
               <option value="">Auto from phone / address</option><option value="America/New_York">Eastern</option><option value="America/Chicago">Central</option><option value="America/Denver">Mountain</option><option value="America/Phoenix">Arizona (no DST)</option><option value="America/Los_Angeles">Pacific</option><option value="America/Anchorage">Alaska</option><option value="Pacific/Honolulu">Hawaii</option></select></div>
             <div class="field" style="grid-column:1/-1"><label>Notes</label><textarea data-f="notes" style="min-height:70px;font-family:inherit"></textarea></div>
@@ -770,7 +770,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.5.2";
+const TOOLKIT_VERSION = "1.5.3";
 const DEMO = false; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
