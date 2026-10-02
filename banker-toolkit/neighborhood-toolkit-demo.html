@@ -703,9 +703,20 @@ Discover 6,100 190 24.9"></textarea>
               <div class="eyebrow" style="font-size:11px">Desktop app</div>
               <div class="hint" id="deskPath" style="margin:4px 0 8px"></div>
               <div class="btnrow"><button class="btn ghost small" onclick="DESK.openDataFolder()">Open data folder</button>
-                <button class="btn ghost small" onclick="DESK.checkUpdates().then(ok=>toast(ok?'Checking the hub for updates\u2026':'Link the hub first — updates come from it'))">Check for updates</button>
+                <button class="btn ghost small" onclick="DESK.checkUpdates().then(r=>toast(!r||r.state==='off'?'Updates are off in this build':r.state==='available'?'Update available: v'+r.version+' \u2014 see the bar at the top':r.state==='current'?'Up to date \u2014 v'+r.version:'Couldn\u2019t check right now'+(r.error?': '+r.error:'')))">Check for updates</button>
                 <button class="btn ghost small" onclick="importOldDesktop()">Import a previous toolkit file (.json)</button></div>
               <div id="deskFound" style="margin-top:8px"></div>
+              <div id="extBox" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">
+                <div class="eyebrow" style="font-size:11px">Chrome extension (test) — one-click send from Salesforce</div>
+                <div class="hint" id="extStatus" style="margin:4px 0 8px"></div>
+                <ol class="hint" style="margin:0 0 8px 18px;line-height:1.7">
+                  <li>In Chrome open <b>chrome://extensions</b> and switch on <b>Developer mode</b> (top right).</li>
+                  <li>Click <b>Load unpacked</b> and pick the folder below.</li>
+                  <li>Open any Salesforce lead — a red <b>Send to NMC toolkit</b> button appears bottom-right. Click it; the lead lands at the top of your Pipeline.</li>
+                </ol>
+                <div class="btnrow"><code id="extPath" class="hint" style="flex:1;word-break:break-all"></code><button class="btn ghost small" onclick="DESK.openExtensionFolder()">Open extension folder</button></div>
+                <p class="hint" style="margin:6px 0 0">Updates: the folder is replaced with each toolkit update — restart Chrome to pick it up. Nothing leaves this computer; the extension talks to the app on 127.0.0.1 only.</p>
+              </div>
             </div>
             <div class="eyebrow" style="font-size:11px">Local save file</div>
             <p class="hint" style="margin:4px 0 8px">Everything you do saves on this computer, instantly, with or without a connection. Pick a folder and it also writes <b>nmc-toolkit-you.json</b> and <b>call-blocks-you.csv</b> there (Chrome/Edge) — a local folder or the mapped NMC drive.</p>
@@ -1238,7 +1249,7 @@ function renderPipeline(){
   const inbox=(state.inbox||[]);
   const ib = inbox.length? `<div style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px">
     <b>New from Salesforce (${inbox.length})</b>
-    ${inbox.map(it=>`<div class="btnrow" style="margin-top:6px"><span><b>${esc(it.fields.name)}</b>${it.fields.balance?` \u00b7 ${money(num(it.fields.balance))}`:""}${it.fields.rate?` @ ${pct(num(it.fields.rate))}`:""}${it.fields.leadStatus?` \u00b7 ${esc(it.fields.leadStatus)}`:""}</span><span style="flex:1"></span>
+    ${inbox.map(it=>`<div class="btnrow" style="margin-top:6px"><span><b>${esc(it.fields.name)}</b>${it.fields.balance?` \u00b7 ${money(num(it.fields.balance))}`:""}${it.fields.rate?` @ ${pct(num(it.fields.rate))}`:""}${it.fields.leadStatus?` \u00b7 ${esc(it.fields.leadStatus)}`:""}${it.source==="chrome-extension"?` <span class="tag-flat">via Chrome${it.pairs?" \u00b7 "+it.pairs+" fields read, "+Object.keys(it.fields||{}).length+" recognized":""}</span>`:""}</span><span style="flex:1"></span>
       <button class="btn small" onclick="importInbox('${it.id}')">Import</button><button class="btn ghost small" onclick="ackInbox('${it.id}')">Ignore</button></div>`).join("")}</div>` : "";
   $("pipeTable").innerHTML = ib + bar + seasonBar + rwBar + (!rows.length ? `<div class="empty">${pipeView!=="all"?"Nothing in this view right now \u2014 that can change with the next rate push.":"No pipeline clients yet. Add one, paste a Salesforce record, or load the samples in Settings."}</div>` :
   `<table class="data"><thead><tr><th>Client</th><th>Status</th><th class="num">Balance</th><th class="num">Rate</th><th class="num">P&amp;I</th><th>Follow-up</th><th>Opportunity</th><th></th></tr></thead><tbody>`+
@@ -1268,7 +1279,21 @@ const SF_NMC={ "name":"name","email":"email","phone":"phone","phone +":"phone","
   "balance of open ccs":"ccBal","# of open ccs":"ccCount","monthly payment of revolving debt(s)":"ccPay","cc payment":"ccPay2",
   "balance of auto loan(s)":"autoBal","payment of auto loan(s)":"autoPay","hel balance":"helBal","hel monthly payment":"helPay",
   "total loan(s) balance":"instBal","# of loans":"loanCount","total installment debt payments":"instPay",
-  "occupancy br":"occupancy","email #2":"email2" };
+  "occupancy br":"occupancy","email #2":"email2",
+  /* fields the Chrome extension reads straight from the Salesforce record */
+  "current mortgage balance":"balance","current loan balance":"balance","first mortgage interest rate":"rate","current rate":"rate",
+  "monthly payment of 1st mortgage":"paymentTotalAlt","current monthly payment":"paymentTotalAlt",
+  "estimated monthly p and i":"payment","current p & i":"payment","current p &amp; i":"payment",
+  "annual tax amount":"taxAnnual","current property tax - monthly":"taxMonthly","current hazard insurance - monthly":"insMonthly","current mortgage insurance payment":"miMonthly",
+  "original balance of 1st mortgage":"origAmount","first mortgage loan amount":"origAmount","original loan amount":"origAmount","initial balance of recent mortgage":"origAmount",
+  "loan term":"origTermYears","current loan term (months)":"origTermMonths","close date of 1st mortgage":"closeDate",
+  "first mortgage loan type":"mortType","current loan type":"mortType","va eligible?":"vaElig","military?":"military","current lender":"servicer",
+  "appraisal value":"value","ltv":"ltv","equity":"equity",
+  "current balance of 2nd mortgage":"secondBal","2nd mortgage interest rate":"secondRate","monthly payment of 2nd mortgage":"secondPay","second mortgage servicer":"secondServicer","2nd mortgage loan type":"secondType",
+  "heloc balance":"helocBal","heloc payment":"helocPay","heloc credit limit":"helocLimit","revolving debt payment":"ccPay3","total installment debt":"instBal2",
+  "total monthly debt":"totalDebtPay","dti":"dti","refi or purchase":"purpose","transaction type":"txType","target rate":"rateToBeat","cash out amount":"cashOut",
+  "call back date":"callBack","market watch":"marketWatch","proposed rate":"propRate","proposed pi":"propPI","proposed piti":"propPITI","proposed loan amount":"propAmt","chosen lender":"chosenLender",
+  "first name":"firstName","last name":"lastName","mobile phone":"phone","street":"street","city":"city","state":"state","zip":"zip" };
 /* never captured, never previewed, never stored */
 const SF_NEVER=["ssn","social security","social security number","birthdate","date of birth","dob","age","marital status"];
 const SF_NOISE=/^(tabs|\*.*|client details.*|client information|i\.p\.a\.c\.t\.?|-{2,})$/i;
@@ -1305,10 +1330,20 @@ function parseSFText(text){
   const em=(raw.email||"").match(/[\w.+-]+@[\w-]+\.[\w.]+/)||safe.match(/[\w.+-]+@[\w-]+\.[\w.]+/); if(em) found.email=em[0];
   const ph=(raw.phone||"").match(/(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/)||safe.match(/(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/); if(ph) found.phone=ph[0].trim();
   const n=v=>v==null||v===""?null:num(v);
+  if(!raw.name && (raw.firstName||raw.lastName)) found.name=titleCase(((raw.firstName||"")+" "+(raw.lastName||"")).trim());
+  if(!raw.address && raw.street) found.address=[raw.street, raw.city, [raw.state, raw.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ");
   found.balance = n(raw.balance) ?? n(raw.balanceAlt) ?? n(raw.balanceAlt2);
   if(n(raw.balanceAlt2)>0 && found.balance>0 && n(raw.balanceAlt2)>found.balance) found.origAmount=n(raw.balanceAlt2);
   found.rate=n(raw.rate); if(found.rate!=null && found.rate>25) found.rate=null;
-  found.payment=n(raw.payment); found.paymentTotal=n(raw.paymentTotal); found.value=n(raw.value); found.fico=n(raw.fico);
+  found.payment=n(raw.payment); found.paymentTotal=n(raw.paymentTotal) ?? n(raw.paymentTotalAlt); found.value=n(raw.value); found.fico=n(raw.fico);
+  if(found.payment>0 && found.paymentTotal>0 && found.payment>=found.paymentTotal) delete found.payment;   /* a "P&I" that equals the total is really the total */
+  /* taxes & insurance straight from the record: annual figures for the client, and today's escrow when the pieces are there */
+  const taxA = n(raw.taxAnnual) ?? (n(raw.taxMonthly)!=null ? Math.round(n(raw.taxMonthly)*12) : null); if(taxA>0) found.taxAnnual=taxA;
+  if(n(raw.insMonthly)>0) found.insAnnual=Math.round(n(raw.insMonthly)*12);
+  { const esc_=(n(raw.taxMonthly)||(taxA>0?taxA/12:0))+(n(raw.insMonthly)||0)+(n(raw.miMonthly)||0); if(esc_>0 && (n(raw.taxMonthly)>0||n(raw.insMonthly)>0)) found.escrow=Math.round(esc_); }
+  if(n(raw.origAmount)>0 && !(found.origAmount>0)) found.origAmount=n(raw.origAmount);
+  { const yrs=n(raw.origTermYears), mos=n(raw.origTermMonths); const t = yrs>0 ? (yrs>60? Math.round(yrs/12) : Math.round(yrs)) : mos>0 ? Math.round(mos/12) : null; if(t&&[10,15,20,25,30,40].includes(t)) found.origTerm=t; }
+  if(raw.closeDate && raw.monthsLeft==null){ const d=new Date(raw.closeDate); if(!isNaN(d)){ const since=Math.max(0,Math.round((Date.now()-d.getTime())/2629800000)); const term=(found.origTerm||30)*12; if(since<term) found.monthsLeft=term-since; } }
   if(raw.servicer) found.servicer=raw.servicer; if(raw.address) found.address=raw.address;
   const src=(raw.leadSource||"")+" "+(raw.mortType||"")+" "+(raw.loanType||"");
   if(/fha/i.test(src)) found.loanType="FHA"; else if(/\bva\b/i.test(src)) found.loanType="VA"; else if(/jumbo/i.test(src)) found.loanType="Jumbo"; else if(raw.leadSource||raw.loanType) found.loanType="Conventional";
@@ -1317,17 +1352,26 @@ function parseSFText(text){
   const noteBits=[]; if(raw.leadStatus) noteBits.push("Lead status: "+raw.leadStatus); if(raw.closeDate) noteBits.push("Closed "+raw.closeDate);
   if(raw.purpose) noteBits.push(raw.purpose); if(n(raw.rateToBeat)) noteBits.push("Rate to beat "+raw.rateToBeat);
   if(n(raw.loanCount)) noteBits.push(raw.loanCount+" loans on credit"+(n(raw.instBal)?", "+money(n(raw.instBal))+" total":""));
+  if(/^(yes|true)$/i.test(raw.vaElig||"")||/^(yes|true)$/i.test(raw.military||"")) noteBits.push("VA eligible");
+  if(n(raw.cashOut)>0) noteBits.push("Wants "+money(n(raw.cashOut))+" cash out");
+  if(raw.txType) noteBits.push(raw.txType); if(n(raw.dti)>0) noteBits.push("DTI "+String(raw.dti).replace(/%?$/,"%"));
+  if(n(raw.ltv)>0) noteBits.push("LTV "+String(raw.ltv).replace(/%?$/,"%")); if(raw.callBack) noteBits.push("Call back "+raw.callBack);
+  if(n(raw.propRate)>0) noteBits.push("Previously quoted "+String(raw.propRate).replace(/%?$/,"%")+(n(raw.propPI)?" / "+money(n(raw.propPI))+" P&I":"")+(raw.chosenLender?" ("+raw.chosenLender+")":""));
+  if(/^(yes|true)$/i.test(raw.marketWatch||"")) noteBits.push("On Salesforce market watch");
   if(noteBits.length) found.notes=noteBits.join(" \u00b7 ");
   const debts=[];
   if(n(raw.ccBal)>0) debts.push({name:"Credit cards"+(n(raw.ccCount)?" ("+raw.ccCount+" open)":""), type:"card", acct:"", extra:0, balance:n(raw.ccBal), apr:24.99, aprEst:true, pay:n(raw.ccPay)??n(raw.ccPay2)??null});
   if(n(raw.autoBal)>0) debts.push({name:"Auto loan(s)", type:"auto", acct:"", extra:0, balance:n(raw.autoBal), apr:7.5, aprEst:true, pay:n(raw.autoPay)});
   if(n(raw.helBal)>0) debts.push({name:"Home equity loan", type:"heloc", acct:"", extra:0, balance:n(raw.helBal), apr:9.0, aprEst:true, pay:n(raw.helPay)});
+  if(n(raw.helocBal)>0 && !(n(raw.helBal)>0 && Math.abs(n(raw.helBal)-n(raw.helocBal))<1)) debts.push({name:"HELOC"+(n(raw.helocLimit)?" (limit "+money(n(raw.helocLimit))+")":""), type:"heloc", acct:"", extra:0, balance:n(raw.helocBal), apr:9.0, aprEst:true, pay:n(raw.helocPay)});
+  if(n(raw.secondBal)>0) debts.push({name:"2nd mortgage"+(raw.secondServicer?" \u2014 "+raw.secondServicer:""), type:"heloc", acct:"", extra:0, balance:n(raw.secondBal), apr:n(raw.secondRate)>0?n(raw.secondRate):9.0, aprEst:!(n(raw.secondRate)>0), pay:n(raw.secondPay)});
+  if(n(raw.instBal2)>0 && !(n(raw.instBal)>0)) debts.push({name:"Installment loan(s)", type:"installment", acct:"", extra:0, balance:n(raw.instBal2), apr:11, aprEst:true, pay:n(raw.instPay)});
   Object.keys(found).forEach(k=>{ if(found[k]==null||found[k]==="") delete found[k]; });
   lastSF={fields:found, debts};
   const keys=Object.keys(found); const cc=null;   /* a paste never targets the selected client */
   const digits=v=>String(v||"").replace(/\D/g,"").slice(-10);
   const dup=state.clients.find(x=>!x.quick&&((found.phone&&digits(x.phone)&&digits(x.phone)===digits(found.phone))||(found.email&&x.email&&x.email.toLowerCase()===found.email.toLowerCase())));
-  const fmt=(k,v)=> ["balance","payment","paymentTotal","escrow","value"].includes(k)? money(v) : k==="rate"||k==="targetRate"? pct(v) : esc(v);
+  const fmt=(k,v)=> ["balance","payment","paymentTotal","escrow","value","origAmount","taxAnnual","insAnnual"].includes(k)? money(v) : k==="rate"||k==="targetRate"? pct(v) : esc(v);
   const mlNote = raw.monthsSince && raw.monthsLeft==null ? `<div class="hint">Months left assumes a 30-year term from \u201cMonths Since Close Date\u201d \u2014 adjust in the details if it was a 15 or 20.</div>` : "";
   const fcHint = (found.balance==null||found.balance===0) ? `<div class="hint" style="margin-bottom:6px">No mortgage balance on this lead \u2014 if the home is paid off, tick <b>Owns the home free and clear</b> on the client after creating it.</div>` : "";
   const hdr = fcHint + (dup ? `<div style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:13px"><b>${esc(dup.name)}</b> is already in your pipeline with this ${found.phone&&digits(dup.phone)===digits(found.phone)?"phone number":"email"}. <button class="btn small" onclick="pickClient('${dup.id}'); go('client'); toast('Opened '+${JSON.stringify(dup.name)})">Open ${esc(dup.name)}</button> <button class="btn ghost small" onclick="applySFTo('${dup.id}')">Update ${esc(dup.name.split(/[ ,&]/)[0])} with this paste</button></div>` : "");
@@ -2670,6 +2714,20 @@ function bmDone(){ bmInstalled(); $("bmModal").style.display="none"; toast("Book
 function bmLater(){ $("bmModal").style.display="none"; }
 function bmCopyCode(){ const src=$("sfBmLink"); const code=src?decodeURIComponent(src.getAttribute("href")):""; if(!code) return;
   (navigator.clipboard&&navigator.clipboard.writeText ? navigator.clipboard.writeText(code) : Promise.reject()).then(()=>toast("Bookmark code copied \u2014 paste it as the bookmark\u2019s URL"),()=>prompt("Copy this:",code)); }
+/* Chrome extension → desktop listener → here: parse like a paste, drop it in the Pipeline inbox, and open the preview */
+function sfIncoming(p){ if(!p||!p.text) return;
+  try{ parseSFText(p.text); }catch(e){ toast("Couldn\u2019t read that Salesforce page"); return; }
+  const F=(lastSF&&lastSF.fields)||{}; const debts=(lastSF&&lastSF.debts)||[];
+  const id="ext"+Date.now().toString(36);
+  state.inbox=(state.inbox||[]).filter(x=>!(x.source==="chrome-extension"&&x.fields&&F.name&&x.fields.name===F.name));   /* resend replaces */
+  const pairs = p.pairs>0 ? p.pairs : Math.max(0, Math.floor(((p.text.split("----- page text -----")[0]||"").trim().split(/\n/).length)/2));
+  state.inbox.unshift({id, fields:F, debts, text:p.text, pairs, when:p.when||new Date().toISOString(), source:"chrome-extension", url:p.url||""});
+  save(); go("pipeline"); renderPipeline(); renderExtStatus();
+  toast("From Salesforce: "+(F.name||"lead")+" \u2014 "+pairs+" fields read, "+Object.keys(F).length+" recognized. Top of your Pipeline."); }
+function renderExtStatus(){ const el=$("extStatus"), ep=$("extPath"); if(!el||!DESK||!DESK.sfStatus) return;
+  let st=null; try{ st=DESK.sfStatus(); }catch(e){}
+  el.innerHTML = !st ? "" : st.listening ? `<span class="tag-good">Listening for the extension on 127.0.0.1:${st.port}</span>${st.lastAt?` \u00b7 last lead received ${new Date(st.lastAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}`:" \u00b7 nothing received yet"}` : `<span class="tag-warn">Listener couldn\u2019t start on port ${st.port}</span> \u2014 another program may be using it`;
+  if(ep){ let p=""; try{ p=DESK.extensionPath()||""; }catch(e){} ep.textContent=p; } }
 function maybeBmUpdate(){ const v=state.settings.bmVersion; if(v && v!==BOOKMARKLET_VERSION) showBmModal(false); }
 function maybeSetup(){ const s=state.settings; if(!s.loName && !s.setupDone){ const m=$("setupModal"); if(m) m.style.display="flex"; } }
 function saveSetup(){ const s=state.settings;
@@ -2995,17 +3053,17 @@ async function fetchInbox(){ const b=apiBase(); if(!b) return; const s=state.set
   try{ const r=await fetch(b+"/api/inbox?email="+encodeURIComponent(s.loEmail||"")+"&name="+encodeURIComponent(s.loName||""),{cache:"no-store"});
     if(!r.ok) return; const j=await r.json(); const items=(j&&j.items)||[];
     const fresh=items.filter(it=>!(state.inbox||[]).some(x=>x.id===it.id));
-    state.inbox=items; save(); if($("s-pipeline")&&$("s-pipeline").classList.contains("active")) renderPipeline();
+    state.inbox=(state.inbox||[]).filter(x=>x.source==="chrome-extension").concat(items); save(); if($("s-pipeline")&&$("s-pipeline").classList.contains("active")) renderPipeline();
     if(fresh.length) toast("New from Salesforce: "+fresh.map(x=>x.fields.name).join(", ")+" \u2014 see Pipeline");
   }catch(e){} }
-async function ackInbox(id){ state.inbox=(state.inbox||[]).filter(x=>x.id!==id); save(); renderPipeline();
+async function ackInbox(id){ const it=(state.inbox||[]).find(x=>x.id===id); state.inbox=(state.inbox||[]).filter(x=>x.id!==id); save(); renderPipeline(); if(it&&it.source==="chrome-extension") return;
   const b=apiBase(); if(!b) return; const s=state.settings;
   try{ await fetch(b+"/api/inbox/ack",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id,email:s.loEmail||"",name:s.loName||""})}); }catch(e){} }
 function importInbox(id){ const it=(state.inbox||[]).find(x=>x.id===id); if(!it) return; const F=it.fields;
   const em=(F.email||"").toLowerCase(); const nm=(F.name||"").toLowerCase();
   const match=state.clients.find(c=>!c.quick && em && (c.email||"").toLowerCase()===em) || state.clients.find(c=>!c.quick && nm && (c.name||"").toLowerCase()===nm);
   state.currentId = match? match.id : null;
-  save(); refreshAll(); go("client"); const text=recordToSFText(F); $("sfPaste").value=text; parseSFText(text);
+  save(); refreshAll(); go("client"); const text=it.text||recordToSFText(F); $("sfPaste").value=text; parseSFText(text);
   ackInbox(id);
   toast(match? "Salesforce record loaded \u2014 changed fields are checked; apply when ready" : "New record \u2014 review, then \u201cCreate new client from this\u201d"); }
 async function heartbeat(){ const nm=state.settings.loName||"Banker";
@@ -3233,6 +3291,7 @@ if(state.settings.brand==="#0E3A5D"||state.settings.brand==="#7E2318") state.set
 if(state.settings.accent==="#D98E2B") state.settings.accent="#DDE4F4";
 if(DEMO){ document.body.classList.add("demo"); const bn=$("demoBanner"); if(bn) bn.style.display="block"; }
 { const v=$("verTag"); if(v) v.innerHTML="<b>NMC Toolkit v"+esc(appVersion())+"</b>"+(DESK?" \u00b7 desktop":" \u00b7 browser")+"<br>"; }
+if(/-beta\./.test(appVersion())){ const bn=$("updBanner"); if(bn){ bn.style.display="block"; bn.innerHTML=`<b>Beta build</b> \u2014 this is the test version with the Chrome extension. It keeps its own data file and never updates itself; newer betas are posted on the <a href="#" onclick="DESK&&DESK.openReleases();return false">releases page</a>.`; } }
 if(DESK){ DESK.setHub(apiBase()||""); DESK.onUpdateStatus(s=>{ const b=$("updBanner"); if(!b) return;
     b.style.display="block"; b.innerHTML = s.state==="ready"
       ? `<div class="btnrow"><span><b>Update available:</b> version ${esc(s.version)} is ready. Everything you\u2019re working on is saved \u2014 update whenever you have a moment.</span><span style="flex:1"></span><button class="btn small" onclick="DESK.installUpdate()">Update now</button><button class="btn ghost small" onclick="this.closest('#updBanner').style.display='none'">Later</button></div>`
@@ -3240,6 +3299,7 @@ if(DESK){ DESK.setHub(apiBase()||""); DESK.onUpdateStatus(s=>{ const b=$("updBan
       ? `<div class="btnrow"><span><b>Update available:</b> version ${esc(s.version)}. Download the new installer and drag it over the app \u2014 your data stays put.</span><span style="flex:1"></span><button class="btn small" onclick="DESK.openReleases&&DESK.openReleases()">Download update</button><button class="btn ghost small" onclick="this.closest('#updBanner').style.display='none'">Later</button></div>`
       : "<b>Downloading update</b> to version "+esc(s.version)+" in the background\u2026"; });
   document.body.classList.add("desktop"); const b=$("deskBox"); if(b) b.style.display="block";
+  if(DESK.onSfIncoming) DESK.onSfIncoming(sfIncoming); renderExtStatus();
   const p=$("deskPath"); if(p) p.innerHTML="Your data saves automatically to <b>"+esc(DESK.dataPath())+"</b> \u2014 self-contained with the app, no browser involved. Version "+esc(DESK.version()||"")+".";
   (async()=>{ try{ const found=await DESK.findOldExports(); const el=$("deskFound"); if(!el||!found||!found.length) return;
     el.innerHTML='<div class="hint" style="margin-bottom:4px">Previous toolkit files found on this computer:</div>'+found.slice(0,6).map(f=>`<div class="btnrow" style="margin:3px 0"><span class="hint" style="flex:1">${esc(f.name)} <span style="opacity:.7">\u00b7 ${esc(f.where)} \u00b7 ${esc(f.when)}</span></span><button class="btn small" onclick="importFromPath(${JSON.stringify(f.path).replace(/"/g,"&quot;")})">Import</button></div>`).join("");

@@ -16,4 +16,8 @@ contextBridge.exposeInMainWorld("nmcDesktop", {
   installUpdate: () => ipcRenderer.invoke("update:install"),
   openReleases: () => ipcRenderer.invoke("update:openReleases"),
   onUpdateStatus: (fn) => ipcRenderer.on("update:status", (e, s) => fn(s)),
+  onSfIncoming: (fn) => ipcRenderer.on("sf:incoming", (e, p) => fn(p)),         /* Chrome extension → local listener → toolkit */
+  sfStatus: () => ipcRenderer.sendSync("sf:statusSync"),
+  extensionPath: () => ipcRenderer.sendSync("sf:extensionPathSync"),
+  openExtensionFolder: () => ipcRenderer.invoke("sf:openExtensionFolder"),
 });
