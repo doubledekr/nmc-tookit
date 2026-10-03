@@ -475,7 +475,8 @@ Discover 6,100 190 24.9"></textarea>
         </div>
       </div>
 
-      <div class="hint" id="anRateSrc" style="margin:-4px 0 8px"></div>
+      <div class="btnrow" style="margin:-4px 0 8px;align-items:center;gap:12px"><div class="hint" id="anRateSrc" style="margin:0"></div><span style="flex:1"></span>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;white-space:nowrap"><input type="checkbox" id="anReal" style="width:auto;min-height:0" onchange="setRealQuote(this.checked)"> <b>Real quote</b> <span class="hint" style="display:inline">— priced with the lender today</span></label></div>
       <div id="anResults"></div>
     </section>
 
@@ -512,6 +513,10 @@ Discover 6,100 190 24.9"></textarea>
           <div class="field" style="display:none"><label>Pricing option on proposal</label><select id="propOption" onchange="renderProposalPreview()"></select></div>
           <div class="field" style="align-self:end"><div class="btnrow"><button class="btn" onclick="copyImage('proposal')">Copy proposal</button><button class="btn ghost" onclick="emailImage('proposal')">Email</button><button class="btn ghost" onclick="exportImage('proposal')">Save image</button><button class="btn ghost" onclick="exportPDF()">PDF</button><button class="btn ghost" onclick="librarySave('proposal')">Save to library</button><button class="btn ghost" id="propSaveOpt" onclick="addSnapScenario(); renderProposalPreview()" title="Keep this proposal's set-up as a saved option, so it can sit side by side with others">Save as an option</button><button class="btn ghost" onclick="librarySave('proposal'); markSentLatest('text')" title="Logs this proposal as sent by text (Email marks itself automatically)">Mark sent by text</button></div></div>
         </div>
+        <div class="field"><div class="chiprow" style="gap:16px">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="propBadge" style="width:auto;min-height:0" onchange="setPropFlag('badge',this.checked)"> NMC mortgage badge</label>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="propAwards" style="width:auto;min-height:0" onchange="setPropFlag('awards',this.checked)"> 2024 Rocket award badges</label>
+          <span class="hint" id="propBrandHint"></span></div></div>
         <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="propAmort" style="width:auto" checked onchange="setPropAmort(this.checked)"> Include the year-by-year amortization table on the proposal</label></div>
         <div class="field"><label>Personal note to client (optional)</label><textarea id="propNote" style="min-height:60px;font-family:inherit" oninput="renderProposalPreview()" placeholder="e.g. Maria — here's the consolidation option we walked through on Tuesday."></textarea></div>
         <div class="field"><label>Saved options from Savings analysis <span class="hint" style="display:inline">(check one for a single proposal, two or more for a side-by-side · ★ marks your recommendation)</span></label><div id="propSnapList"></div></div>
@@ -750,6 +755,10 @@ Discover 6,100 190 24.9"></textarea>
           <p class="hint" style="margin:4px 0 6px"><b>With the hub:</b> ask IT to add the \u201cSend to NMC toolkit\u201d button to the Salesforce lead page. Click it on any open lead and that client shows up at the top of your Pipeline as <b>New from Salesforce</b> the moment you switch back here.</p>
           <p class="hint" style="margin:0 0 6px"><b>Without the hub:</b> drag this to your bookmarks bar (re-drag it after each toolkit update), click it on an open lead, then use <b>Paste from clipboard &amp; parse</b> on the Client workspace. It reads every field on the lead — including sections Salesforce hides from a plain copy: <a id="sfBmLink" class="btn ghost small" style="text-decoration:none" draggable="true" ondragstart="bmInstalled()" onclick="bmInstalled();return false" href="javascript:(function(){%0Avar pairs=[],seen={},QSA,DQSA,TC,IT,SR,fr;%0Atry{fr=document.createElement('iframe');fr.style.display='none';document.documentElement.appendChild(fr);var W=fr.contentWindow;%0AQSA=W.Element.prototype.querySelectorAll;DQSA=W.Document.prototype.querySelectorAll;%0ATC=Object.getOwnPropertyDescriptor(W.Node.prototype,'textContent').get;IT=Object.getOwnPropertyDescriptor(W.HTMLElement.prototype,'innerText').get;SR=Object.getOwnPropertyDescriptor(W.Element.prototype,'shadowRoot').get;}catch(e){}%0Afunction qs(root,sel){try{if(QSA&&root.nodeType===1)return QSA.call(root,sel);if(DQSA&&root.nodeType===9)return DQSA.call(root,sel);}catch(e){}try{return root.querySelectorAll(sel);}catch(e){return [];}}%0Afunction tc(el){try{return TC.call(el)||'';}catch(e){return el.textContent||'';}}%0Afunction it(el){try{return IT.call(el)||'';}catch(e){return el.innerText||'';}}%0Avar JUNK='button, .slds-assistive-text, [class*=&quot;inline-edit&quot;], lightning-helptext, lightning-static-map, iframe, svg, script, style';%0Afunction fallback(el){var c=el.cloneNode(true);qs(c,JUNK).forEach(function(b){b.remove();});qs(c,'div, li, p, br, tr').forEach(function(d){d.parentNode.insertBefore(document.createTextNode('%5Cn'),d);});return tc(c);}%0Afunction vis(el){try{if(el.checkVisibility)return el.checkVisibility();return el.getClientRects().length>0;}catch(e){return true;}}%0Afunction lines(el){var t=it(el);if(!t||!t.trim())t=fallback(el);return t.split(/%5Cn+/).map(function(s){return s.replace(/%5Cs+/g,' ').trim();}).filter(function(s){return s&&!/%5E(Edit|Help)%5Cs/.test(s);});}%0Afunction harvest(root){%0A  qs(root,'[data-target-selection-name%5E=&quot;sfdc:RecordField&quot;], .slds-form-element, records-record-layout-item').forEach(function(fe){%0A    if(fe.getAttribute&&fe.getAttribute('data-target-selection-name')&&qs(fe,'[data-target-selection-name%5E=&quot;sfdc:RecordField&quot;]').length)return;%0A    var lab=qs(fe,'.test-id__field-label, .slds-form-element__label, label')[0];%0A    var val=qs(fe,'.test-id__field-value, .slds-form-element__static, .slds-form-element__control')[0];%0A    if(!lab||!val||!vis(fe))return;%0A    var l=(lines(lab)[0]||'').replace(/[:*]+%24/,'').trim();if(!l)return;%0A    var v=lines(val).filter(function(s){return s!==l;}).join(', ');%0A    var k=l+'|'+v;if(!seen[k]){seen[k]=1;pairs.push(l+'%5Cn'+v);}%0A  });%0A  qs(root,'*').forEach(function(el){var s=null;try{s=SR?SR.call(el):el.shadowRoot;}catch(e){}if(s)harvest(s);if(el.tagName==='IFRAME'&&el!==fr){try{if(el.contentDocument)harvest(el.contentDocument);}catch(e){}}});%0A}%0Aharvest(document);%0Avar raw=it(document.body);%0Aif(fr)fr.remove();%0Avar text=pairs.length?pairs.join('%5Cn')+'%5Cn%5Cn----- page text -----%5Cn'+raw:raw;%0Afunction done(){alert('Copied '+pairs.length+' fields for the NMC toolkit. Switch to it and click &quot;Paste from clipboard & parse&quot;.');}%0Aif(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(done,function(){prompt('Copy this:',text);});}%0Aelse{prompt('Copy this:',text);}%0A})();" onclick="return false" title="Drag me to your bookmarks bar">Copy lead for NMC</a> <span id="bmStatus" class="hint" style="display:inline"></span> <button class="btn ghost small" onclick="showBmModal(true)">How to update the bookmark</button></p>
         </div>
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
+          <div class="eyebrow" style="font-size:11px">Brand images on proposals</div>
+          <p class="hint" style="margin:4px 0 6px">The NMC mortgage badge and the 2024 Rocket award badges come from neighborhoodmc.com and are cached here, so proposals embed them offline. <span id="brandStatus"></span> <button class="btn ghost small" onclick="fetchBrandAssets(true).then(()=>toast('Brand images refreshed'))">Refresh brand images</button></p>
+        </div>
         <p class="hint" style="margin-top:10px">Linking the hub turns on live rates, team stats, the template library, and a server backup of this save file. No VPN or offline? Everything core keeps working from your local copy and catches up on its own.</p>
       </div>
       <div class="row">
@@ -808,8 +817,19 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.6.1";
-const BOOKMARKLET_VERSION = "2";   /* bump this whenever the Salesforce bookmarklet code changes — bankers get a one-time "re-drag it" walkthrough */
+const TOOLKIT_VERSION = "1.6.2";
+const BOOKMARKLET_VERSION = "2";
+/* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
+const BRAND_ASSETS = {
+  badge: "https://neighborhoodmc.com/wp-content/uploads/2025/03/mortgage.jpg",
+  awards: [
+    "https://neighborhoodmc.com/wp-content/uploads/2025/03/L-2024RocketAwards-Top100MB-e1741359578501.png",
+    "https://neighborhoodmc.com/wp-content/uploads/2025/03/L-2024RocketAwards-TopPurchaseMB-e1741359550223.png",
+    "https://neighborhoodmc.com/wp-content/uploads/2025/03/L-2024RocketAwards-TopRefiMB-e1741359538779.png",
+    "https://neighborhoodmc.com/wp-content/uploads/2025/03/L-2024RocketAwards-TopVAMB-e1741358781112.png",
+    "https://neighborhoodmc.com/wp-content/uploads/2025/03/L-2024RocketAwards-TopFHAMB-e1741359567670.png"
+  ]
+};   /* bump this whenever the Salesforce bookmarklet code changes — bankers get a one-time "re-drag it" walkthrough */
 const DEMO = false; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
 let mirrorSeq=1, mirrorSent=0, mirrorBusy=false;
@@ -1598,7 +1618,7 @@ function readAnalysisInputs(){ const c=cur(); if(!c) return;
   c.analysis={anRate:num($("anRate").value), anTerm:+$("anTerm").value, anCosts:num($("anCosts").value)||0,
     anCashOut:num($("anCashOut").value)||0, anSkip:+$("anSkip").value, anRoll:$("anRoll").value, anLien:$("anLien").value,
     anExtra:num($("anExtra")?$("anExtra").value:0)||0, rateSrc:c.analysis.rateSrc,
-    anProgram:$("anProgram")?$("anProgram").value:"standard", anMip:num($("anMip")?$("anMip").value:1.75)??1.75, anPrepay:$("anPrepay")?$("anPrepay").value:"yes",
+    anReal:!!($("anReal")&&$("anReal").checked), realWhen:c.analysis.realWhen, anProgram:$("anProgram")?$("anProgram").value:"standard", anMip:num($("anMip")?$("anMip").value:1.75)??1.75, anPrepay:$("anPrepay")?$("anPrepay").value:"yes",
     saved:c.analysis.saved, anEquity:$("anEquity")?$("anEquity").value:"hel", anDraw:num($("anDraw")?$("anDraw").value:10)||10,
     anX1:num($("anX1")?$("anX1").value:100), anX2:num($("anX2")?$("anX2").value:250), anX3:num($("anX3")?$("anX3").value:500),
     anNoCompare:$("anNoCompare")&&$("anNoCompare").checked?"yes":"no", anShowExtra:$("anShowExtra")&&!$("anShowExtra").checked?"no":"yes", anCustom:num($("anCustom")?$("anCustom").value:0)||0}; save();
@@ -1607,12 +1627,14 @@ function readAnalysisInputs(){ const c=cur(); if(!c) return;
 const todayStr=()=>new Date().toISOString().slice(0,10);
 function aprText(c){ try{ const r=c&&computeAnalysis(c); if(!r||r.tooSmall) return ""; return " APR "+pct(r.apr)+(r.aprEst?" (est. \u2014 rate + 0.25% until costs are entered)":" (from "+money((r.a.anCosts||0)+r.mipAmt)+" in costs)")+"."; }catch(e){ return ""; } }
 function rateSrcText(c){ const s=c&&c.analysis&&c.analysis.rateSrc; if(!c||!c.analysis||c.analysis.anRate==null) return "";
+  if(c.analysis.anReal) return "\u2714 Real quote \u2014 "+pct(c.analysis.anRate)+" priced with the lender"+(c.analysis.realWhen?" "+c.analysis.realWhen:"")+(s&&s.lender?" ("+s.lender+")":"")+".";
   if(!s) return "Rate: entered earlier (source not recorded).";
   if(s.type==="quote") return "Rate: actual lender quote \u2014 "+(s.lender||"lender")+" "+pct(c.analysis.anRate)+(s.when?" ("+s.when+")":"")+".";
   if(s.type==="feed") return "Rate: ESTIMATE from the rate feed"+(s.when?" ("+s.when+")":"")+" \u2014 replace with actual pricing before this goes to the client.";
   return "Rate: entered by hand"+(s.when?" ("+s.when+")":"")+"."; }
+function setRealQuote(on){ const c=cur(); if(!c) return; readAnalysisInputs(); c.analysis.anReal=!!on; if(on) c.analysis.realWhen=todayStr(); save(); runAnalysis(); renderProposalPreview(); toast(on?"Marked as a real quote \u2014 the proposal says so":"Back to an estimate"); }
 function markRateManual(){ const c=cur(); if(!c) return; const v=num($("anRate").value);
-  if(v!=null && v!==c.analysis.anRate){ c.analysis.rateSrc={type:"manual",when:todayStr()}; } }
+  if(v!=null && v!==c.analysis.anRate){ c.analysis.rateSrc={type:"manual",when:todayStr()}; if(c.analysis.anReal){ c.analysis.anReal=false; const cb=$("anReal"); if(cb) cb.checked=false; toast("Rate changed \u2014 no longer marked as a real quote"); } } }
 function fillAnalysisInputs(){ const c=cur(); const a=c?c.analysis:blankClient().analysis;
   /* prefill from the feed ONLY when nothing is set yet \u2014 a real quote is never overwritten */
   if(c && a.anRate==null){ const fr = a.anLien==="second" ? heRateFromFeed() : feedRateFor(c);   /* a consolidation loan never borrows the first-mortgage feed rate */
@@ -1625,9 +1647,10 @@ function fillAnalysisInputs(){ const c=cur(); const a=c?c.analysis:blankClient()
   if($("anShowExtra")) $("anShowExtra").checked=a.anShowExtra!=="no";
   if($("anCustom")) $("anCustom").value=a.anCustom||"";
   if($("anEquity")){ $("anEquity").value=a.anEquity||"hel"; $("anDraw").value=a.anDraw||10; document.body.classList.toggle("heloc", (a.anEquity||"hel")==="heloc"); }
+  if($("anReal")) $("anReal").checked=!!a.anReal;
   if($("anProgram")){ $("anProgram").value=a.anProgram||"standard"; $("anMip").value=a.anMip??1.75; $("anPrepay").value=a.anPrepay||"yes"; programRules(); } applyLienMode(); }
 function setTerm(y){ $("anTerm").value=String(y); runAnalysis(); }
-const MODE_KEYS=["anRate","rateSrc","anTerm","anCosts","anCashOut","anSkip","anRoll","anExtra","anMip","anPrepay","anEquity","anDraw","anX1","anX2","anX3","anNoCompare","anShowExtra","anCustom"];
+const MODE_KEYS=["anRate","rateSrc","anReal","anTerm","anCosts","anCashOut","anSkip","anRoll","anExtra","anMip","anPrepay","anEquity","anDraw","anX1","anX2","anX3","anNoCompare","anShowExtra","anCustom"];
 function modeOf(a){ if(a.anLien==="second") return "second"; if(a.anLien==="fc") return "fc"; if(a.anProgram==="fha_streamline") return "fha"; if(a.anProgram==="va_irrrl") return "va"; return "refi"; }
 function setMode(m){ const c=cur(); if(!c){ toast("Pick a client first"); return; } const from=modeOf(c.analysis);
   if(from===m){ applyMode(); return; }
@@ -1908,7 +1931,7 @@ function comparisonProposalHTML(c,sel){
   const rec=c.cmp&&c.cmp.rec; const recIt=items.find(x=>x.sc.id===rec);
   return `
   <div class="brandbar">
-    <div><img src="${s.logo||NMC_LOGO}" alt="${esc(s.co)}"><div class="tag">${esc(s.tag)}</div></div>
+    <div><img src="${s.logo||NMC_LOGO}" alt="${esc(s.co)}">${brandBadgeHTML(c)}<div class="tag">${esc(s.tag)}</div></div>
     <div class="lo"><b>${esc(s.loName||"Your Loan Officer")}</b>${s.loNmls?` \u00b7 NMLS #${esc(s.loNmls)}`:""}<br>${esc(s.loPhone||"")}${s.loPhone&&s.loEmail?" \u00b7 ":""}${esc(s.loEmail||"")}<br>Prepared ${new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}</div>
   </div>
   <div class="eyebrow">Your options</div>
@@ -1936,6 +1959,7 @@ function comparisonProposalHTML(c,sel){
   ${(()=>{ const all=[]; items.forEach(x=>(x.r.debts||[]).forEach(d=>{ if(d.aprEst&&d.apr>0&&!all.some(y=>y.name===d.name)) all.push(d); })); return all.length?`<div class="hint" style="margin-top:4px">APR${all.length>1?"s":""} on ${all.map(d=>esc(d.name)).join(", ")} estimated at typical rates for that kind of debt; statements will show the exact figures.</div>`:""; })()}
   <div class="hint" style="margin-top:4px">${items.some(x=>x.r.escrowIsEst)?"* Taxes &amp; insurance estimated as today\u2019s total payment minus P&amp;I. ":""}${items.some(x=>x.r.aprEst)?"* APR estimated at the note rate + 0.25% until closing costs are priced; the exact APR comes with the lender\u2019s Loan Estimate. ":""}Interest totals include your current debts at today\u2019s minimum payments in every column, so the options are compared apples to apples.${c.escrow>0?" Taxes &amp; insurance escrow (~"+money(c.escrow)+"/mo) continues on any option and is not included above.":""}</div>
   ${recIt?`<div class="recbox"><b>\u2605 Our recommendation: ${esc(recIt.sc.label)}.</b> ${c.cmp&&c.cmp.why?esc(c.cmp.why):""}</div>`:""}
+  ${awardsRowHTML(c)}
   <div class="disc">This comparison is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. Figures exclude taxes, insurance, and escrows unless noted. Program eligibility (including FHA Streamline and VA IRRRL) is subject to lender and agency guidelines. ${esc(s.co)} \u00b7 NMLS #2484730 \u00b7 Equal Housing Lender.</div>`;
 }
 function fcProposalHTML(c,r){
@@ -1951,7 +1975,7 @@ function fcProposalHTML(c,r){
   const debtRows=r.roll?r.debts.map(d=>`<tr><td>${esc(d.name)}${d.acct?` <span style="color:#777">${esc(acctTail(d.acct))}</span>`:""}</td><td class="num">${money(d.balance)}</td><td class="num">${pct(d.apr)}</td><td class="num">${money((d.pay||0)+(d.extra||0))}</td><td class="num" style="color:#2E6B4F;font-weight:600">Paid off</td></tr>`).join(""):"";
   return `
   <div class="brandbar">
-    <div><img src="${s.logo||NMC_LOGO}" alt="${esc(s.co)}"><div class="tag">${esc(s.tag)}</div></div>
+    <div><img src="${s.logo||NMC_LOGO}" alt="${esc(s.co)}">${brandBadgeHTML(c)}<div class="tag">${esc(s.tag)}</div></div>
     <div class="lo"><b>${esc(s.loName||"Your Loan Officer")}</b>${s.loNmls?` \u00b7 NMLS #${esc(s.loNmls)}`:""}<br>${esc(s.loPhone||"")}${s.loPhone&&s.loEmail?" \u00b7 ":""}${esc(s.loEmail||"")}<br>Prepared ${new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}</div>
   </div>
   <div class="eyebrow">Putting your equity to work</div>
@@ -1998,6 +2022,7 @@ function fcProposalHTML(c,r){
    ${[1,2,3,5,7,10,15,20,25,30].filter(y=>y<=r.a.anTerm).map(y=>{const m=y*12; const b=(rows)=>rows[m-1]?rows[m-1].bal:0;
      return `<tr><td>Year ${y}</td><td class="num">${money(b(r.newSched.rows))}</td>${r.ladder.map(l=>`<td class="num">${b(l.rows)>0?money(b(l.rows)):"Paid in full"}</td>`).join("")}</tr>`;}).join("")}
   </tbody></table>`}
+  ${awardsRowHTML(c)}
   <div class="disc">This proposal is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. ${r.noc?"Figures exclude taxes, insurance, and escrows.":"Taxes and insurance are estimates and will be set by the actual escrow analysis."} Cash-out eligibility and maximum loan-to-value are subject to lender and program guidelines. ${esc(s.co)} \u00b7 NMLS #2484730 \u00b7 Equal Housing Lender.</div>`;
 }
 function proposalSingleHTML(){
@@ -2050,14 +2075,14 @@ function proposalSingleHTML(){
    <tr><td><b>Total going out each month</b></td><td class="num"><b>${money(r.pitiNow>0?r.allInNow:r.outlayNow)}</b></td><td class="num"><b>${money(r.pitiNow>0?r.allInNew:r.newPay)}</b></td></tr>`:""}`;
   return `
   <div class="brandbar">
-    <div><img src="${s.logo||NMC_LOGO}" alt="${esc(s.co)}">
+    <div><img src="${s.logo||NMC_LOGO}" alt="${esc(s.co)}">${brandBadgeHTML(c)}
       <div class="tag">${esc(s.tag)}</div></div>
     <div class="lo"><b>${esc(s.loName||"Your Loan Officer")}</b>${s.loNmls?` \u00b7 NMLS #${esc(s.loNmls)}`:""}<br>
       ${esc(s.loPhone||"")}${s.loPhone&&s.loEmail?" \u00b7 ":""}${esc(s.loEmail||"")}<br>
       Prepared ${new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}</div>
   </div>
   <div class="eyebrow">Prepared exclusively for you</div>
-  <h1>${r.second?"Home Equity Proposal":"Mortgage Savings Proposal"} \u2014 ${esc(c.name)}</h1>
+  <h1>${r.second?"Home Equity Proposal":"Mortgage Savings Proposal"} \u2014 ${esc(c.name)}${quoteTagHTML(c)}</h1>
   <div style="font-size:11.5px;color:#555">${esc(c.address||"")}${c.address?" \u00b7 ":""}${esc(c.loanType)} \u00b7 ${r.second?"HEL / HELOC \u2014 second mortgage (your first mortgage is unchanged)":r.fhaS?"FHA Streamline refinance":r.prog==="va_irrrl"?"VA IRRRL refinance":"Refinance"}</div>
   ${note?`<p style="margin:10px 0;font-size:12px;font-style:italic;color:#333">${esc(note)}</p>`:""}
   ${benefits.length?`<h2>What this does for you</h2><ul style="margin:4px 0 4px 18px;font-size:12px;line-height:1.7">${benefits.map(b=>`<li>${b}</li>`).join("")}</ul>`:""}
@@ -2110,6 +2135,7 @@ function proposalSingleHTML(){
      const b1=r.newSched.rows[m-1]?r.newSched.rows[m-1].bal:0; const b2=r.pw.rows[m-1]?r.pw.rows[m-1].bal:0; const b3=r.cust&&r.cust.rows[m-1]?r.cust.rows[m-1].bal:0;
      return `<tr><td>Year ${y}</td><td class="num">${money(b1)}</td>${r.cust?`<td class="num">${b3>0?money(b3):"Paid in full"}</td>`:""}<td class="num">${b2>0?money(b2):"Paid in full"}</td></tr>`;}).join("")}
   </tbody></table>`}
+  ${awardsRowHTML(c)}
   <div class="disc">This proposal is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. Figures exclude taxes, insurance, and escrows unless noted; skipped-payment amounts reflect standard refinance timing and any escrow refund comes from your current servicer. Consolidating short-term debt into a mortgage or home equity loan may increase the total interest paid on that debt over the life of the loan and converts unsecured debt into debt secured by your home. All loans subject to credit approval. Equal Housing Opportunity. ${esc(s.footer)}${s.loNmls?` \u00b7 Loan Officer NMLS #${esc(s.loNmls)}`:""}</div>`;
 }
 function toggleInclude(id,on){ const c=cur(); if(!c) return; const P=c.prop;
@@ -2133,9 +2159,17 @@ function renderPropOptions(){ const c=cur(); const el=$("propOptsList"); if(!el)
   const ww=$("propWhyWrap"); if(ww){ ww.style.display=P.rec?"block":"none";
     const wt=$("propWhy"); if(wt&&document.activeElement!==wt) wt.value=P.why||""; }
 }
+function setPropFlag(k,on){ const c=cur(); if(!c) return; c.prop[k]=!!on; save(); const el=$("propPreview"); if(el) el.innerHTML=proposalHTML();
+  if(on && !brandImg(k==="badge"?BRAND_ASSETS.badge:BRAND_ASSETS.awards[0])) fetchBrandAssets(false).then(()=>{ const el2=$("propPreview"); if(el2) el2.innerHTML=proposalHTML(); }); }
+/* brand extras on every proposal variant: the mortgage badge beside the logo, the award row above the disclaimer */
+function brandBadgeHTML(c){ const u=BRAND_ASSETS.badge; return (c&&c.prop&&c.prop.badge&&brandImg(u)) ? `<img src="${brandImg(u)}" alt="Neighborhood Mortgage" style="max-height:46px;margin-left:12px;vertical-align:middle">` : ""; }
+function awardsRowHTML(c){ if(!(c&&c.prop&&c.prop.awards)) return ""; const imgs=BRAND_ASSETS.awards.map(u=>brandImg(u)).filter(Boolean); if(!imgs.length) return "";
+  return `<div class="awards" style="display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;margin:14px 0 6px">${imgs.map(d=>`<img src="${d}" alt="2024 Rocket Award" style="height:64px;width:auto">`).join("")}</div>`; }
+function quoteTagHTML(c){ const a=c&&c.analysis; return a&&a.anReal ? `<span style="display:inline-block;background:#E3F1E7;color:#2E6B4F;border-radius:999px;padding:2px 10px;font-size:11px;font-weight:600;margin-left:8px">Priced quote${a.realWhen?" \u00b7 "+esc(a.realWhen):""}</span>` : `<span style="display:inline-block;background:#F4EFE6;color:#7A6F5B;border-radius:999px;padding:2px 10px;font-size:11px;font-weight:600;margin-left:8px">Estimate</span>`; }
 function setPropAmort(on){ const c=cur(); if(!c) return; c.prop.amort=!!on; save(); const el=$("propPreview"); if(el) el.innerHTML=proposalHTML(); }
 function renderPropSnaps(){ const c=cur(); const el=$("propSnapList"); if(!el) return;
-  { const cb=$("propAmort"); if(cb) cb.checked=!(c&&c.prop&&c.prop.amort===false); }
+  { const cb=$("propAmort"); if(cb) cb.checked=!(c&&c.prop&&c.prop.amort===false); const b=$("propBadge"); if(b) b.checked=!!(c&&c.prop&&c.prop.badge); const aw=$("propAwards"); if(aw) aw.checked=!!(c&&c.prop&&c.prop.awards);
+    const bh=$("propBrandHint"); if(bh) bh.textContent = brandImg(BRAND_ASSETS.badge) ? "" : "(images download the first time the app is online)"; }
   const L=c?(c.scenarios||[]).filter(x=>x.kind==="snap"):[];
   if(!c||!L.length){ el.innerHTML=`<div class="hint">Nothing saved yet \u2014 click <b>Save as an option</b> above (or <b>Save this option for the proposal</b> on Savings analysis). Save two or more and check them here for a side-by-side. Until then the proposal follows whatever is on the analysis screen.</div>`; const w=$("propCmpWhyWrap"); if(w) w.style.display="none"; const so=$("propSaveOpt"); if(so) so.style.display=""; return; }
   const rec=c.cmp&&c.cmp.rec; const sel=propSelected(c);
@@ -2699,7 +2733,7 @@ function compareHTML(){
   const s=state.settings;
   return `
   <div class="brandbar">
-    <div><img src="${s.logo||NMC_LOGO}" alt="${esc(s.co)}">
+    <div><img src="${s.logo||NMC_LOGO}" alt="${esc(s.co)}">${brandBadgeHTML(c)}
       <div class="tag">${esc(s.tag)}</div></div>
     <div class="lo"><b>${esc(s.loName||"Your Loan Officer")}</b>${s.loNmls?` \u00b7 NMLS #${esc(s.loNmls)}`:""}<br>
       ${esc(s.loPhone||"")}${s.loPhone&&s.loEmail?" \u00b7 ":""}${esc(s.loEmail||"")}<br>
@@ -2712,6 +2746,7 @@ function compareHTML(){
   ${programMatrix(c,list.filter(x=>x.kind==="snap"),c.cmp&&c.cmp.rec)}
   ${compareMatrix(list.filter(x=>x.kind!=="snap"),curPay,cmpOpts(c))}
   ${cmpWhy}
+  ${awardsRowHTML(c)}
   <div class="disc">This comparison is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. Figures exclude taxes, insurance, and escrows unless noted. HELOC rates are variable and payments will change when the index changes. Borrowing against your home converts other spending or unsecured debt into debt secured by your home. All loans subject to credit approval. Equal Housing Opportunity. ${esc(s.footer)}${s.loNmls?` \u00b7 Loan Officer NMLS #${esc(s.loNmls)}`:""}</div>`;
 }
 function exportComparePDF(){ const html=compareHTML(); if(html.includes('class="empty"')){ toast("Add at least two complete scenarios first"); return; }
@@ -2744,6 +2779,16 @@ function renderExtStatus(){ const el=$("extStatus"), ep=$("extPath"); if(!el||!D
   let st=null; try{ st=DESK.sfStatus(); }catch(e){}
   el.innerHTML = !st ? "" : st.listening ? `<span class="tag-good">Listening for the extension on 127.0.0.1:${st.port}</span>${st.lastAt?` \u00b7 last lead received ${new Date(st.lastAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}`:" \u00b7 nothing received yet"}` : `<span class="tag-warn">Listener couldn\u2019t start on port ${st.port}</span> \u2014 another program may be using it`;
   if(ep){ let p=""; try{ p=DESK.extensionPath()||""; }catch(e){} ep.textContent=p; } }
+async function fetchBrandAssets(force){ const s=state.settings; s.assets=s.assets||{};
+  const urls=[BRAND_ASSETS.badge].concat(BRAND_ASSETS.awards).filter(u=>force||!s.assets[u]); if(!urls.length) return s.assets;
+  let got={};
+  if(DESK&&DESK.fetchImages){ try{ got=await DESK.fetchImages(urls); }catch(e){} }
+  else { for(const u of urls){ try{ const r=await fetch(u,{mode:"cors"}); const b=await r.blob(); got[u]=await new Promise(res=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.readAsDataURL(b); }); }catch(e){} } }
+  let n=0; for(const u in got){ if(got[u]&&/^data:image/.test(got[u])){ s.assets[u]=got[u]; n++; } }
+  if(n) save(); renderBrandStatus(); return s.assets; }
+function brandImg(u){ return (state.settings.assets||{})[u]||""; }
+function renderBrandStatus(){ const el=$("brandStatus"); if(!el) return; const a=state.settings.assets||{}; const have=[BRAND_ASSETS.badge].concat(BRAND_ASSETS.awards).filter(u=>a[u]).length;
+  el.innerHTML = have ? `<span class="tag-good">${have} of 6 brand images cached</span>` : `<span class="tag-warn">Brand images not cached yet</span> \u2014 needs internet once`; }
 function maybeBmUpdate(){ const v=state.settings.bmVersion; if(v && v!==BOOKMARKLET_VERSION) showBmModal(false); }
 function maybeSetup(){ const s=state.settings; if(!s.loName && !s.setupDone){ const m=$("setupModal"); if(m) m.style.display="flex"; } }
 function saveSetup(){ const s=state.settings;
@@ -3337,7 +3382,7 @@ if(DEMO && state.clients.length===0 && !seededFlag){
   seedDemo(); try{ localStorage.setItem("nmc_demo_seeded","1"); }catch(e){}
 }
 if(!state.currentId && state.clients.length) state.currentId=state.clients[0].id;
-bindClientFields(); applyBrandCss(); fillSettingsUI(); updateRatePill(); refreshAll(); setupPolling(); maybeSetup(); renderBmStatus(); maybeBmUpdate(); initAutosave();
+bindClientFields(); applyBrandCss(); fillSettingsUI(); updateRatePill(); refreshAll(); setupPolling(); maybeSetup(); renderBmStatus(); maybeBmUpdate(); renderBrandStatus(); setTimeout(()=>fetchBrandAssets(false).catch(()=>{}), 3000); initAutosave();
 if(DEMO){ try{ sampleTeam(); }catch(e){} }
 if(state.settings.poll && state.settings.feedUrl) fetchRates();
 

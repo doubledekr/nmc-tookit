@@ -111,6 +111,17 @@ function startSfListener(){
 ipcMain.on("sf:statusSync", e => { e.returnValue = { listening: !!sfServer && sfServer.listening, port: SF_PORT, lastAt: sfLastAt }; });
 ipcMain.handle("sf:openExtensionFolder", () => { const p = path.join(process.resourcesPath || __dirname, "chrome-extension"); const alt = path.join(__dirname, "..", "chrome-extension"); return shell.openPath(fs.existsSync(p) ? p : alt); });
 ipcMain.on("sf:extensionPathSync", e => { const p = path.join(process.resourcesPath || __dirname, "chrome-extension"); const alt = path.join(__dirname, "..", "chrome-extension"); e.returnValue = fs.existsSync(p) ? p : alt; });
+/* brand images for proposals: download in the main process (no CORS), hand back data URLs; only neighborhoodmc.com */
+ipcMain.handle("brand:fetch", async (e, urls) => {
+  const https = require("https"); const out = {};
+  const get = u => new Promise(res => { if (!/^https:\/\/(www\.)?neighborhoodmc\.com\//.test(u)) return res(null);
+    const req = https.get(u, { timeout: 15000, headers: { "User-Agent": "NMC-Toolkit/" + app.getVersion() } }, r => {
+      if (r.statusCode !== 200) { r.resume(); return res(null); } const chunks = []; r.on("data", c => chunks.push(c));
+      r.on("end", () => { const buf = Buffer.concat(chunks); const mime = (r.headers["content-type"] || "image/png").split(";")[0]; res(buf.length < 4e6 ? "data:" + mime + ";base64," + buf.toString("base64") : null); }); });
+    req.on("error", () => res(null)); req.on("timeout", () => { req.destroy(); res(null); }); });
+  for (const u of (urls || []).slice(0, 12)) out[u] = await get(u);
+  return out;
+});
 ipcMain.handle("update:openReleases", () => { shell.openExternal(IS_BETA ? "https://github.com/doubledekr/nmc-tookit/releases" : RELEASES_URL); return true; });
 ipcMain.handle("update:install", () => { if (!updater) return false; flushWrites(); setTimeout(() => updater.quitAndInstall(false, true), 300); return true; });
 
