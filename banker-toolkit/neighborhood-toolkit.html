@@ -365,6 +365,7 @@ table.data tr.rec td{background:var(--cream)}
             <div class="field"><label>Current servicer</label><input type="text" data-f="servicer"></div>
             <div class="field"><label>Loan type</label><select data-f="loanType">
               <option>Conventional</option><option>FHA</option><option>VA</option><option>Jumbo</option><option>DSCR</option><option>Other</option></select></div>
+            <div id="streamQuick" class="cur-loan" style="grid-column:1/-1;display:none"></div>
             <div class="field"><label>Next follow-up</label><div class="chiprow"><input type="date" data-f="followUp" style="flex:1"><input type="time" data-f="followUpTime" style="width:120px;flex:0 0 120px" title="Optional time"></div></div>
             <div class="field" style="grid-column:1/-1"><div id="fuActions"></div><div id="fuLog" class="hint" style="margin-top:4px"></div></div>
             <div class="field"><label>Client time zone <span class="hint" style="display:inline">(NMC is Eastern)</span></label><select data-f="tz">
@@ -807,7 +808,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.6.0";
+const TOOLKIT_VERSION = "1.6.1";
 const BOOKMARKLET_VERSION = "2";   /* bump this whenever the Salesforce bookmarklet code changes — bankers get a one-time "re-drag it" walkthrough */
 const DEMO = false; /* build flag: the demo file is this same file with DEMO=true */
 const LS_KEY = DEMO ? "nmc_toolkit_demo_v1" : "nmc_toolkit_v1";
@@ -1142,6 +1143,19 @@ async function fetchAVM(){ const c=cur(); if(!c){ toast("Pick a client first"); 
     c.value=j.value; c.valueSrc={type:"avm",source:j.source,asOf:j.asOf,low:j.low,high:j.high,confidence:j.confidence}; save(); fillClientForm(); ltvHint(); renderClientBar();
     toast("Value set to "+money(j.value)+" from "+(j.source||"the AVM"));
   }catch(e){ if(vs) vs.textContent="Hub unreachable \u2014 try again when connected, or use the Pennymac link."; } }
+/* FHA / VA clients: one click runs the streamline at a set drop from today's rate (nearest eighth) */
+const round8=x=>Math.round(x*8)/8;
+function renderStreamQuick(c){ const el=$("streamQuick"); if(!el) return;
+  const ok=c&&!c.freeClear&&c.rate>0&&c.balance>0&&(c.loanType==="VA"||c.loanType==="FHA"); el.style.display=ok?"block":"none"; if(!ok){ el.innerHTML=""; return; }
+  const prog=c.loanType==="VA"?"VA IRRRL":"FHA Streamline"; const n=c.monthsLeft||360; const curPI=c.payment>0?c.payment:pmt(c.balance,c.rate,n);
+  const chip=(d,main)=>{ const r=round8(c.rate-d); const np=pmt(c.balance+(c.loanType==="FHA"?Math.round(c.balance*0.0175):0),r,360); const sv=curPI-np;
+    return `<button class="${main?"btn small":"chip"}" onclick="quickStreamline(${d})" title="Run the ${prog} at ${pct(r)}">${main?prog+" at "+pct(r)+" (\u00bd below)":d+" below \u2192 "+pct(r)}${main&&sv>0?` <span style="opacity:.8">\u2248 ${money(sv)}/mo less P&amp;I</span>`:""}</button>`; };
+  el.innerHTML=`<div style="background:var(--cream-soft);border:1px solid #E2DCCF;border-radius:10px;padding:8px 12px"><div class="hint" style="margin-bottom:6px"><b>${prog} quick look</b> \u2014 rate-and-term, no appraisal; the ${c.loanType==="VA"?"0.5% net tangible benefit":"net tangible benefit"} test wants about \u00bd% off today\u2019s ${pct(c.rate)}.</div><div class="chiprow">${chip(0.5,true)}${chip(0.25)}${chip(0.75)}${chip(1)}</div></div>`; }
+function quickStreamline(delta){ const c=cur(); if(!c||!(c.rate>0)) return;
+  const m=c.loanType==="VA"?"va":"fha"; go("analysis"); setMode(m);
+  const a=c.analysis; a.anRate=round8(c.rate-delta); a.rateSrc={type:"manual",when:todayStr(),note:delta+" below current"}; if(!a.anTerm) a.anTerm=30;
+  save(); fillAnalysisInputs(); applyMode(); runAnalysis(); try{ window.scrollTo(0,0); }catch(e){}
+  toast((m==="va"?"VA IRRRL":"FHA Streamline")+" at "+pct(a.anRate)+" \u2014 "+delta+" below today\u2019s "+pct(c.rate)+". Swap in real pricing before you quote."); }
 /* seasoning: N months from today (or from the Salesforce close date when it's on file) */
 function setSeason(months){ const c=cur(); if(!c) return; if(months!=null&&isInelig(c)){ c.ineligSeason=true; c.ineligFull=false; }
   if(months==null){ c.seasonDate=""; } else { const d=new Date(); d.setMonth(d.getMonth()+months); c.seasonDate=d.toISOString().slice(0,10); }
@@ -1168,6 +1182,7 @@ function bindClientFields(){
       if(f==="targetRate"&&c.targetRate>0&&isInelig(c)){ c.ineligRate=true; c.ineligFull=false; }
       if(f==="seasonDate"&&c.seasonDate&&isInelig(c)){ c.ineligSeason=true; c.ineligFull=false; }
       if(["ineligRate","ineligSeason","ineligFull","targetRate","seasonDate"].includes(f)){ fillClientForm(); }
+      if(["loanType","rate","balance","payment","monthsLeft","freeClear"].includes(f)) renderStreamQuick(c);
       normalizePayment(c,f);
       if(f==="value") c.valueSrc={type:"manual",when:todayStr()};
       ["payment","escrow","paymentTotal","monthsLeft","origAmount"].forEach(k=>{ if(k!==f){ const o=document.querySelector(`#s-client [data-f="${k}"]`); if(o) o.value=c[k]==null?"":c[k]; } });
@@ -1185,6 +1200,7 @@ function fillClientForm(){ const c=cur();
     : `<span class="tag-good">In pipeline</span>`);
   ltvHint(); const vs=$("valueSrc"); if(vs) vs.innerHTML=valueSrcText(c);
   const ph=$("payHint"); if(ph) ph.innerHTML=payHintText(c); { const lc=$("loanCheck"); if(lc) lc.innerHTML=loanCheckHTML(c); flagLoanFields(c); }
+  renderStreamQuick(c);
   { const sh=$("seasonHint"); if(sh){ const si=c?seasonInfo(c):null; sh.innerHTML = si ? `<span class="${si.tag}">${si.txt}</span>` : ""; } }
   const fa=$("fuActions"); if(fa) fa.innerHTML=c?fuButtons(c,false):""; const fl=$("fuLog"); if(fl) fl.innerHTML=c?fuLogHTML(c):"";
   const dc=$("dispoChips"); if(dc){ dc.innerHTML = !c ? "" : STATUSES.map(st=>`<button class="chip${c.status===st?" on":""}" ${c.status===st?'style="background:var(--brand);color:#fff;border-color:var(--brand)"':''} onclick="dispo('${st.replace(/'/g,"\\'")}')">${st}</button>`).join("");
