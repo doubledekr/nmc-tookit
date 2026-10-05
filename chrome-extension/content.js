@@ -89,13 +89,14 @@
   function send(cb){ readLead().then(h=>{
     if(!h.text||h.text.length<40){ toast('Nothing to read here \u2014 open a lead or contact record first.', false); if(cb) cb({ok:false,pairs:0,error:'nothing to read'}); return; }
     toast('Read '+h.pairs+' fields'+(h.via==='api'?' ('+h.apiPairs+' direct from the record)':h.apiError?' (record lookup failed: '+h.apiError+')':'')+' \u2014 sending to the NMC toolkit\u2026', true);
-    chrome.runtime.sendMessage({type:'nmc:send', text:h.text, url:location.href, title:document.title, pairs:h.pairs, via:h.via, apiPairs:h.apiPairs||0}, res=>{
+    if(!alive()){ toast('The NMC extension was updated \u2014 reload this page (F5) and click again.', false); if(cb) cb({ok:false,pairs:h.pairs,error:'extension reloaded'}); return; }
+    try{ chrome.runtime.sendMessage({type:'nmc:send', text:h.text, url:location.href, title:document.title, pairs:h.pairs, via:h.via, apiPairs:h.apiPairs||0}, res=>{
       if(chrome.runtime.lastError){ toast('Extension error: '+chrome.runtime.lastError.message, false); if(cb) cb({ok:false,pairs:h.pairs,error:chrome.runtime.lastError.message}); return; }
       if(res&&res.ok) toast('Sent '+h.pairs+' fields to the NMC toolkit \u2014 top of your Pipeline as New from Salesforce.', true);
       else if(res&&res.copied) toast('Toolkit app isn\u2019t running \u2014 copied '+h.pairs+' fields to the clipboard instead. Use Paste from clipboard & parse.', false);
       else toast('Couldn\u2019t reach the toolkit app'+(res&&res.error?': '+res.error:'')+'. Is NMC Toolkit open?', false);
       if(cb) cb(Object.assign({pairs:h.pairs,chars:h.text.length,via:h.via,apiPairs:h.apiPairs||0,apiError:h.apiError},res||{}));
-    }); });
+    }); }catch(e){ toast('The NMC extension was updated \u2014 reload this page (F5) and click again.', false); if(cb) cb({ok:false,pairs:h.pairs,error:'extension reloaded'}); } });
   }
 
   function isRecordPage(){ return /\/lightning\/r\/|\/lightning\/o\/|\/\w{15,18}(\/view)?(\?|$)/.test(location.href); }
@@ -105,7 +106,8 @@
     b=document.createElement('button'); b.className='nmc-ext-btn'; b.type='button'; b.textContent='Send to NMC toolkit';
     b.style.cssText='position:fixed;right:18px;bottom:18px;z-index:2147483646;background:#A53222;color:#fff;border:0;border-radius:999px;padding:10px 16px;font:600 13px system-ui,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer';
     b.addEventListener('click', send); document.body.appendChild(b); }
-  if(TOP){ ensureButton(); setInterval(ensureButton, 1500); }
+  function alive(){ try{ return !!(chrome.runtime && chrome.runtime.id); }catch(e){ return false; } }
+  if(TOP){ ensureButton(); const tmr=setInterval(()=>{ if(!alive()){ clearInterval(tmr); const b=document.querySelector('.nmc-ext-btn'); if(b){ b.textContent='NMC extension updated \u2014 reload page'; b.style.background='#8F3223'; b.onclick=()=>location.reload(); } return; } ensureButton(); }, 1500); }
 
   chrome.runtime.onMessage.addListener((msg, sender, reply)=>{
     if(msg&&msg.type==='nmc:harvest'&&TOP){ readLead().then(h=>reply(h)); return true; }
