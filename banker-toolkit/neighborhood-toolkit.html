@@ -309,7 +309,7 @@ table.data tr.rec td{background:var(--cream)}
           <button class="btn ghost" onclick="go('client')">Paste from Salesforce</button>
           <span id="pipeChips" class="btnrow" style="gap:6px;margin-left:6px"></span>
           <span style="flex:1"></span>
-          <input type="search" id="pipeSearch" placeholder="Search name, phone, email, address, loan type\u2026" oninput="renderPipeline()" style="width:260px;min-height:36px">
+          <input type="search" id="pipeSearch" placeholder="Search name, phone, email, address, loan type…" oninput="renderPipeline()" style="width:260px;min-height:36px">
           <select id="pipeFilter" onchange="renderPipeline()" style="width:auto">
             <option value="">All statuses</option>
           </select>
@@ -347,16 +347,16 @@ table.data tr.rec td{background:var(--cream)}
                 <label class="row"><input type="checkbox" data-f="ineligFull"><span><b>Fully ineligible</b> — no follow-up; stays off the watch lists</span></label>
               </div>
               <div id="futureBox" class="inelig future">
-                <div class="t">\uD83C\uDFE1 Future purchase \u2014 selling now, buying later. The pipeline gives a heads-up when the window opens.</div>
+                <div class="t">🏡 Future purchase — selling now, buying later. The pipeline gives a heads-up when the window opens.</div>
                 <label class="row"><span>Buying around</span><input type="date" data-f="futureWhen" style="width:160px;flex:0 0 160px"><span class="hint">or</span>
-                  <select data-f="futureWindow" style="width:150px;flex:0 0 150px"><option value="">pick a window</option><option value="3-6">3\u20136 months</option><option value="6-12">6\u201312 months</option><option value="12+">12+ months</option></select></label>
-                <label class="row"><span>They\u2019ll want</span><select data-f="futureProduct" style="width:150px;flex:0 0 150px"><option value="">product?</option><option>Conventional</option><option>FHA</option><option>VA</option><option>Jumbo</option><option>DSCR</option><option>Not sure</option></select>
+                  <select data-f="futureWindow" style="width:150px;flex:0 0 150px"><option value="">pick a window</option><option value="3-6">3–6 months</option><option value="6-12">6–12 months</option><option value="12+">12+ months</option></select></label>
+                <label class="row"><span>They’ll want</span><select data-f="futureProduct" style="width:150px;flex:0 0 150px"><option value="">product?</option><option>Conventional</option><option>FHA</option><option>VA</option><option>Jumbo</option><option>DSCR</option><option>Not sure</option></select>
                   <span>price range</span><input type="number" data-f="futurePrice" step="5000" placeholder="e.g. 350000" style="width:130px;flex:0 0 130px"></label>
                 <label class="row" style="align-items:flex-start"><span>Note</span><input type="text" data-f="futureNote" placeholder="e.g. listing in spring, wants to stay in Wichita" style="flex:1"></label>
                 <div class="hint" id="futureHint"></div>
               </div>
-              <div class="chiprow" style="margin-top:8px;align-items:center"><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px"><input type="checkbox" data-f="hot" style="width:auto;min-height:0"> <b>\uD83D\uDD25 Hot lead</b> <span class="hint" style="display:inline">\u2014 working it, very interested, not in process yet</span></label>
-                <input type="text" data-f="hotNeed" placeholder="what we still need (paystubs, credit pull, appraisal\u2026)" style="flex:1;min-width:200px"></div></div>
+              <div class="chiprow" style="margin-top:8px;align-items:center"><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px"><input type="checkbox" data-f="hot" style="width:auto;min-height:0"> <b>🔥 Hot lead</b> <span class="hint" style="display:inline">— working it, very interested, not in process yet</span></label>
+                <input type="text" data-f="hotNeed" placeholder="what we still need (paystubs, credit pull, appraisal…)" style="flex:1;min-width:200px"></div></div>
             <div class="field"><label>Phone</label><input type="tel" data-f="phone"></div>
             <div class="field"><label>Email</label><input type="email" data-f="email"></div>
             <div class="field" style="grid-column:1/-1"><label>Property address</label><input type="text" data-f="address"></div>
@@ -656,9 +656,9 @@ Discover 6,100 190 24.9"></textarea>
       </div>
 
       <div class="panel" id="amortPanel">
-        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap"><h2>Amortization compare \u2014 current program vs new</h2>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap"><h2>Amortization compare — current program vs new</h2>
           <div class="btnrow"><button class="btn ghost small" onclick="amortAutofill()">Autofill from client</button><button class="btn ghost small" onclick="amortClear()">Clear</button></div></div>
-        <div class="hint" style="margin-bottom:12px">The double-amortization sheet, on screen: both loans month by month, with interest and time saved. Type anything in, or pull the client\u2019s numbers and the analysis rate.</div>
+        <div class="hint" style="margin-bottom:12px">The double-amortization sheet, on screen: both loans month by month, with interest and time saved. Type anything in, or pull the client’s numbers and the analysis rate.</div>
         <div class="grid2">
           <div><div class="tstep"><span class="tnum">A</span>Current program</div>
             <div class="grid2"><div class="field"><label>Loan amount</label><input type="number" class="num" data-am="cAmt" placeholder="290,000" oninput="amortCalc()"></div>
@@ -3467,7 +3467,7 @@ function amortModel(v){ const n=x=>{ const t=num(x); return t==null?0:t; };
   return {ok:true,c,w,cs,ns,cNow,nNow,
     totalSaved:(isFinite(cs.interest)&&isFinite(ns.interest))?cs.interest-ns.interest:null,
     fromNowSaved:(isFinite(cAhead)&&isFinite(nAhead))?cAhead-nAhead:null,
-    timeSaved:(isFinite(cLeft)&&isFinite(nLeft))?cLeft-nLeft:null, cLeft, nLeft,
+    timeSaved:(isFinite(cLeft)&&isFinite(nLeft))?cLeft-nLeft:null, cLeft, nLeft, timeSavedTotal:(isFinite(cs.months)&&isFinite(ns.months))?cs.months-ns.months:null,
     payDiff:(ns.pay+w.extra)-(cs.pay+c.extra)}; }
 function amortCalc(){ const v=amortVals(); state.amort=v; save(); const m=amortModel(v); const box=$("amortOut"); if(!box) return;
   if(!m.ok){ box.innerHTML=`<div class="empty">Enter a loan amount and rate on both sides to compare.</div>`; return; }
@@ -3475,10 +3475,10 @@ function amortCalc(){ const v=amortVals(); state.amort=v; save(); const m=amortM
 function amortHTML(m,monthly){ const {c,w,cs,ns}=m; const fmtM=x=>x==null?"\u2014":(x>=0?"":"\u2212")+money(Math.abs(x)); const fmtT=x=>x==null?"\u2014":(x>=0?"":"\u2212")+yrsMo(Math.abs(x));
   const stat=(v,l,cls)=>`<div class="stat ${cls||""}"><div class="v">${v}</div><div class="l">${l}</div></div>`;
   const head=`<div class="grid4">
-    ${stat(money(cs.pay+c.extra)+" \u2192 "+money(ns.pay+w.extra),"Monthly payment, current \u2192 new"+((c.extra||w.extra)?" (incl. extra)":""))}
+    ${stat(money(cs.pay)+(c.extra?" + "+money(c.extra):"")+" \u2192 "+money(ns.pay)+(w.extra?" + "+money(w.extra):""),"Monthly payment, current \u2192 new"+((c.extra||w.extra)?" (P&amp;I + extra)":""))}
     ${stat(fmtM(m.totalSaved),"Total interest saved (whole life of each loan)",m.totalSaved>0?"green":"")}
     ${stat(fmtM(m.fromNowSaved),"Interest saved from now"+(c.into?" (current loan is "+yrsMo(c.into)+" in)":""),m.fromNowSaved>0?"green":"")}
-    ${stat(fmtT(m.timeSaved),"Time saved \u2014 paid off "+(m.timeSaved>=0?"sooner":"later"),m.timeSaved>0?"green":"")}
+    ${stat(fmtT(m.timeSaved),"Time saved from now \u2014 paid off "+(m.timeSaved>=0?"sooner":"later")+(c.into>0&&m.timeSavedTotal!=null?" (loan-to-loan: "+fmtT(m.timeSavedTotal)+")":""),m.timeSaved>0?"green":"")}
     ${stat(fmtM(-m.payDiff),"Payment difference per month"+(m.payDiff<0?" (less)":" (more)"),m.payDiff<0?"green":"")}
     ${stat(m.cNow?money(m.cNow.cumInt):"\u2014","Interest already paid on the current loan")}
     ${stat(m.cNow?money(c.amt-m.cNow.bal)+" ("+Math.round((c.amt-m.cNow.bal)/c.amt*100)+"%)":"\u2014","Principal paid so far on the current loan")}
