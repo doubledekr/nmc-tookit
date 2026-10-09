@@ -654,6 +654,29 @@ Discover 6,100 190 24.9"></textarea>
           <div id="toolsCash"></div>
         </div>
       </div>
+
+      <div class="panel" id="amortPanel">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap"><h2>Amortization compare \u2014 current program vs new</h2>
+          <div class="btnrow"><button class="btn ghost small" onclick="amortAutofill()">Autofill from client</button><button class="btn ghost small" onclick="amortClear()">Clear</button></div></div>
+        <div class="hint" style="margin-bottom:12px">The double-amortization sheet, on screen: both loans month by month, with interest and time saved. Type anything in, or pull the client\u2019s numbers and the analysis rate.</div>
+        <div class="grid2">
+          <div><div class="tstep"><span class="tnum">A</span>Current program</div>
+            <div class="grid2"><div class="field"><label>Loan amount</label><input type="number" class="num" data-am="cAmt" placeholder="290,000" oninput="amortCalc()"></div>
+              <div class="field"><label>Interest rate %</label><input type="number" class="num" step="0.001" data-am="cRate" placeholder="6.625" oninput="amortCalc()"></div>
+              <div class="field"><label>Term (months)</label><select data-am="cTerm" onchange="amortCalc()"><option value="120">10 years (120 mo)</option><option value="180">15 years (180 mo)</option><option value="240">20 years (240 mo)</option><option value="300">25 years (300 mo)</option><option value="360" selected>30 years (360 mo)</option><option value="480">40 years (480 mo)</option></select></div>
+              <div class="field"><label>Months into loan</label><input type="number" class="num" data-am="cInto" placeholder="0" oninput="amortCalc()"></div>
+              <div class="field"><label>Extra payment / month</label><input type="number" class="num" data-am="cExtra" placeholder="0" oninput="amortCalc()"></div>
+              <div class="field"><label>Date loan closed <span class="hint" style="display:inline">(optional, fills months)</span></label><input type="date" data-am="cClosed" onchange="amortFromDate('c')"></div></div></div>
+          <div><div class="tstep"><span class="tnum">B</span>New program</div>
+            <div class="grid2"><div class="field"><label>Loan amount</label><input type="number" class="num" data-am="nAmt" placeholder="295,000" oninput="amortCalc()"></div>
+              <div class="field"><label>Interest rate %</label><input type="number" class="num" step="0.001" data-am="nRate" placeholder="6.125" oninput="amortCalc()"></div>
+              <div class="field"><label>Term (months)</label><select data-am="nTerm" onchange="amortCalc()"><option value="120">10 years (120 mo)</option><option value="180">15 years (180 mo)</option><option value="240">20 years (240 mo)</option><option value="300">25 years (300 mo)</option><option value="360" selected>30 years (360 mo)</option></select></div>
+              <div class="field"><label>Months into loan <span class="hint" style="display:inline">(0 = brand new)</span></label><input type="number" class="num" data-am="nInto" placeholder="0" oninput="amortCalc()"></div>
+              <div class="field"><label>Extra payment / month</label><input type="number" class="num" data-am="nExtra" placeholder="65" oninput="amortCalc()"></div>
+              <div class="field"><label>&nbsp;</label><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px"><input type="checkbox" data-am="monthly" style="width:auto;min-height:0" onchange="amortCalc()"> Show every month</label></div></div></div>
+        </div>
+        <div id="amortOut" style="margin-top:10px"></div>
+      </div>
     </section>
 
     <section class="screen" id="s-blocks">
@@ -2355,14 +2378,14 @@ function buildSheetSVG(html,W){
   const xhtml=new XMLSerializer().serializeToString(wrap);
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml"><style>${sheetCSS(W).replace(/</g,"\\3c ")}</style>${xhtml}</div></foreignObject></svg>`;
   return {svg,W,H}; }
-function sheetTitle(kind,c,r){ const multi=c&&kind==="proposal"&&propSelected(c).length>=2;
+function sheetTitle(kind,c,r){ if(kind==="amort") return "Amortization Comparison"+(c&&c.name?" \u2014 "+c.name:""); const multi=c&&kind==="proposal"&&propSelected(c).length>=2;
   return (kind==="compare"||multi?"Your Options":(r&&r.fc?"Cash-Out Proposal":r&&r.second?(r.secType==="heloc"?"HELOC Proposal":"Home Equity Loan Proposal"):"Savings Proposal"))+(c&&c.name?" \u2014 "+c.name:""); }
 async function renderSheet(kind, snap){ const c=cur();
-  const html = snap ? snap.html : (kind==="compare" ? compareHTML() : proposalHTML());
+  const html = snap ? snap.html : (kind==="compare" ? compareHTML() : kind==="amort" ? amortSheetHTML() : proposalHTML());
   if(html.includes('class="empty"')) throw new Error(kind==="compare"?"Add at least two complete scenarios first":"Finish the analysis first");
   const r=c&&!snap&&computeAnalysis(c);
   const title= snap ? snap.title : sheetTitle(kind,c,r);
-  if(!snap) libraryAdd(kind, html, title);          /* every proposal that leaves the app is on record for that client */
+  if(!snap && (kind!=="amort" || c)) libraryAdd(kind, html, title);          /* every proposal that leaves the app is on record for that client */
   const name=title.replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"");
   const {svg,W,H}=buildSheetSVG(html,880);
   const img=new Image(); await new Promise((ok,bad)=>{ img.onload=ok; img.onerror=()=>bad(new Error("render")); img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg); });
@@ -3425,6 +3448,69 @@ function toolsModel(){
 function toolsPWYPN(){ const m=toolsModel(); if(!m.ok||!m.nw){ toast("Fill in today's mortgage and the new rate first"); return; }
   const ex=Math.max(0,Math.round(m.outlayNow-m.nw.pay)); document.querySelector('[data-t="nExtra"]').value=ex; toolsCalc();
   toast(ex>0? "Extra set to "+money(ex)+"/mo \u2014 same money out the door as today" : "The new payment is already at or above what they pay today"); }
+/* ---- Amortization compare (the double-amortization spreadsheet) ---- */
+function amortVals(){ const v={}; document.querySelectorAll("#amortPanel [data-am]").forEach(el=>{ v[el.dataset.am]= el.type==="checkbox" ? el.checked : el.value; }); return v; }
+function amortSet(k,val){ const el=document.querySelector(`#amortPanel [data-am="${k}"]`); if(!el) return; if(el.type==="checkbox") el.checked=!!val; else el.value=val==null?"":val; }
+function amortSched(P,rate,n,extra){ const r=rate/1200, pay=pmt(P,rate,n); const rows=[]; let bal=P, i=0, totInt=0;
+  while(bal>0.01 && i<1201){ i++; const int=bal*r; let prin=pay+extra-int; if(prin<=0) return {pay,rows,months:Infinity,interest:Infinity}; if(prin>bal) prin=bal; totInt+=int; bal-=prin; rows.push({m:i,int,prin,bal:Math.max(bal,0),cumInt:totInt}); }
+  return {pay,rows,months:i,interest:totInt}; }
+function amortModel(v){ const n=x=>{ const t=num(x); return t==null?0:t; };
+  const c={amt:n(v.cAmt),rate:n(v.cRate),term:+v.cTerm||360,into:Math.max(0,Math.round(n(v.cInto))),extra:n(v.cExtra)};
+  const w={amt:n(v.nAmt),rate:n(v.nRate),term:+v.nTerm||360,into:Math.max(0,Math.round(n(v.nInto))),extra:n(v.nExtra)};
+  if(!(c.amt>0&&c.rate>0&&w.amt>0&&w.rate>0)) return {ok:false};
+  const cs=amortSched(c.amt,c.rate,c.term,c.extra), ns=amortSched(w.amt,w.rate,w.term,w.extra);
+  const at=(sc,m)=>m>0&&sc.rows[m-1]?sc.rows[m-1]:null;
+  const cNow=at(cs,c.into), nNow=at(ns,w.into);
+  /* "from now": interest still ahead on each loan, measured from where each one stands */
+  const cAhead=isFinite(cs.interest)?cs.interest-(cNow?cNow.cumInt:0):Infinity, nAhead=isFinite(ns.interest)?ns.interest-(nNow?nNow.cumInt:0):Infinity;
+  const cLeft=isFinite(cs.months)?cs.months-c.into:Infinity, nLeft=isFinite(ns.months)?ns.months-w.into:Infinity;
+  return {ok:true,c,w,cs,ns,cNow,nNow,
+    totalSaved:(isFinite(cs.interest)&&isFinite(ns.interest))?cs.interest-ns.interest:null,
+    fromNowSaved:(isFinite(cAhead)&&isFinite(nAhead))?cAhead-nAhead:null,
+    timeSaved:(isFinite(cLeft)&&isFinite(nLeft))?cLeft-nLeft:null, cLeft, nLeft,
+    payDiff:(ns.pay+w.extra)-(cs.pay+c.extra)}; }
+function amortCalc(){ const v=amortVals(); state.amort=v; save(); const m=amortModel(v); const box=$("amortOut"); if(!box) return;
+  if(!m.ok){ box.innerHTML=`<div class="empty">Enter a loan amount and rate on both sides to compare.</div>`; return; }
+  box.innerHTML=amortHTML(m,v.monthly)+`<div class="btnrow" style="margin-top:10px"><button class="btn" onclick="copyImage('amort')">Copy as image</button><button class="btn ghost" onclick="downloadImage('amort')">Download JPG</button><button class="btn ghost" onclick="emailImage('amort')">Email</button>${cur()?`<span class="hint">Saved to ${esc(cur().name)}\u2019s proposal library when you copy or download.</span>`:""}</div>`; }
+function amortHTML(m,monthly){ const {c,w,cs,ns}=m; const fmtM=x=>x==null?"\u2014":(x>=0?"":"\u2212")+money(Math.abs(x)); const fmtT=x=>x==null?"\u2014":(x>=0?"":"\u2212")+yrsMo(Math.abs(x));
+  const stat=(v,l,cls)=>`<div class="stat ${cls||""}"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+  const head=`<div class="grid4">
+    ${stat(money(cs.pay+c.extra)+" \u2192 "+money(ns.pay+w.extra),"Monthly payment, current \u2192 new"+((c.extra||w.extra)?" (incl. extra)":""))}
+    ${stat(fmtM(m.totalSaved),"Total interest saved (whole life of each loan)",m.totalSaved>0?"green":"")}
+    ${stat(fmtM(m.fromNowSaved),"Interest saved from now"+(c.into?" (current loan is "+yrsMo(c.into)+" in)":""),m.fromNowSaved>0?"green":"")}
+    ${stat(fmtT(m.timeSaved),"Time saved \u2014 paid off "+(m.timeSaved>=0?"sooner":"later"),m.timeSaved>0?"green":"")}
+    ${stat(fmtM(-m.payDiff),"Payment difference per month"+(m.payDiff<0?" (less)":" (more)"),m.payDiff<0?"green":"")}
+    ${stat(m.cNow?money(m.cNow.cumInt):"\u2014","Interest already paid on the current loan")}
+    ${stat(m.cNow?money(c.amt-m.cNow.bal)+" ("+Math.round((c.amt-m.cNow.bal)/c.amt*100)+"%)":"\u2014","Principal paid so far on the current loan")}
+    ${stat(yrsMo(m.cLeft)+" / "+yrsMo(m.nLeft),"Months left, current / new")}
+  </div>`;
+  const yrs=Math.ceil(Math.max(isFinite(cs.months)?cs.months:c.term,isFinite(ns.months)?ns.months:w.term)/12);
+  const pick=(sc,i)=>sc.rows[i-1];
+  const idx=monthly?Array.from({length:yrs*12},(_,i)=>i+1):Array.from({length:yrs},(_,y)=>(y+1)*12);
+  const cell=r=>r?`<td class="num">${money(r.prin)}</td><td class="num">${money(r.int)}</td><td class="num">${money(r.bal)}</td>`:`<td class="num" colspan="3" style="color:#2E6B4F">paid off</td>`;
+  const table=`<div class="schedwrap" style="margin-top:10px"><table class="data"><thead><tr><th class="num">${monthly?"Month":"Year"}</th><th colspan="3" style="text-align:center">Current program \u2014 ${pct(c.rate)}, ${money(c.amt)}</th><th colspan="3" style="text-align:center">New program \u2014 ${pct(w.rate)}, ${money(w.amt)}</th></tr>
+    <tr><th></th><th class="num">Principal</th><th class="num">Interest</th><th class="num">Balance</th><th class="num">Principal</th><th class="num">Interest</th><th class="num">Balance</th></tr></thead><tbody>
+    ${idx.map(i=>{ const a=pick(cs,i), b=pick(ns,i); if(!a&&!b) return ""; const lab=monthly?i:(i/12);
+      const yr=(sc,i)=>{ if(monthly) return sc.rows[i-1]; const rr=sc.rows.slice(i-12,i); if(!rr.length) return null; return {prin:rr.reduce((t,x)=>t+x.prin,0),int:rr.reduce((t,x)=>t+x.int,0),bal:rr[rr.length-1].bal}; };
+      const A=monthly?a:yr(cs,i), B=monthly?b:yr(ns,i);
+      return `<tr${(!monthly&&c.into>0&&Math.ceil(c.into/12)===lab)?' style="background:var(--cream-soft)"':''}><td class="num">${lab}${(!monthly&&c.into>0&&Math.ceil(c.into/12)===lab)?' <span class="hint">now</span>':''}</td>${cell(A)}${cell(B)}</tr>`; }).join("")}
+    </tbody></table></div>`;
+  return head+table; }
+function amortSheetHTML(){ const v=state.amort||amortVals(); const m=amortModel(v); if(!m.ok) return `<div class="empty">Enter both loans first.</div>`; const s=state.settings; const c=cur();
+  return `<div class="brandbar"><div><img src="${s.logo||NMC_LOGO}" alt="${esc(s.co)}"><div class="tag">${esc(s.tag)}</div></div>
+    <div class="lo"><b>${esc(s.loName||"Your Loan Officer")}</b>${s.loNmls?` \u00b7 NMLS #${esc(s.loNmls)}`:""}<br>${esc(s.loPhone||"")}${s.loPhone&&s.loEmail?" \u00b7 ":""}${esc(s.loEmail||"")}<br>Prepared ${new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}</div></div>
+    <div class="eyebrow">Amortization comparison</div><h1>Current loan vs. new loan${c?" \u2014 "+esc(c.name):""}</h1>
+    ${amortHTML(m,false)}
+    <div class="disc">This comparison is an estimate for discussion purposes only. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. Figures exclude taxes, insurance and escrows. All loans subject to credit approval. Equal Housing Opportunity. ${esc(s.footer)}${s.loNmls?` \u00b7 Loan Officer NMLS #${esc(s.loNmls)}`:""}</div>`; }
+function amortAutofill(){ const c=cur(); if(!c){ toast("Pick a client first"); return; } const a=c.analysis||{};
+  const n=c.monthsLeft>0?c.monthsLeft:null; const term=(c.origTerm||30)*12; const into=n?Math.max(0,term-n):0;
+  amortSet("cAmt", c.origAmount>0?c.origAmount:c.balance||""); amortSet("cRate", c.rate||""); amortSet("cTerm", c.origAmount>0?term:(n?[120,180,240,300,360,480].reduce((b,t)=>Math.abs(t-n)<Math.abs(b-n)?t:b,360):360)); amortSet("cInto", c.origAmount>0?into:0); amortSet("cExtra", 0);
+  const r=a.anRate?computeAnalysis(c):null;
+  amortSet("nAmt", r&&r.newP?Math.round(r.newP):(c.balance||"")); amortSet("nRate", a.anRate||""); amortSet("nTerm", (a.anTerm||30)*12); amortSet("nInto", 0); amortSet("nExtra", a.anCustom>0?a.anCustom:0);
+  amortCalc(); toast("Filled from "+c.name+(r?" and the savings analysis":" \u2014 add a rate on the analysis for the new side")); }
+function amortFromDate(side){ const v=amortVals(); const d=v.cClosed; if(!d) return; const since=Math.max(0,Math.round((Date.now()-new Date(d+"T00:00:00").getTime())/2629800000)); amortSet("cInto", since); amortCalc(); }
+function amortClear(){ document.querySelectorAll("#amortPanel [data-am]").forEach(el=>{ if(el.type==="checkbox") el.checked=false; else if(el.tagName==="SELECT") el.value="360"; else el.value=""; }); state.amort={}; save(); amortCalc(); }
+function amortRestore(){ const v=state.amort||{}; Object.keys(v).forEach(k=>amortSet(k,v[k])); amortCalc(); }
 function toolsCalc(){
   const tv={_cid:(state.tools||{})._cid}; document.querySelectorAll("[data-t]").forEach(el=>{ tv[el.dataset.t]=el.value; }); state.tools=tv; save(); toolsUsing();
   const m=toolsModel(); const box=$("toolsCompare"); if(!box) return;
@@ -3535,7 +3621,7 @@ if(DEMO && state.clients.length===0 && !seededFlag){
   seedDemo(); try{ localStorage.setItem("nmc_demo_seeded","1"); }catch(e){}
 }
 if(!state.currentId && state.clients.length) state.currentId=state.clients[0].id;
-bindClientFields(); applyBrandCss(); fillSettingsUI(); updateRatePill(); refreshAll(); setupPolling(); maybeSetup(); renderBmStatus(); maybeBmUpdate(); renderBrandStatus(); setTimeout(()=>fetchBrandAssets(false).catch(()=>{}), 3000); initAutosave();
+bindClientFields(); applyBrandCss(); fillSettingsUI(); updateRatePill(); refreshAll(); setupPolling(); maybeSetup(); renderBmStatus(); maybeBmUpdate(); renderBrandStatus(); amortRestore(); setTimeout(()=>fetchBrandAssets(false).catch(()=>{}), 3000); initAutosave();
 if(DEMO){ try{ sampleTeam(); }catch(e){} }
 if(state.settings.poll && state.settings.feedUrl) fetchRates();
 
