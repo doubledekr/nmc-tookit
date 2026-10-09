@@ -1538,10 +1538,63 @@ function parseCreditReport(text){
     rows.push({name:m[2].trim(), acct, type, balance:balance||0, pay:pay||0, high, opened, term, apr: type==="mortgage"?null:(DEBT_TYPES[type]||DEBT_TYPES.other).apr, aprEst:true, closed, mortgage, kind:m[4]});
   });
   return rows; }
+/* ---- tabular debt pastes: a header row/block plus one record per row (tab/CSV) or per N lines (stacked, like a Salesforce liabilities list) ---- */
+const DEBT_COLS={ name:["company","creditor","lender","account name","name","description","creditor name","institution"], type:["type","account type","kind","category","trade type"],
+  balance:["balance","current balance","amount owed","amount","unpaid balance","bal"], pay:["payment","monthly payment","min payment","minimum payment","minimum","mo payment","pmt"],
+  apr:["apr","rate","interest","interest rate"], acct:["account","acct","account #","acct #","account number","acct no","account no"], ignore:["source","status","opened","date","date opened","limit","high","high credit","credit limit","terms","months","months reviewed","past due","notes","id","#"] };
+function debtColOf(label){ const l=String(label||"").trim().toLowerCase().replace(/[:*]+$/,"").trim(); if(!l) return null; for(const k in DEBT_COLS){ if(DEBT_COLS[k].includes(l)) return k; } return null; }
+const debtColLabel=k=>({name:"Creditor / name",type:"Type",balance:"Balance",pay:"Payment",apr:"APR",acct:"Account #",ignore:"Ignore"})[k]||k;
+function parseDebtGrid(text){
+  const lines=text.split(/\r?\n/).map(l=>l.replace(/\u00a0/g," ").trimEnd()).filter(l=>l.trim()!=="");
+  if(lines.length<2) return null;
+  /* 1. delimited table (tabs, or commas / pipes with a recognizable header) */
+  const split=l=>l.includes("\t")?l.split("\t"):l.includes("|")?l.split("|"):l.split(",");
+  const h0=split(lines[0]).map(x=>x.trim()); const known0=h0.filter(debtColOf).length;
+  const tabbed=lines[0].includes("\t")||lines[0].includes("|"); const headerish=!/\$|\d{3,}/.test(lines[0]);
+  if(h0.length>=2 && (known0>=2 || (tabbed&&headerish&&h0.length>=3)) && lines.length>=2 && lines.slice(1).every(l=>split(l).length>=h0.length-1)){
+    return {kind:"table", header:h0, rows:lines.slice(1).map(l=>split(l).map(x=>x.trim()))}; }
+  /* 2. stacked: the first N lines are all column names, then records of N lines each */
+  let n=0; while(n<lines.length && n<10 && debtColOf(lines[n])) n++;
+  if(n>=3){ const body=lines.slice(n); if(body.length>=n && body.length%n===0){ const rows=[]; for(let i=0;i<body.length;i+=n) rows.push(body.slice(i,i+n).map(x=>x.trim())); return {kind:"stacked", header:lines.slice(0,n).map(x=>x.trim()), rows}; }
+    return {kind:"stacked", header:lines.slice(0,n).map(x=>x.trim()), rows:[], perRecord:n, body:body.map(x=>x.trim()), uneven:true}; }
+  return null; }
+function debtLayoutKey(g){ return g.header.map(h=>h.toLowerCase()).join("|"); }
+function gridMapping(g){ const saved=(state.settings.debtLayouts||{})[debtLayoutKey(g)]; if(saved) return saved; return g.header.map(h=>debtColOf(h)||"ignore"); }
+function gridToDebts(g,map){ const out=[]; const n=v=>{ const m=String(v||"").replace(/[$,\s]/g,"").match(/-?\d+(?:\.\d+)?/); return m?+m[0]:null; };
+  g.rows.forEach(r=>{ const d={name:"",type:"",acct:"",balance:null,pay:null,apr:null,extra:0};
+    r.forEach((v,i)=>{ const k=map[i]; if(!k||k==="ignore") return; if(k==="name") d.name=(d.name?d.name+" ":"")+v; else if(k==="type") d.kind=v; else if(k==="acct") d.acct=v; else if(k==="balance") d.balance=n(v); else if(k==="pay") d.pay=n(v); else if(k==="apr"){ const a=n(v); if(a>0&&a<60) d.apr=a; } });
+    if(!(d.balance>0)&&!(d.pay>0)&&!d.name) return;
+    const kind=(d.kind||"").toLowerCase(); d.mortgage=/mortgage|real estate/.test(kind)||/mortgage/i.test(d.name);
+    d.type = d.mortgage ? "mortgage" : /revolv|card|credit/.test(kind) ? (debtTypeOf(d.name)==="card"||!/auto|student|personal|heloc|installment/.test(debtTypeOf(d.name)) ? "card" : debtTypeOf(d.name)) : /install/.test(kind) ? (["auto","student","personal"].includes(debtTypeOf(d.name))?debtTypeOf(d.name):"installment") : /auto|vehicle/.test(kind) ? "auto" : /student|education/.test(kind) ? "student" : /heloc|home equity|line/.test(kind) ? "heloc" : debtTypeOf(d.name);
+    if(d.type==="other"&&!kind&&!/loan|finance|lease|medical|collection/i.test(d.name)) d.type="card";
+    if(!d.name) d.name=(DEBT_TYPES[d.type]||DEBT_TYPES.other).label;
+    d.aprEst=!(d.apr>0); if(!(d.apr>0)) d.apr=d.mortgage?null:(DEBT_TYPES[d.type]||DEBT_TYPES.other).apr;
+    d.balance=d.balance||0; d.pay=d.pay||0; d.closed=!(d.balance>0); d.kind=d.kind||(d.type==="card"?"Revolving":"");
+    out.push(d); });
+  { const seen={}; out.forEach(d=>{ const k=d.name.trim().toLowerCase(); seen[k]=(seen[k]||0)+1; }); const cnt={}; out.forEach(d=>{ const k=d.name.trim().toLowerCase(); if(seen[k]>1){ cnt[k]=(cnt[k]||0)+1; d.name=d.name.trim()+" "+cnt[k]; } }); }
+  return out; }
+let lastGrid=null;
+function renderDebtMapper(g,map,why){ lastGrid={g,map};
+  const opts=i=>`<select onchange="lastGrid.map[${i}]=this.value">${["name","type","balance","pay","apr","acct","ignore"].map(k=>`<option value="${k}" ${map[i]===k?"selected":""}>${debtColLabel(k)}</option>`).join("")}</select>`;
+  const prev=g.rows.slice(0,4);
+  $("debtParsed").innerHTML=`<div class="panel" style="border-left:4px solid var(--warn);background:#FFF8EC;margin:0 0 8px"><h2 style="color:var(--warn)">Help me read this list</h2>
+    <p class="hint">${why||"I can see a table but I\u2019m not sure what each column is."} Tell me what each column holds; I\u2019ll remember this layout next time.</p>
+    ${g.uneven?`<p class="hint">The header has <b>${g.perRecord}</b> columns but the lines after it don\u2019t divide evenly (${g.body.length} lines). Lines per record: <input type="number" value="${g.perRecord}" min="2" max="12" style="width:70px" onchange="regroupGrid(+this.value)"></p>`:""}
+    <div class="schedwrap"><table class="data"><thead><tr>${g.header.map((h,i)=>`<th><div class="hint" style="margin-bottom:4px">${esc(h)}</div>${opts(i)}</th>`).join("")}</tr></thead><tbody>
+    ${prev.map(r=>`<tr>${g.header.map((h,i)=>`<td>${esc(r[i]||"")}</td>`).join("")}</tr>`).join("")}${g.rows.length>4?`<tr><td colspan="${g.header.length}" class="hint">\u2026 ${g.rows.length-4} more</td></tr>`:""}</tbody></table></div>
+    <div class="btnrow" style="margin-top:8px"><button class="btn small" onclick="applyGridMapping()">Read it this way</button><button class="btn ghost small" onclick="$('debtParsed').innerHTML=''">Cancel</button></div></div>`; }
+function regroupGrid(n){ const g=lastGrid&&lastGrid.g; if(!g||!g.body) return; const rows=[]; for(let i=0;i+n<=g.body.length;i+=n) rows.push(g.body.slice(i,i+n)); g.rows=rows; g.perRecord=n; g.uneven=g.body.length%n!==0; const hdr=g.header.slice(0,n); while(hdr.length<n) hdr.push("Column "+(hdr.length+1)); g.header=hdr; const map=hdr.map(h=>debtColOf(h)||"ignore"); renderDebtMapper(g,map); }
+function applyGridMapping(){ const {g,map}=lastGrid||{}; if(!g) return; if(!map.includes("balance")&&!map.includes("pay")){ toast("Pick which column is the balance (or payment)"); return; }
+  state.settings.debtLayouts=state.settings.debtLayouts||{}; state.settings.debtLayouts[debtLayoutKey(g)]=map.slice(); save();
+  const rows=gridToDebts(g,map); lastDebts=rows; renderCreditParsed(rows, `<b>Table read:</b> ${rows.length} account${rows.length===1?"":"s"} \u2014 layout remembered.`); }
 function parseDebts(){
   const text=$("debtPaste").value; if(!text.trim()){ toast("Paste a list first"); return; }
   const cr=parseCreditReport(text);
   if(cr&&cr.length){ lastDebts=cr; renderCreditParsed(cr); return; }
+  const g=parseDebtGrid(text);
+  if(g){ const map=gridMapping(g); const good=(map.includes("balance")||map.includes("pay"))&&(map.includes("name")||map.includes("type"))&&!g.uneven;
+    if(good){ const rows=gridToDebts(g,map); if(rows.length){ lastDebts=rows; renderCreditParsed(rows, `<b>${g.kind==="stacked"?"Stacked list":"Table"} read:</b> ${rows.length} account${rows.length===1?"":"s"} from ${g.header.length} columns (${g.header.join(", ")}).`); return; } }
+    renderDebtMapper(g,map, g.uneven?"":"I found a table but couldn\u2019t tell which column is which."); return; }
   const rows=[];
   text.split(/\r?\n/).forEach(line=>{ line=line.trim(); if(!line||/^(creditor|debt|account|name)\b/i.test(line)&&/balance|payment/i.test(line)) return;
     let pcts=[...line.matchAll(/(?<![\w.])(\d{1,2}(?:\.\d{1,3})?)\s*%/g)].map(m=>+m[1]).filter(v=>v>0&&v<60);
@@ -1566,10 +1619,10 @@ function parseDebts(){
    rows.map((d,i)=>`<tr><td><input type="checkbox" checked data-di="${i}"></td><td>${esc(d.name)}</td><td class="num">${money(d.balance)}</td><td class="num">${d.pay!=null?money(d.pay):"\u2014"}</td><td class="num">${d.apr!=null?d.apr+"%":"\u2014"}</td></tr>`).join("")+
    `</tbody></table><div class="btnrow" style="margin-top:8px"><button class="btn small" onclick="addParsedDebts()">Add checked debts</button></div>`;
 }
-function renderCreditParsed(rows){
+function renderCreditParsed(rows,intro){
   const open=rows.filter(r=>!r.closed&&r.balance>0&&!r.mortgage), mort=rows.filter(r=>r.mortgage&&r.balance>0), skipped=rows.length-open.length-mort.length;
   const sel=(r,i)=>`<select onchange="crType(${i},this.value)">${Object.keys(DEBT_TYPES).map(k=>`<option value="${k}" ${r.type===k?"selected":""}>${DEBT_TYPES[k].label}</option>`).join("")}</select>`;
-  $("debtParsed").innerHTML = `<div class="hint" style="margin-bottom:6px"><b>Credit report:</b> ${rows.length} tradelines read \u2014 ${open.length} open with a balance${mort.length?", "+mort.length+" mortgage":""}${skipped?", "+skipped+" closed / zero balance (left out)":""}. APRs are estimates by type \u2014 change the type or type the real APR.</div>
+  $("debtParsed").innerHTML = `<div class="hint" style="margin-bottom:6px">${intro||`<b>Credit report:</b> ${rows.length} tradelines read`} \u2014 ${open.length} open with a balance${mort.length?", "+mort.length+" mortgage":""}${skipped?", "+skipped+" closed / zero balance (left out)":""}. APRs are estimates by type \u2014 change the type or type the real APR.</div>
    <table class="data"><thead><tr><th></th><th>Creditor</th><th>Acct #</th><th>Type</th><th class="num">Balance</th><th class="num">Payment</th><th class="num">APR est.</th></tr></thead><tbody>`+
    rows.map((d,i)=>d.closed||!(d.balance>0)?"":d.mortgage?`<tr style="opacity:.75"><td></td><td><b>${esc(d.name)}</b> <span class="tag-flat">mortgage</span></td><td>${esc(acctTail(d.acct))}</td><td>${esc(d.kind)}</td><td class="num">${money(d.balance)}</td><td class="num">${money(d.pay)}</td><td><button class="btn ghost small" onclick="crUseMortgage(${i})">Use as current mortgage</button></td></tr>`
     :`<tr><td><input type="checkbox" checked data-di="${i}"></td><td>${esc(d.name)}</td><td>${esc(acctTail(d.acct))}</td><td>${sel(d,i)}</td><td class="num">${money(d.balance)}</td><td class="num">${d.pay?money(d.pay):"\u2014"}</td><td class="num"><input type="number" class="num" step="0.01" value="${d.apr??""}" style="width:80px" oninput="lastDebts[${i}].apr=num(this.value); lastDebts[${i}].aprEst=false"></td></tr>`).join("")+
