@@ -65,6 +65,11 @@ main{flex:1;padding:28px 32px;max-width:1150px}
 .modebtn.on{border-color:var(--brand);background:var(--cream-soft);box-shadow:inset 0 0 0 1px var(--brand)}
 body.mode-fha #debtPanel,body.mode-va #debtPanel{display:none}
 #s-client.fc .cur-loan,#s-client.fc #payHint{display:none}
+#propPreview.customize [data-hid]{cursor:pointer;position:relative}
+#propPreview.customize [data-hid]:hover{outline:2px dashed var(--brand);outline-offset:1px;background:#FFF3F0}
+#propPreview.customize tr[data-hid]:hover td{background:#FFF3F0}
+#propPreview.customize [data-hid]:hover::after{content:"\u2715 hide";position:absolute;right:0;top:-10px;background:var(--brand);color:#fff;font-size:10px;padding:1px 6px;border-radius:999px;font-family:system-ui,sans-serif;z-index:5}
+#propPreview.customize tr[data-hid]:hover::after{display:none}
 .loancheck{border-radius:10px;padding:10px 14px;font-size:12.5px;line-height:1.55;background:#F1F6F1;border:1px solid #CFE0D2}
 .loancheck.warn{background:#FFF8EC;border-color:#E8CFA0}
 .loancheck .t{font-weight:700;margin-bottom:4px}.loancheck.warn .t{color:var(--warn)}.loancheck.ok .t{color:#2E6B4F}
@@ -527,7 +532,7 @@ Discover 6,100 190 24.9"></textarea>
         <div class="field" id="propWhyWrap" style="display:none"><label>Why this is your recommendation (prints on the proposal)</label><textarea id="propWhy" style="min-height:50px;font-family:inherit" oninput="savePropWhy(this.value)" placeholder="e.g. Best balance of rate and cost — the lower-rate option costs 1.25 points that take 4 years to recoup."></textarea></div>
         <div class="hint">Heads up: this is a savings proposal, not a Loan Estimate. The official LE is a regulated disclosure that comes from the lender after application.</div>
       </div>
-      <div class="panel"><h2>Preview</h2><div class="hint" id="propRateSrc" style="margin-bottom:8px"></div><div id="propPreview" style="border:1px solid var(--line);padding:20px;background:#fff"></div></div>
+      <div class="panel"><h2>Preview</h2><div class="hint" id="propRateSrc" style="margin-bottom:8px"></div><div id="propHiddenBar" style="margin-bottom:8px"></div><div id="propPreview" style="border:1px solid var(--line);padding:20px;background:#fff" onclick="propPreviewClick(event)"></div></div>
       <div class="panel"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><h2 id="propLibTitle">Proposal library</h2><button class="btn ghost small" onclick="libraryClear()">Clear all</button></div><div id="propLibrary"></div></div>
     </section>
 
@@ -1959,11 +1964,53 @@ function renderPropOptionPicker(){ const c=cur(); const el=$("propOption"); if(!
   el.innerHTML = `<option value="">Use analysis rate only</option>` + (c?c.options.map(o=>
     `<option value="${o.id}" ${o.id===c.selectedOption?"selected":""}>${esc(o.lender)} \u2014 ${pct(o.rate)}${o.points!=null?" / "+o.points.toFixed(3)+" pts":""}</option>`).join(""):"");
 }
-function proposalHTML(){ const c=cur(); if(!c) return `<div class="empty">Pick a client.</div>`;
+function proposalHTMLRaw(){ const c=cur(); if(!c) return `<div class="empty">Pick a client.</div>`;
   const sel=propSelected(c);
   if(sel.length>=2) return comparisonProposalHTML(c,sel);
   if(sel.length===1) return withAnalysis(c,sel[0].inputs,proposalSingleHTML);
   return proposalSingleHTML(); }
+function proposalHTML(edit){ return applyHides(proposalHTMLRaw(), cur(), !!edit); }
+/* ---- banker-customized proposals: every section, row, stat and bullet gets a key; hidden keys are dropped from the preview and the export ----
+   Locked (never hideable): the title block, the banker/NMLS block, the disclaimer, and the APR row (it pairs with the rate). */
+const HID_LOCK=/^(apr\b|apr\s)/i;
+const hidSlug=t=>String(t||"").replace(/<[^>]+>/g,"").replace(/[\d$,.%()\u2014\u2013\u2192\u00b7]+/g," ").replace(/\s+/g," ").trim().toLowerCase().slice(0,48);
+function tagHideables(root){
+  const txt=el=>hidSlug(el.textContent);
+  root.querySelectorAll("h2").forEach(h=>{ const key="sec:"+txt(h); h.setAttribute("data-hid",key); h.setAttribute("data-hlabel",h.textContent.trim()); let n=h.nextElementSibling;
+    while(n && !(n.tagName==="H2"||n.classList.contains("disc")||n.classList.contains("statline")||n.classList.contains("awards")||n.classList.contains("brandbar"))){ n.setAttribute("data-hsec",key); n=n.nextElementSibling; } });
+  root.querySelectorAll(".statline").forEach(el=>{ el.setAttribute("data-hid","sec:stats"); el.setAttribute("data-hlabel","Highlights strip"); });
+  root.querySelectorAll(".statline>div").forEach(el=>{ const l=el.querySelector(".l"); const key="stat:"+txt(l||el); el.setAttribute("data-hid",key); el.setAttribute("data-hlabel","Highlight: "+(l?l.textContent.trim():"")); });
+  root.querySelectorAll(".awards").forEach(el=>{ el.setAttribute("data-hid","sec:awards"); el.setAttribute("data-hlabel","Award badges"); });
+  root.querySelectorAll("ul>li").forEach(el=>{ el.setAttribute("data-hid","li:"+txt(el)); el.setAttribute("data-hlabel","Bullet: "+el.textContent.trim().slice(0,60)); });
+  root.querySelectorAll("tbody>tr").forEach(tr=>{ const td=tr.querySelector("td"); if(!td) return; const label=td.textContent.trim(); if(!label||HID_LOCK.test(label)) return;
+    const sec=tr.closest("[data-hsec]"); const key="row:"+(sec?sec.getAttribute("data-hsec").replace(/^sec:/,"")+":":"")+hidSlug(label); tr.setAttribute("data-hid",key); tr.setAttribute("data-hlabel","Row: "+label.slice(0,60)); });
+  root.querySelectorAll(":scope>.hint, :scope>p").forEach(el=>{ if(el.closest(".disc")) return; el.setAttribute("data-hid","note:"+txt(el)); el.setAttribute("data-hlabel","Note: "+el.textContent.trim().slice(0,60)); });
+}
+function applyHides(html,c,edit){ if(!c||/class="empty"/.test(html)) return html;
+  const hidden=(c.prop&&c.prop.hidden)||{}; const tpl=document.createElement("template"); tpl.innerHTML=html; const root=tpl.content;
+  const wrap=document.createElement("div"); wrap.append(...root.childNodes); tagHideables(wrap);
+  Object.keys(hidden).forEach(key=>{ wrap.querySelectorAll(`[data-hid="${CSS.escape(key)}"]`).forEach(el=>{ if(el.tagName==="H2"){ wrap.querySelectorAll(`[data-hsec="${CSS.escape(key)}"]`).forEach(x=>x.remove()); } el.remove(); }); });
+  wrap.querySelectorAll("table").forEach(t=>{ const tb=t.querySelector("tbody"); if(tb&&!tb.querySelector("tr")) t.remove(); });
+  if(!edit){ wrap.querySelectorAll("[data-hid],[data-hsec],[data-hlabel]").forEach(el=>{ el.removeAttribute("data-hid"); el.removeAttribute("data-hsec"); el.removeAttribute("data-hlabel"); }); }
+  return wrap.innerHTML; }
+function propPreviewClick(ev){ if(!propCustomize) return; const el=ev.target.closest("[data-hid]"); if(!el||!$("propPreview").contains(el)) return; ev.preventDefault(); ev.stopPropagation(); hideProp(el.getAttribute("data-hid"), el.getAttribute("data-hlabel")); }
+let propCustomize=false;
+function setPropCustomize(on){ propCustomize=!!on; const el=$("propPreview"); if(el) el.classList.toggle("customize",propCustomize); renderProposalPreview(); }
+function hideProp(key,label){ const c=cur(); if(!c) return; c.prop.hidden=c.prop.hidden||{}; c.prop.hidden[key]=label||key; save(); renderProposalPreview(); }
+function unhideProp(key){ const c=cur(); if(!c||!c.prop.hidden) return; delete c.prop.hidden[key]; save(); renderProposalPreview(); }
+function propShowAll(){ const c=cur(); if(!c) return; c.prop.hidden={}; save(); renderProposalPreview(); toast("Everything is back on the proposal"); }
+const SIMPLE_SECS=["your program options","your numbers side by side","debts consolidated at closing","debts paid off at closing","three ways to pay it","pay what you pay now amortization snapshot","balance over time","pay it off faster","today vs with the new loan","your new loan","your new home equity loan","your new heloc"];
+function propSimpleView(){ const c=cur(); if(!c) return; c.prop.hidden=c.prop.hidden||{};
+  const tpl=document.createElement("div"); tpl.innerHTML=proposalHTMLRaw(); tagHideables(tpl);
+  tpl.querySelectorAll("[data-hid]").forEach(el=>{ const k=el.getAttribute("data-hid"), l=el.getAttribute("data-hlabel")||k;
+    if(k.startsWith("sec:")&&SIMPLE_SECS.includes(k.slice(4))) c.prop.hidden[k]=l;
+    if(k.startsWith("note:")) c.prop.hidden[k]=l;
+    if(k.startsWith("row:")&&/(total interest|what the rate works out to|extra toward the loan|new loan$|rate term|extra each month)/.test(k)) c.prop.hidden[k]=l; });
+  save(); renderProposalPreview(); toast("Simple view \u2014 click any item to hide more, or Show all to restore"); }
+function renderHiddenBar(){ const el=$("propHiddenBar"); if(!el) return; const c=cur(); const h=(c&&c.prop&&c.prop.hidden)||{}; const keys=Object.keys(h);
+  el.innerHTML=`<div class="btnrow" style="gap:8px;flex-wrap:wrap;align-items:center"><label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px"><input type="checkbox" ${propCustomize?"checked":""} onchange="setPropCustomize(this.checked)" style="width:auto;min-height:0"> <b>Customize</b> <span class="hint" style="display:inline">\u2014 click any row, box or bullet on the preview to hide it</span></label>
+    <button class="btn ghost small" onclick="propSimpleView()">Simple view</button><button class="btn ghost small" onclick="propShowAll()" ${keys.length?"":"disabled"}>Show all${keys.length?" ("+keys.length+" hidden)":""}</button></div>
+    ${keys.length?`<div class="chiprow" style="margin-top:6px">${keys.map(k=>`<button class="chip" title="Put it back" onclick="unhideProp('${k.replace(/'/g,"\\'")}')">\u21a9 ${esc(String(h[k]).slice(0,50))}</button>`).join("")}</div>`:""}`; }
 function aprEstNote(r){ const est=(r.debts||[]).filter(d=>d.aprEst&&d.apr>0); if(!est.length) return "";
   const byType={}; est.forEach(d=>{ const t=DEBT_TYPES[d.type]?DEBT_TYPES[d.type].label.toLowerCase():"other"; byType[t]=d.apr; });
   return `<div class="hint" style="margin-top:4px">APR${est.length>1?"s":""} on ${est.map(d=>esc(d.name)).join(", ")} estimated at typical rates (${Object.keys(byType).map(t=>t+" "+pct(byType[t])).join(", ")}); your statements will show the exact figures.</div>`; }
@@ -2243,7 +2290,7 @@ function renderPropSnaps(){ const c=cur(); const el=$("propSnapList"); if(!el) r
     + `<div class="hint" style="margin-top:6px">${sel.length===0?"None checked \u2014 the proposal follows the analysis screen.":sel.length===1?"One checked \u2014 a single proposal for "+esc(sel[0].label)+".":sel.length+" checked \u2014 a side-by-side proposal"+(rec?"":" (\u2606 star the one you recommend)")+"."}</div>`;
   const w=$("propCmpWhyWrap"); if(w){ w.style.display=(sel.length>=2&&rec)?"block":"none"; const t=$("propCmpWhy"); if(t&&document.activeElement!==t) t.value=(c.cmp&&c.cmp.why)||""; }
   const so=$("propSaveOpt"); if(so) so.style.display = sel.length===0 ? "" : "none"; }
-function renderProposalPreview(){ renderPropOptionPicker(); renderPropOptions(); renderPropSnaps(); renderLibrary(); const el=$("propPreview"); if(el) el.innerHTML=proposalHTML();
+function renderProposalPreview(){ renderPropOptionPicker(); renderPropOptions(); renderPropSnaps(); renderLibrary(); const el=$("propPreview"); if(el){ el.innerHTML=proposalHTML(true); el.classList.toggle("customize",propCustomize); } renderHiddenBar();
   const ps=$("propRateSrc"); if(ps){ const t=rateSrcText(cur()); ps.textContent=t; ps.style.color = /ESTIMATE/.test(t)?"var(--warn)":"var(--muted)"; } }
 const APP_TITLE=document.title;
 function printAs(title, html){ /* the browser prints the page title in the header, so give the
