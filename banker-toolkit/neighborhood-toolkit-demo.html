@@ -65,6 +65,32 @@ main{flex:1;padding:28px 32px;max-width:1150px}
 .modebtn.on{border-color:var(--brand);background:var(--cream-soft);box-shadow:inset 0 0 0 1px var(--brand)}
 body.mode-fha #debtPanel,body.mode-va #debtPanel{display:none}
 #s-client.fc .cur-loan,#s-client.fc #payHint{display:none}
+/* presentation: the T-chart (also on the exported sheet) */
+#printSheet .tchart{display:grid;grid-template-columns:1fr 1fr;border:1px solid #E2DCCF;border-radius:12px;overflow:hidden;background:#fff;margin:10px 0}
+#printSheet .tchart>div{padding:12px 14px}#printSheet .tchart>div:first-child{border-right:2px solid var(--brand)}
+#printSheet .tchart h3{font-family:var(--serif);font-size:18px;font-weight:400;margin:0 0 8px;color:var(--brand)}
+#printSheet .tchart .trow{display:grid;grid-template-columns:1.3fr 1fr .8fr .9fr 0;gap:6px;align-items:center;padding:3px 0;border-bottom:1px dashed #EFEAE0;font-size:12px}
+#printSheet .tchart .trow.hd{font-size:10px;color:#5C616E;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid #E2DCCF}
+#printSheet .tchart .num{text-align:right}#printSheet .tchart .tot{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0 2px;font-size:13px;border-top:2px solid #E2DCCF;margin-top:6px}
+#printSheet .tchart .tot b{font-family:var(--serif);font-size:20px;font-weight:400}#printSheet .tchart .keep{background:#E3F1E7;color:#2E6B4F;border-radius:10px;padding:8px 10px;margin-top:8px;font-size:12.5px}#printSheet .tchart .keep b{font-family:var(--serif);font-size:20px;font-weight:400}
+#printSheet .tchart .pw{background:#F4EFE6;border-radius:10px;padding:8px 10px;margin-top:8px;font-size:11.5px;line-height:1.55}#printSheet .tchart .paid{color:#2E6B4F;font-weight:600}#printSheet .tchart .muted{color:#7A6F5B}#printSheet .tchart .hint{font-size:10.5px;color:#666}
+.tchart{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
+.tchart>div{padding:14px 16px}.tchart>div:first-child{border-right:2px solid var(--brand)}
+.tchart h3{font-family:var(--serif);font-size:20px;font-weight:400;margin:0 0 10px;color:var(--brand)}
+.tchart .trow{display:grid;grid-template-columns:1.3fr 1fr .8fr .9fr 28px;gap:6px;align-items:center;padding:4px 0;border-bottom:1px dashed #EFEAE0;font-size:13.5px}
+.tchart .trow.hd{font-size:11px;color:#5C616E;text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--line)}
+.tchart .trow input,.tchart .trow select{min-height:32px;padding:4px 8px;font-size:13.5px}.tchart .trow .num{text-align:right}
+.tchart .tot{display:flex;justify-content:space-between;align-items:baseline;padding:10px 0 2px;font-size:15px;border-top:2px solid var(--line);margin-top:6px}
+.tchart .tot b{font-family:var(--serif);font-size:22px;font-weight:400}
+.tchart .keep{background:#E3F1E7;color:#2E6B4F;border-radius:10px;padding:10px 12px;margin-top:10px;font-size:14px}.tchart .keep b{font-family:var(--serif);font-size:24px;font-weight:400}
+.tchart .pw{background:var(--cream-soft);border-radius:10px;padding:10px 12px;margin-top:10px;font-size:13px;line-height:1.6}
+.tchart .paid{color:#2E6B4F;font-weight:600}.tchart .muted{color:#7A6F5B}
+.benef{display:flex;flex-wrap:wrap;gap:8px}.benef label{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:13px;background:#fff}
+.benef label.on{background:#E3F1E7;border-color:#2E6B4F;color:#2E6B4F;font-weight:600}.benef input{width:auto;min-height:0}
+.flowstrip{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12.5px}.flowstrip span{background:var(--cream-soft);border-radius:999px;padding:5px 10px}.flowstrip span.pen{background:#FFF3C4;font-weight:600}
+body.present-mode aside,body.present-mode #presentSrc,body.present-mode #presentFlow,body.present-mode .clientbar,body.present-mode #demoBanner,body.present-mode #updBanner{display:none!important}
+body.present-mode main{max-width:none;padding:18px 28px;font-size:17px}body.present-mode .tchart .trow{font-size:17px}body.present-mode .tchart .tot b{font-size:30px}body.present-mode .tchart .keep b{font-size:34px}body.present-mode .tchart h3{font-size:26px}body.present-mode .tchart .trow input,body.present-mode .tchart .trow select{font-size:17px}
+body.present-mode #s-present .sub,body.present-mode #s-present .eyebrow{display:none}body.present-mode .benef label{font-size:16px}
 #propPreview.customize [data-hid]{cursor:pointer;position:relative}
 #propPreview.customize [data-hid]:hover{outline:2px dashed var(--brand);outline-offset:1px;background:#FFF3F0}
 #propPreview.customize tr[data-hid]:hover td{background:#FFF3F0}
@@ -286,6 +312,7 @@ table.data tr.rec td{background:var(--cream)}
       <button data-s="client">Client workspace</button>
       <button data-s="analysis">Savings analysis</button>
       <button data-s="proposal">Client proposal</button>
+      <button data-s="present">Presentation</button>
       <button data-s="tools">Tools</button>
       <button data-s="tmpl">Scripts &amp; templates</button>
       <button data-s="desk">My desk</button>
@@ -550,6 +577,15 @@ Discover 6,100 190 24.9"></textarea>
     </section>
 
     <!-- ================= CALL BLOCKS ================= -->
+    <section class="screen" id="s-present">
+      <div class="eyebrow">Talk it through, live</div><h1>Presentation <span class="hint" style="display:inline;font-size:14px">— the T-chart</span></h1>
+      <div class="sub">Today on the left, the new loan on the right, benefits and the close underneath. Every number is editable and recalculates as you type. Fill it from the client or a saved option, or type it in cold.</div>
+      <div class="panel" id="presentFlow"></div>
+      <div class="panel" id="presentSrc"></div>
+      <div class="panel" id="presentChart"></div>
+      <div class="panel" id="presentBenefits"></div>
+      <div class="panel" id="presentClose"></div>
+    </section>
     <section class="screen" id="s-tools">
       <div class="eyebrow">Quick math, mid-call</div><h1>Tools</h1>
       <div class="sub">No client needed — everything recalculates as you type. Numbers stay filled in until you clear them.</div>
@@ -861,7 +897,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.7.0";
+const TOOLKIT_VERSION = "1.7.1";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2378,10 +2414,10 @@ function buildSheetSVG(html,W){
   const xhtml=new XMLSerializer().serializeToString(wrap);
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml"><style>${sheetCSS(W).replace(/</g,"\\3c ")}</style>${xhtml}</div></foreignObject></svg>`;
   return {svg,W,H}; }
-function sheetTitle(kind,c,r){ if(kind==="amort") return "Amortization Comparison"+(c&&c.name?" \u2014 "+c.name:""); const multi=c&&kind==="proposal"&&propSelected(c).length>=2;
+function sheetTitle(kind,c,r){ if(kind==="amort") return "Amortization Comparison"+(c&&c.name?" \u2014 "+c.name:""); if(kind==="present") return "Today vs New"+(c&&c.name?" \u2014 "+c.name:""); const multi=c&&kind==="proposal"&&propSelected(c).length>=2;
   return (kind==="compare"||multi?"Your Options":(r&&r.fc?"Cash-Out Proposal":r&&r.second?(r.secType==="heloc"?"HELOC Proposal":"Home Equity Loan Proposal"):"Savings Proposal"))+(c&&c.name?" \u2014 "+c.name:""); }
 async function renderSheet(kind, snap){ const c=cur();
-  const html = snap ? snap.html : (kind==="compare" ? compareHTML() : kind==="amort" ? amortSheetHTML() : proposalHTML());
+  const html = snap ? snap.html : (kind==="compare" ? compareHTML() : kind==="amort" ? amortSheetHTML() : kind==="present" ? presentSheetHTML() : proposalHTML());
   if(html.includes('class="empty"')) throw new Error(kind==="compare"?"Add at least two complete scenarios first":"Finish the analysis first");
   const r=c&&!snap&&computeAnalysis(c);
   const title= snap ? snap.title : sheetTitle(kind,c,r);
@@ -3511,6 +3547,139 @@ function amortAutofill(){ const c=cur(); if(!c){ toast("Pick a client first"); r
 function amortFromDate(side){ const v=amortVals(); const d=v.cClosed; if(!d) return; const since=Math.max(0,Math.round((Date.now()-new Date(d+"T00:00:00").getTime())/2629800000)); amortSet("cInto", since); amortCalc(); }
 function amortClear(){ document.querySelectorAll("#amortPanel [data-am]").forEach(el=>{ if(el.type==="checkbox") el.checked=false; else if(el.tagName==="SELECT") el.value="360"; else el.value=""; }); state.amort={}; save(); amortCalc(); }
 function amortRestore(){ const v=state.amort||{}; Object.keys(v).forEach(k=>amortSet(k,v[k])); amortCalc(); }
+/* ======== Presentation: the live T-chart ======== */
+const CLOSES_SEED=["This option came out better than I expected.","Honestly, this is one of the cleaner ones I\u2019ve seen this month.","If the numbers make sense to you, I can lock this in today and we\u2019re done talking about it.","You\u2019re paying it either way \u2014 this just stops so much of it going to interest.","Want me to lock this in before the market moves?","Let\u2019s get the application started while it\u2019s fresh \u2014 ten minutes."];
+const PRESENT_BENEFITS=[["noOut","No out-of-pocket \u2014 nothing due at closing"],["noAppr","No appraisal"],["noInc","No income re-verification"],["quick","Closes quick \u2014 a couple of weeks, signing comes to you"],["skip","Skip a payment (or two) at closing"],["noPrepay","No prepayment penalty"],["one","One payment instead of several"],["cash","Cash to you at closing"],["escrow","Escrow refund from your current servicer"],["noOrig","No origination fee (lender-paid costs)"]];
+function presentState(c){ if(!c.present) c.present={src:"",d:null,ben:{},close:"",closeCustom:"",showCombined:false}; return c.present; }
+function presentBlank(){ return {mortgage:{balance:null,rate:null,payment:null,monthsLeft:null}, debts:[], program:"standard", lien:"refi", secType:"hel", hideFirst:false, rate:null, term:30, costs:0, cashOut:0, skip:1, roll:"yes", extra:0}; }
+function presentFromClient(c, inputs){ const a=Object.assign({},c.analysis||{},inputs||{}); const d=presentBlank();
+  d.mortgage={balance:c.balance||null, rate:c.rate||null, payment:c.payment>0?c.payment:(c.balance&&c.rate?Math.round(pmt(c.balance,c.rate,c.monthsLeft||360)):null), monthsLeft:c.monthsLeft||null, paymentTotal:c.paymentTotal||null};
+  d.debts=(c.debts||[]).filter(x=>x.balance>0).map(x=>({name:x.name,balance:x.balance,apr:x.apr,pay:(x.pay||0)+(x.extra||0)}));
+  d.program=a.anProgram||"standard"; d.lien=a.anLien==="second"?"second":"refi"; d.secType=a.anSecondType||"hel"; d.hideFirst=a.anHideFirst==="yes";
+  d.rate=a.anRate||null; d.term=a.anTerm||30; d.costs=a.anCosts||0; d.cashOut=a.anCashOut||0; d.skip=a.anSkip??1; d.roll=a.anRoll||"yes"; d.extra=a.anCustom||0; return d; }
+function presentTemp(c,d){ /* a throwaway client so the proposal engine does the math */
+  const t=Object.assign({},blankClient(),{id:"present",name:c?c.name:"",balance:d.mortgage.balance||0,rate:d.mortgage.rate||0,payment:d.mortgage.payment||null,monthsLeft:d.mortgage.monthsLeft||null,paymentTotal:d.mortgage.paymentTotal||null,freeClear:false,
+    debts:d.debts.filter(x=>x.balance>0).map(x=>({name:x.name||"Debt",type:debtTypeOf(x.name||""),balance:+x.balance||0,apr:x.apr>0?+x.apr:(DEBT_TYPES[debtTypeOf(x.name||"")]||DEBT_TYPES.other).apr,aprEst:!(x.apr>0),pay:+x.pay||0,extra:0,acct:""}))});
+  t.analysis={anRate:d.rate,anTerm:d.term||30,anCosts:+d.costs||0,anCashOut:+d.cashOut||0,anSkip:+d.skip||0,anRoll:d.roll||"yes",anLien:d.lien||"refi",anProgram:d.program||"standard",anSecondType:d.secType||"hel",anHideFirst:d.hideFirst?"yes":"no",anCustom:+d.extra||0,anPrepay:"yes",anMip:1.75}; return t; }
+function presentCalc(c){ const p=presentState(c); if(!p.d) return null; const t=presentTemp(c,p.d); const r=computeAnalysis(t); return r&&!r.tooSmall?r:null; }
+function presentFill(src){ const c=cur(); if(!c){ toast("Pick a client first"); return; } const p=presentState(c);
+  if(src==="client"){ p.d=presentFromClient(c); p.src="client"; }
+  else if(src==="blank"){ p.d=presentBlank(); p.src="manual"; }
+  else if(src.startsWith("snap:")){ const sc=(c.scenarios||[]).find(x=>x.id===src.slice(5)); if(!sc) return; p.d=presentFromClient(c,sc.inputs); p.src=src; }
+  presentDefaultBenefits(c); save(); renderPresent(); }
+function presentDefaultBenefits(c){ const p=presentState(c); const d=p.d; if(!d) return; const r=presentCalc(c); const b={};
+  const stream=d.program==="fha_streamline"||d.program==="va_irrrl";
+  b.noAppr=stream; b.noInc=stream; b.noOrig=d.program==="fha_streamline"; b.skip=!!(r&&r.skipCash>0); b.noPrepay=true; b.one=!!(r&&r.roll&&r.debts.length>1); b.cash=!!(d.cashOut>0); b.escrow=d.lien==="refi"; b.noOut=!(d.lien==="second"); b.quick=true;
+  p.ben=b; }
+function presentSet(path,val){ const c=cur(); if(!c) return; const p=presentState(c); if(!p.d){ p.d=presentBlank(); p.src="manual"; }
+  const parts=path.split("."); let o=p.d; for(let i=0;i<parts.length-1;i++){ o=o[parts[i]]; } const k=parts[parts.length-1];
+  o[k]= (typeof o[k]==="number"||o[k]==null||/^(balance|rate|payment|monthsLeft|apr|pay|costs|cashOut|skip|term|extra|paymentTotal)$/.test(k)) ? (val===""?null:(isNaN(+val)?val:+val)) : val;
+  if(path==="mortgage.balance"||path==="mortgage.rate"||path==="mortgage.monthsLeft"){ const m=p.d.mortgage; if(!m.paymentTyped&&m.balance>0&&m.rate>0) m.payment=Math.round(pmt(m.balance,m.rate,m.monthsLeft||360)); }
+  if(path==="mortgage.payment") p.d.mortgage.paymentTyped=true;
+  if(path==="program"){ const stream=val==="fha_streamline"||val==="va_irrrl"; if(stream){ p.d.roll="no"; p.d.cashOut=0; } if(val==="fha_streamline"){ p.d.skip=0; p.d.costs=0; } presentDefaultBenefits(c); }
+  if(path==="lien"){ if(val==="second"){ p.d.roll="yes"; p.d.skip=0; if(p.d.term>20) p.d.term=20; } presentDefaultBenefits(c); }
+  save(); renderPresent(true); }
+function presentDebt(i,k,val){ const c=cur(); if(!c) return; const p=presentState(c); if(!p.d) return; const d=p.d.debts[i]; if(!d) return; d[k]= k==="name"?val:(val===""?null:+val); save(); renderPresent(true); }
+function presentAddDebt(){ const c=cur(); if(!c) return; const p=presentState(c); if(!p.d){ p.d=presentBlank(); p.src="manual"; } p.d.debts.push({name:"",balance:null,apr:null,pay:null}); save(); renderPresent(); setTimeout(()=>{ const el=document.querySelector(`#presentChart [data-pd="${p.d.debts.length-1}.name"]`); if(el) el.focus(); },0); }
+function presentDelDebt(i){ const c=cur(); if(!c) return; const p=presentState(c); if(!p.d) return; p.d.debts.splice(i,1); save(); renderPresent(); }
+function presentBen(k,on){ const c=cur(); if(!c) return; const p=presentState(c); p.ben[k]=!!on; save(); renderPresent(true); }
+function presentClose(v){ const c=cur(); if(!c) return; const p=presentState(c); p.close=v; save(); renderPresentClose(); }
+function presentCloseCustom(v){ const c=cur(); if(!c) return; const p=presentState(c); p.closeCustom=v; p.close=""; save(); }
+function presentSaveClose(){ const c=cur(); if(!c) return; const p=presentState(c); const t=(p.closeCustom||"").trim(); if(!t){ toast("Type a close line first"); return; }
+  state.settings.closes=state.settings.closes||[]; if(!state.settings.closes.includes(t)) state.settings.closes.push(t); p.close=t; p.closeCustom=""; save(); renderPresentClose(); toast("Saved to your closes"); }
+function presentDelClose(t){ state.settings.closes=(state.settings.closes||[]).filter(x=>x!==t); const c=cur(); if(c&&presentState(c).close===t) presentState(c).close=""; save(); renderPresentClose(); }
+function presentToClient(){ const c=cur(); if(!c) return; const p=presentState(c); if(!p.d) return; const d=p.d;
+  if(!confirm("Write these numbers to "+c.name+"\u2019s client workspace and savings analysis? The presentation stays as it is.")) return;
+  c.balance=d.mortgage.balance; c.rate=d.mortgage.rate; c.payment=d.mortgage.payment; c.monthsLeft=d.mortgage.monthsLeft; if(d.mortgage.paymentTotal) c.paymentTotal=d.mortgage.paymentTotal;
+  c.debts=d.debts.filter(x=>x.balance>0).map(x=>({name:x.name||"Debt",type:debtTypeOf(x.name||""),balance:+x.balance,apr:x.apr>0?+x.apr:(DEBT_TYPES[debtTypeOf(x.name||"")]||DEBT_TYPES.other).apr,aprEst:!(x.apr>0),pay:+x.pay||0,extra:0,acct:""}));
+  Object.assign(c.analysis,{anRate:d.rate,anTerm:d.term,anCosts:d.costs,anCashOut:d.cashOut,anSkip:d.skip,anRoll:d.roll,anLien:d.lien,anProgram:d.program,anSecondType:d.secType,anHideFirst:d.hideFirst?"yes":"no",anCustom:d.extra});
+  save(); refreshAll(); toast("Saved to "+c.name); }
+function presentDrift(c){ const p=presentState(c); if(!p.d||p.src!=="client") return false; const d=presentFromClient(c); const m=p.d.mortgage, n=d.mortgage;
+  return m.balance!==n.balance||m.rate!==n.rate||p.d.rate!==d.rate||p.d.term!==d.term||JSON.stringify(p.d.debts.map(x=>[x.name,x.balance,x.pay]))!==JSON.stringify(d.debts.map(x=>[x.name,x.balance,x.pay])); }
+function togglePresentMode(on){ document.body.classList.toggle("present-mode", on==null?!document.body.classList.contains("present-mode"):!!on); if(document.body.classList.contains("present-mode")) go("present"); renderPresent(); }
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&document.body.classList.contains("present-mode")) togglePresentMode(false); });
+function renderPresent(keepFocus){ const c=cur(); if(!$("presentChart")) return;
+  const active=keepFocus&&document.activeElement&&document.activeElement.closest("#s-present")?{id:document.activeElement.id,pos:document.activeElement.selectionStart}:null;
+  if(!c){ $("presentSrc").innerHTML=`<div class="empty">Pick a client first \u2014 or add one and type the numbers in here.</div>`; $("presentChart").innerHTML=""; $("presentBenefits").innerHTML=""; $("presentClose").innerHTML=""; $("presentFlow").innerHTML=""; return; }
+  const p=presentState(c); const pm=document.body.classList.contains("present-mode");
+  $("presentFlow").innerHTML=`<div class="flowstrip"><b style="margin-right:4px">Call flow:</b><span>Greeting</span><span class="pen">\u270F\uFE0F \u201cGrab a pen and paper\u201d</span><span>Yes-train: today\u2019s numbers</span><span>The new side</span><span>Benefits</span><span>Close</span><span style="flex:1;background:none"></span><button class="btn small" onclick="togglePresentMode()">${pm?"Exit presenting (Esc)":"Present \u2014 big &amp; clean"}</button></div>`;
+  const snaps=(c.scenarios||[]).filter(x=>x.kind==="snap");
+  $("presentSrc").innerHTML=`<div class="btnrow" style="flex-wrap:wrap;gap:8px;align-items:center"><button class="btn small" onclick="presentFill('client')">Fill from ${esc(c.name)}</button>
+    ${snaps.length?`<select onchange="if(this.value) presentFill(this.value); this.value=''" style="width:auto"><option value="">Fill from a saved option\u2026</option>${snaps.map(x=>`<option value="snap:${x.id}">${esc(x.label)}</option>`).join("")}</select>`:""}
+    <button class="btn ghost small" onclick="presentFill('blank')">Start blank</button><span style="flex:1"></span>
+    ${p.d?`<button class="btn ghost small" onclick="presentToClient()">Save numbers to client</button><button class="btn small" onclick="copyImage('present')">Copy as image</button><button class="btn ghost small" onclick="downloadImage('present')">Download</button><button class="btn ghost small" onclick="emailImage('present')">Email</button>`:""}</div>
+    ${p.d&&presentDrift(c)?`<div class="hint" style="margin-top:6px;color:var(--warn)">These numbers differ from the client workspace \u2014 \u201cSave numbers to client\u201d writes them back, \u201cFill from ${esc(c.name)}\u201d reloads.</div>`:""}`;
+  if(!p.d){ $("presentChart").innerHTML=`<div class="empty">Fill from the client, a saved option, or start blank.</div>`; $("presentBenefits").innerHTML=""; $("presentClose").innerHTML=""; return; }
+  $("presentChart").innerHTML=presentChartHTML(c,true); renderPresentBenefits(); renderPresentClose();
+  if(active&&active.id){ const el=$(active.id); if(el){ el.focus(); try{ if(active.pos!=null&&el.setSelectionRange) el.setSelectionRange(active.pos,active.pos); }catch(e){} } } }
+function presentChartHTML(c,edit){ const p=presentState(c); const d=p.d; const r=presentCalc(c); const m=d.mortgage;
+  const second=d.lien==="second"; const stream=d.program==="fha_streamline"||d.program==="va_irrrl"; const roll=!second&&!stream?d.roll==="yes":second;
+  const inp=(id,path,val,cls,ph,step)=> edit?`<input id="${id}" type="number" class="${cls||"num"}" step="${step||"any"}" value="${val==null?"":val}" placeholder="${ph||""}" oninput="presentSet('${path}',this.value)">`:`<span class="${cls||"num"}">${val==null?"\u2014":val}</span>`;
+  const sel=(id,path,val,opts)=> edit?`<select id="${id}" onchange="presentSet('${path}',this.value)">${opts.map(o=>`<option value="${o[0]}" ${String(val)===String(o[0])?"selected":""}>${o[1]}</option>`).join("")}</select>`:`<span>${(opts.find(o=>String(o[0])===String(val))||[])[1]||""}</span>`;
+  const showDebts = roll || second;
+  const dPay=d.debts.reduce((s,x)=>s+(+x.pay||0),0), dBal=d.debts.reduce((s,x)=>s+(+x.balance||0),0);
+  const todayOut=(second?0:(m.payment||0))+(showDebts?dPay:0);
+  const secName=d.secType==="heloc"?"HELOC":"home equity loan";
+  /* ---- left ---- */
+  let L=`<h3>Today</h3>`;
+  if(!(second&&d.hideFirst)) L+=`<div class="trow hd"><span>Mortgage</span><span class="num">Balance</span><span class="num">Rate</span><span class="num">Payment</span><span></span></div>
+    <div class="trow"><span>${second?"First mortgage (stays)":"Current mortgage"}${edit?`<div class="hint">months left ${inp("pmL","mortgage.monthsLeft",m.monthsLeft,"num","360","1")}</div>`:(m.monthsLeft?`<div class="hint">${yrsMo(m.monthsLeft)} left</div>`:"")}</span>
+      <span>${inp("pmB","mortgage.balance",m.balance,"num","185,000","1000")}</span><span>${inp("pmR","mortgage.rate",m.rate,"num","7.25","0.125")}</span><span>${inp("pmP","mortgage.payment",m.payment,"num","P&I","1")}</span><span></span></div>`;
+  if(showDebts){ L+=`<div class="trow hd" style="margin-top:6px"><span>Debts</span><span class="num">Balance</span><span class="num">APR</span><span class="num">Payment</span><span></span></div>`+
+    d.debts.map((x,i)=>`<div class="trow"><span>${edit?`<input id="pd${i}n" type="text" data-pd="${i}.name" value="${esc(x.name||"")}" placeholder="Visa, auto, personal loan" oninput="presentDebt(${i},'name',this.value)">`:esc(x.name||"Debt")}</span>
+      <span>${edit?`<input id="pd${i}b" type="number" class="num" step="100" value="${x.balance==null?"":x.balance}" placeholder="balance" oninput="presentDebt(${i},'balance',this.value)">`:money(x.balance)}</span>
+      <span>${edit?`<input id="pd${i}a" type="number" class="num" step="0.01" value="${x.apr==null?"":x.apr}" placeholder="APR" oninput="presentDebt(${i},'apr',this.value)">`:pct(x.apr)}</span>
+      <span>${edit?`<input id="pd${i}p" type="number" class="num" step="1" value="${x.pay==null?"":x.pay}" placeholder="min" oninput="presentDebt(${i},'pay',this.value)">`:money(x.pay)}</span>
+      <span>${edit?`<button class="btn ghost small" style="padding:2px 6px" onclick="presentDelDebt(${i})" title="Remove">\u2715</button>`:""}</span></div>`).join("")+
+    (edit?`<div class="btnrow" style="margin-top:6px"><button class="btn ghost small" onclick="presentAddDebt()">+ Add a debt</button>${d.debts.length?`<span class="hint">${d.debts.length} debt${d.debts.length===1?"":"s"} \u00b7 ${money(dBal)} owed${r&&r.blended!=null&&!second?" \u00b7 blended "+pct(r.blended):""}</span>`:""}</div>`:""); }
+  L+=`<div class="tot"><span>Going out each month</span><b>${money(todayOut)}</b></div>`;
+  if(r&&r.pitiNow>0&&!second) L+=`<div class="hint">with taxes &amp; insurance: ${money(r.allInNow)}</div>`;
+  /* ---- right ---- */
+  let R=`<h3>New</h3>`;
+  if(edit) R+=`<div class="trow" style="grid-template-columns:1fr 1fr;border:0"><span>${sel("pLien","lien",d.lien,[["refi","Refinance (new first mortgage)"],["second","Home equity (second mortgage)"]])}</span>
+    <span>${second?sel("pSec","secType",d.secType,[["hel","Home equity loan (fixed)"],["heloc","HELOC"]]):sel("pProg","program",d.program,[["standard","Standard / cash-out"],["fha_streamline","FHA Streamline"],["va_irrrl","VA IRRRL"]])}</span></div>`;
+  R+=`<div class="trow hd"><span>${second?"New "+secName:"New mortgage"}</span><span class="num">Loan</span><span class="num">Rate</span><span class="num">Payment</span><span></span></div>
+    <div class="trow"><span>${r?money(r.newP):"\u2014"} loan${edit?`<div class="hint">term ${sel("pTerm","term",d.term,[[30,"30 yr"],[25,"25 yr"],[20,"20 yr"],[15,"15 yr"],[10,"10 yr"]])}</div>`:`<div class="hint">${d.term} yr</div>`}</span>
+      <span class="num muted">${second?"":money(m.balance||0)}${!second&&(d.costs||d.cashOut)?"<br><span class='hint'>+ costs/cash</span>":""}</span><span>${inp("pR","rate",d.rate,"num","6.5","0.125")}</span><span class="num"><b>${r?money(r.newPay):"\u2014"}</b></span><span></span></div>`;
+  if(showDebts) R+=d.debts.map(x=>`<div class="trow"><span>${esc(x.name||"Debt")}</span><span class="num paid">paid off</span><span></span><span class="num paid">$0</span><span></span></div>`).join("");
+  if(edit) R+=`<div class="trow" style="grid-template-columns:repeat(4,1fr) 0;border:0;margin-top:4px">
+      <span><span class="hint">Costs</span>${inp("pC","costs",d.costs,"num","0","500")}</span>
+      <span><span class="hint">Cash out</span>${inp("pCO","cashOut",d.cashOut,"num","0","1000")}</span>
+      <span><span class="hint">Skip pmts</span>${sel("pS","skip",d.skip,[[0,"0"],[1,"1"],[2,"2"]])}</span>
+      <span><span class="hint">Set extra/mo</span>${inp("pX","extra",d.extra,"num","0","25")}</span><span></span></div>
+      ${!second&&!stream?`<div class="hint">Roll debts in: ${sel("pRoll","roll",d.roll,[["yes","yes \u2014 pay them off"],["no","no \u2014 leave them"]])}</div>`:""}
+      ${second?`<div class="hint"><label style="display:inline-flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" ${d.hideFirst?"checked":""} onchange="presentSet('hideFirst',this.checked)" style="width:auto;min-height:0"> leave the first mortgage out</label> &nbsp; <label style="display:inline-flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" ${p.showCombined?"checked":""} onchange="presentState(cur()).showCombined=this.checked; save(); renderPresent(true)" style="width:auto;min-height:0"> show combined payment</label></div>`:""}`;
+  if(r){ const newOut=r.newPay; R+=`<div class="tot"><span>Going out each month</span><b>${money(newOut)}</b></div>`;
+    if(second&&(p.showCombined||!d.hideFirst)&&m.payment>0) R+=`<div class="hint">first mortgage ${money(m.payment)} + new ${secName} ${money(r.newPay)} = <b>${money(m.payment+r.newPay)}</b> combined${r.pitiNow>0?" \u00b7 with taxes &amp; insurance "+money(r.pitiNew):""}</div>`;
+    else if(r.pitiNow>0&&!second) R+=`<div class="hint">with taxes &amp; insurance: ${money(r.allInNew)}</div>`;
+    if(r.saveMo>0) R+=`<div class="keep">You keep <b>${money(r.saveMo)}</b> every month</div>`;
+    else if(r.saveMo<0) R+=`<div class="pw">${money(-r.saveMo)}/mo more than today${r.cashOut>0?" \u2014 with "+money(r.cashOut)+" cash out":""}</div>`;
+    if(r.extra>0) R+=`<div class="pw"><b>Pay what you pay now:</b> keep sending ${money(r.outlayNow)} and the extra ${money(r.extra)} hits principal \u2192 paid off in <b>${yrsMo(r.pw.months)}</b>${isFinite(r.pw.months)&&r.n-r.pw.months>0?" ("+yrsMo(r.n-r.pw.months)+" sooner)":""}, <b>${money(r.intSavedPW)}</b> less interest than today\u2019s path. The rate works out to <b>${pct(r.pwEff)}</b> on paper-vs-pocket.</div>`;
+    if(r.cust) R+=`<div class="pw">Or a set <b>${money(r.cust.extra)}/mo</b> extra: paid off in <b>${yrsMo(r.cust.months)}</b>, works out to <b>${pct(r.cust.eff)}</b>, and <b>${money(r.cust.pocket)}/mo</b> still stays in their pocket.</div>`;
+    if(r.skipCash>0&&p.ben.skip) R+=`<div class="pw">Skip ${r.skipN} payment${r.skipN>1?"s":""} at closing \u2192 about <b>${money(r.skipCash)}</b> stays in their pocket.</div>`;
+    if(r.roll&&r.debts.length&&r.blended!=null&&!second) R+=`<div class="hint" style="margin-top:6px">${pct(r.blended)} blended today \u2192 ${pct(d.rate)} new${r.aprEst?" \u00b7 APR est. "+pct(r.apr):" \u00b7 APR "+pct(r.apr)}</div>`; }
+  else R+=`<div class="empty" style="margin-top:8px">Add the new rate${second&&!d.debts.length&&!(d.cashOut>0)?" and some debts or cash out":""}.</div>`;
+  return `<div class="tchart"><div>${L}</div><div>${R}</div></div>`; }
+function renderPresentBenefits(){ const c=cur(); const p=presentState(c); const r=presentCalc(c);
+  $("presentBenefits").innerHTML=`<h2>Benefits <span class="hint" style="display:inline">\u2014 flip them on as you say them</span></h2><div class="benef">${PRESENT_BENEFITS.map(([k,l])=>{ const on=!!p.ben[k]; let txt=l;
+    if(k==="skip"&&r&&r.skipCash>0) txt=`Skip ${r.skipN} payment${r.skipN>1?"s":""} \u2014 about ${money(r.skipCash)} stays with you`; if(k==="cash"&&r&&r.cashOut>0) txt=`${money(r.cashOut)} cash to you at closing`; if(k==="one"&&r&&r.debts.length>1) txt=`One payment instead of ${r.debts.length+1}`;
+    return `<label class="${on?"on":""}"><input type="checkbox" ${on?"checked":""} onchange="presentBen('${k}',this.checked)"> ${txt}</label>`; }).join("")}</div>`; }
+function renderPresentClose(){ const c=cur(); if(!c||!$("presentClose")) return; const p=presentState(c); const lib=(state.settings.closes&&state.settings.closes.length)?state.settings.closes:CLOSES_SEED.slice();
+  const cur_=p.close||p.closeCustom||"";
+  $("presentClose").innerHTML=`<h2>The close</h2><div class="chiprow" style="margin-bottom:8px">${lib.map(t=>`<button class="chip${p.close===t?" on":""}" ${p.close===t?'style="background:var(--brand);color:#fff;border-color:var(--brand)"':""} onclick="presentClose('${t.replace(/'/g,"\\'")}')" title="Use this line">${esc(t)}</button>`).join("")}</div>
+    <div class="btnrow"><input type="text" id="pCloseCustom" value="${esc(p.closeCustom||"")}" placeholder="\u2026or type your own close" style="flex:1" oninput="presentCloseCustom(this.value)"><button class="btn ghost small" onclick="presentSaveClose()">Save line to my closes</button>${(state.settings.closes||[]).includes(p.close)?`<button class="btn ghost small" onclick="presentDelClose('${(p.close||"").replace(/'/g,"\\'")}')">Remove from my closes</button>`:""}</div>
+    ${cur_?`<div class="keep" style="margin-top:10px;font-size:16px;background:var(--cream-soft);color:var(--ink)"><b style="font-family:var(--serif);font-size:20px;font-weight:400">\u201c${esc(cur_)}\u201d</b></div>`:""}`; }
+function presentSheetHTML(){ const c=cur(); if(!c) return `<div class="empty">Pick a client.</div>`; const p=presentState(c); if(!p.d) return `<div class="empty">Fill the presentation first.</div>`; const r=presentCalc(c); const s=state.settings;
+  const bens=PRESENT_BENEFITS.filter(([k])=>p.ben[k]).map(([k,l])=>{ if(k==="skip"&&r&&r.skipCash>0) return `Skip ${r.skipN} payment${r.skipN>1?"s":""} \u2014 about ${money(r.skipCash)} stays with you`; if(k==="cash"&&r&&r.cashOut>0) return `${money(r.cashOut)} cash to you at closing`; if(k==="one"&&r&&r.debts.length>1) return `One payment instead of ${r.debts.length+1}`; return l; });
+  const close=p.close||p.closeCustom||"";
+  return `<div class="brandbar"><div><img src="${s.logo||NMC_LOGO}" alt="${esc(s.co)}">${brandBadgeHTML(c)}<div class="tag">${esc(s.tag)}</div></div>
+    <div class="lo"><b>${esc(s.loName||"Your Loan Officer")}</b>${s.loNmls?` \u00b7 NMLS #${esc(s.loNmls)}`:""}<br>${esc(s.loPhone||"")}${s.loPhone&&s.loEmail?" \u00b7 ":""}${esc(s.loEmail||"")}<br>Prepared ${new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}</div></div>
+    <div class="eyebrow">Today vs. new</div><h1>${esc(c.name)}${quoteTagHTML(c)}</h1>
+    ${presentChartHTML(c,false)}
+    ${bens.length?`<h2>What this does for you</h2><ul style="margin:4px 0 4px 18px;font-size:12px;line-height:1.7">${bens.map(b=>`<li>${b}</li>`).join("")}</ul>`:""}
+    ${close?`<div class="recbox" style="margin-top:10px;font-family:var(--serif);font-size:16px">\u201c${esc(close)}\u201d</div>`:""}
+    ${awardsRowHTML(c)}
+    <div class="disc">This presentation is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. Figures exclude taxes, insurance, and escrows unless noted. Consolidating short-term debt into a mortgage or home equity loan may increase the total interest paid on that debt over the life of the loan and converts unsecured debt into debt secured by your home. All loans subject to credit approval. Equal Housing Opportunity. ${esc(s.footer)}${s.loNmls?` \u00b7 Loan Officer NMLS #${esc(s.loNmls)}`:""}</div>`; }
 function toolsCalc(){
   const tv={_cid:(state.tools||{})._cid}; document.querySelectorAll("[data-t]").forEach(el=>{ tv[el.dataset.t]=el.value; }); state.tools=tv; save(); toolsUsing();
   const m=toolsModel(); const box=$("toolsCompare"); if(!box) return;
@@ -3578,6 +3747,7 @@ function go(s){ document.querySelectorAll(".screen").forEach(x=>x.classList.remo
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.s===s));
   if(s==="analysis"){ fillAnalysisInputs(); renderDebts(); runAnalysis(); }
   if(s==="proposal") renderProposalPreview();
+  if(s==="present") renderPresent();
   if(s==="pricing") renderSavedOptions();
   if(s==="blocks") renderBlocks();
   if(s==="compare") renderCompare();
