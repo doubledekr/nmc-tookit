@@ -87,13 +87,13 @@ body.mode-fha #debtPanel,body.mode-va #debtPanel{display:none}
 .tchart .keep{background:#E3F1E7;color:#2E6B4F;border-radius:10px;padding:10px 12px;margin-top:10px;font-size:14px}.tchart .keep b{font-family:var(--serif);font-size:24px;font-weight:400}
 .tchart .pw{background:var(--cream-soft);border-radius:10px;padding:10px 12px;margin-top:10px;font-size:13px;line-height:1.6}
 .tchart .paid{color:#2E6B4F;font-weight:600}.tchart .muted{color:#7A6F5B}
-.tchart .trow.d6{grid-template-columns:1.3fr 1fr .7fr .8fr .7fr 28px}.tchart .trow.gap{margin-top:8px}.tchart .trow.tsum{border-bottom:0;border-top:1px solid var(--line);padding-top:6px}.tchart .trow .hint{font-size:10.5px}
+.tchart .trow.d6{grid-template-columns:1.4fr 1fr .9fr .9fr .85fr 24px}.tchart .trow input[type=number]{padding:4px 5px;-moz-appearance:textfield}.tchart .trow input[type=number]::-webkit-inner-spin-button,.tchart .trow input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.tchart .trow input[type=text]{padding:4px 6px}.tchart .trow.gap{margin-top:8px}.tchart .trow.tsum{border-bottom:0;border-top:1px solid var(--line);padding-top:6px}.tchart .trow .hint{font-size:10.5px}
 .tchart h3 .side{font-family:var(--sans);font-size:12px;color:#A53222;background:#FBECE9;border-radius:999px;padding:2px 9px;vertical-align:middle;margin-left:6px}.tchart h3 .side.good{color:#2E6B4F;background:#E3F1E7}
 .greet{font-family:var(--serif);font-size:19px;line-height:1.4;color:var(--ink)}.cashline{background:#FFF3C4;border-radius:10px;padding:10px 12px;margin-top:10px;font-size:14px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 10px}.cashline b{font-family:var(--serif);font-size:22px;font-weight:400}.cashline .hint{flex-basis:100%}
 .tchart label.tc{display:inline-flex;gap:4px;align-items:center;cursor:pointer;margin-top:2px}.tchart label.tc input{width:auto;min-height:0;margin:0}.tchart label.tc.on{color:#8A6D00}.benef label .x{margin-left:4px;color:#999;cursor:pointer;font-size:11px}.benef label .x:hover{color:var(--brand)}
 body.present-mode .tchart .trow{font-size:18px;padding:7px 0}body.present-mode .tchart .trow.hd{font-size:12px}body.present-mode .cashline{font-size:17px}.pastebox{background:var(--cream-soft);border-radius:10px;padding:8px 10px;margin:6px 0}.pastebox textarea{font-size:12.5px}.pastebox table.data td{padding:3px 6px;font-size:12.5px}
 body.present-mode #presentFlow textarea{display:none}.flowstrip span.bad{background:#FBECE9;color:#A53222}.flowstrip span.good{background:#E3F1E7;color:#2E6B4F}
-body.present-mode .greet{font-size:24px}body.present-mode .tchart .trow.d6{grid-template-columns:1.3fr 1fr .7fr .8fr .7fr 28px}
+body.present-mode .greet{font-size:24px}body.present-mode .tchart .trow.d6{grid-template-columns:1.4fr 1fr .9fr .9fr .85fr 0}
 .benef{display:flex;flex-wrap:wrap;gap:8px}.benef label{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:13px;background:#fff}
 .benef label.on{background:#E3F1E7;border-color:#2E6B4F;color:#2E6B4F;font-weight:600}.benef input{width:auto;min-height:0}
 .flowstrip{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12.5px}.flowstrip span{background:var(--cream-soft);border-radius:999px;padding:5px 10px}.flowstrip span.pen{background:#FFF3C4;font-weight:600}
@@ -906,7 +906,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.7.2";
+const TOOLKIT_VERSION = "1.7.3";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -3720,7 +3720,7 @@ function renderPresent(keepFocus){ const c=cur(); if(!$("presentChart")) return;
   if(active&&active.id){ const el=$(active.id); if(el){ if(el.type==="number"&&active.val!==el.value&&+active.val===+el.value&&!/^0\d/.test(active.val)) el.value=active.val; el.focus(); try{ if(active.pos!=null&&el.setSelectionRange) el.setSelectionRange(active.pos,active.pos); }catch(e){} } } }
 function presentChartHTML(c,edit){ const p=presentState(c); const d=p.d; const r=presentCalc(c); const m=d.mortgage;
   const second=d.lien==="second"; const stream=d.program==="fha_streamline"||d.program==="va_irrrl"; const roll=!second&&!stream?d.roll==="yes":second;
-  const inp=(id,path,val,cls,ph,step)=> edit?`<input id="${id}" type="number" class="${cls||"num"}" step="${step||"any"}" value="${val==null||val===0?"":val}" placeholder="${ph||""}" oninput="presentSetEl('${path}',this)">`:`<span class="${cls||"num"}">${val==null?"\u2014":val}</span>`;
+  const inp=(id,path,val,cls,ph,step)=> edit?`<input id="${id}" type="number" class="${cls||"num"}" step="${step||"any"}" value="${val==null||val===0?"":val}" placeholder="${ph||""}" oninput="presentSetEl('${path}',this)">`:`<span class="${cls||"num"}" style="display:block;text-align:right">${val==null?"\u2014":/rate$/i.test(path)?pct(val):val}</span>`;
   const sel=(id,path,val,opts)=> edit?`<select id="${id}" onchange="presentSet('${path}',this.value)">${opts.map(o=>`<option value="${o[0]}" ${String(val)===String(o[0])?"selected":""}>${o[1]}</option>`).join("")}</select>`:`<span>${(opts.find(o=>String(o[0])===String(val))||[])[1]||""}</span>`;
   const showDebts = roll || second;
   const T=presentDebtTotals(d); const dPay=T.pay, dBal=T.bal;

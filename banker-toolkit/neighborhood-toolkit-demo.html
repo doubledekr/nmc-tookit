@@ -74,6 +74,7 @@ body.mode-fha #debtPanel,body.mode-va #debtPanel{display:none}
 #printSheet .tchart .num{text-align:right}#printSheet .tchart .tot{display:flex;justify-content:space-between;align-items:baseline;padding:8px 0 2px;font-size:13px;border-top:2px solid #E2DCCF;margin-top:6px}
 #printSheet .tchart .tot b{font-family:var(--serif);font-size:20px;font-weight:400}#printSheet .tchart .keep{background:#E3F1E7;color:#2E6B4F;border-radius:10px;padding:8px 10px;margin-top:8px;font-size:12.5px}#printSheet .tchart .keep b{font-family:var(--serif);font-size:20px;font-weight:400}
 #printSheet .tchart .trow.d6{grid-template-columns:1.3fr 1fr .7fr .8fr .7fr 0}#printSheet .tchart .trow.tsum{border-bottom:0;border-top:1px solid #E2DCCF}#printSheet .tchart h3 .side{font-size:10px;color:#777;font-family:var(--sans);margin-left:6px}
+#printSheet .cashline{background:#FFF3C4;border-radius:10px;padding:8px 10px;margin-top:8px;font-size:12.5px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 10px}#printSheet .cashline b{font-family:var(--serif);font-size:18px;font-weight:400}#printSheet .cashline .hint{flex-basis:100%}
 #printSheet .tchart .pw{background:#F4EFE6;border-radius:10px;padding:8px 10px;margin-top:8px;font-size:11.5px;line-height:1.55}#printSheet .tchart .paid{color:#2E6B4F;font-weight:600}#printSheet .tchart .muted{color:#7A6F5B}#printSheet .tchart .hint{font-size:10.5px;color:#666}
 .tchart{display:grid;grid-template-columns:1fr 1fr;gap:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff}
 .tchart>div{padding:14px 16px}.tchart>div:first-child{border-right:2px solid var(--brand)}
@@ -86,11 +87,13 @@ body.mode-fha #debtPanel,body.mode-va #debtPanel{display:none}
 .tchart .keep{background:#E3F1E7;color:#2E6B4F;border-radius:10px;padding:10px 12px;margin-top:10px;font-size:14px}.tchart .keep b{font-family:var(--serif);font-size:24px;font-weight:400}
 .tchart .pw{background:var(--cream-soft);border-radius:10px;padding:10px 12px;margin-top:10px;font-size:13px;line-height:1.6}
 .tchart .paid{color:#2E6B4F;font-weight:600}.tchart .muted{color:#7A6F5B}
-.tchart .trow.d6{grid-template-columns:1.3fr 1fr .7fr .8fr .7fr 28px}.tchart .trow.gap{margin-top:8px}.tchart .trow.tsum{border-bottom:0;border-top:1px solid var(--line);padding-top:6px}.tchart .trow .hint{font-size:10.5px}
+.tchart .trow.d6{grid-template-columns:1.4fr 1fr .9fr .9fr .85fr 24px}.tchart .trow input[type=number]{padding:4px 5px;-moz-appearance:textfield}.tchart .trow input[type=number]::-webkit-inner-spin-button,.tchart .trow input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.tchart .trow input[type=text]{padding:4px 6px}.tchart .trow.gap{margin-top:8px}.tchart .trow.tsum{border-bottom:0;border-top:1px solid var(--line);padding-top:6px}.tchart .trow .hint{font-size:10.5px}
 .tchart h3 .side{font-family:var(--sans);font-size:12px;color:#A53222;background:#FBECE9;border-radius:999px;padding:2px 9px;vertical-align:middle;margin-left:6px}.tchart h3 .side.good{color:#2E6B4F;background:#E3F1E7}
-.greet{font-family:var(--serif);font-size:19px;line-height:1.4;color:var(--ink)}.pastebox{background:var(--cream-soft);border-radius:10px;padding:8px 10px;margin:6px 0}.pastebox textarea{font-size:12.5px}.pastebox table.data td{padding:3px 6px;font-size:12.5px}
+.greet{font-family:var(--serif);font-size:19px;line-height:1.4;color:var(--ink)}.cashline{background:#FFF3C4;border-radius:10px;padding:10px 12px;margin-top:10px;font-size:14px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 10px}.cashline b{font-family:var(--serif);font-size:22px;font-weight:400}.cashline .hint{flex-basis:100%}
+.tchart label.tc{display:inline-flex;gap:4px;align-items:center;cursor:pointer;margin-top:2px}.tchart label.tc input{width:auto;min-height:0;margin:0}.tchart label.tc.on{color:#8A6D00}.benef label .x{margin-left:4px;color:#999;cursor:pointer;font-size:11px}.benef label .x:hover{color:var(--brand)}
+body.present-mode .tchart .trow{font-size:18px;padding:7px 0}body.present-mode .tchart .trow.hd{font-size:12px}body.present-mode .cashline{font-size:17px}.pastebox{background:var(--cream-soft);border-radius:10px;padding:8px 10px;margin:6px 0}.pastebox textarea{font-size:12.5px}.pastebox table.data td{padding:3px 6px;font-size:12.5px}
 body.present-mode #presentFlow textarea{display:none}.flowstrip span.bad{background:#FBECE9;color:#A53222}.flowstrip span.good{background:#E3F1E7;color:#2E6B4F}
-body.present-mode .greet{font-size:24px}body.present-mode .tchart .trow.d6{grid-template-columns:1.3fr 1fr .7fr .8fr .7fr 28px}
+body.present-mode .greet{font-size:24px}body.present-mode .tchart .trow.d6{grid-template-columns:1.4fr 1fr .9fr .9fr .85fr 0}
 .benef{display:flex;flex-wrap:wrap;gap:8px}.benef label{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:13px;background:#fff}
 .benef label.on{background:#E3F1E7;border-color:#2E6B4F;color:#2E6B4F;font-weight:600}.benef input{width:auto;min-height:0}
 .flowstrip{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12.5px}.flowstrip span{background:var(--cream-soft);border-radius:999px;padding:5px 10px}.flowstrip span.pen{background:#FFF3C4;font-weight:600}
@@ -903,7 +906,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.7.2";
+const TOOLKIT_VERSION = "1.7.3";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1717,7 +1720,32 @@ function parseDebts(){
    `</tbody></table><div class="btnrow" style="margin-top:8px"><button class="btn small" onclick="addParsedDebts()">Add checked debts</button></div>`;
 }
 /* one debt per line, amounts anywhere on it: the biggest is the balance, the smallest other amount the payment, a % (or bare decimal) the APR */
-function parseDebtLines(text){ const rows=[];
+function parseDebtBlocks(text){
+  const lines=text.split(/\r?\n/).map(l=>l.replace(/\u00a0/g," ").trim()).filter(Boolean);
+  const amtOnly=l=>/^\$?\s?\d{1,3}(?:,\d{3})*(?:\.\d{1,2})?$|^\$?\s?\d+(?:\.\d{1,2})?$/.test(l);
+  if(lines.filter(amtOnly).length<2) return null;
+  const header=l=>/^(unsecured|secured|revolving|installment|other|open|closed)?\s*(debts?|liabilities|accounts?|tradelines|creditors?)\s*:?$/i.test(l)||/^total\b/i.test(l);
+  const typeOnly=l=>/^(credit card|card|revolving|installment|auto(?: loan)?|student(?: loan)?|personal(?: loan)?|mortgage|heloc|line of credit|medical|collection|lease|other|unsecured|secured)s?$/i.test(l);
+  const aprLine=l=>/^\d{1,2}(?:\.\d{1,3})?\s*%(?:\s*apr)?$/i.test(l)||/^apr:?\s*\d{1,2}(?:\.\d{1,3})?\s*%?$/i.test(l)||/^(?:interest )?rate:?\s*\d{1,2}(?:\.\d{1,3})?\s*%?$/i.test(l);
+  const payRe=/^(?:min(?:imum)?(?: payment)?|monthly(?: payment)?|payment|pmt)\s*:?\s*\$?\s?(\d[\d,]*(?:\.\d\d)?)(?:\s*\/\s*mo(?:nth)?)?$/i;
+  const stripAcct=l=>l.replace(/(?:\*+|x{2,}|#|ending(?: in)?|acct\.?|account)\s?\d+/gi,"");
+  const nameish=l=>/[A-Za-z]{2}/.test(l)&&!/\$\s?\d|\d{3,}/.test(stripAcct(l))&&!/%/.test(l)&&!typeOnly(l)&&!aprLine(l)&&!payRe.test(l)&&!header(l);
+  const rows=[]; let cur=null;
+  for(const l of lines){ if(header(l)) continue;
+    if(nameish(l)){ const am=l.match(/(?:\*+|x{2,}|#|ending(?: in)?)\s?(\d{3,})/i); cur={name:stripAcct(l).replace(/[\s\-\u2013:|,]+$/,"").trim(), acct:am?am[1]:"", balance:null, pay:null, apr:null, kind:""}; rows.push(cur); continue; }
+    if(!cur) continue;
+    if(aprLine(l)){ const v=+(l.match(/\d{1,2}(?:\.\d{1,3})?/)||[0])[0]; if(v>0&&v<60) cur.apr=v; continue; }
+    const pm=l.match(payRe); if(pm){ cur.pay=+pm[1].replace(/,/g,""); continue; }
+    if(typeOnly(l)){ cur.kind=l; continue; }
+    if(amtOnly(l)){ const v=+l.replace(/[$,\s]/g,""); if(cur.balance==null) cur.balance=v; else if(cur.pay==null&&v<cur.balance) cur.pay=v; continue; }
+    const lab=l.match(/^(?:balance|bal|amount|owed|current balance)\s*:?\s*\$?\s?(\d[\d,]*(?:\.\d\d)?)/i); if(lab){ cur.balance=+lab[1].replace(/,/g,""); continue; } }
+  const good=rows.filter(r=>r.balance>0); if(!good.length) return null;
+  return good.map(r=>{ const kind=r.kind.toLowerCase(); let type=/card|revolv/.test(kind)?"card":/auto/.test(kind)?"auto":/student/.test(kind)?"student":/personal/.test(kind)?"personal":/install/.test(kind)?"installment":/heloc|line/.test(kind)?"heloc":debtTypeOf(r.name);
+    if(type==="other"&&!kind&&!/loan|finance|lease|medical|collection/i.test(r.name)) type="card";
+    return {name:r.name||"Debt",type,acct:r.acct,balance:r.balance,pay:r.pay,apr:r.apr!=null?r.apr:(DEBT_TYPES[type]||DEBT_TYPES.other).apr,aprEst:r.apr==null,extra:0,mortgage:/mortgage/.test(kind),kind:r.kind}; }); }
+/* a payment the source didn't list: cards ~2% of the balance (floor $25), loans a 5-year amortization at the APR — always flagged as an estimate */
+function estDebtPay(d){ const b=+d.balance||0; if(!(b>0)) return null; if(d.type==="card"||d.type==="other") return Math.max(25,Math.round(b*0.02)); return Math.round(pmt(b, d.apr>0?d.apr:10, 60)); }
+function parseDebtLines(text){ const blk=parseDebtBlocks(text); if(blk) return blk; const rows=[];
   text.split(/\r?\n/).forEach(line=>{ line=line.trim(); if(!line||/^(creditor|debt|account|name)\b/i.test(line)&&/balance|payment/i.test(line)) return;
     let pcts=[...line.matchAll(/(?<![\w.])(\d{1,2}(?:\.\d{1,3})?)\s*%/g)].map(m=>+m[1]).filter(v=>v>0&&v<60);
     let work=line.replace(/(?<![\w.])\d{1,2}(?:\.\d{1,3})?\s*%/g," ");
@@ -3578,6 +3606,7 @@ const PRESENT_NEXT="Next steps are super simple.";
 function presentBlank(){ return {mortgage:{balance:null,rate:null,payment:null,monthsLeft:null}, debts:[], program:"standard", lien:"refi", secType:"hel", hideFirst:false, rate:null, term:30, costs:0, cashOut:0, skip:1, roll:"yes", extra:0, newPay:null, pwCustom:null}; }
 /* today's side, totaled: balance, what goes out each month (minimums + extra), and the blended rate across the debts
    (typed APRs; a debt with no APR uses the type default and marks the blend as an estimate) */
+function presentCash(d){ const cl=(d.debts||[]).filter(x=>x.toClient&&x.balance>0); const toClient=cl.reduce((s,x)=>s+(+x.balance||0),0); const extra=+d.cashOut||0; return {toClient, extra, total:toClient+extra, names:cl.map(x=>x.name||"Debt")}; }
 function presentDebtTotals(d){ const ds=(d.debts||[]).filter(x=>x.balance>0||x.pay>0); let bal=0,pay=0,w=0,est=false;
   ds.forEach(x=>{ const b=+x.balance||0; bal+=b; pay+=(+x.pay||0)+(+x.extra||0); let apr=x.apr>0?+x.apr:null; if(apr==null){ apr=(DEBT_TYPES[debtTypeOf(x.name||"")]||DEBT_TYPES.other).apr; if(b>0) est=true; } w+=b*apr; });
   return {n:ds.length, bal, pay, blended: bal>0? w/bal : null, est}; }
@@ -3591,14 +3620,14 @@ function presentTemp(c,d){ /* a throwaway client so the proposal engine does the
     debts:d.debts.filter(x=>x.balance>0).map(x=>({name:x.name||"Debt",type:debtTypeOf(x.name||""),balance:+x.balance||0,apr:x.apr>0?+x.apr:(DEBT_TYPES[debtTypeOf(x.name||"")]||DEBT_TYPES.other).apr,aprEst:!(x.apr>0),pay:+x.pay||0,extra:+x.extra||0,acct:""}))});
   t.analysis={anRate:d.rate,anTerm:d.term||30,anCosts:+d.costs||0,anCashOut:+d.cashOut||0,anSkip:+d.skip||0,anRoll:d.roll||"yes",anLien:d.lien||"refi",anProgram:d.program||"standard",anSecondType:d.secType||"hel",anHideFirst:d.hideFirst?"yes":"no",anCustom:+d.extra||0,anNewPay:d.newPay>0?+d.newPay:null,anPrepay:"yes",anMip:1.75}; return t; }
 function presentCalc(c){ const p=presentState(c); if(!p.d) return null; const t=presentTemp(c,p.d); const r=computeAnalysis(t); return r&&!r.tooSmall?r:null; }
-function presentFill(src){ const c=cur(); if(!c){ toast("Pick a client first"); return; } const p=presentState(c);
+function presentFill(src){ const c=cur(); if(!c){ toast("Pick a client first"); return; } const p=presentState(c); if(p.d) presentSnap(src==="blank"?"start blank":"fill from "+(src==="client"?c.name:"a saved option"));
   if(src==="client"){ p.d=presentFromClient(c); p.src="client"; }
   else if(src==="blank"){ p.d=presentBlank(); p.src="manual"; }
   else if(src.startsWith("snap:")){ const sc=(c.scenarios||[]).find(x=>x.id===src.slice(5)); if(!sc) return; p.d=presentFromClient(c,sc.inputs); p.src=src; }
   presentDefaultBenefits(c); save(); renderPresent(); }
 function presentDefaultBenefits(c){ const p=presentState(c); const d=p.d; if(!d) return; const r=presentCalc(c); const b={};
   const stream=d.program==="fha_streamline"||d.program==="va_irrrl";
-  b.noAppr=stream; b.noInc=stream; b.noOrig=d.program==="fha_streamline"; b.skip=!!(r&&r.skipCash>0); b.noPrepay=true; b.one=!!(r&&r.roll&&r.debts.length>1); b.cash=!!(d.cashOut>0); b.escrow=d.lien==="refi"; b.noOut=!(d.lien==="second")||!(d.costs>0); b.quick=true;
+  b.noAppr=stream; b.noInc=stream; b.noOrig=d.program==="fha_streamline"; b.skip=!!(r&&r.skipCash>0); b.noPrepay=true; b.one=!!(r&&r.roll&&r.debts.length>1); b.cash=presentCash(d).total>0; b.escrow=d.lien==="refi"; b.noOut=!(d.lien==="second")||!(d.costs>0); b.quick=true;
   p.ben=b; }
 /* number inputs mid-keystroke ("11." on the way to 11.4) report an empty value with validity.badInput — leave the field alone until it's a number again */
 function presentSetEl(path,el){ if(el&&el.validity&&el.validity.badInput) return; presentSet(path,el.value); }
@@ -3609,12 +3638,13 @@ function presentToggle(k){ presentUI[k]=!presentUI[k]; if(!presentUI[k]) present
 function presentParseDebts(){ const el=$("pDebtPaste"); const text=el?el.value:""; if(!text.trim()){ toast("Paste the debts first"); return; }
   const res=debtRowsFromText(text);
   if(res.needsMap){ presentUI.parsed={needsMap:true}; renderPresent(); return; }
-  const rows=res.rows.filter(r=>!r.closed&&r.balance>0); rows.forEach(r=>{ r.use=!r.mortgage; }); presentUI.parsed={rows,how:res.how,text,skipped:res.rows.length-rows.length}; renderPresent(); }
+  const rows=res.rows.filter(r=>!r.closed&&r.balance>0); rows.forEach(r=>{ r.use=!r.mortgage; if(!(r.pay>0)&&!r.mortgage){ r.payEst=estDebtPay(r); } }); presentUI.parsed={rows,how:res.how,text,skipped:res.rows.length-rows.length,estPay:true}; renderPresent(); }
 function presentParsedUse(i,on){ const pr=presentUI.parsed; if(pr&&pr.rows[i]) pr.rows[i].use=!!on; }
 function presentAddParsed(){ const c=cur(); const pr=presentUI.parsed; if(!c||!pr||!pr.rows) return; const p=presentState(c); if(!p.d){ p.d=presentBlank(); p.src="manual"; }
   const picked=pr.rows.filter(r=>r.use); if(!picked.length){ toast("Tick the debts to bring over"); return; }
   picked.forEach(r=>{ if(r.mortgage){ p.d.mortgage.balance=r.balance; if(r.pay>0&&!(p.d.mortgage.payment>0)){ p.d.mortgage.paymentTotal=r.pay; } return; }
-    p.d.debts.push({name:r.name||"Debt",balance:+r.balance||0,apr:r.aprEst?null:(r.apr>0?+r.apr:null),pay:+r.pay||0,extra:0}); });
+    const usePayEst=!(r.pay>0)&&pr.estPay&&r.payEst>0;
+    p.d.debts.push({name:r.name||"Debt",balance:+r.balance||0,apr:r.aprEst?null:(r.apr>0?+r.apr:null),pay:usePayEst?r.payEst:(+r.pay||0),payEst:usePayEst,extra:0,toClient:false}); });
   presentUI.debtPaste=false; presentUI.parsed=null; presentDefaultBenefits(c); save(); renderPresent(); toast(picked.length+" debt"+(picked.length===1?"":"s")+" added to the old side"); }
 /* the new side from a quote pasted as text: rate / term / payment / costs / cash out / skipped payments / program, plus benefit phrases */
 function presentParseTerms(text){ const t=String(text||"").replace(/\u00a0/g," "); const low=t.toLowerCase(); const out={}, ben={}, read=[];
@@ -3638,7 +3668,7 @@ function presentParseTerms(text){ const t=String(text||"").replace(/\u00a0/g," "
   const bn=Object.keys(ben); if(bn.length) read.push(bn.map(k=>(PRESENT_BENEFITS.find(b=>b[0]===k)||[])[1]||k).join(", ").toLowerCase());
   return {out,ben,read}; }
 function presentApplyTerms(){ const c=cur(); if(!c) return; const el=$("pTermPaste"); const text=el?el.value:""; if(!text.trim()){ toast("Paste the new terms first"); return; }
-  const p=presentState(c); if(!p.d){ p.d=presentBlank(); p.src="manual"; } const {out,ben,read}=presentParseTerms(text);
+  const p=presentState(c); if(!p.d){ p.d=presentBlank(); p.src="manual"; } presentSnap("paste new terms"); const {out,ben,read}=presentParseTerms(text);
   if(!read.length){ toast("Couldn\u2019t find a rate, term or payment in that \u2014 try \u201c6.5% 30 yr payment $1,234\u201d"); return; }
   if(out.lien){ presentSet("lien",out.lien); if(out.secType) p.d.secType=out.secType; } if(out.program){ presentSet("program",out.program); }
   ["rate","term","newPay","costs","cashOut","skip"].forEach(k=>{ if(out[k]!=null) p.d[k]=out[k]; });
@@ -3651,9 +3681,11 @@ function presentSet(path,val){ const c=cur(); if(!c) return; const p=presentStat
   if(path==="program"){ const stream=val==="fha_streamline"||val==="va_irrrl"; if(stream){ p.d.roll="no"; p.d.cashOut=0; } if(val==="fha_streamline"){ p.d.skip=0; p.d.costs=0; } presentDefaultBenefits(c); }
   if(path==="lien"){ if(val==="second"){ p.d.roll="yes"; p.d.skip=0; if(p.d.term>20) p.d.term=20; } presentDefaultBenefits(c); }
   save(); renderPresent(true); }
-function presentDebt(i,k,val){ const c=cur(); if(!c) return; const p=presentState(c); if(!p.d) return; const d=p.d.debts[i]; if(!d) return; d[k]= k==="name"?val:(val===""?null:+val); save(); renderPresent(true); }
+function presentDebt(i,k,val){ const c=cur(); if(!c) return; const p=presentState(c); if(!p.d) return; const d=p.d.debts[i]; if(!d) return; d[k]= k==="name"?val:k==="toClient"?!!val:(val===""?null:+val); if(k==="pay") d.payEst=false; save(); renderPresent(true); }
 function presentAddDebt(){ const c=cur(); if(!c) return; const p=presentState(c); if(!p.d){ p.d=presentBlank(); p.src="manual"; } p.d.debts.push({name:"",balance:null,apr:null,pay:null,extra:null}); save(); renderPresent(); setTimeout(()=>{ const el=document.querySelector(`#presentChart [data-pd="${p.d.debts.length-1}.name"]`); if(el) el.focus(); },0); }
-function presentDelDebt(i){ const c=cur(); if(!c) return; const p=presentState(c); if(!p.d) return; p.d.debts.splice(i,1); save(); renderPresent(); }
+function presentSnap(label){ const c=cur(); if(!c) return; const p=presentState(c); presentUI.undo=presentUI.undo||[]; presentUI.undo.push({cid:c.id,label,d:JSON.stringify(p.d),ben:JSON.stringify(p.ben),src:p.src}); if(presentUI.undo.length>20) presentUI.undo.shift(); }
+function presentUndo(){ const c=cur(); const st=presentUI.undo||[]; const u=st.pop(); if(!c||!u) return; if(u.cid!==c.id){ toast("That undo was for another client"); return; } const p=presentState(c); p.d=JSON.parse(u.d); p.ben=JSON.parse(u.ben); p.src=u.src; save(); renderPresent(); toast("Undid: "+u.label); }
+function presentDelDebt(i){ const c=cur(); if(!c) return; const p=presentState(c); if(!p.d) return; presentSnap("removed "+(p.d.debts[i]&&p.d.debts[i].name||"a debt")); p.d.debts.splice(i,1); save(); renderPresent(); }
 function presentBen(k,on){ const c=cur(); if(!c) return; const p=presentState(c); p.ben[k]=!!on; save(); renderPresent(true); }
 function presentClose(v){ const c=cur(); if(!c) return; const p=presentState(c); p.close=v; save(); renderPresentClose(); }
 function presentCloseCustom(v){ const c=cur(); if(!c) return; const p=presentState(c); p.closeCustom=v; p.close=""; save(); }
@@ -3680,15 +3712,15 @@ function renderPresent(keepFocus){ const c=cur(); if(!$("presentChart")) return;
   const snaps=(c.scenarios||[]).filter(x=>x.kind==="snap");
   $("presentSrc").innerHTML=`<div class="btnrow" style="flex-wrap:wrap;gap:8px;align-items:center"><button class="btn small" onclick="presentFill('client')">Fill from ${esc(c.name)}</button>
     ${snaps.length?`<select onchange="if(this.value) presentFill(this.value); this.value=''" style="width:auto"><option value="">Fill from a saved option\u2026</option>${snaps.map(x=>`<option value="snap:${x.id}">${esc(x.label)}</option>`).join("")}</select>`:""}
-    <button class="btn ghost small" onclick="presentFill('blank')">Start blank</button><span style="flex:1"></span>
+    <button class="btn ghost small" onclick="presentFill('blank')">Start blank</button>${(presentUI.undo||[]).length&&presentUI.undo[presentUI.undo.length-1].cid===c.id?`<button class="btn ghost small" onclick="presentUndo()" title="Put it back">\u21B6 Undo: ${esc(presentUI.undo[presentUI.undo.length-1].label)}</button>`:""}<span style="flex:1"></span>
     ${p.d?`<button class="btn ghost small" onclick="presentToClient()">Save numbers to client</button><button class="btn small" onclick="copyImage('present')">Copy as image</button><button class="btn ghost small" onclick="downloadImage('present')">Download</button><button class="btn ghost small" onclick="emailImage('present')">Email</button>`:""}</div>
     ${p.d&&presentDrift(c)?`<div class="hint" style="margin-top:6px;color:var(--warn)">These numbers differ from the client workspace \u2014 \u201cSave numbers to client\u201d writes them back, \u201cFill from ${esc(c.name)}\u201d reloads.</div>`:""}`;
   if(!p.d){ $("presentChart").innerHTML=`<div class="empty">Fill from the client or a saved option \u2014 or <a href="#" onclick="presentFill('blank');return false">start blank and type it in</a>: debt names, balances and payments on the left, the new payment and rate on the right.</div>`; $("presentBenefits").innerHTML=""; $("presentClose").innerHTML=""; return; }
-  $("presentChart").innerHTML=presentChartHTML(c,true); renderPresentBenefits(); renderPresentClose();
-  if(active&&active.id){ const el=$(active.id); if(el){ if(el.type==="number"&&active.val!==el.value&&+active.val===+el.value) el.value=active.val; el.focus(); try{ if(active.pos!=null&&el.setSelectionRange) el.setSelectionRange(active.pos,active.pos); }catch(e){} } } }
+  $("presentChart").innerHTML=presentChartHTML(c,!pm); renderPresentBenefits(); renderPresentClose();
+  if(active&&active.id){ const el=$(active.id); if(el){ if(el.type==="number"&&active.val!==el.value&&+active.val===+el.value&&!/^0\d/.test(active.val)) el.value=active.val; el.focus(); try{ if(active.pos!=null&&el.setSelectionRange) el.setSelectionRange(active.pos,active.pos); }catch(e){} } } }
 function presentChartHTML(c,edit){ const p=presentState(c); const d=p.d; const r=presentCalc(c); const m=d.mortgage;
   const second=d.lien==="second"; const stream=d.program==="fha_streamline"||d.program==="va_irrrl"; const roll=!second&&!stream?d.roll==="yes":second;
-  const inp=(id,path,val,cls,ph,step)=> edit?`<input id="${id}" type="number" class="${cls||"num"}" step="${step||"any"}" value="${val==null?"":val}" placeholder="${ph||""}" oninput="presentSetEl('${path}',this)">`:`<span class="${cls||"num"}">${val==null?"\u2014":val}</span>`;
+  const inp=(id,path,val,cls,ph,step)=> edit?`<input id="${id}" type="number" class="${cls||"num"}" step="${step||"any"}" value="${val==null||val===0?"":val}" placeholder="${ph||""}" oninput="presentSetEl('${path}',this)">`:`<span class="${cls||"num"}" style="display:block;text-align:right">${val==null?"\u2014":/rate$/i.test(path)?pct(val):val}</span>`;
   const sel=(id,path,val,opts)=> edit?`<select id="${id}" onchange="presentSet('${path}',this.value)">${opts.map(o=>`<option value="${o[0]}" ${String(val)===String(o[0])?"selected":""}>${o[1]}</option>`).join("")}</select>`:`<span>${(opts.find(o=>String(o[0])===String(val))||[])[1]||""}</span>`;
   const showDebts = roll || second;
   const T=presentDebtTotals(d); const dPay=T.pay, dBal=T.bal;
@@ -3697,15 +3729,15 @@ function presentChartHTML(c,edit){ const p=presentState(c); const d=p.d; const r
   const secName=d.secType==="heloc"?"HELOC":"home equity loan";
   /* ---- left ---- */
   let L=`<h3>Today <span class="side">the old side</span></h3>`;
-  if(!(second&&d.hideFirst)) L+=`<div class="trow hd"><span>Mortgage</span><span class="num">Balance</span><span class="num">Rate</span><span class="num">Payment</span><span></span></div>
-    <div class="trow"><span>${second?"First mortgage (stays)":"Current mortgage"}${edit?`<div class="hint">months left ${inp("pmL","mortgage.monthsLeft",m.monthsLeft,"num","360","1")}</div>`:(m.monthsLeft?`<div class="hint">${yrsMo(m.monthsLeft)} left</div>`:"")}</span>
-      <span>${inp("pmB","mortgage.balance",m.balance,"num","185,000","1000")}</span><span>${inp("pmR","mortgage.rate",m.rate,"num","7.25","0.125")}</span><span>${inp("pmP","mortgage.payment",m.payment,"num","P&I","1")}</span><span></span></div>`;
+  if(!(second&&d.hideFirst)) L+=dRow("Mortgage","Balance","Rate","Payment","","","hd")+
+    dRow(`${second?"First mortgage (stays)":"Current mortgage"}${edit?`<div class="hint">months left ${inp("pmL","mortgage.monthsLeft",m.monthsLeft,"num","360","1")}</div>`:(m.monthsLeft?`<div class="hint">${yrsMo(m.monthsLeft)} left</div>`:"")}`,
+      edit?inp("pmB","mortgage.balance",m.balance,"num","185,000","1000"):money(m.balance||0), edit?inp("pmR","mortgage.rate",m.rate,"num","7.25","0.125"):(m.rate>0?pct(m.rate):"\u2014"), edit?inp("pmP","mortgage.payment",m.payment,"num","P&I","1"):money(m.payment||0), "", "");
   if(showDebts){ L+=dRow("Debts","Balance","Rate","Payment","Extra paid","","hd"+(second&&d.hideFirst?"":" gap"))+
     d.debts.map((x,i)=>dRow(
-      edit?`<input id="pd${i}n" type="text" data-pd="${i}.name" value="${esc(x.name||"")}" placeholder="Visa, auto, personal loan" oninput="presentDebt(${i},'name',this.value)">`:esc(x.name||"Debt"),
+      (edit?`<input id="pd${i}n" type="text" data-pd="${i}.name" value="${esc(x.name||"")}" placeholder="Visa, auto, personal loan" oninput="presentDebt(${i},'name',this.value)">`:esc(x.name||"Debt"))+(edit?`<label class="hint tc${x.toClient?" on":""}" title="Lender sends this one as cash to the client instead of paying the creditor directly"><input type="checkbox" ${x.toClient?"checked":""} onchange="presentDebt(${i},'toClient',this.checked)"> cash to client</label>`:x.toClient?`<div class="hint">paid from cash to you</div>`:""),
       edit?`<input id="pd${i}b" type="number" class="num" step="100" value="${x.balance==null?"":x.balance}" placeholder="balance" oninput="presentDebtEl(${i},'balance',this)">`:money(x.balance),
       edit?`<input id="pd${i}a" type="number" class="num" step="0.01" value="${x.apr==null?"":x.apr}" placeholder="optional" oninput="presentDebtEl(${i},'apr',this)">`:(x.apr>0?pct(x.apr):"\u2014"),
-      edit?`<input id="pd${i}p" type="number" class="num" step="1" value="${x.pay==null?"":x.pay}" placeholder="monthly" oninput="presentDebtEl(${i},'pay',this)">`:money(x.pay),
+      (edit?`<input id="pd${i}p" type="number" class="num" step="1" value="${x.pay==null?"":x.pay}" placeholder="monthly" oninput="presentDebtEl(${i},'pay',this)">`:money(x.pay))+(x.payEst?`<div class="hint">est.</div>`:""),
       edit?`<input id="pd${i}x" type="number" class="num" step="1" value="${x.extra==null||x.extra===0?"":x.extra}" placeholder="optional" oninput="presentDebtEl(${i},'extra',this)">`:(x.extra>0?money(x.extra):"\u2014"),
       edit?`<button class="btn ghost small" style="padding:2px 6px" onclick="presentDelDebt(${i})" title="Remove">\u2715</button>`:"")).join("")+
     (T.n?dRow("<b>Total</b>",`<b>${money(dBal)}</b>`,`<b>${T.blended!=null?pct(T.blended):"\u2014"}</b>${T.est?`<div class="hint">est. blend</div>`:""}`,`<b>${money(dPay)}</b>${d.debts.some(x=>x.extra>0)?`<div class="hint">incl. extra</div>`:""}`,"","","tsum"):"")+
@@ -3713,7 +3745,7 @@ function presentChartHTML(c,edit){ const p=presentState(c); const d=p.d; const r
   if(edit&&showDebts&&presentUI.debtPaste){ const pr=presentUI.parsed;
     L+=`<div class="pastebox"><textarea id="pDebtPaste" rows="4" placeholder="Paste from a credit report, Salesforce liabilities, or one debt per line (\u201cVisa 12,000 360 24.99%\u201d)">${pr&&pr.text?esc(pr.text):""}</textarea><div class="btnrow" style="margin-top:6px"><button class="btn small" onclick="presentParseDebts()">Read it</button><span class="hint">Then tick which ones go on the old side.</span></div>`;
     if(pr&&pr.needsMap) L+=`<div class="hint" style="color:var(--warn);margin-top:6px">I can see a table but not which column is which. Paste it once on the Client workspace \u2192 Debts, teach me the columns there (it\u2019s remembered), then \u201cFill from client\u201d here.</div>`;
-    else if(pr&&pr.rows) L+=`<div class="hint" style="margin-top:6px">${pr.rows.length} with a balance (${pr.how})${pr.skipped?", "+pr.skipped+" closed / zero left out":""}</div><table class="data" style="margin-top:4px"><tbody>${pr.rows.map((x,i)=>`<tr><td><input type="checkbox" ${x.use?"checked":""} onchange="presentParsedUse(${i},this.checked)" style="width:auto;min-height:0"></td><td>${esc(x.name)}${x.mortgage?' <span class="tag-flat">mortgage \u2192 current mortgage</span>':""}</td><td class="num">${money(x.balance)}</td><td class="num">${x.pay?money(x.pay):"\u2014"}</td><td class="num">${x.apr>0&&!x.aprEst?pct(x.apr):"<span class='hint'>rate: typical</span>"}</td></tr>`).join("")}</tbody></table><div class="btnrow" style="margin-top:6px"><button class="btn small" onclick="presentAddParsed()">Add the ticked debts</button></div>`;
+    else if(pr&&pr.rows) L+=`<div class="hint" style="margin-top:6px">${pr.rows.length} with a balance (${pr.how})${pr.skipped?", "+pr.skipped+" closed / zero left out":""}</div><table class="data" style="margin-top:4px"><tbody>${pr.rows.map((x,i)=>`<tr><td><input type="checkbox" ${x.use?"checked":""} onchange="presentParsedUse(${i},this.checked)" style="width:auto;min-height:0"></td><td>${esc(x.name)}${x.mortgage?' <span class="tag-flat">mortgage \u2192 current mortgage</span>':""}</td><td class="num">${money(x.balance)}</td><td class="num">${x.pay?money(x.pay):x.payEst&&pr.estPay?money(x.payEst)+" <span class='hint'>est.</span>":"\u2014"}</td><td class="num">${x.apr>0&&!x.aprEst?pct(x.apr):"<span class='hint'>rate: typical</span>"}</td></tr>`).join("")}</tbody></table><div class="btnrow" style="margin-top:6px"><button class="btn small" onclick="presentAddParsed()">Add the ticked debts</button>${pr.rows.some(x=>!(x.pay>0)&&x.payEst)?`<label class="hint" style="display:inline-flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" ${pr.estPay?"checked":""} onchange="presentUI.parsed.estPay=this.checked; renderPresent()" style="width:auto;min-height:0"> no payment listed \u2014 estimate it (cards \u2248 2% of balance) and flag it; untick to type them yourself</label>`:""}</div>`;
     L+=`</div>`; }
   L+=`<div class="tot"><span>Going out each month</span><b>${money(todayOut)}</b></div>`;
   if(r&&r.pitiNow>0&&!second) L+=`<div class="hint">with taxes &amp; insurance: ${money(r.allInNow)}</div>`;
@@ -3725,7 +3757,8 @@ function presentChartHTML(c,edit){ const p=presentState(c); const d=p.d; const r
   R+=`<div class="trow hd"><span>${second?"New "+secName:"New mortgage"}</span><span class="num">Loan</span><span class="num">Rate</span><span class="num">Payment</span><span></span></div>
     <div class="trow"><span>${r?money(r.newP):"\u2014"} loan${edit?`<div class="hint">term ${sel("pTerm","term",d.term,[[30,"30 yr"],[25,"25 yr"],[20,"20 yr"],[15,"15 yr"],[10,"10 yr"]])}</div>`:`<div class="hint">${d.term} yr</div>`}</span>
       <span class="num muted">${second?(showDebts&&dBal>0?"pays off "+money(dBal):""):money(m.balance||0)}${!second&&(d.costs||d.cashOut)?"<br><span class='hint'>+ costs/cash</span>":""}</span><span>${inp("pR","rate",d.rate,"num","6.5","0.125")}</span><span class="num">${edit?`<input id="pNP" type="number" class="num" step="1" value="${d.newPay==null?"":d.newPay}" placeholder="${r?Math.round(r.newPay):"payment"}" oninput="presentSetEl('newPay',this)" title="Type the quoted payment, or leave blank to compute it from the loan, rate and term">${r&&d.newPay>0?`<div class="hint">${r.newPayTyped?"typed \u00b7 "+money(pmt(r.newP,d.rate,r.n))+" computed":"below interest \u2014 using computed"}</div>`:r?`<div class="hint">computed \u00b7 type to override</div>`:""}`:`<b>${r?money(r.newPay):"\u2014"}</b>`}</span><span></span></div>`;
-  if(showDebts) R+=d.debts.map(x=>`<div class="trow"><span>${esc(x.name||"Debt")}</span><span class="num paid">paid off</span><span></span><span class="num paid">$0</span><span></span></div>`).join("");
+  if(showDebts) R+=d.debts.map(x=>`<div class="trow"><span>${esc(x.name||"Debt")}</span><span class="num paid">${x.toClient?"paid off <span class='hint'>from your cash</span>":"paid off <span class='hint'>by lender</span>"}</span><span></span><span class="num paid">$0</span><span></span></div>`).join("");
+  { const cash=presentCash(d); if(cash.total>0) R+=`<div class="cashline"><span>Cash to you at closing</span><b>${money(cash.total)}</b>${cash.toClient>0?`<div class="hint">${money(cash.toClient)} covers ${cash.names.join(", ")}${cash.extra>0?" + "+money(cash.extra)+" to keep":""} \u2014 it\u2019s your money, but the numbers here assume those get paid.</div>`:""}</div>`; }
   if(edit) R+=`<div class="trow" style="grid-template-columns:repeat(4,1fr) 0;border:0;margin-top:4px">
       <span><span class="hint">Costs</span>${inp("pC","costs",d.costs,"num","0","500")}</span>
       <span><span class="hint">Cash out</span>${inp("pCO","cashOut",d.cashOut,"num","0","1000")}</span>
@@ -3748,17 +3781,21 @@ function presentChartHTML(c,edit){ const p=presentState(c); const d=p.d; const r
     if(r.roll&&r.debts.length&&r.blended!=null&&!second) R+=`<div class="hint" style="margin-top:6px">${pct(r.blended)} blended today \u2192 ${pct(d.rate)} new${r.aprEst?" \u00b7 APR est. "+pct(r.apr):" \u00b7 APR "+pct(r.apr)}</div>`; }
   else R+=`<div class="empty" style="margin-top:8px">Add the new rate${second&&!d.debts.length&&!(d.cashOut>0)?" and some debts or cash out":""}.</div>`;
   return `<div class="tchart"><div>${L}</div><div>${R}</div></div>`; }
-function renderPresentBenefits(){ const c=cur(); const p=presentState(c); const r=presentCalc(c);
-  $("presentBenefits").innerHTML=`<h2>Benefits <span class="hint" style="display:inline">\u2014 flip them on as you say them</span></h2><div class="benef">${PRESENT_BENEFITS.map(([k,l])=>{ const on=!!p.ben[k]; let txt=l;
-    if(k==="skip"&&r&&r.skipCash>0) txt=`Skip ${r.skipN} payment${r.skipN>1?"s":""} \u2014 about ${money(r.skipCash)} stays with you`; if(k==="cash"&&r&&r.cashOut>0) txt=`${money(r.cashOut)} cash to you at closing`; if(k==="one"&&r&&r.debts.length>1) txt=`One payment instead of ${r.debts.length+1}`;
-    return `<label class="${on?"on":""}"><input type="checkbox" ${on?"checked":""} onchange="presentBen('${k}',this.checked)"> ${txt}</label>`; }).join("")}</div>`; }
+function renderPresentBenefits(){ const c=cur(); const p=presentState(c); const r=presentCalc(c); const pm=document.body.classList.contains("present-mode");
+  $("presentBenefits").innerHTML=`<h2>Benefits${pm?"":` <span class="hint" style="display:inline">\u2014 flip them on as you say them</span>`}</h2><div class="benef">${PRESENT_BENEFITS.map(([k,l])=>{ const on=!!p.ben[k]; let txt=l;
+    if(k==="skip"&&r&&r.skipCash>0) txt=`Skip ${r.skipN} payment${r.skipN>1?"s":""} \u2014 about ${money(r.skipCash)} stays with you`; if(k==="cash"){ const cash=presentCash(p.d); if(cash.total>0) txt=`${money(cash.total)} cash to you at closing`; } if(k==="one"&&r&&r.debts.length>1) txt=`One payment instead of ${r.debts.length+1}`;
+    return [k,txt,on]; }).concat((state.settings.benefitsCustom||[]).map(t=>["c:"+t,t,!!p.ben["c:"+t]])).map(([k,txt,on])=> pm ? (on?`<label class="on">${esc(txt)}</label>`:"") : `<label class="${on?"on":""}"><input type="checkbox" ${on?"checked":""} onchange="presentBen('${k.replace(/'/g,"\\'")}',this.checked)"> ${txt}${k.startsWith("c:")?` <span class="x" title="Remove from my benefits" onclick="event.preventDefault(); presentDelBenefit('${k.slice(2).replace(/'/g,"\\'")}')">\u2715</span>`:""}</label>`).join("")}</div>
+    ${pm?"":`<div class="btnrow" style="margin-top:8px"><input type="text" id="pBenNew" placeholder="Add your own benefit chip \u2014 \u201cRate lock is free\u201d, \u201cWe handle the payoffs\u201d" style="flex:1" onkeydown="if(event.key==='Enter') presentAddBenefit()"><button class="btn ghost small" onclick="presentAddBenefit()">Add chip</button></div>`}`; }
+function presentAddBenefit(){ const el=$("pBenNew"); const t=(el?el.value:"").trim(); if(!t){ toast("Type the benefit first"); return; } state.settings.benefitsCustom=state.settings.benefitsCustom||[]; if(!state.settings.benefitsCustom.includes(t)) state.settings.benefitsCustom.push(t); const c=cur(); if(c) presentState(c).ben["c:"+t]=true; save(); renderPresentBenefits(); }
+function presentDelBenefit(t){ state.settings.benefitsCustom=(state.settings.benefitsCustom||[]).filter(x=>x!==t); state.clients.forEach(c=>{ if(c.present&&c.present.ben) delete c.present.ben["c:"+t]; }); save(); renderPresentBenefits(); }
 function renderPresentClose(){ const c=cur(); if(!c||!$("presentClose")) return; const p=presentState(c); const lib=(state.settings.closes&&state.settings.closes.length)?state.settings.closes:CLOSES_SEED.slice();
   const cur_=p.close||p.closeCustom||"";
+  if(document.body.classList.contains("present-mode")){ $("presentClose").innerHTML=`<h2>The close</h2><div class="greet">\u201c${PRESENT_NEXT}\u201d</div>${cur_?`<div class="greet" style="margin-top:8px">\u201c${esc(cur_)}\u201d</div>`:`<div class="hint">(pick a close line before presenting)</div>`}`; return; }
   $("presentClose").innerHTML=`<h2>The close</h2><div class="greet" style="margin-bottom:10px">\u201c${PRESENT_NEXT}\u201d <span class="hint" style="display:inline;font-size:12px">\u2014 then one of these, or your own:</span></div><div class="chiprow" style="margin-bottom:8px">${lib.map(t=>`<button class="chip${p.close===t?" on":""}" ${p.close===t?'style="background:var(--brand);color:#fff;border-color:var(--brand)"':""} onclick="presentClose('${t.replace(/'/g,"\\'")}')" title="Use this line">${esc(t)}</button>`).join("")}</div>
     <div class="btnrow"><input type="text" id="pCloseCustom" value="${esc(p.closeCustom||"")}" placeholder="\u2026or type your own close" style="flex:1" oninput="presentCloseCustom(this.value)"><button class="btn ghost small" onclick="presentSaveClose()">Save line to my closes</button>${(state.settings.closes||[]).includes(p.close)?`<button class="btn ghost small" onclick="presentDelClose('${(p.close||"").replace(/'/g,"\\'")}')">Remove from my closes</button>`:""}</div>
     ${cur_?`<div class="keep" style="margin-top:10px;font-size:16px;background:var(--cream-soft);color:var(--ink)"><b style="font-family:var(--serif);font-size:20px;font-weight:400">\u201c${esc(cur_)}\u201d</b></div>`:""}`; }
 function presentSheetHTML(){ const c=cur(); if(!c) return `<div class="empty">Pick a client.</div>`; const p=presentState(c); if(!p.d) return `<div class="empty">Fill the presentation first.</div>`; const r=presentCalc(c); const s=state.settings;
-  const bens=PRESENT_BENEFITS.filter(([k])=>p.ben[k]).map(([k,l])=>{ if(k==="skip"&&r&&r.skipCash>0) return `Skip ${r.skipN} payment${r.skipN>1?"s":""} \u2014 about ${money(r.skipCash)} stays with you`; if(k==="cash"&&r&&r.cashOut>0) return `${money(r.cashOut)} cash to you at closing`; if(k==="one"&&r&&r.debts.length>1) return `One payment instead of ${r.debts.length+1}`; return l; });
+  const bens=PRESENT_BENEFITS.filter(([k])=>p.ben[k]).map(([k,l])=>{ if(k==="skip"&&r&&r.skipCash>0) return `Skip ${r.skipN} payment${r.skipN>1?"s":""} \u2014 about ${money(r.skipCash)} stays with you`; if(k==="cash"){ const cash=presentCash(p.d); if(cash.total>0) return `${money(cash.total)} cash to you at closing`; } if(k==="one"&&r&&r.debts.length>1) return `One payment instead of ${r.debts.length+1}`; return l; }).concat((state.settings.benefitsCustom||[]).filter(t=>p.ben["c:"+t]).map(esc));
   const close=p.close||p.closeCustom||"";
   return `<div class="brandbar"><div><img src="${s.logo||NMC_LOGO}" alt="${esc(s.co)}">${brandBadgeHTML(c)}<div class="tag">${esc(s.tag)}</div></div>
     <div class="lo"><b>${esc(s.loName||"Your Loan Officer")}</b>${s.loNmls?` \u00b7 NMLS #${esc(s.loNmls)}`:""}<br>${esc(s.loPhone||"")}${s.loPhone&&s.loEmail?" \u00b7 ":""}${esc(s.loEmail||"")}<br>Prepared ${new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}</div></div>
