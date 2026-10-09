@@ -88,14 +88,15 @@ body.mode-fha #debtPanel,body.mode-va #debtPanel{display:none}
 .tchart .paid{color:#2E6B4F;font-weight:600}.tchart .muted{color:#7A6F5B}
 .tchart .trow.d6{grid-template-columns:1.3fr 1fr .7fr .8fr .7fr 28px}.tchart .trow.gap{margin-top:8px}.tchart .trow.tsum{border-bottom:0;border-top:1px solid var(--line);padding-top:6px}.tchart .trow .hint{font-size:10.5px}
 .tchart h3 .side{font-family:var(--sans);font-size:12px;color:#A53222;background:#FBECE9;border-radius:999px;padding:2px 9px;vertical-align:middle;margin-left:6px}.tchart h3 .side.good{color:#2E6B4F;background:#E3F1E7}
-.greet{font-family:var(--serif);font-size:19px;line-height:1.4;color:var(--ink)}.flowstrip span.bad{background:#FBECE9;color:#A53222}.flowstrip span.good{background:#E3F1E7;color:#2E6B4F}
+.greet{font-family:var(--serif);font-size:19px;line-height:1.4;color:var(--ink)}.pastebox{background:var(--cream-soft);border-radius:10px;padding:8px 10px;margin:6px 0}.pastebox textarea{font-size:12.5px}.pastebox table.data td{padding:3px 6px;font-size:12.5px}
+body.present-mode #presentFlow textarea{display:none}.flowstrip span.bad{background:#FBECE9;color:#A53222}.flowstrip span.good{background:#E3F1E7;color:#2E6B4F}
 body.present-mode .greet{font-size:24px}body.present-mode .tchart .trow.d6{grid-template-columns:1.3fr 1fr .7fr .8fr .7fr 28px}
 .benef{display:flex;flex-wrap:wrap;gap:8px}.benef label{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:13px;background:#fff}
 .benef label.on{background:#E3F1E7;border-color:#2E6B4F;color:#2E6B4F;font-weight:600}.benef input{width:auto;min-height:0}
 .flowstrip{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12.5px}.flowstrip span{background:var(--cream-soft);border-radius:999px;padding:5px 10px}.flowstrip span.pen{background:#FFF3C4;font-weight:600}
 body.present-mode aside,body.present-mode #presentSrc,body.present-mode .clientbar,body.present-mode #demoBanner,body.present-mode #updBanner{display:none!important}
 body.present-mode main{max-width:none;padding:18px 28px;font-size:17px}body.present-mode .tchart .trow{font-size:17px}body.present-mode .tchart .tot b{font-size:30px}body.present-mode .tchart .keep b{font-size:34px}body.present-mode .tchart h3{font-size:26px}body.present-mode .tchart .trow input,body.present-mode .tchart .trow select{font-size:17px}
-body.present-mode #s-present .sub,body.present-mode #s-present .eyebrow{display:none}body.present-mode #presentFlow .flowstrip span:not(.bad):not(.good):not([style]){display:none}body.present-mode .benef label{font-size:16px}
+body.present-mode #s-present .sub,body.present-mode #s-present .eyebrow{display:none}body.present-mode .pastebtn,body.present-mode .pastebox{display:none!important}body.present-mode .benef label{font-size:16px}
 #propPreview.customize [data-hid]{cursor:pointer;position:relative}
 #propPreview.customize [data-hid]:hover{outline:2px dashed var(--brand);outline-offset:1px;background:#FFF3F0}
 #propPreview.customize tr[data-hid]:hover td{background:#FFF3F0}
@@ -584,7 +585,7 @@ Discover 6,100 190 24.9"></textarea>
     <!-- ================= CALL BLOCKS ================= -->
     <section class="screen" id="s-present">
       <div class="eyebrow">Talk it through, live</div><h1>Presentation <span class="hint" style="display:inline;font-size:14px">— the T-chart</span></h1>
-      <div class="sub">Today on the left, the new loan on the right, benefits and the close underneath. Every number is editable and recalculates as you type \u2014 fill it from the client or a saved option, or start blank and type it in: debt names, balances, payments (rate and extra paid optional), then the new payment and rate.</div>
+      <div class="sub">Today on the left, the new loan on the right, benefits and the close underneath. Every number is editable and recalculates as you type — fill it from the client or a saved option, or start blank and type it in: debt names, balances, payments (rate and extra paid optional), then the new payment and rate.</div>
       <div class="panel" id="presentFlow"></div>
       <div class="panel" id="presentSrc"></div>
       <div class="panel" id="presentChart"></div>
@@ -1708,7 +1709,15 @@ function parseDebts(){
   if(g){ const map=gridMapping(g); const good=(map.includes("balance")||map.includes("pay"))&&(map.includes("name")||map.includes("type"))&&!g.uneven;
     if(good){ const rows=gridToDebts(g,map); if(rows.length){ lastDebts=rows; renderCreditParsed(rows, `<b>${g.kind==="stacked"?"Stacked list":"Table"} read:</b> ${rows.length} account${rows.length===1?"":"s"} from ${g.header.length} columns (${g.header.join(", ")}).`); return; } }
     renderDebtMapper(g,map, g.uneven?"":"I found a table but couldn\u2019t tell which column is which."); return; }
-  const rows=[];
+  const rows=parseDebtLines(text);
+  lastDebts=rows;
+  $("debtParsed").innerHTML = !rows.length ? `<div class="empty">No amounts found \u2014 one debt per line with the balance on it.</div>` :
+   `<table class="data"><thead><tr><th></th><th>Debt</th><th class="num">Balance</th><th class="num">Payment</th><th class="num">APR</th></tr></thead><tbody>`+
+   rows.map((d,i)=>`<tr><td><input type="checkbox" checked data-di="${i}"></td><td>${esc(d.name)}</td><td class="num">${money(d.balance)}</td><td class="num">${d.pay!=null?money(d.pay):"\u2014"}</td><td class="num">${d.apr!=null?d.apr+"%":"\u2014"}</td></tr>`).join("")+
+   `</tbody></table><div class="btnrow" style="margin-top:8px"><button class="btn small" onclick="addParsedDebts()">Add checked debts</button></div>`;
+}
+/* one debt per line, amounts anywhere on it: the biggest is the balance, the smallest other amount the payment, a % (or bare decimal) the APR */
+function parseDebtLines(text){ const rows=[];
   text.split(/\r?\n/).forEach(line=>{ line=line.trim(); if(!line||/^(creditor|debt|account|name)\b/i.test(line)&&/balance|payment/i.test(line)) return;
     let pcts=[...line.matchAll(/(?<![\w.])(\d{1,2}(?:\.\d{1,3})?)\s*%/g)].map(m=>+m[1]).filter(v=>v>0&&v<60);
     let work=line.replace(/(?<![\w.])\d{1,2}(?:\.\d{1,3})?\s*%/g," ");
@@ -1726,12 +1735,15 @@ function parseDebts(){
   /* same creditor more than once (two Capital One cards): keep every line and number them */
   { const seen={}; rows.forEach(d=>{ const k=d.name.trim().toLowerCase(); seen[k]=(seen[k]||0)+1; });
     const cnt={}; rows.forEach(d=>{ const k=d.name.trim().toLowerCase(); if(seen[k]>1){ cnt[k]=(cnt[k]||0)+1; d.name=d.name.trim()+" "+cnt[k]; } }); }
-  lastDebts=rows;
-  $("debtParsed").innerHTML = !rows.length ? `<div class="empty">No amounts found \u2014 one debt per line with the balance on it.</div>` :
-   `<table class="data"><thead><tr><th></th><th>Debt</th><th class="num">Balance</th><th class="num">Payment</th><th class="num">APR</th></tr></thead><tbody>`+
-   rows.map((d,i)=>`<tr><td><input type="checkbox" checked data-di="${i}"></td><td>${esc(d.name)}</td><td class="num">${money(d.balance)}</td><td class="num">${d.pay!=null?money(d.pay):"\u2014"}</td><td class="num">${d.apr!=null?d.apr+"%":"\u2014"}</td></tr>`).join("")+
-   `</tbody></table><div class="btnrow" style="margin-top:8px"><button class="btn small" onclick="addParsedDebts()">Add checked debts</button></div>`;
-}
+  return rows; }
+/* any debt paste → rows, without touching the client workspace UI (used by the presentation).
+   Returns {rows, how} or {needsMap:true} when the table layout has to be taught on the Client workspace first. */
+function debtRowsFromText(text){ const cr=parseCreditReport(text); if(cr&&cr.length) return {rows:cr, how:"credit report"};
+  const g=parseDebtGrid(text);
+  if(g){ const map=gridMapping(g); const good=(map.includes("balance")||map.includes("pay"))&&(map.includes("name")||map.includes("type"))&&!g.uneven;
+    if(good){ const rows=gridToDebts(g,map); if(rows.length) return {rows, how:g.kind==="stacked"?"stacked list":"table"}; }
+    return {needsMap:true}; }
+  return {rows:parseDebtLines(text), how:"list"}; }
 function renderCreditParsed(rows,intro){
   const open=rows.filter(r=>!r.closed&&r.balance>0&&!r.mortgage), mort=rows.filter(r=>r.mortgage&&r.balance>0), skipped=rows.length-open.length-mort.length;
   const sel=(r,i)=>`<select onchange="crType(${i},this.value)">${Object.keys(DEBT_TYPES).map(k=>`<option value="${k}" ${r.type===k?"selected":""}>${DEBT_TYPES[k].label}</option>`).join("")}</select>`;
@@ -3561,9 +3573,9 @@ function amortRestore(){ const v=state.amort||{}; Object.keys(v).forEach(k=>amor
 const CLOSES_SEED=["I send you the application link, you e-sign it, and we lock this rate in today.","All I need is a few documents and a signature \u2014 I\u2019ll handle the rest.","Honestly, this is one of the cleaner ones I\u2019ve seen this month.","If the numbers make sense to you, I can lock this in today and we\u2019re done talking about it.","You\u2019re paying it either way \u2014 this just stops so much of it going to interest.","Want me to lock this in before the market moves?","Let\u2019s get the application started while it\u2019s fresh \u2014 ten minutes."];
 const PRESENT_BENEFITS=[["noOut","No out-of-pocket \u2014 nothing due at closing"],["noAppr","No appraisal"],["noInc","No income re-verification"],["quick","Closes quick \u2014 a couple of weeks, signing comes to you"],["skip","Skip a payment (or two) at closing"],["noPrepay","No prepayment penalty"],["one","One payment instead of several"],["cash","Cash to you at closing"],["escrow","Escrow refund from your current servicer"],["noOrig","No origination fee (lender-paid costs)"]];
 function presentState(c){ if(!c.present) c.present={src:"",d:null,ben:{},close:"",closeCustom:"",showCombined:false}; return c.present; }
-const PRESENT_GREETING="Hey, this turned out way better than I expected, grab a pen and paper for me to walk you through this all.";
+const PRESENT_GREETING="This came out better than I expected. Can you grab a pen and paper and I\u2019ll walk you through this? \u2026 Perfect.";
 const PRESENT_NEXT="Next steps are super simple.";
-function presentBlank(){ return {mortgage:{balance:null,rate:null,payment:null,monthsLeft:null}, debts:[], program:"standard", lien:"refi", secType:"hel", hideFirst:false, rate:null, term:30, costs:0, cashOut:0, skip:1, roll:"yes", extra:0, newPay:null}; }
+function presentBlank(){ return {mortgage:{balance:null,rate:null,payment:null,monthsLeft:null}, debts:[], program:"standard", lien:"refi", secType:"hel", hideFirst:false, rate:null, term:30, costs:0, cashOut:0, skip:1, roll:"yes", extra:0, newPay:null, pwCustom:null}; }
 /* today's side, totaled: balance, what goes out each month (minimums + extra), and the blended rate across the debts
    (typed APRs; a debt with no APR uses the type default and marks the blend as an estimate) */
 function presentDebtTotals(d){ const ds=(d.debts||[]).filter(x=>x.balance>0||x.pay>0); let bal=0,pay=0,w=0,est=false;
@@ -3588,9 +3600,52 @@ function presentDefaultBenefits(c){ const p=presentState(c); const d=p.d; if(!d)
   const stream=d.program==="fha_streamline"||d.program==="va_irrrl";
   b.noAppr=stream; b.noInc=stream; b.noOrig=d.program==="fha_streamline"; b.skip=!!(r&&r.skipCash>0); b.noPrepay=true; b.one=!!(r&&r.roll&&r.debts.length>1); b.cash=!!(d.cashOut>0); b.escrow=d.lien==="refi"; b.noOut=!(d.lien==="second")||!(d.costs>0); b.quick=true;
   p.ben=b; }
+/* number inputs mid-keystroke ("11." on the way to 11.4) report an empty value with validity.badInput — leave the field alone until it's a number again */
+function presentSetEl(path,el){ if(el&&el.validity&&el.validity.badInput) return; presentSet(path,el.value); }
+function presentDebtEl(i,k,el){ if(el&&el.validity&&el.validity.badInput) return; presentDebt(i,k,el.value); }
+const presentUI={debtPaste:false,termPaste:false,parsed:null};
+function presentIntro(v){ const c=cur(); if(!c) return; presentState(c).intro=v; save(); }
+function presentToggle(k){ presentUI[k]=!presentUI[k]; if(!presentUI[k]) presentUI.parsed=null; renderPresent(); setTimeout(()=>{ const el=$(k==="debtPaste"?"pDebtPaste":"pTermPaste"); if(el) el.focus(); },0); }
+function presentParseDebts(){ const el=$("pDebtPaste"); const text=el?el.value:""; if(!text.trim()){ toast("Paste the debts first"); return; }
+  const res=debtRowsFromText(text);
+  if(res.needsMap){ presentUI.parsed={needsMap:true}; renderPresent(); return; }
+  const rows=res.rows.filter(r=>!r.closed&&r.balance>0); rows.forEach(r=>{ r.use=!r.mortgage; }); presentUI.parsed={rows,how:res.how,text,skipped:res.rows.length-rows.length}; renderPresent(); }
+function presentParsedUse(i,on){ const pr=presentUI.parsed; if(pr&&pr.rows[i]) pr.rows[i].use=!!on; }
+function presentAddParsed(){ const c=cur(); const pr=presentUI.parsed; if(!c||!pr||!pr.rows) return; const p=presentState(c); if(!p.d){ p.d=presentBlank(); p.src="manual"; }
+  const picked=pr.rows.filter(r=>r.use); if(!picked.length){ toast("Tick the debts to bring over"); return; }
+  picked.forEach(r=>{ if(r.mortgage){ p.d.mortgage.balance=r.balance; if(r.pay>0&&!(p.d.mortgage.payment>0)){ p.d.mortgage.paymentTotal=r.pay; } return; }
+    p.d.debts.push({name:r.name||"Debt",balance:+r.balance||0,apr:r.aprEst?null:(r.apr>0?+r.apr:null),pay:+r.pay||0,extra:0}); });
+  presentUI.debtPaste=false; presentUI.parsed=null; presentDefaultBenefits(c); save(); renderPresent(); toast(picked.length+" debt"+(picked.length===1?"":"s")+" added to the old side"); }
+/* the new side from a quote pasted as text: rate / term / payment / costs / cash out / skipped payments / program, plus benefit phrases */
+function presentParseTerms(text){ const t=String(text||"").replace(/\u00a0/g," "); const low=t.toLowerCase(); const out={}, ben={}, read=[];
+  const num=x=>+String(x).replace(/[$,\s]/g,"");
+  const pcts=[...t.matchAll(/(?<![\w.])(\d{1,2}(?:\.\d{1,3})?)\s*%/g)].map(m=>({v:+m[1],i:m.index,pre:t.slice(Math.max(0,m.index-18),m.index).toLowerCase()}));
+  let rate=pcts.find(p=>/rate|note/.test(p.pre)&&!/apr/.test(p.pre)); if(!rate) rate=pcts.find(p=>!/apr/.test(p.pre)&&p.v>0&&p.v<20); if(!rate){ const m=t.match(/(?:^|\s)(?:rate|note rate)\s*[:=]?\s*(\d{1,2}(?:\.\d{1,3})?)(?![\d%])/i); if(m) rate={v:+m[1]}; }
+  if(rate&&rate.v>0&&rate.v<20){ out.rate=rate.v; read.push("rate "+pct(rate.v)); }
+  let tm=t.match(/(\d{1,2})\s*-?\s*(?:yr|year)s?\b/i); if(tm&&+tm[1]>=5&&+tm[1]<=40){ out.term=+tm[1]; read.push(tm[1]+" yr"); } else { tm=t.match(/(\d{2,3})\s*(?:mo|month)s?\b(?!\s*(?:skip|free|no payment))/i); if(tm&&+tm[1]>=60&&+tm[1]<=480&&+tm[1]%12===0){ out.term=+tm[1]/12; read.push(out.term+" yr"); } }
+  let pm=t.match(/(?:payment|p\s*&\s*i|pmt|pi)\s*(?:of|is|:|=)?\s*\$?\s?(\d{1,3}(?:,\d{3})+|\d{3,5})(?:\.\d\d)?/i) || t.match(/\$?\s?(\d{1,3}(?:,\d{3})+|\d{3,5})(?:\.\d\d)?\s*(?:\/\s*mo\b|per month|a month|monthly|\/month)/i);
+  if(pm){ out.newPay=num(pm[1]); read.push("payment "+money(out.newPay)); }
+  let cm=t.match(/(?:closing costs?|costs?|fees|lender fees)\s*(?:of|are|is|:|=)?\s*\$?\s?(\d{1,3}(?:,\d{3})+|\d{3,6})(?:\.\d\d)?/i); if(cm){ out.costs=num(cm[1]); read.push("costs "+money(out.costs)); }
+  if(/no closing costs?|zero closing costs?|lender[- ]paid (?:closing )?costs?|no costs?\b/i.test(t)){ out.costs=0; ben.noOut=true; read.push("no closing costs"); }
+  let co=t.match(/cash\s*(?:out|to (?:you|borrower|them|the borrower)|back)\s*(?:of|:|=)?\s*\$?\s?(\d{1,3}(?:,\d{3})+|\d{3,7})/i); if(co){ out.cashOut=num(co[1]); ben.cash=true; read.push("cash out "+money(out.cashOut)); }
+  const sk=t.match(/skip\w*\s*(?:the\s*)?(?:first\s*)?(\d|one|two|a|next)?\s*(?:month|payment|mortgage payment)/i); if(/no skip/i.test(t)){ out.skip=0; } else if(sk){ const w=(sk[1]||"1").toLowerCase(); out.skip=w==="two"||w==="2"?2:1; ben.skip=true; read.push("skip "+out.skip); }
+  if(/irrrl|va streamline/i.test(t)) out.program="va_irrrl"; else if(/fha streamline/i.test(t)) out.program="fha_streamline";
+  if(/\bheloc\b|line of credit/i.test(t)){ out.lien="second"; out.secType="heloc"; } else if(/home equity loan|\bhel\b|second mortgage|2nd mortgage|closed[- ]end second/i.test(t)){ out.lien="second"; out.secType="hel"; }
+  if(/no appraisal|appraisal waiver|appraisal waived|waived appraisal|no appraisal needed/i.test(t)) ben.noAppr=true;
+  if(/no income|income not verified|no employment/i.test(t)) ben.noInc=true;
+  if(/(?:no|nothing|zero|\$0)\s*(?:money\s*)?out of pocket|nothing due at closing|no money down/i.test(t)) ben.noOut=true;
+  if(/no pre-?pay/i.test(t)) ben.noPrepay=true; if(/escrow refund/i.test(t)) ben.escrow=true; if(/no origination/i.test(t)) ben.noOrig=true;
+  const bn=Object.keys(ben); if(bn.length) read.push(bn.map(k=>(PRESENT_BENEFITS.find(b=>b[0]===k)||[])[1]||k).join(", ").toLowerCase());
+  return {out,ben,read}; }
+function presentApplyTerms(){ const c=cur(); if(!c) return; const el=$("pTermPaste"); const text=el?el.value:""; if(!text.trim()){ toast("Paste the new terms first"); return; }
+  const p=presentState(c); if(!p.d){ p.d=presentBlank(); p.src="manual"; } const {out,ben,read}=presentParseTerms(text);
+  if(!read.length){ toast("Couldn\u2019t find a rate, term or payment in that \u2014 try \u201c6.5% 30 yr payment $1,234\u201d"); return; }
+  if(out.lien){ presentSet("lien",out.lien); if(out.secType) p.d.secType=out.secType; } if(out.program){ presentSet("program",out.program); }
+  ["rate","term","newPay","costs","cashOut","skip"].forEach(k=>{ if(out[k]!=null) p.d[k]=out[k]; });
+  Object.keys(ben).forEach(k=>{ p.ben[k]=true; }); presentUI.termPaste=false; presentUI.lastTerms=read; save(); renderPresent(); toast("Read: "+read.join(" \u00b7 ")); }
 function presentSet(path,val){ const c=cur(); if(!c) return; const p=presentState(c); if(!p.d){ p.d=presentBlank(); p.src="manual"; }
   const parts=path.split("."); let o=p.d; for(let i=0;i<parts.length-1;i++){ o=o[parts[i]]; } const k=parts[parts.length-1];
-  o[k]= (typeof o[k]==="number"||o[k]==null||/^(balance|rate|payment|monthsLeft|apr|pay|costs|cashOut|skip|term|extra|paymentTotal|newPay)$/.test(k)) ? (val===""?null:(isNaN(+val)?val:+val)) : val;
+  o[k]= (typeof o[k]==="number"||o[k]==null||/^(balance|rate|payment|monthsLeft|apr|pay|costs|cashOut|skip|term|extra|paymentTotal|newPay|pwCustom)$/.test(k)) ? (val===""?null:(isNaN(+val)?val:+val)) : val;
   if(path==="mortgage.balance"||path==="mortgage.rate"||path==="mortgage.monthsLeft"){ const m=p.d.mortgage; if(!m.paymentTyped&&m.balance>0&&m.rate>0) m.payment=Math.round(pmt(m.balance,m.rate,m.monthsLeft||360)); }
   if(path==="mortgage.payment") p.d.mortgage.paymentTyped=true;
   if(path==="program"){ const stream=val==="fha_streamline"||val==="va_irrrl"; if(stream){ p.d.roll="no"; p.d.cashOut=0; } if(val==="fha_streamline"){ p.d.skip=0; p.d.costs=0; } presentDefaultBenefits(c); }
@@ -3616,10 +3671,11 @@ function presentDrift(c){ const p=presentState(c); if(!p.d||p.src!=="client") re
 function togglePresentMode(on){ document.body.classList.toggle("present-mode", on==null?!document.body.classList.contains("present-mode"):!!on); if(document.body.classList.contains("present-mode")) go("present"); renderPresent(); }
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&document.body.classList.contains("present-mode")) togglePresentMode(false); });
 function renderPresent(keepFocus){ const c=cur(); if(!$("presentChart")) return;
-  const active=keepFocus&&document.activeElement&&document.activeElement.closest("#s-present")?{id:document.activeElement.id,pos:document.activeElement.selectionStart}:null;
+  const active=keepFocus&&document.activeElement&&document.activeElement.closest("#s-present")?{id:document.activeElement.id,pos:(()=>{ try{ return document.activeElement.selectionStart; }catch(e){ return null; } })(),val:document.activeElement.value}:null;
   if(!c){ $("presentSrc").innerHTML=`<div class="empty">Pick a client first \u2014 or add one and type the numbers in here.</div>`; $("presentChart").innerHTML=""; $("presentBenefits").innerHTML=""; $("presentClose").innerHTML=""; $("presentFlow").innerHTML=""; return; }
   const p=presentState(c); const pm=document.body.classList.contains("present-mode");
   $("presentFlow").innerHTML=`<div class="greet">\u201c${PRESENT_GREETING}\u201d</div>
+    ${pm?(p.intro?`<div class="greet" style="font-size:20px;margin-top:8px;color:#5C616E">${esc(p.intro)}</div>`:""):`<textarea id="pIntro" rows="2" placeholder="Anything to say before the T-chart \u2014 \u201cI pulled your numbers from the statement you sent\u2026\u201d, a reminder, how you want to open" style="margin-top:8px;font-size:14px;min-height:0;height:56px" oninput="presentIntro(this.value)">${esc(p.intro||"")}</textarea>`}
     <div class="flowstrip" style="margin-top:8px"><b style="margin-right:4px">Then:</b><span class="bad">1 \u00b7 Today \u2014 the old side</span><span class="good">2 \u00b7 New \u2014 the good side</span><span>3 \u00b7 Benefits</span><span>4 \u00b7 \u201c${PRESENT_NEXT}\u201d + close</span><span style="flex:1;background:none"></span><button class="btn small" onclick="togglePresentMode()">${pm?"Exit presenting (Esc)":"Present \u2014 big &amp; clean"}</button></div>`;
   const snaps=(c.scenarios||[]).filter(x=>x.kind==="snap");
   $("presentSrc").innerHTML=`<div class="btnrow" style="flex-wrap:wrap;gap:8px;align-items:center"><button class="btn small" onclick="presentFill('client')">Fill from ${esc(c.name)}</button>
@@ -3629,10 +3685,10 @@ function renderPresent(keepFocus){ const c=cur(); if(!$("presentChart")) return;
     ${p.d&&presentDrift(c)?`<div class="hint" style="margin-top:6px;color:var(--warn)">These numbers differ from the client workspace \u2014 \u201cSave numbers to client\u201d writes them back, \u201cFill from ${esc(c.name)}\u201d reloads.</div>`:""}`;
   if(!p.d){ $("presentChart").innerHTML=`<div class="empty">Fill from the client or a saved option \u2014 or <a href="#" onclick="presentFill('blank');return false">start blank and type it in</a>: debt names, balances and payments on the left, the new payment and rate on the right.</div>`; $("presentBenefits").innerHTML=""; $("presentClose").innerHTML=""; return; }
   $("presentChart").innerHTML=presentChartHTML(c,true); renderPresentBenefits(); renderPresentClose();
-  if(active&&active.id){ const el=$(active.id); if(el){ el.focus(); try{ if(active.pos!=null&&el.setSelectionRange) el.setSelectionRange(active.pos,active.pos); }catch(e){} } } }
+  if(active&&active.id){ const el=$(active.id); if(el){ if(el.type==="number"&&active.val!==el.value&&+active.val===+el.value) el.value=active.val; el.focus(); try{ if(active.pos!=null&&el.setSelectionRange) el.setSelectionRange(active.pos,active.pos); }catch(e){} } } }
 function presentChartHTML(c,edit){ const p=presentState(c); const d=p.d; const r=presentCalc(c); const m=d.mortgage;
   const second=d.lien==="second"; const stream=d.program==="fha_streamline"||d.program==="va_irrrl"; const roll=!second&&!stream?d.roll==="yes":second;
-  const inp=(id,path,val,cls,ph,step)=> edit?`<input id="${id}" type="number" class="${cls||"num"}" step="${step||"any"}" value="${val==null?"":val}" placeholder="${ph||""}" oninput="presentSet('${path}',this.value)">`:`<span class="${cls||"num"}">${val==null?"\u2014":val}</span>`;
+  const inp=(id,path,val,cls,ph,step)=> edit?`<input id="${id}" type="number" class="${cls||"num"}" step="${step||"any"}" value="${val==null?"":val}" placeholder="${ph||""}" oninput="presentSetEl('${path}',this)">`:`<span class="${cls||"num"}">${val==null?"\u2014":val}</span>`;
   const sel=(id,path,val,opts)=> edit?`<select id="${id}" onchange="presentSet('${path}',this.value)">${opts.map(o=>`<option value="${o[0]}" ${String(val)===String(o[0])?"selected":""}>${o[1]}</option>`).join("")}</select>`:`<span>${(opts.find(o=>String(o[0])===String(val))||[])[1]||""}</span>`;
   const showDebts = roll || second;
   const T=presentDebtTotals(d); const dPay=T.pay, dBal=T.bal;
@@ -3647,28 +3703,34 @@ function presentChartHTML(c,edit){ const p=presentState(c); const d=p.d; const r
   if(showDebts){ L+=dRow("Debts","Balance","Rate","Payment","Extra paid","","hd"+(second&&d.hideFirst?"":" gap"))+
     d.debts.map((x,i)=>dRow(
       edit?`<input id="pd${i}n" type="text" data-pd="${i}.name" value="${esc(x.name||"")}" placeholder="Visa, auto, personal loan" oninput="presentDebt(${i},'name',this.value)">`:esc(x.name||"Debt"),
-      edit?`<input id="pd${i}b" type="number" class="num" step="100" value="${x.balance==null?"":x.balance}" placeholder="balance" oninput="presentDebt(${i},'balance',this.value)">`:money(x.balance),
-      edit?`<input id="pd${i}a" type="number" class="num" step="0.01" value="${x.apr==null?"":x.apr}" placeholder="optional" oninput="presentDebt(${i},'apr',this.value)">`:(x.apr>0?pct(x.apr):"\u2014"),
-      edit?`<input id="pd${i}p" type="number" class="num" step="1" value="${x.pay==null?"":x.pay}" placeholder="monthly" oninput="presentDebt(${i},'pay',this.value)">`:money(x.pay),
-      edit?`<input id="pd${i}x" type="number" class="num" step="1" value="${x.extra==null||x.extra===0?"":x.extra}" placeholder="optional" oninput="presentDebt(${i},'extra',this.value)">`:(x.extra>0?money(x.extra):"\u2014"),
+      edit?`<input id="pd${i}b" type="number" class="num" step="100" value="${x.balance==null?"":x.balance}" placeholder="balance" oninput="presentDebtEl(${i},'balance',this)">`:money(x.balance),
+      edit?`<input id="pd${i}a" type="number" class="num" step="0.01" value="${x.apr==null?"":x.apr}" placeholder="optional" oninput="presentDebtEl(${i},'apr',this)">`:(x.apr>0?pct(x.apr):"\u2014"),
+      edit?`<input id="pd${i}p" type="number" class="num" step="1" value="${x.pay==null?"":x.pay}" placeholder="monthly" oninput="presentDebtEl(${i},'pay',this)">`:money(x.pay),
+      edit?`<input id="pd${i}x" type="number" class="num" step="1" value="${x.extra==null||x.extra===0?"":x.extra}" placeholder="optional" oninput="presentDebtEl(${i},'extra',this)">`:(x.extra>0?money(x.extra):"\u2014"),
       edit?`<button class="btn ghost small" style="padding:2px 6px" onclick="presentDelDebt(${i})" title="Remove">\u2715</button>`:"")).join("")+
     (T.n?dRow("<b>Total</b>",`<b>${money(dBal)}</b>`,`<b>${T.blended!=null?pct(T.blended):"\u2014"}</b>${T.est?`<div class="hint">est. blend</div>`:""}`,`<b>${money(dPay)}</b>${d.debts.some(x=>x.extra>0)?`<div class="hint">incl. extra</div>`:""}`,"","","tsum"):"")+
-    (edit?`<div class="btnrow" style="margin-top:6px"><button class="btn ghost small" onclick="presentAddDebt()">+ Add a debt</button>${T.n&&!second&&r&&r.blended!=null?`<span class="hint">${pct(r.blended)} blended with the mortgage</span>`:T.n&&T.est?`<span class="hint">blended rate uses a typical rate for debts with no rate typed</span>`:""}</div>`:""); }
+    (edit?`<div class="btnrow" style="margin-top:6px"><button class="btn ghost small" onclick="presentAddDebt()">+ Add a debt</button><button class="btn ghost small pastebtn" onclick="presentToggle('debtPaste')">${presentUI.debtPaste?"Close paste":"Paste debts\u2026"}</button>${T.n&&!second&&r&&r.blended!=null?`<span class="hint">${pct(r.blended)} blended with the mortgage</span>`:T.n&&T.est?`<span class="hint">blended rate uses a typical rate for debts with no rate typed</span>`:""}</div>`:""); }
+  if(edit&&showDebts&&presentUI.debtPaste){ const pr=presentUI.parsed;
+    L+=`<div class="pastebox"><textarea id="pDebtPaste" rows="4" placeholder="Paste from a credit report, Salesforce liabilities, or one debt per line (\u201cVisa 12,000 360 24.99%\u201d)">${pr&&pr.text?esc(pr.text):""}</textarea><div class="btnrow" style="margin-top:6px"><button class="btn small" onclick="presentParseDebts()">Read it</button><span class="hint">Then tick which ones go on the old side.</span></div>`;
+    if(pr&&pr.needsMap) L+=`<div class="hint" style="color:var(--warn);margin-top:6px">I can see a table but not which column is which. Paste it once on the Client workspace \u2192 Debts, teach me the columns there (it\u2019s remembered), then \u201cFill from client\u201d here.</div>`;
+    else if(pr&&pr.rows) L+=`<div class="hint" style="margin-top:6px">${pr.rows.length} with a balance (${pr.how})${pr.skipped?", "+pr.skipped+" closed / zero left out":""}</div><table class="data" style="margin-top:4px"><tbody>${pr.rows.map((x,i)=>`<tr><td><input type="checkbox" ${x.use?"checked":""} onchange="presentParsedUse(${i},this.checked)" style="width:auto;min-height:0"></td><td>${esc(x.name)}${x.mortgage?' <span class="tag-flat">mortgage \u2192 current mortgage</span>':""}</td><td class="num">${money(x.balance)}</td><td class="num">${x.pay?money(x.pay):"\u2014"}</td><td class="num">${x.apr>0&&!x.aprEst?pct(x.apr):"<span class='hint'>rate: typical</span>"}</td></tr>`).join("")}</tbody></table><div class="btnrow" style="margin-top:6px"><button class="btn small" onclick="presentAddParsed()">Add the ticked debts</button></div>`;
+    L+=`</div>`; }
   L+=`<div class="tot"><span>Going out each month</span><b>${money(todayOut)}</b></div>`;
   if(r&&r.pitiNow>0&&!second) L+=`<div class="hint">with taxes &amp; insurance: ${money(r.allInNow)}</div>`;
   /* ---- right ---- */
   let R=`<h3>New <span class="side good">the good side</span></h3>`;
   if(edit) R+=`<div class="trow" style="grid-template-columns:1fr 1fr;border:0"><span>${sel("pLien","lien",d.lien,[["refi","Refinance (new first mortgage)"],["second","Home equity (second mortgage)"]])}</span>
     <span>${second?sel("pSec","secType",d.secType,[["hel","Home equity loan (fixed)"],["heloc","HELOC"]]):sel("pProg","program",d.program,[["standard","Standard / cash-out"],["fha_streamline","FHA Streamline"],["va_irrrl","VA IRRRL"]])}</span></div>`;
+  if(edit) R+=`<div class="btnrow" style="margin-bottom:4px"><button class="btn ghost small pastebtn" onclick="presentToggle('termPaste')">${presentUI.termPaste?"Close paste":"Paste new terms\u2026"}</button>${presentUI.lastTerms&&!presentUI.termPaste?`<span class="hint">read: ${presentUI.lastTerms.join(" \u00b7 ")}</span>`:""}</div>${presentUI.termPaste?`<div class="pastebox"><textarea id="pTermPaste" rows="3" placeholder="Paste the quote \u2014 \u201c6.5% 30 yr, payment $1,234, closing costs $4,500, skip 2 payments, no appraisal, nothing out of pocket\u201d">${esc($("pTermPaste")?$("pTermPaste").value:"")}</textarea><div class="btnrow" style="margin-top:6px"><button class="btn small" onclick="presentApplyTerms()">Read the terms</button><span class="hint">Rate, term, payment, costs, cash out, skipped payments and benefit phrases fill in.</span></div></div>`:""}`;
   R+=`<div class="trow hd"><span>${second?"New "+secName:"New mortgage"}</span><span class="num">Loan</span><span class="num">Rate</span><span class="num">Payment</span><span></span></div>
     <div class="trow"><span>${r?money(r.newP):"\u2014"} loan${edit?`<div class="hint">term ${sel("pTerm","term",d.term,[[30,"30 yr"],[25,"25 yr"],[20,"20 yr"],[15,"15 yr"],[10,"10 yr"]])}</div>`:`<div class="hint">${d.term} yr</div>`}</span>
-      <span class="num muted">${second?(showDebts&&dBal>0?"pays off "+money(dBal):""):money(m.balance||0)}${!second&&(d.costs||d.cashOut)?"<br><span class='hint'>+ costs/cash</span>":""}</span><span>${inp("pR","rate",d.rate,"num","6.5","0.125")}</span><span class="num">${edit?`<input id="pNP" type="number" class="num" step="1" value="${d.newPay==null?"":d.newPay}" placeholder="${r?Math.round(r.newPay):"payment"}" oninput="presentSet('newPay',this.value)" title="Type the quoted payment, or leave blank to compute it from the loan, rate and term">${r&&d.newPay>0?`<div class="hint">${r.newPayTyped?"typed \u00b7 "+money(pmt(r.newP,d.rate,r.n))+" computed":"below interest \u2014 using computed"}</div>`:r?`<div class="hint">computed \u00b7 type to override</div>`:""}`:`<b>${r?money(r.newPay):"\u2014"}</b>`}</span><span></span></div>`;
+      <span class="num muted">${second?(showDebts&&dBal>0?"pays off "+money(dBal):""):money(m.balance||0)}${!second&&(d.costs||d.cashOut)?"<br><span class='hint'>+ costs/cash</span>":""}</span><span>${inp("pR","rate",d.rate,"num","6.5","0.125")}</span><span class="num">${edit?`<input id="pNP" type="number" class="num" step="1" value="${d.newPay==null?"":d.newPay}" placeholder="${r?Math.round(r.newPay):"payment"}" oninput="presentSetEl('newPay',this)" title="Type the quoted payment, or leave blank to compute it from the loan, rate and term">${r&&d.newPay>0?`<div class="hint">${r.newPayTyped?"typed \u00b7 "+money(pmt(r.newP,d.rate,r.n))+" computed":"below interest \u2014 using computed"}</div>`:r?`<div class="hint">computed \u00b7 type to override</div>`:""}`:`<b>${r?money(r.newPay):"\u2014"}</b>`}</span><span></span></div>`;
   if(showDebts) R+=d.debts.map(x=>`<div class="trow"><span>${esc(x.name||"Debt")}</span><span class="num paid">paid off</span><span></span><span class="num paid">$0</span><span></span></div>`).join("");
   if(edit) R+=`<div class="trow" style="grid-template-columns:repeat(4,1fr) 0;border:0;margin-top:4px">
       <span><span class="hint">Costs</span>${inp("pC","costs",d.costs,"num","0","500")}</span>
       <span><span class="hint">Cash out</span>${inp("pCO","cashOut",d.cashOut,"num","0","1000")}</span>
       <span><span class="hint">Skip pmts</span>${sel("pS","skip",d.skip,[[0,"0"],[1,"1"],[2,"2"]])}</span>
-      <span><span class="hint">Set extra/mo</span>${inp("pX","extra",d.extra,"num","0","25")}</span><span></span></div>
+      <span><span class="hint">Custom payment</span>${inp("pPW","pwCustom",d.pwCustom,"num",r?String(Math.round(r.outlayNow)):"per month","25")}</span><span></span></div>
       ${!second&&!stream?`<div class="hint">Roll debts in: ${sel("pRoll","roll",d.roll,[["yes","yes \u2014 pay them off"],["no","no \u2014 leave them"]])}</div>`:""}
       ${second?`<div class="hint"><label style="display:inline-flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" ${d.hideFirst?"checked":""} onchange="presentSet('hideFirst',this.checked)" style="width:auto;min-height:0"> leave the first mortgage out</label> &nbsp; <label style="display:inline-flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" ${p.showCombined?"checked":""} onchange="presentState(cur()).showCombined=this.checked; save(); renderPresent(true)" style="width:auto;min-height:0"> show combined payment</label></div>`:""}`;
   if(r){ const newOut=r.newPay; R+=`<div class="tot"><span>Going out each month</span><b>${money(newOut)}</b></div>`;
@@ -3677,7 +3739,11 @@ function presentChartHTML(c,edit){ const p=presentState(c); const d=p.d; const r
     if(r.saveMo>0) R+=`<div class="keep">You keep <b>${money(r.saveMo)}</b> every month</div>`;
     else if(r.saveMo<0) R+=`<div class="pw">${money(-r.saveMo)}/mo more than today${r.cashOut>0?" \u2014 with "+money(r.cashOut)+" cash out":""}</div>`;
     if(r.extra>0) R+=`<div class="pw"><b>Pay what you pay now:</b> keep sending ${money(r.outlayNow)} \u2014 the extra ${money(r.extra)} hits principal \u2192 paid off in <b>${yrsMo(r.pw.months)}</b>${isFinite(r.pw.months)&&r.n-r.pw.months>0?" ("+yrsMo(r.n-r.pw.months)+" sooner than the "+yrsMo(r.n)+" minimum)":""}${r.intSavedPW>0?`, <b>${money(r.intSavedPW)}</b> less interest than today\u2019s path`:""}. <b>Effective rate ${pct(r.pwEff)}</b> \u2014 ${pct(d.rate)} on paper, ${pct(r.pwEff)} in your pocket.</div>`;
-    if(r.cust) R+=`<div class="pw">Or a set <b>${money(r.cust.extra)}/mo</b> extra: paid off in <b>${yrsMo(r.cust.months)}</b>, works out to <b>${pct(r.cust.eff)}</b>, and <b>${money(r.cust.pocket)}/mo</b> still stays in their pocket.</div>`;
+    else R+=`<div class="pw"><b>Pay what you pay now:</b> today\u2019s ${money(r.outlayNow)} ${r.outlayNow>0?"is not more than":"\u2014 nothing on the old side yet, so there\u2019s no extra over"} the new ${money(r.newPay)}, so nothing extra lands on principal. <b>Effective rate ${pct(d.rate)}</b> \u2014 same as the note. Type a custom payment to see what paying more does.</div>`;
+    if(d.pwCustom>0){ const cp=+d.pwCustom; if(cp>r.newPay){ const cs=amort(r.newP,d.rate,r.n,cp-r.newPay,r.newPay); const eff=equivRate(r.newP,r.n,cs.interest,d.rate); const minInt=r.newSched.interest;
+        R+=`<div class="pw"><b>Paying ${money(cp)}/mo instead:</b> ${money(cp-r.newPay)} over the payment \u2192 paid off in <b>${yrsMo(cs.months)}</b>${r.n-cs.months>0?" ("+yrsMo(r.n-cs.months)+" sooner)":""}, <b>${money(Math.max(0,minInt-cs.interest))}</b> less interest than the minimum. <b>Effective rate ${pct(eff)}</b>${r.outlayNow>cp?` \u2014 and <b>${money(r.outlayNow-cp)}/mo</b> still stays in their pocket vs today`:""}.</div>`; }
+      else R+=`<div class="pw">A custom payment of ${money(cp)} isn\u2019t above the ${money(r.newPay)} payment \u2014 nothing extra to apply.</div>`; }
+    if(r.cust&&!(d.pwCustom>0)) R+=`<div class="pw">Or a set <b>${money(r.cust.extra)}/mo</b> extra: paid off in <b>${yrsMo(r.cust.months)}</b>, works out to <b>${pct(r.cust.eff)}</b>, and <b>${money(r.cust.pocket)}/mo</b> still stays in their pocket.</div>`;
     if(r.skipCash>0&&p.ben.skip) R+=`<div class="pw">Skip ${r.skipN} payment${r.skipN>1?"s":""} at closing \u2192 about <b>${money(r.skipCash)}</b> stays in their pocket.</div>`;
     if(r.roll&&r.debts.length&&r.blended!=null&&!second) R+=`<div class="hint" style="margin-top:6px">${pct(r.blended)} blended today \u2192 ${pct(d.rate)} new${r.aprEst?" \u00b7 APR est. "+pct(r.apr):" \u00b7 APR "+pct(r.apr)}</div>`; }
   else R+=`<div class="empty" style="margin-top:8px">Add the new rate${second&&!d.debts.length&&!(d.cashOut>0)?" and some debts or cash out":""}.</div>`;
