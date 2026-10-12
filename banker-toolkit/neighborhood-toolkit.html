@@ -910,7 +910,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.7.4";
+const TOOLKIT_VERSION = "1.7.5";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1639,7 +1639,7 @@ const DEBT_TYPES={card:{label:"Credit card",apr:24.99},auto:{label:"Auto loan",a
 function debtTypeOf(text){ const t=String(text||"").toLowerCase();
   if(/automobile|auto\b|vehicle|motor|car loan/.test(t)) return "auto"; if(/student|education|sallie|navient|nelnet|mohela/.test(t)) return "student";
   if(/heloc|home equity|hel\b/.test(t)) return "heloc";
-  if(/credit ?card|charge ?account|chargeaccount|creditcard|revolving|visa|mastercard|amex|american express|discover|capital one|cap one|capone|chase|citi|synchrony|syncb|barclay|brclys|fnb omaha|first national|usaa|navy fed|nfcu|wells fargo card|bank of america|boa|comenity|elan|td bank|us bank|kohls|macys|target|best buy|home depot|lowes|care ?credit|paypal|affirm|klarna|credit one|merrick|mission lane|milestone|indigo|apple card|gs bank/.test(t)) return "card";
+  if(/credit ?card|\bcards?\b|charge ?account|chargeaccount|creditcard|revolving|visa|mastercard|amex|american express|discover|capital one|cap one|capone|chase|citi|synchrony|syncb|barclay|brclys|fnb omaha|first national|usaa|navy fed|nfcu|wells fargo card|bank of america|boa|comenity|elan|td bank|us bank|kohls|macys|target|best buy|home depot|lowes|care ?credit|paypal|affirm|klarna|credit one|merrick|mission lane|milestone|indigo|apple card|gs bank/.test(t)) return "card";
   if(/personal|unsecured|signature/.test(t)) return "personal"; if(/installment|sales contract/.test(t)) return "installment"; return "other"; }
 const acctTail=a=>{ const d=String(a||"").replace(/\D/g,""); return d.length>=4?"\u2022\u2022"+d.slice(-4):String(a||""); };
 function addDebt(){ const c=cur(); if(!c){ toast("Pick a client first"); return; }
@@ -3676,12 +3676,12 @@ function presentDebtTotals(d){ const ds=(d.debts||[]).filter(x=>x.balance>0||x.p
   return {n:ds.length, bal, pay, blended: bal>0? w/bal : null, est}; }
 function presentFromClient(c, inputs){ const a=Object.assign({},c.analysis||{},inputs||{}); const d=presentBlank();
   d.mortgage={balance:c.balance||null, rate:c.rate||null, payment:c.payment>0?c.payment:(c.balance&&c.rate?Math.round(pmt(c.balance,c.rate,c.monthsLeft||360)):null), monthsLeft:c.monthsLeft||null, paymentTotal:c.paymentTotal||null};
-  d.debts=(c.debts||[]).filter(x=>x.balance>0).map(x=>({name:x.name,balance:x.balance,apr:x.apr,pay:x.pay||0,extra:x.extra||0,payMode:x.payMode||""}));
+  d.debts=(c.debts||[]).filter(x=>x.balance>0).map(x=>({name:x.name,type:x.type||"",balance:x.balance,apr:x.apr,pay:x.pay||0,extra:x.extra||0,payMode:x.payMode||""}));
   d.program=a.anProgram||"standard"; d.lien=a.anLien==="second"?"second":"refi"; d.secType=a.anSecondType||"hel"; d.hideFirst=a.anHideFirst==="yes";
   d.rate=a.anRate||null; d.term=a.anTerm||30; d.costs=a.anCosts||0; d.cashOut=a.anCashOut||0; d.skip=a.anSkip??1; d.roll=a.anRoll||"yes"; d.extra=a.anCustom||0; return d; }
 function presentTemp(c,d){ /* a throwaway client so the proposal engine does the math */
   const t=Object.assign({},blankClient(),{id:"present",name:c?c.name:"",balance:d.mortgage.balance||0,rate:d.mortgage.rate||0,payment:d.mortgage.payment||null,monthsLeft:d.mortgage.monthsLeft||null,paymentTotal:d.mortgage.paymentTotal||null,freeClear:false,
-    debts:d.debts.filter(x=>x.balance>0).map(x=>({name:x.name||"Debt",type:debtTypeOf(x.name||""),balance:+x.balance||0,apr:x.apr>0?+x.apr:(DEBT_TYPES[debtTypeOf(x.name||"")]||DEBT_TYPES.other).apr,aprEst:!(x.apr>0),pay:+x.pay||0,extra:+x.extra||0,acct:"",payMode:x.payMode||""}))});
+    debts:d.debts.filter(x=>x.balance>0).map(x=>({name:x.name||"Debt",type:x.type||debtTypeOf(x.name||""),balance:+x.balance||0,apr:x.apr>0?+x.apr:(DEBT_TYPES[debtTypeOf(x.name||"")]||DEBT_TYPES.other).apr,aprEst:!(x.apr>0),pay:+x.pay||0,extra:+x.extra||0,acct:"",payMode:x.payMode||""}))});
   t.analysis={anRate:d.rate,anTerm:d.term||30,anCosts:+d.costs||0,anCashOut:+d.cashOut||0,anSkip:+d.skip||0,anRoll:d.roll||"yes",anLien:d.lien||"refi",anProgram:d.program||"standard",anSecondType:d.secType||"hel",anHideFirst:d.hideFirst?"yes":"no",anCustom:+d.extra||0,anNewPay:d.newPay>0?+d.newPay:null,anPrepay:"yes",anMip:1.75}; return t; }
 function presentCalc(c){ const p=presentState(c); if(!p.d) return null; const t=presentTemp(c,p.d); const r=computeAnalysis(t); return r&&!r.tooSmall?r:null; }
 function presentFill(src){ const c=cur(); if(!c){ toast("Pick a client first"); return; } const p=presentState(c); if(p.d) presentSnap(src==="blank"?"start blank":"fill from "+(src==="client"?c.name:"a saved option"));
@@ -3708,7 +3708,7 @@ function presentAddParsed(){ const c=cur(); const pr=presentUI.parsed; if(!c||!p
   const picked=pr.rows.filter(r=>r.use); if(!picked.length){ toast("Tick the debts to bring over"); return; }
   picked.forEach(r=>{ if(r.mortgage){ p.d.mortgage.balance=r.balance; if(r.pay>0&&!(p.d.mortgage.payment>0)){ p.d.mortgage.paymentTotal=r.pay; } return; }
     const usePayEst=!(r.pay>0)&&pr.estPay&&r.payEst>0;
-    p.d.debts.push({name:r.name||"Debt",balance:+r.balance||0,apr:r.aprEst?null:(r.apr>0?+r.apr:null),pay:usePayEst?r.payEst:(+r.pay||0),payEst:usePayEst,extra:0,toClient:false}); });
+    p.d.debts.push({name:r.name||"Debt",type:r.type||"",balance:+r.balance||0,apr:r.aprEst?null:(r.apr>0?+r.apr:null),pay:usePayEst?r.payEst:(+r.pay||0),payEst:usePayEst,extra:0,toClient:false}); });
   presentUI.debtPaste=false; presentUI.parsed=null; presentDefaultBenefits(c); save(); renderPresent(); toast(picked.length+" debt"+(picked.length===1?"":"s")+" added to the old side"); }
 /* the new side from a quote pasted as text: rate / term / payment / costs / cash out / skipped payments / program, plus benefit phrases */
 function presentParseTerms(text){ const t=String(text||"").replace(/\u00a0/g," "); const low=t.toLowerCase(); const out={}, ben={}, read=[];
@@ -3759,7 +3759,7 @@ function presentDelClose(t){ state.settings.closes=(state.settings.closes||[]).f
 function presentToClient(){ const c=cur(); if(!c) return; const p=presentState(c); if(!p.d) return; const d=p.d;
   if(!confirm("Write these numbers to "+c.name+"\u2019s client workspace and savings analysis? The presentation stays as it is.")) return;
   c.balance=d.mortgage.balance; c.rate=d.mortgage.rate; c.payment=d.mortgage.payment; c.monthsLeft=d.mortgage.monthsLeft; if(d.mortgage.paymentTotal) c.paymentTotal=d.mortgage.paymentTotal;
-  c.debts=d.debts.filter(x=>x.balance>0).map(x=>({name:x.name||"Debt",type:debtTypeOf(x.name||""),balance:+x.balance,apr:x.apr>0?+x.apr:(DEBT_TYPES[debtTypeOf(x.name||"")]||DEBT_TYPES.other).apr,aprEst:!(x.apr>0),pay:+x.pay||0,extra:+x.extra||0,acct:"",payMode:x.payMode||""}));
+  c.debts=d.debts.filter(x=>x.balance>0).map(x=>({name:x.name||"Debt",type:x.type||debtTypeOf(x.name||""),balance:+x.balance,apr:x.apr>0?+x.apr:(DEBT_TYPES[debtTypeOf(x.name||"")]||DEBT_TYPES.other).apr,aprEst:!(x.apr>0),pay:+x.pay||0,extra:+x.extra||0,acct:"",payMode:x.payMode||""}));
   Object.assign(c.analysis,{anRate:d.rate,anTerm:d.term,anCosts:d.costs,anCashOut:d.cashOut,anSkip:d.skip,anRoll:d.roll,anLien:d.lien,anProgram:d.program,anSecondType:d.secType,anHideFirst:d.hideFirst?"yes":"no",anCustom:d.extra});
   save(); refreshAll(); toast("Saved to "+c.name); }
 function presentDrift(c){ const p=presentState(c); if(!p.d||p.src!=="client") return false; const d=presentFromClient(c); const m=p.d.mortgage, n=d.mortgage;
