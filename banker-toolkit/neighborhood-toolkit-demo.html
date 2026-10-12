@@ -90,6 +90,8 @@ body.mode-fha #debtPanel,body.mode-va #debtPanel{display:none}
 .tchart .trow.d6{grid-template-columns:1.4fr 1fr .9fr .9fr .85fr 24px}.tchart .trow input[type=number]{padding:4px 5px;-moz-appearance:textfield}.tchart .trow input[type=number]::-webkit-inner-spin-button,.tchart .trow input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.tchart .trow input[type=text]{padding:4px 6px}.tchart .trow.gap{margin-top:8px}.tchart .trow.tsum{border-bottom:0;border-top:1px solid var(--line);padding-top:6px}.tchart .trow .hint{font-size:10.5px}
 .tchart h3 .side{font-family:var(--sans);font-size:12px;color:#A53222;background:#FBECE9;border-radius:999px;padding:2px 9px;vertical-align:middle;margin-left:6px}.tchart h3 .side.good{color:#2E6B4F;background:#E3F1E7}
 .greet{font-family:var(--serif);font-size:19px;line-height:1.4;color:var(--ink)}
+.equitybox{margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}.equitybox .eqhead{margin-bottom:8px}.eqrows{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.eqrow{background:var(--cream-soft);border-radius:8px;padding:8px 10px}.eqrow .eql{font-size:12px;color:#5C616E}.eqrow .eqv{font-family:var(--serif);font-size:22px;color:#2E6B4F}.eqrow.none .eqv{color:#999}.eqrow .chip{margin-top:4px;font-size:11px}
 .objflow{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}.objbox{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;position:relative}.objbox .objl{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#5C616E;margin-bottom:4px}.objbox .objt{font-size:14px;line-height:1.5}
 .objbox.tr{background:#F4EFE6}.objbox.ag{background:#E3F1E7}.objbox.rs{background:#FFF8EC}.objbox.tn{background:#EEF2F7}.objbox.cl{background:var(--brand);color:#fff;border-color:var(--brand)}.objbox.cl .objl{color:#F7D9D3}.objbox.cl .objt{font-family:var(--serif);font-size:18px}.objbox.cl .hint{color:#F7D9D3}
 body.present-mode .objbox .objt{font-size:17px}body.present-mode .objbox.cl .objt{font-size:22px}.cashline{background:#FFF3C4;border-radius:10px;padding:10px 12px;margin-top:10px;font-size:14px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 10px}.cashline b{font-family:var(--serif);font-size:22px;font-weight:400}.cashline .hint{flex-basis:100%}
@@ -910,7 +912,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.7.5";
+const TOOLKIT_VERSION = "1.7.6";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1322,6 +1324,7 @@ function bindClientFields(){
       if(f==="seasonDate"&&c.seasonDate&&isInelig(c)){ c.ineligSeason=true; c.ineligFull=false; }
       if(["ineligRate","ineligSeason","ineligFull","targetRate","seasonDate","futureWhen","futureWindow","futureProduct","futurePrice","hot"].includes(f)){ fillClientForm(); }
       if(["loanType","rate","balance","payment","monthsLeft","freeClear"].includes(f)) renderStreamQuick(c);
+      if(["balance","value","freeClear"].includes(f)) ltvHint();
       normalizePayment(c,f);
       if(f==="value") c.valueSrc={type:"manual",when:todayStr()};
       ["payment","escrow","paymentTotal","monthsLeft","origAmount"].forEach(k=>{ if(k!==f){ const o=document.querySelector(`#s-client [data-f="${k}"]`); if(o) o.value=c[k]==null?"":c[k]; } });
@@ -1349,9 +1352,19 @@ function fillClientForm(){ const c=cur();
       : c.status===S_FUTURE ? `\uD83C\uDFE1 Future buyer \u2014 ${(futureInfo(c)||{}).txt||"set when they\u2019re buying below"}.`
       : c.status===S_DONE ? `Closed ${esc(c.closedAt||"")} \u2014 counted in this month\u2019s goal.` : c.status==="Needs follow-up"&&c.followUp ? `Follow-up ${esc(c.followUp)} \u2014 shows under Follow-ups due on that day.` : ""; }
 }
-function ltvHint(){ const c=cur(); const el=$("clientLtv"); if(!c||!c.balance||!c.value){ el.textContent=""; return; }
-  const ltv=c.balance/c.value*100; el.textContent = "LTV: "+ltv.toFixed(1)+"%"+(ltv<=80?" \u2014 conventional cash-out territory":ltv<=97?"":" \u2014 above standard limits");
-}
+/* equity available at 80 / 85 / 90% combined LTV: value × cap − what's owed (first mortgage + any HELOC / home-equity debt on the list) */
+const EQUITY_CAPS=[80,85,90];
+function equityRows(c){ const v=+c.value||0; if(!(v>0)) return null; const first=c.freeClear?0:(+c.balance||0);
+  const liens=(c.debts||[]).filter(d=>d.type==="heloc"&&d.balance>0); const second=liens.reduce((s,d)=>s+(+d.balance||0),0); const owed=first+second;
+  return {v, first, second, owed, ltv: owed/v*100, rows: EQUITY_CAPS.map(p=>({p, max:Math.round(v*p/100), avail:Math.max(0,Math.round(v*p/100-owed))}))}; }
+function ltvHint(){ const c=cur(); const el=$("clientLtv"); if(!el) return; const e=c?equityRows(c):null;
+  if(!e){ el.innerHTML = c&&c.balance&&!c.value ? `<span class="hint">Enter the home value to see equity available at 80 / 85 / 90% LTV.</span>` : ""; return; }
+  el.innerHTML=`<div class="equitybox"><div class="eqhead"><b>Equity</b> <span class="hint">home ${money(e.v)} \u00b7 owed ${money(e.owed)}${e.second>0?" (first "+money(e.first)+" + HELOC/HEL "+money(e.second)+")":""} \u00b7 LTV <b>${e.ltv.toFixed(1)}%</b>${e.ltv<=80?" \u2014 conventional cash-out territory":e.ltv>97?" \u2014 above standard limits":""}</span></div>
+    <div class="eqrows">${e.rows.map(r=>`<div class="eqrow${r.avail>0?"":" none"}"><div class="eql">up to <b>${r.p}%</b> LTV</div><div class="eqv">${r.avail>0?money(r.avail):"\u2014"}</div><div class="hint">max ${money(r.max)} total liens</div>${r.avail>0?`<button class="chip" title="Set this as the cash out on the savings analysis (rounded down to the thousand)" onclick="useEquity(${r.p})">\u2192 cash out</button>`:""}</div>`).join("")}</div>
+    <div class="hint" style="margin-top:4px">Gross equity before closing costs; program limits vary (VA cash-out to 100%, FHA 80%, most HELs 85\u201390%). A new HEL/HELOC counts against the same cap as the first mortgage.</div></div>`; }
+function useEquity(p){ const c=cur(); if(!c) return; const e=equityRows(c); if(!e) return; const row=e.rows.find(r=>r.p===p); if(!row||!(row.avail>0)) return;
+  const amt=Math.floor(row.avail/1000)*1000; if(!(amt>0)){ toast("Less than $1,000 available at "+p+"%"); return; }
+  c.analysis=c.analysis||{}; c.analysis.anCashOut=amt; save(); if($("anCashOut")) $("anCashOut").value=amt; toast("Cash out set to "+money(amt)+" (up to "+p+"% LTV) \u2014 see the Savings analysis"); }
 
 /* ---------- pipeline ---------- */
 function feedRateFor(c){ if(!state.rates||!state.rates.rates) return null;
@@ -1831,7 +1844,7 @@ function renderDebts(){
    <td><input type="number" class="num" value="${d.pay??""}" placeholder="${isRevolving(d)&&d.balance>0?"min \u2248 "+Math.round(cardMinNow(d.balance,d.apr)):""}" oninput="updDebt(${i},'pay',this.value)">${isRevolving(d)&&d.balance>0?`<div class="hint" style="white-space:nowrap"><select style="min-height:0;padding:1px 4px;font-size:11px;width:auto" title="How today\u2019s path is modeled for this card" onchange="updDebt(${i},'payMode',this.value)"><option value="" ${!d.payMode?"selected":""}>auto \u00b7 ${debtPayMode(d)==="min"?"minimums only":"fixed amount"}</option><option value="min" ${d.payMode==="min"?"selected":""}>minimums only</option><option value="fixed" ${d.payMode==="fixed"?"selected":""}>fixed amount</option></select>${debtPayMode(d)==="min"?` <span title="Minimum = this month\u2019s interest + 1% of the balance, shrinking as the balance falls">min now \u2248 ${money(cardMinNow(d.balance,d.apr))}</span>`:""}</div>`:""}</td>
    <td><input type="number" class="num" placeholder="0" value="${d.extra||""}" oninput="updDebt(${i},'extra',this.value)"></td>
    <td><button class="btn danger small" onclick="delDebt(${i})">\u2715</button></td></tr>`).join("")+`</tbody><tfoot id="debtTotals"></tfoot></table>`);
-  renderDebtTotals();
+  renderDebtTotals(); if($("clientLtv")) ltvHint();
 }
 function renderDebtTotals(){ const c=cur(); const tf=$("debtTotals"); if(!tf||!c) return;
   const L=c.debts.filter(d=>d.balance>0); const bal=L.reduce((t,d)=>t+d.balance,0), min=L.reduce((t,d)=>t+(d.pay||0),0), ex=L.reduce((t,d)=>t+(d.extra||0),0);
