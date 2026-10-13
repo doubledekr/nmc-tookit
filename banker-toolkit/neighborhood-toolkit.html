@@ -913,7 +913,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.7.7";
+const TOOLKIT_VERSION = "1.7.8";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1314,6 +1314,7 @@ function bindClientFields(){
   document.querySelectorAll("#s-client [data-f]").forEach(el=>{
     if(el.tagName==="SELECT" && el.dataset.f==="status") el.innerHTML = STATUSES.map(s=>`<option>${s}</option>`).join("");
     el.addEventListener("input", ()=>{ const c=cur(); if(!c) return;
+      if(el.type==="number" && el.validity && el.validity.badInput) return;   /* "6." on the way to 6.25 — leave the field alone until it's a number */
       const f=el.dataset.f; c[f] = el.type==="checkbox" ? el.checked : (el.type==="number") ? num(el.value) : el.value;
       if(f==="freeClear"){ if(c.freeClear){ c.balance=0; c.rate=null; c.payment=null; c.paymentTotal=null; c.escrow=null; c.monthsLeft=null; c.origAmount=null; c.analysis.anLien="fc"; c.analysis.anProgram="standard"; }
         else if(c.analysis.anLien==="fc"){ c.analysis.anLien="refi"; } fillClientForm(); }
@@ -1336,7 +1337,9 @@ function bindClientFields(){
 function fillClientForm(){ const c=cur();
   document.querySelectorAll("#s-client [data-f]").forEach(el=>{
     if(el.type==="checkbox"){ el.checked=!!(c&&c[el.dataset.f]); el.disabled=!c; return; }
-    el.value = c ? (c[el.dataset.f]==null ? "" : c[el.dataset.f]) : ""; el.disabled = !c; });
+    const v = c ? (c[el.dataset.f]==null ? "" : c[el.dataset.f]) : "";
+    if(el===document.activeElement && el.type==="number" && +el.value===+v && el.value!=="") { el.disabled=!c; return; }   /* keep "6.0" / "6.250" as typed while the field is focused */
+    el.value = v; el.disabled = !c; });
   $("s-client").classList.toggle("fc", !!(c&&c.freeClear)); $("s-client").classList.toggle("inelig-on", !!(c&&isInelig(c))); $("s-client").classList.toggle("future-on", !!(c&&isFuture(c)));
   { const fh=$("futureHint"); if(fh){ const fi=c?futureInfo(c):null; fh.innerHTML = fi ? `<span class="${fi.tag}">${fi.txt}</span>` : ""; } } document.body.classList.toggle("fc-client", !!(c&&c.freeClear));
   const qb=$("quickBadge"); if(qb) qb.innerHTML = !c ? "" : (c.quick
