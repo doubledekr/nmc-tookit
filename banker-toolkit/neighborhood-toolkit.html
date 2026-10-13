@@ -90,6 +90,7 @@ body.mode-fha #debtPanel,body.mode-va #debtPanel{display:none}
 .tchart .trow.d6{grid-template-columns:1.4fr 1fr .9fr .9fr .85fr 24px}.tchart .trow input[type=number]{padding:4px 5px;-moz-appearance:textfield}.tchart .trow input[type=number]::-webkit-inner-spin-button,.tchart .trow input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.tchart .trow input[type=text]{padding:4px 6px}.tchart .trow.gap{margin-top:8px}.tchart .trow.tsum{border-bottom:0;border-top:1px solid var(--line);padding-top:6px}.tchart .trow .hint{font-size:10.5px}
 .tchart h3 .side{font-family:var(--sans);font-size:12px;color:#A53222;background:#FBECE9;border-radius:999px;padding:2px 9px;vertical-align:middle;margin-left:6px}.tchart h3 .side.good{color:#2E6B4F;background:#E3F1E7}
 .greet{font-family:var(--serif);font-size:19px;line-height:1.4;color:var(--ink)}
+.hlswatch{width:22px;height:22px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--line);cursor:pointer;padding:0}.hlswatch.on{box-shadow:0 0 0 2px var(--brand)}#propPreview.customize #propHL{display:none}
 .equitybox{margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}.equitybox .eqhead{margin-bottom:8px}.eqrows{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
 .eqrow{background:var(--cream-soft);border-radius:8px;padding:8px 10px}.eqrow .eql{font-size:12px;color:#5C616E}.eqrow .eqv{font-family:var(--serif);font-size:22px;color:#2E6B4F}.eqrow.none .eqv{color:#999}.eqrow .chip{margin-top:4px;font-size:11px}
 .objflow{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}.objbox{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;position:relative}.objbox .objl{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#5C616E;margin-bottom:4px}.objbox .objt{font-size:14px;line-height:1.5}
@@ -586,7 +587,7 @@ Discover 6,100 190 24.9"></textarea>
         <div class="field" id="propWhyWrap" style="display:none"><label>Why this is your recommendation (prints on the proposal)</label><textarea id="propWhy" style="min-height:50px;font-family:inherit" oninput="savePropWhy(this.value)" placeholder="e.g. Best balance of rate and cost — the lower-rate option costs 1.25 points that take 4 years to recoup."></textarea></div>
         <div class="hint">Heads up: this is a savings proposal, not a Loan Estimate. The official LE is a regulated disclosure that comes from the lender after application.</div>
       </div>
-      <div class="panel"><h2>Preview</h2><div class="hint" id="propRateSrc" style="margin-bottom:8px"></div><div id="propHiddenBar" style="margin-bottom:8px"></div><div id="propPreview" style="border:1px solid var(--line);padding:20px;background:#fff" onclick="propPreviewClick(event)"></div></div>
+      <div class="panel"><h2>Preview</h2><div class="hint" id="propRateSrc" style="margin-bottom:8px"></div><div id="propHiddenBar" style="margin-bottom:8px"></div><div id="propHLBar" class="btnrow" style="margin-bottom:8px;align-items:center"></div><div id="propPreview" style="border:1px solid var(--line);padding:20px;background:#fff" onclick="propPreviewClick(event)"></div></div>
       <div class="panel"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><h2 id="propLibTitle">Proposal library</h2><button class="btn ghost small" onclick="libraryClear()">Clear all</button></div><div id="propLibrary"></div></div>
     </section>
 
@@ -2182,9 +2183,60 @@ function applyHides(html,c,edit){ if(!c||/class="empty"/.test(html)) return html
   wrap.querySelectorAll("table").forEach(t=>{ const tb=t.querySelector("tbody"); if(tb&&!tb.querySelector("tr")) t.remove(); });
   if(!edit){ wrap.querySelectorAll("[data-hid],[data-hsec],[data-hlabel]").forEach(el=>{ el.removeAttribute("data-hid"); el.removeAttribute("data-hsec"); el.removeAttribute("data-hlabel"); }); }
   return wrap.innerHTML; }
+/* ---- highlighter: free-hand strokes over the proposal preview. Each stroke is anchored to the block it started on
+   (a bullet, table row, stat box, heading) as fractions of that block's box, so it lands on the same words when the
+   sheet is re-rendered at export width. Saved with the client; drawn into Copy / Save image / Email. ---- */
+const HL_COLORS=[["yellow","#FFE600"],["green","#8CF08C"],["pink","#FF8FD0"],["blue","#8CD4FF"]];
+const HL_BLOCKS="li,tr,.statline>div,h1,h2,h3,p,.recbox,.keep,.pw,.trow,.tot,.cashline,.disc,.brandbar>div";
+const hl={on:false,color:"yellow",width:18,drawing:false,cur:null};
+function hlMarks(){ const c=cur(); if(!c) return []; c.prop=c.prop||{}; c.prop.marks=c.prop.marks||[]; return c.prop.marks; }
+function hlBlocks(root){ return [...root.querySelectorAll(HL_BLOCKS)]; }
+function hlSetOn(on){ hl.on=!!on; if(hl.on&&propCustomize) setPropCustomize(false); hlMount(); renderHLBar(); }
+function hlSetColor(k){ hl.color=k; if(!hl.on) hlSetOn(true); else renderHLBar(); }
+function hlUndo(){ const m=hlMarks(); if(!m.length) return; m.pop(); save(); hlMount(); renderHLBar(); }
+function hlClear(){ const m=hlMarks(); if(!m.length) return; m.length=0; save(); hlMount(); renderHLBar(); }
+function renderHLBar(){ const bar=$("propHLBar"); if(!bar) return; const n=hlMarks().length;
+  bar.innerHTML=`<button class="btn small${hl.on?"":" ghost"}" onclick="hlSetOn(${hl.on?"false":"true"})" title="Draw highlighter strokes on the preview \u2014 they go out with Copy, Save image and Email">\uD83D\uDD8D ${hl.on?"Highlighting \u2014 draw on the preview":"Highlighter"}</button>
+    ${HL_COLORS.map(([k,hex])=>`<button class="hlswatch${hl.color===k?" on":""}" style="background:${hex}" title="${k}" onclick="hlSetColor('${k}')"></button>`).join("")}
+    <button class="btn ghost small" onclick="hlUndo()" ${n?"":"disabled"}>Undo</button><button class="btn ghost small" onclick="hlClear()" ${n?"":"disabled"}>Clear</button>
+    ${n?`<span class="hint">${n} highlight${n===1?"":"s"} \u2014 saved with ${esc(cur().name)}, included in the image</span>`:hl.on?`<span class="hint">Drag across anything on the preview. Esc to stop.</span>`:""}`; }
+function hlCanvas(){ const pv=$("propPreview"); if(!pv) return null; let cv=$("propHL");
+  if(!cv){ cv=document.createElement("canvas"); cv.id="propHL"; pv.appendChild(cv); cv.addEventListener("pointerdown",hlDown); cv.addEventListener("pointermove",hlMove); cv.addEventListener("pointerup",hlUp); cv.addEventListener("pointercancel",hlUp); cv.addEventListener("pointerleave",hlUp); }
+  pv.style.position="relative"; const W=pv.clientWidth, H=pv.clientHeight; if(cv.width!==W||cv.height!==H){ cv.width=W; cv.height=H; }
+  cv.style.cssText=`position:absolute;left:0;top:0;width:${W}px;height:${H}px;pointer-events:${hl.on?"auto":"none"};mix-blend-mode:multiply;cursor:${hl.on?"crosshair":"default"};z-index:4;touch-action:none`; return cv; }
+function hlPos(ev){ const pv=$("propPreview"); const r=pv.getBoundingClientRect(); return {x:ev.clientX-r.left-pv.clientLeft, y:ev.clientY-r.top-pv.clientTop}; }
+function hlDown(ev){ if(!hl.on) return; ev.preventDefault(); const cv=hlCanvas(); try{ cv.setPointerCapture(ev.pointerId); }catch(e){}
+  const pv=$("propPreview"); cv.style.pointerEvents="none"; const under=document.elementFromPoint(ev.clientX,ev.clientY); cv.style.pointerEvents="auto";
+  const block=under&&pv.contains(under)?under.closest(HL_BLOCKS):null; const blocks=hlBlocks(pv); const bi=block?blocks.indexOf(block):-1;
+  const base=(bi>=0?block:pv).getBoundingClientRect(); const pvr=pv.getBoundingClientRect();
+  hl.cur={bi, color:hl.color, w:hl.width/base.height, base:{x:base.left-pvr.left-pv.clientLeft, y:base.top-pvr.top-pv.clientTop, w:base.width, h:base.height}, pts:[]}; hl.drawing=true; hlAdd(ev); }
+function hlAdd(ev){ const p=hlPos(ev); const b=hl.cur.base; const fx=(p.x-b.x)/b.w, fy=(p.y-b.y)/b.h; const last=hl.cur.pts[hl.cur.pts.length-1];
+  if(last && Math.abs(last[0]-fx)*b.w<2 && Math.abs(last[1]-fy)*b.h<2) return; hl.cur.pts.push([+fx.toFixed(4),+fy.toFixed(4)]); hlDraw(); }
+function hlMove(ev){ if(!hl.drawing||!hl.cur) return; ev.preventDefault(); hlAdd(ev); }
+function hlUp(ev){ if(!hl.drawing) return; hl.drawing=false; const st=hl.cur; hl.cur=null; if(!st||st.pts.length<2) { hlDraw(); return; }
+  hlMarks().push({bi:st.bi,color:st.color,w:+st.w.toFixed(4),pts:st.pts}); save(); hlDraw(); renderHLBar(); }
+function hlStroke(ctx, pts, width, hex, alpha){ if(pts.length<2) return; ctx.save(); ctx.globalAlpha=alpha; ctx.strokeStyle=hex; ctx.lineWidth=width; ctx.lineCap="round"; ctx.lineJoin="round"; ctx.beginPath(); ctx.moveTo(pts[0][0],pts[0][1]);
+  for(let i=1;i<pts.length-1;i++){ const mx=(pts[i][0]+pts[i+1][0])/2, my=(pts[i][1]+pts[i+1][1])/2; ctx.quadraticCurveTo(pts[i][0],pts[i][1],mx,my); } const l=pts[pts.length-1]; ctx.lineTo(l[0],l[1]); ctx.stroke(); ctx.restore(); }
+/* resolve a mark's points to pixels inside a rendered copy of the sheet (preview or the export's measuring div) */
+function hlResolve(mark, root, blocks){ const block=mark.bi>=0?blocks[mark.bi]:null; const rr=root.getBoundingClientRect(); const b=(block||root).getBoundingClientRect();
+  const ox=b.left-rr.left+(block?0:root.clientLeft), oy=b.top-rr.top+(block?0:root.clientTop);
+  return {pts:mark.pts.map(([fx,fy])=>[ox+fx*b.width, oy+fy*b.height]), width:Math.max(6,mark.w*b.height)}; }
+function hlDraw(){ const pv=$("propPreview"); const cv=hlCanvas(); if(!cv) return; const ctx=cv.getContext&&cv.getContext("2d"); if(!ctx) return; ctx.clearRect(0,0,cv.width,cv.height);
+  const blocks=hlBlocks(pv); const hexOf=k=>(HL_COLORS.find(c=>c[0]===k)||HL_COLORS[0])[1];
+  hlMarks().forEach(m=>{ const r=hlResolve(m,pv,blocks); hlStroke(ctx,r.pts,r.width,hexOf(m.color),0.65); });
+  if(hl.cur&&hl.cur.pts.length>1){ const b=hl.cur.base; hlStroke(ctx,hl.cur.pts.map(([fx,fy])=>[b.x+fx*b.w,b.y+fy*b.h]),Math.max(6,hl.cur.w*b.h),hexOf(hl.cur.color),0.65); } }
+function hlMount(){ const pv=$("propPreview"); if(!pv) return; if(!cur()){ const old=$("propHL"); if(old) old.remove(); return; } hlCanvas(); hlDraw(); }
+/* the preview's innerHTML is replaced from many places: put the canvas back whenever that happens */
+document.addEventListener("DOMContentLoaded",()=>{ const pv=$("propPreview"); if(!pv) return; new MutationObserver(()=>{ if(!$("propHL")||!pv.contains($("propHL"))) requestAnimationFrame(()=>{ hlMount(); renderHLBar(); }); }).observe(pv,{childList:true}); window.addEventListener("resize",()=>{ if($("propHL")) hlDraw(); }); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&hl.on) hlSetOn(false); });
+/* strokes for the export: measure the same HTML at export width, then draw the paths over the foreignObject */
+function hlExportSVG(root, marks){ if(!marks||!marks.length) return ""; const blocks=hlBlocks(root); const hexOf=k=>(HL_COLORS.find(c=>c[0]===k)||HL_COLORS[0])[1];
+  return `<g fill="none" stroke-linecap="round" stroke-linejoin="round" style="mix-blend-mode:multiply">`+marks.map(m=>{ const r=hlResolve(m,root,blocks); if(r.pts.length<2) return ""; let d="M"+r.pts[0][0].toFixed(1)+" "+r.pts[0][1].toFixed(1);
+    for(let i=1;i<r.pts.length-1;i++){ const mx=(r.pts[i][0]+r.pts[i+1][0])/2, my=(r.pts[i][1]+r.pts[i+1][1])/2; d+=" Q"+r.pts[i][0].toFixed(1)+" "+r.pts[i][1].toFixed(1)+" "+mx.toFixed(1)+" "+my.toFixed(1); } const l=r.pts[r.pts.length-1]; d+=" L"+l[0].toFixed(1)+" "+l[1].toFixed(1);
+    return `<path d="${d}" stroke="${hexOf(m.color)}" stroke-opacity="0.55" stroke-width="${r.width.toFixed(1)}"/>`; }).join("")+`</g>`; }
 function propPreviewClick(ev){ if(!propCustomize) return; const el=ev.target.closest("[data-hid]"); if(!el||!$("propPreview").contains(el)) return; ev.preventDefault(); ev.stopPropagation(); hideProp(el.getAttribute("data-hid"), el.getAttribute("data-hlabel")); }
 let propCustomize=false;
-function setPropCustomize(on){ propCustomize=!!on; const el=$("propPreview"); if(el) el.classList.toggle("customize",propCustomize); renderProposalPreview(); }
+function setPropCustomize(on){ propCustomize=!!on; if(propCustomize&&hl.on){ hl.on=false; } const el=$("propPreview"); if(el) el.classList.toggle("customize",propCustomize); renderProposalPreview(); }
 function hideProp(key,label){ const c=cur(); if(!c) return; c.prop.hidden=c.prop.hidden||{}; c.prop.hidden[key]=label||key; save(); renderProposalPreview(); }
 function unhideProp(key){ const c=cur(); if(!c||!c.prop.hidden) return; delete c.prop.hidden[key]; save(); renderProposalPreview(); }
 function propShowAll(){ const c=cur(); if(!c) return; c.prop.hidden={}; save(); renderProposalPreview(); toast("Everything is back on the proposal"); }
@@ -2495,13 +2547,13 @@ function sheetCSS(W){ let css="";
     for(const r of rules){ if(r.type===1 && /#printSheet|^:root/.test(r.cssText)) css+=r.cssText+"\n"; } } }catch(e){}
   return css+`#printSheet{display:block!important;width:${W}px;box-sizing:border-box;padding:28px 32px;background:#fff;color:#343740;font-family:Arial,Helvetica,sans-serif;font-size:12px}
   #printSheet h1,#printSheet h2,#printSheet .brandbar .co,#printSheet .statline .v{font-family:Georgia,"Times New Roman",serif}`; }
-function buildSheetSVG(html,W){
+function buildSheetSVG(html,W,marks){
   const wrap=document.createElement("div"); wrap.id="printSheet"; wrap.innerHTML=html;
   const meas=document.createElement("div"); meas.style.cssText="position:fixed;left:-20000px;top:0;width:"+W+"px;background:#fff";
   const m2=wrap.cloneNode(true); m2.style.cssText="display:block;width:"+W+"px;box-sizing:border-box;padding:28px 32px"; meas.appendChild(m2); document.body.appendChild(meas);
-  const H=Math.max(400,(m2.scrollHeight||1400)+24); meas.remove();
+  const H=Math.max(400,(m2.scrollHeight||1400)+24); const over=hlExportSVG(m2, marks); meas.remove();
   const xhtml=new XMLSerializer().serializeToString(wrap);
-  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml"><style>${sheetCSS(W).replace(/</g,"\\3c ")}</style>${xhtml}</div></foreignObject></svg>`;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml"><style>${sheetCSS(W).replace(/</g,"\\3c ")}</style>${xhtml}</div></foreignObject>${over}</svg>`;
   return {svg,W,H}; }
 function sheetTitle(kind,c,r){ if(kind==="amort") return "Amortization Comparison"+(c&&c.name?" \u2014 "+c.name:""); if(kind==="present") return "Today vs New"+(c&&c.name?" \u2014 "+c.name:""); const multi=c&&kind==="proposal"&&propSelected(c).length>=2;
   return (kind==="compare"||multi?"Your Options":(r&&r.fc?"Cash-Out Proposal":r&&r.second?(r.secType==="heloc"?"HELOC Proposal":"Home Equity Loan Proposal"):"Savings Proposal"))+(c&&c.name?" \u2014 "+c.name:""); }
@@ -2512,7 +2564,7 @@ async function renderSheet(kind, snap){ const c=cur();
   const title= snap ? snap.title : sheetTitle(kind,c,r);
   if(!snap && (kind!=="amort" || c)) libraryAdd(kind, html, title);          /* every proposal that leaves the app is on record for that client */
   const name=title.replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"");
-  const {svg,W,H}=buildSheetSVG(html,880);
+  const {svg,W,H}=buildSheetSVG(html,880, (kind==="proposal"&&!snap&&c&&c.prop&&c.prop.marks)||null);
   const img=new Image(); await new Promise((ok,bad)=>{ img.onload=ok; img.onerror=()=>bad(new Error("render")); img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg); });
   /* texting limit: keep the JPG under ~480 KB. Try full size at good quality, then ease quality, then scale — text stays crisp well below 0.8. */
   const LIMIT=480*1024;
