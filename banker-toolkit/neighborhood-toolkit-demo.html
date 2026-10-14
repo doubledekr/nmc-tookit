@@ -913,7 +913,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.7.8";
+const TOOLKIT_VERSION = "1.7.9";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2552,6 +2552,11 @@ function sheetCSS(W){ let css="";
   try{ for(const sh of document.styleSheets){ let rules; try{ rules=sh.cssRules; }catch(e){ continue; }
     for(const r of rules){ if(r.type===1 && /#printSheet|^:root/.test(r.cssText)) css+=r.cssText+"\n"; } } }catch(e){}
   return css+`#printSheet{display:block!important;width:${W}px;box-sizing:border-box;padding:28px 32px;background:#fff;color:#343740;font-family:Arial,Helvetica,sans-serif;font-size:12px}
+  #printSheet .num{text-align:right;font-variant-numeric:tabular-nums}#printSheet .eyebrow{color:#A53222;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin-bottom:7px}
+  #printSheet .tag-good{background:#E3F1E7;color:#2E6B4F;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:600;display:inline-block;vertical-align:middle;line-height:1.7}
+  #printSheet .tag-warn{background:#FFF3C4;color:#8A6D00;border-radius:20px;padding:2px 10px;font-size:12px;font-weight:600;display:inline-block;vertical-align:middle;line-height:1.7}
+  #printSheet .tag-flat{background:#F4EFE6;border:1px solid #E2DCCF;color:#7A6F5B;border-radius:20px;padding:2px 10px;font-size:12px;display:inline-block;vertical-align:middle;line-height:1.7}
+  #printSheet .hint{font-size:10.5px;color:#666}
   #printSheet,#printSheet *{font-family:Arial,Helvetica,sans-serif!important}
   #printSheet h1,#printSheet h2,#printSheet h3,#printSheet .brandbar .co,#printSheet .statline .v,#printSheet .tchart h3,#printSheet .tot b,#printSheet .keep b,#printSheet .cashline b,#printSheet .recbox b.serif{font-family:Georgia,"Times New Roman",serif!important}`; }
 async function buildSheetSVG(html,W,marks){
