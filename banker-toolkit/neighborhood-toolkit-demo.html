@@ -913,7 +913,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.8.0";
+const TOOLKIT_VERSION = "1.8.1";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1483,6 +1483,9 @@ const SF_NMC={ "name":"name","email":"email","phone":"phone","phone +":"phone","
   "call back date":"callBack","market watch":"marketWatch","proposed rate":"propRate","proposed pi":"propPI","proposed piti":"propPITI","proposed loan amount":"propAmt","chosen lender":"chosenLender",
   "first name":"firstName","last name":"lastName","mobile phone":"phone","street":"street","city":"city","state":"state","zip":"zip",
   /* a converted lead's Loan (Opportunity) record */
+  "current balance of recent mortgage":"balance","monthly payment of recent mortgage":"paymentTotal","current mortgage interest rate":"rate","loan type of most recent mortgage":"mortType",
+  "open cc balance last 12 months":"ccBal","# of open cc trades":"ccCount","total balance of revolving debt":"ccBalAlt","monthly payment of hel":"helPay","amount of hel last year":"helBal","dti ratio":"dti","proposed program type/name":"propProgram",
+  "borrower first name":"firstName","borrower last name":"lastName","borrower email":"email","borrower phone":"phone","borrower cell":"phone","borrower mobile":"phone","account name":"nameAlt",
   "property taxes (annual)":"taxAnnual","hazard insurance (annual)":"insAnnual","total revolving debt":"ccBalAlt","# of liabilities":"liabCount","loan stage":"leadStatus","converted date":"convertedDate","application date":"appDate",
   "proposed program":"propProgram","new loan type":"propType","proposed apr":"propAPR","proposed total loan amount":"propAmtTotal","proposed term":"propTerm","skipped payments":"propSkip","lender credits":"lenderCredits","discount points":"points",
   "anticipated closing date":"closingDate","scheduled closing date":"closingDate2","rate locked date":"lockDate","rate lock expiration":"lockExp","occupancy":"occupancy","# of open mortgage trades":"mortCount" };
@@ -1531,6 +1534,7 @@ function parseSFText(text){
   const ph=(raw.phone||"").match(/(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/)||safe.match(/(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/); if(ph) found.phone=ph[0].trim();
   const n=v=>v==null||v===""?null:num(v);
   if(!raw.name && (raw.firstName||raw.lastName)) found.name=titleCase(((raw.firstName||"")+" "+(raw.lastName||"")).trim());
+  else if(!raw.name && raw.nameAlt) found.name=titleCase(raw.nameAlt.trim());   /* converted loan: the Account name */
   if(!raw.address && raw.street) found.address=[raw.street, raw.city, [raw.state, raw.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ");
   found.balance = n(raw.balance) ?? n(raw.balanceAlt) ?? n(raw.balanceAlt2);
   if(n(raw.balanceAlt2)>0 && found.balance>0 && n(raw.balanceAlt2)>found.balance) found.origAmount=n(raw.balanceAlt2);
