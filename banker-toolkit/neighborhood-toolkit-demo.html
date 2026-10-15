@@ -913,7 +913,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.8.1";
+const TOOLKIT_VERSION = "1.8.2";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1530,8 +1530,18 @@ function parseSFText(text){
   const safe=kept.join("\n");
   const found={};
   if(raw.name) found.name=titleCase(raw.name);
-  const em=(raw.email||"").match(/[\w.+-]+@[\w-]+\.[\w.]+/)||safe.match(/[\w.+-]+@[\w-]+\.[\w.]+/); if(em) found.email=em[0];
-  const ph=(raw.phone||"").match(/(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/)||safe.match(/(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/); if(ph) found.phone=ph[0].trim();
+  /* email / phone: the labeled field first. The free-text fallback only looks at the labeled pairs (not the "page text" dump, which
+     carries System Information — Created By, Loan Owner, Sonar partner — and would pass an NMC address off as the client's) and never
+     accepts an internal address or the banker's own number. */
+  const pairsOnly=safe.split("----- page text -----")[0]||safe; const st_=state.settings||{};
+  const internalEmail=e=>{ e=String(e||"").toLowerCase(); return /@(neighborhoodmc\.com|neighborhoodmortgage\.com|salesforce\.com|force\.com|imbus\.com|sonar\w*\.com)$/.test(e) || (st_.loEmail&&e===String(st_.loEmail).toLowerCase()); };
+  { let em=(raw.email||"").match(/[\w.+-]+@[\w-]+\.[\w.]+/); if(em&&internalEmail(em[0])) em=null;
+    if(!em){ const all=[...pairsOnly.matchAll(/[\w.+-]+@[\w-]+\.[\w.]+/g)].map(m=>m[0]).filter(e=>!internalEmail(e)); if(all.length) em=[all[0]]; }
+    if(em) found.email=em[0]; }
+  { const digits=v=>String(v||"").replace(/\D/g,"").slice(-10); const mine=digits(st_.loPhone);
+    let ph=(raw.phone||"").match(/(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/);
+    if(!ph){ const all=[...pairsOnly.matchAll(/(\+?1[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}/g)].map(m=>m[0]).filter(p=>!(mine&&digits(p)===mine)); if(all.length) ph=[all[0]]; }
+    if(ph&&!(mine&&digits(ph[0])===mine)) found.phone=ph[0].trim(); }
   const n=v=>v==null||v===""?null:num(v);
   if(!raw.name && (raw.firstName||raw.lastName)) found.name=titleCase(((raw.firstName||"")+" "+(raw.lastName||"")).trim());
   else if(!raw.name && raw.nameAlt) found.name=titleCase(raw.nameAlt.trim());   /* converted loan: the Account name */
