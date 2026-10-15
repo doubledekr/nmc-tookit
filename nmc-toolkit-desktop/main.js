@@ -88,7 +88,8 @@ ipcMain.handle("update:check", () => checkUpdates());
    Bound to loopback only, so nothing outside this computer can reach it. */
 const http = require("http");
 const SF_PORT = +(process.env.NMC_SF_PORT || 47831);
-let sfServer = null, sfLastAt = 0;
+let sfServer = null, sfLastAt = 0, sfExtSeen = "";
+function shippedExtVersion(){ try { const p = path.join(process.resourcesPath || __dirname, "chrome-extension", "manifest.json"); const alt = path.join(__dirname, "..", "chrome-extension", "manifest.json"); return JSON.parse(fs.readFileSync(fs.existsSync(p) ? p : alt, "utf8")).version || ""; } catch (e) { return ""; } }
 function startSfListener(){
   if (sfServer) return;
   sfServer = http.createServer((req, res) => {
@@ -99,8 +100,8 @@ function startSfListener(){
       let body = ""; req.on("data", c => { body += c; if (body.length > 2e6) req.destroy(); });
       req.on("end", () => { let j = null; try { j = JSON.parse(body); } catch (e) {}
         if (!j || typeof j.text !== "string") { res.writeHead(400, cors); res.end("bad payload"); return; }
-        sfLastAt = Date.now();
-        if (mainWin && !mainWin.isDestroyed()) { mainWin.webContents.send("sf:incoming", { text: j.text, url: j.url || "", title: j.title || "", when: j.when || new Date().toISOString(), source: j.source || "chrome-extension" }); if (mainWin.isMinimized()) mainWin.restore(); mainWin.focus(); }
+        sfLastAt = Date.now(); if (typeof j.extVersion === "string") sfExtSeen = j.extVersion.slice(0, 20);
+        if (mainWin && !mainWin.isDestroyed()) { mainWin.webContents.send("sf:incoming", { text: j.text, url: j.url || "", title: j.title || "", when: j.when || new Date().toISOString(), source: j.source || "chrome-extension", pairs: +j.pairs || 0, via: j.via || "", apiPairs: +j.apiPairs || 0, obj: typeof j.obj === "string" ? j.obj.slice(0, 20) : "", extVersion: sfExtSeen }); if (mainWin.isMinimized()) mainWin.restore(); mainWin.focus(); }
         res.writeHead(200, Object.assign({ "Content-Type": "application/json" }, cors)); res.end(JSON.stringify({ ok: true, version: app.getVersion() })); });
       return; }
     res.writeHead(404, cors); res.end();
@@ -108,7 +109,7 @@ function startSfListener(){
   sfServer.on("error", e => { console.error("SF listener failed on port " + SF_PORT + ": " + e.message); sfServer = null; });
   sfServer.listen(SF_PORT, "127.0.0.1");
 }
-ipcMain.on("sf:statusSync", e => { e.returnValue = { listening: !!sfServer && sfServer.listening, port: SF_PORT, lastAt: sfLastAt }; });
+ipcMain.on("sf:statusSync", e => { e.returnValue = { listening: !!sfServer && sfServer.listening, port: SF_PORT, lastAt: sfLastAt, extSeen: sfExtSeen, extShipped: shippedExtVersion() }; });
 ipcMain.handle("sf:openExtensionFolder", () => { const p = path.join(process.resourcesPath || __dirname, "chrome-extension"); const alt = path.join(__dirname, "..", "chrome-extension"); return shell.openPath(fs.existsSync(p) ? p : alt); });
 ipcMain.on("sf:extensionPathSync", e => { const p = path.join(process.resourcesPath || __dirname, "chrome-extension"); const alt = path.join(__dirname, "..", "chrome-extension"); e.returnValue = fs.existsSync(p) ? p : alt; });
 /* brand images for proposals: download in the main process (no CORS), hand back data URLs; only neighborhoodmc.com */

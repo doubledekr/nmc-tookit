@@ -1436,7 +1436,7 @@ function renderPipeline(){
   const inbox=(state.inbox||[]);
   const ib = inbox.length? `<div style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px">
     <b>New from Salesforce (${inbox.length})</b>
-    ${inbox.map(it=>`<div class="btnrow" style="margin-top:6px"><span><b>${esc(it.fields.name)}</b>${it.fields.balance?` \u00b7 ${money(num(it.fields.balance))}`:""}${it.fields.rate?` @ ${pct(num(it.fields.rate))}`:""}${it.fields.leadStatus?` \u00b7 ${esc(it.fields.leadStatus)}`:""}${it.source==="chrome-extension"?` <span class="tag-flat">via Chrome${it.pairs?" \u00b7 "+it.pairs+" fields read, "+Object.keys(it.fields||{}).length+" recognized":""}</span>`:""}</span><span style="flex:1"></span>
+    ${inbox.map(it=>`<div class="btnrow" style="margin-top:6px"><span><b>${esc(it.fields.name)}</b>${it.fields.balance?` \u00b7 ${money(num(it.fields.balance))}`:""}${it.fields.rate?` @ ${pct(num(it.fields.rate))}`:""}${it.fields.leadStatus?` \u00b7 ${esc(it.fields.leadStatus)}`:""}${it.converted?` <span class="tag-good" title="The lead was converted in Salesforce \u2014 this is the loan record, the most current numbers">Converted loan</span>`:""}${it.source==="chrome-extension"?` <span class="tag-flat">via Chrome${it.pairs?" \u00b7 "+it.pairs+" fields read, "+Object.keys(it.fields||{}).length+" recognized":""}</span>`:""}</span><span style="flex:1"></span>
       <button class="btn small" onclick="importInbox('${it.id}')">Import</button><button class="btn ghost small" onclick="ackInbox('${it.id}')">Ignore</button></div>`).join("")}</div>` : "";
   $("pipeTable").innerHTML = ib + bar + seasonBar + futBar + rwBar + (!rows.length ? `<div class="empty">${pipeView!=="all"?"Nothing in this view right now \u2014 that can change with the next rate push.":"No pipeline clients yet. Add one, paste a Salesforce record, or load the samples in Settings."}</div>` :
   `<table class="data"><thead><tr>${th("name","Client")}${th("status","Status")}${th("loanType","Type")}${th("balance","Balance","num")}${th("rate","Rate","num")}${th("payment","P&amp;I","num")}${th("followUp","Follow-up")}<th>Opportunity</th><th></th></tr></thead><tbody>`+
@@ -1481,15 +1481,27 @@ const SF_NMC={ "name":"name","email":"email","phone":"phone","phone +":"phone","
   "heloc balance":"helocBal","heloc payment":"helocPay","heloc credit limit":"helocLimit","revolving debt payment":"ccPay3","total installment debt":"instBal2",
   "total monthly debt":"totalDebtPay","dti":"dti","refi or purchase":"purpose","transaction type":"txType","target rate":"rateToBeat","cash out amount":"cashOut",
   "call back date":"callBack","market watch":"marketWatch","proposed rate":"propRate","proposed pi":"propPI","proposed piti":"propPITI","proposed loan amount":"propAmt","chosen lender":"chosenLender",
-  "first name":"firstName","last name":"lastName","mobile phone":"phone","street":"street","city":"city","state":"state","zip":"zip" };
+  "first name":"firstName","last name":"lastName","mobile phone":"phone","street":"street","city":"city","state":"state","zip":"zip",
+  /* a converted lead's Loan (Opportunity) record */
+  "property taxes (annual)":"taxAnnual","hazard insurance (annual)":"insAnnual","total revolving debt":"ccBalAlt","# of liabilities":"liabCount","loan stage":"leadStatus","converted date":"convertedDate","application date":"appDate",
+  "proposed program":"propProgram","new loan type":"propType","proposed apr":"propAPR","proposed total loan amount":"propAmtTotal","proposed term":"propTerm","skipped payments":"propSkip","lender credits":"lenderCredits","discount points":"points",
+  "anticipated closing date":"closingDate","scheduled closing date":"closingDate2","rate locked date":"lockDate","rate lock expiration":"lockExp","occupancy":"occupancy","# of open mortgage trades":"mortCount" };
 /* never captured, never previewed, never stored */
 const SF_NEVER=["ssn","social security","social security number","birthdate","date of birth","dob","age","marital status"];
+const SF_NEVER_RE=/\b(ssn|social security|birth ?date|date of birth|dob|age|marital|income|salary|employer)\b/i;   /* "Borrower SSN", "Co-Borrower DOB", "Borrower Income"\u2026 */
+function sfNever(l){ return SF_NEVER.includes(l) || (SF_NEVER_RE.test(l) && l.length<60); }
+/* strip the same things from raw Salesforce text before it is stored anywhere (the extension already does this on the page; belt and braces) */
+function scrubSF(text){ const out=[]; const lines=String(text||"").split(/\r?\n/);
+  for(let i=0;i<lines.length;i++){ const l=lines[i].trim();
+    if(SF_NEVER_RE.test(l) && l.length<60 && !/[$]\s?\d/.test(l)){ const m=l.match(/^([^:]{1,50}):\s*(.+)$/); if(m&&SF_NEVER_RE.test(m[1])) continue; if(!m){ i++; continue; } }
+    out.push(lines[i]); }
+  return out.join("\n").replace(/\b\d{3}-\d{2}-\d{4}\b/g,"\u2022\u2022\u2022-\u2022\u2022-\u2022\u2022\u2022\u2022").replace(/(?<![\d$,.])\d{9}(?![\d,.])/g,"\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"); }
 const SF_NOISE=/^(tabs|\*.*|client details.*|client information|i\.p\.a\.c\.t\.?|-{2,})$/i;
 const sfNorm=s=>String(s||"").trim().toLowerCase().replace(/[*:]+$/,"").trim();
-function sfKey(label){ const l=sfNorm(label); if(SF_NEVER.includes(l)) return "__never"; if(SF_NMC[l]) return SF_NMC[l];
+function sfKey(label){ const l=sfNorm(label); if(sfNever(l)) return "__never"; if(SF_NMC[l]) return SF_NMC[l];
   const map=state.settings.sfMap; for(const f in map) if(map[f].some(a=>l===a.toLowerCase())) return f; return null; }
 function sfIsLabel(line){ const l=sfNorm(line); if(!l) return false;
-  if(SF_NMC[l]||SF_NEVER.includes(l)) return true;
+  if(SF_NMC[l]||sfNever(l)) return true;
   const map=state.settings.sfMap; for(const f in map) if(map[f].some(a=>l===a.toLowerCase())) return true;
   return /:$/.test(line.trim()); }
 function titleCase(s){ return s===s.toUpperCase()? s.toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase()) : s; }
@@ -3133,18 +3145,21 @@ function bmLater(){ $("bmModal").style.display="none"; }
 function bmCopyCode(){ const src=$("sfBmLink"); const code=src?decodeURIComponent(src.getAttribute("href")):""; if(!code) return;
   (navigator.clipboard&&navigator.clipboard.writeText ? navigator.clipboard.writeText(code) : Promise.reject()).then(()=>toast("Bookmark code copied \u2014 paste it as the bookmark\u2019s URL"),()=>prompt("Copy this:",code)); }
 /* Chrome extension → desktop listener → here: parse like a paste, drop it in the Pipeline inbox, and open the preview */
-function sfIncoming(p){ if(!p||!p.text) return;
+function sfIncoming(p){ if(!p||!p.text) return; p.text=scrubSF(p.text); if(p.extVersion) state.extSeen=p.extVersion;
   try{ parseSFText(p.text); }catch(e){ toast("Couldn\u2019t read that Salesforce page"); return; }
   const F=(lastSF&&lastSF.fields)||{}; const debts=(lastSF&&lastSF.debts)||[];
   const id="ext"+Date.now().toString(36);
   state.inbox=(state.inbox||[]).filter(x=>!(x.source==="chrome-extension"&&x.fields&&F.name&&x.fields.name===F.name));   /* resend replaces */
   const pairs = p.pairs>0 ? p.pairs : Math.max(0, Math.floor(((p.text.split("----- page text -----")[0]||"").trim().split(/\n/).length)/2));
-  state.inbox.unshift({id, fields:F, debts, text:p.text, pairs, when:p.when||new Date().toISOString(), source:"chrome-extension", url:p.url||""});
+  const converted = p.obj==="Opportunity" || /\/Opportunity\/006/.test(p.url||"");
+  state.inbox.unshift({id, fields:F, debts, text:p.text, pairs, when:p.when||new Date().toISOString(), source:"chrome-extension", url:p.url||"", converted});
   save(); go("pipeline"); renderPipeline(); renderExtStatus();
-  toast("From Salesforce: "+(F.name||"lead")+" \u2014 "+pairs+" fields read, "+Object.keys(F).length+" recognized. Top of your Pipeline."); }
+  toast("From Salesforce: "+(F.name||"lead")+(converted?" (converted loan)":"")+" \u2014 "+pairs+" fields read, "+Object.keys(F).length+" recognized. Top of your Pipeline."); }
 function renderExtStatus(){ const el=$("extStatus"), ep=$("extPath"); if(!el||!DESK||!DESK.sfStatus) return;
   let st=null; try{ st=DESK.sfStatus(); }catch(e){}
-  el.innerHTML = !st ? "" : st.listening ? `<span class="tag-good">Listening for the extension on 127.0.0.1:${st.port}</span>${st.lastAt?` \u00b7 last lead received ${new Date(st.lastAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}`:" \u00b7 nothing received yet"}` : `<span class="tag-warn">Listener couldn\u2019t start on port ${st.port}</span> \u2014 another program may be using it`;
+  const seen=st&&(st.extSeen||state.extSeen); const stale = seen && st.extShipped && seen!==st.extShipped;
+  const staleMsg = stale ? `<div class="hint" style="color:var(--warn);margin-top:4px"><b>Chrome is still running extension v${esc(seen)}</b> \u2014 this app ships v${esc(st.extShipped)}. Restart Chrome, or open chrome://extensions and click Reload on the NMC extension, to pick up the new one.</div>` : "";
+  el.innerHTML = !st ? "" : st.listening ? `<span class="tag-good">Listening for the extension on 127.0.0.1:${st.port}</span>${st.lastAt?` \u00b7 last lead received ${new Date(st.lastAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}`:" \u00b7 nothing received yet"}${seen?` \u00b7 extension v${esc(seen)}`:""}${staleMsg}` : `<span class="tag-warn">Listener couldn\u2019t start on port ${st.port}</span> \u2014 another program may be using it`;
   if(ep){ let p=""; try{ p=DESK.extensionPath()||""; }catch(e){} ep.textContent=p; } }
 async function fetchBrandAssets(force){ const s=state.settings; s.assets=s.assets||{};
   const urls=[BRAND_ASSETS.badge].concat(BRAND_ASSETS.awards).filter(u=>force||!s.assets[u]); if(!urls.length) return s.assets;
@@ -3497,7 +3512,8 @@ function importInbox(id){ const it=(state.inbox||[]).find(x=>x.id===id); if(!it)
   state.currentId = match? match.id : null;
   save(); refreshAll(); go("client"); const text=it.text||recordToSFText(F); $("sfPaste").value=text; parseSFText(text);
   ackInbox(id);
-  toast(match? "Salesforce record loaded \u2014 changed fields are checked; apply when ready" : "New record \u2014 review, then \u201cCreate new client from this\u201d"); }
+  toast(it.converted ? (match? "Converted loan loaded \u2014 these are the latest numbers; changed fields are checked, apply to overwrite" : "Converted loan \u2014 no matching client here; review, then \u201cCreate new client from this\u201d")
+     : match? "Salesforce record loaded \u2014 changed fields are checked; apply when ready" : "New record \u2014 review, then \u201cCreate new client from this\u201d"); }
 async function heartbeat(){ const nm=state.settings.loName||"Banker";
  const b=apiBase();
  if(b){ try{ const r=await fetch(b+"/api/heartbeat",{method:"POST",headers:{"Content-Type":"application/json"},

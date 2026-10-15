@@ -1,7 +1,8 @@
 /* NMC Toolkit — Salesforce content script.
    Reads the open lead the same way the bookmarklet does (every label/value pair, hidden sections included),
    then hands the text to the background worker, which posts it to the desktop app on this computer.
-   Nothing is sent anywhere else. SSN, birthdate, age and marital status are dropped by the toolkit's parser. */
+   Nothing is sent anywhere else. SSN, birthdate, age, marital status and income are stripped here before anything leaves the page,
+   and dropped again by the toolkit's parser. Works on a Lead (00Q) and on a converted lead's Loan / Opportunity (006). */
 (function(){
   if(window.__nmcExt) return; window.__nmcExt=true;
   const TOP = window.top===window;
@@ -34,8 +35,17 @@
     harvest(document);
     var raw=it(document.body);
     if(fr)fr.remove();
-    return {pairs:pairs.length, text: pairs.length?pairs.join('\n')+'\n\n----- page text -----\n'+raw:raw};
+    pairs=pairs.filter(function(p){ return !NEVER_RE.test(p.split('\n')[0]); });
+    return {pairs:pairs.length, text: scrub(pairs.length?pairs.join('\n')+'\n\n----- page text -----\n'+raw:raw)};
   }
+  /* ---- never leaves the page: a label that names SSN / birthdate / age / marital status / income, the value line under it,
+     and anything shaped like an SSN anywhere in the text ---- */
+  const NEVER_RE=/\b(ssn|social security|birth ?date|date of birth|dob|age|marital|income|salary|employer)\b/i;
+  function scrub(text){ const out=[]; const lines=String(text||'').split(/\r?\n/);
+    for(let i=0;i<lines.length;i++){ const l=lines[i].trim();
+      if(NEVER_RE.test(l) && l.length<60 && !/[$]\s?\d/.test(l)){ const m=l.match(/^([^:]{1,50}):\s*(.+)$/); if(m&&NEVER_RE.test(m[1])) continue; if(!m){ i++; continue; } }
+      out.push(lines[i]); }
+    return out.join('\n').replace(/\b\d{3}-\d{2}-\d{4}\b/g,'\u2022\u2022\u2022-\u2022\u2022-\u2022\u2022\u2022\u2022').replace(/(?<![\d$,.])\d{9}(?![\d,.])/g,'\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022'); }
 
   /* ---- UI: a floating button on lead/record pages (top frame only) ---- */
   function toast(msg, ok){ if(!TOP) return; let t=document.querySelector('.nmc-ext-toast'); if(!t){ t=document.createElement('div'); t.className='nmc-ext-toast'; document.body.appendChild(t); }
@@ -67,32 +77,58 @@
     ['Status','Lead Status'],['LeadSource','Lead Source'],['Loan_Type__c','Refi or Purchase'],['Transaction_Type__c','Transaction Type'],['Rate_to_Beat__c','Rate to Beat'],['imbus__Target_Rate__c','Target Rate'],['Cash_Out_Amount__c','Cash Out Amount'],['Occupancy__c','Occupancy'],['Br_Occupancy__c','Occupancy BR'],['Call_Back_Date__c','Call Back Date'],['Market_Watch__c','Market Watch'],
     ['Proposed_Rate__c','Proposed Rate'],['Proposed_PI__c','Proposed PI'],['Proposed_PITI__c','Proposed PITI'],['Proposed_Loan_Amount__c','Proposed Loan Amount'],['Chosen_Lender__c','Chosen Lender']
   ];
-  function leadIdFromUrl(){ const m=location.href.match(/\b00Q[a-zA-Z0-9]{12,15}\b/); return m?m[0]:null; }
+  /* ---- a converted lead: Salesforce keeps the loan on the Opportunity ("Loan" page, 006 id). Same idea, its own allowlist.
+     Labels are chosen to match what the toolkit's parser already understands. ---- */
+  const API_FIELDS_OPP = [
+    ['imbus__Borrower_First_Name__c','First Name'],['imbus__Borrower_Last_Name__c','Last Name'],['imbus__Borrower_Email__c','Email'],['imbus__Borrower_Phone__c','Phone'],['Phone2__c','Phone 2'],
+    ['Subject_Property_Address__c','Subject Property Address'],['imbus__Property_State__c','State'],
+    ['Current_Balance_of_Recent_Mortgage__c','Current Mortgage Balance'],['Current_Mortgage_Interest_Rate__c','Current Rate'],['Monthly_Payment_of_Recent_Mortgage__c','Current Monthly Payment'],
+    ['Loan_Type_of_Most_Recent_Mortgage__c','Current Loan Type'],['Number_of_Open_Mortgage_Trades__c','# of Open Mortgage Trades'],
+    ['imbus__Est_Property_Value__c','Property Value'],['imbus__Appraised_Value__c','Appraisal Value'],['imbus__LTV__c','LTV'],['FICO_Score__c','FICO Score'],
+    ['imbus__Property_Taxes__c','Property Taxes (annual)'],['imbus__Property_Hazard__c','Hazard Insurance (annual)'],
+    ['Open_CC_Balance_Last_12_Months__c','Balance of Open CCs'],['Number_of_Open_CC_Trades__c','# of Open CCs'],['Revolving_Debt_Payment__c','Revolving Debt Payment'],['Total_Balance_of_Revolving_Debt__c','Total Revolving Debt'],
+    ['Total_Installment_Debt__c','Total Installment Debt'],['Total_Installment_Debt_Payments__c','Total Installment Debt Payments'],['Total_of_Liabilities__c','# of Liabilities'],
+    ['Monthly_Payment_of_HEL__c','HEL Monthly Payment'],['Amount_of_HEL_Last_Year__c','HEL Balance'],['DTI_Ratio__c','DTI'],
+    ['LeadSource','Lead Source'],['StageName','Loan Stage'],['Converted_Date__c','Converted Date'],['imbus__Application_Date__c','Application Date'],['imbus__Loan_Purpose__c','Loan Purpose'],['Loan_Type__c','Refi or Purchase'],
+    ['Proposed_Program_Type__c','Proposed Program'],['imbus__Loan_Type__c','New Loan Type'],['imbus__Interest_Rate__c','Proposed Rate'],['Interest_Rate__c','Proposed Rate'],['APR_Quote__c','Proposed APR'],
+    ['imbus__Loan_Amount__c','Proposed Loan Amount'],['imbus__Total_Loan_Amount__c','Proposed Total Loan Amount'],['imbus__Loan_Term__c','Proposed Term'],['Skipped_Payments__c','Skipped Payments'],
+    ['imbus__Chosen_Lender__c','Chosen Lender'],['imbus__Lender_Credits__c','Lender Credits'],['Loan_Discount_Points__c','Discount Points'],
+    ['Anticipated_Closing_Date__c','Anticipated Closing Date'],['Scheduled_Closing_Date__c','Scheduled Closing Date'],['Rate_Locked_Date__c','Rate Locked Date'],['Rate_Lock_Expiration_Date__c','Rate Lock Expiration'],['imbus__Occupancy_Type__c','Occupancy']
+  ];
+  /* page-agnostic: whatever record is open (Lead, Loan/Opportunity, Contact, Account…), ask the UI API for it and keep only
+     fields on the one combined allowlist. A field that doesn't exist on that object simply isn't returned. */
+  const API_FIELDS_ALL = API_FIELDS.concat(API_FIELDS_OPP);
+  const OBJ_BY_PREFIX={'00Q':'Lead','006':'Opportunity','003':'Contact','001':'Account'};
+  function recordFromUrl(){ let m=location.href.match(/\/lightning\/r\/([A-Za-z0-9_]+)\/([a-zA-Z0-9]{15,18})\b/); if(m) return {id:m[2], obj:m[1]};
+    m=location.href.match(/\b(00Q|006|003|001)([a-zA-Z0-9]{12,15})\b/); if(m) return {id:m[1]+m[2], obj:OBJ_BY_PREFIX[m[1]]||''}; return null; }
+  function leadIdFromUrl(){ const r=recordFromUrl(); return r?r.id:null; }
   async function apiLead(){
-    const id=leadIdFromUrl(); if(!id) return null;
+    const rec0=recordFromUrl(); if(!rec0) return null; const id=rec0.id; const FIELDS=API_FIELDS_ALL;
     const r=await fetch('/services/data/v61.0/ui-api/record-ui/'+id+'?layoutTypes=Full&modes=View',{credentials:'same-origin'}); if(!r.ok) throw new Error('UI API '+r.status);
     const j=await r.json(); const rec=j.records&&j.records[id]; if(!rec||!rec.fields) throw new Error('no record');
-    const lines=[]; let n=0;
-    for(const [api,label] of API_FIELDS){ const f=rec.fields[api]; if(!f) continue; let v=f.value; if(v==null||v==='') continue;
+    const lines=[]; let n=0; const seen={};
+    for(const [api,label] of FIELDS){ const f=rec.fields[api]; if(!f) continue; let v=f.value; if(v==null||v==='') continue; if(seen[label]) continue;
       if(typeof v==='object'){ v=f.displayValue||''; if(!v) continue; }
       if(typeof v==='boolean') v=v?'Yes':'No';
-      lines.push(label+'\n'+String(v).replace(/\s+/g,' ').trim()); n++; }
+      seen[label]=1; lines.push(label+'\n'+String(v).replace(/\s+/g,' ').trim()); n++; }
     if(!n) return null;
-    return {pairs:n, text:lines.join('\n'), id};
+    return {pairs:n, text:lines.join('\n'), id, obj:(j.records[id].apiName||rec0.obj)};
   }
+  function extVersion(){ try{ return chrome.runtime.getManifest().version; }catch(e){ return ''; } }
 
   /* Lightning collapses sections (and the bookmarklet is usually clicked after the banker scrolled around): open them first */
   function expandSections(){ let n=0; try{ document.querySelectorAll('button.slds-section__title-action[aria-expanded="false"], .slds-section:not(.slds-is-open) .slds-section__title-action, button[aria-expanded="false"].test-id__section-header-button').forEach(b=>{ try{ b.click(); n++; }catch(e){} }); }catch(e){} return n; }
   function readLead(){ const opened=expandSections(); return new Promise(res=>setTimeout(async()=>{ const h=harvestPage(); h.opened=opened; h.via='page';
-      try{ const a=await apiLead(); if(a){ h.text=a.text+'\n'+h.text; h.pairs=a.pairs+h.pairs; h.apiPairs=a.pairs; h.via='api'; } }catch(e){ h.apiError=e.message; }
+      const r0=recordFromUrl(); h.obj=r0?r0.obj:'';
+      try{ const a=await apiLead(); if(a){ h.text=a.text+'\n'+h.text; h.pairs=a.pairs+h.pairs; h.apiPairs=a.pairs; h.via='api'; h.obj=a.obj; } }catch(e){ h.apiError=e.message; }
       res(h); }, opened?500:0)); }
   function send(cb){ readLead().then(h=>{
     if(!h.text||h.text.length<40){ toast('Nothing to read here \u2014 open a lead or contact record first.', false); if(cb) cb({ok:false,pairs:0,error:'nothing to read'}); return; }
     toast('Read '+h.pairs+' fields'+(h.via==='api'?' ('+h.apiPairs+' direct from the record)':h.apiError?' (record lookup failed: '+h.apiError+')':'')+' \u2014 sending to the NMC toolkit\u2026', true);
     if(!alive()){ toast('The NMC extension was updated \u2014 reload this page (F5) and click again.', false); if(cb) cb({ok:false,pairs:h.pairs,error:'extension reloaded'}); return; }
-    try{ chrome.runtime.sendMessage({type:'nmc:send', text:h.text, url:location.href, title:document.title, pairs:h.pairs, via:h.via, apiPairs:h.apiPairs||0}, res=>{
+    try{ chrome.runtime.sendMessage({type:'nmc:send', text:h.text, url:location.href, title:document.title, pairs:h.pairs, via:h.via, apiPairs:h.apiPairs||0, obj:h.obj||'', extVersion:extVersion()}, res=>{
       if(chrome.runtime.lastError){ toast('Extension error: '+chrome.runtime.lastError.message, false); if(cb) cb({ok:false,pairs:h.pairs,error:chrome.runtime.lastError.message}); return; }
-      if(res&&res.ok) toast('Sent '+h.pairs+' fields to the NMC toolkit \u2014 top of your Pipeline as New from Salesforce.', true);
+      if(res&&res.ok) toast('Sent '+h.pairs+' fields'+(h.obj==='Opportunity'?' from the converted loan':(h.obj==='Contact'||h.obj==='Account')?' from the '+h.obj.toLowerCase()+' (open the Loan or Lead record for the full numbers)':'')+' to the NMC toolkit \u2014 top of your Pipeline as New from Salesforce.', true);
       else if(res&&res.copied) toast('Toolkit app isn\u2019t running \u2014 copied '+h.pairs+' fields to the clipboard instead. Use Paste from clipboard & parse.', false);
       else toast('Couldn\u2019t reach the toolkit app'+(res&&res.error?': '+res.error:'')+'. Is NMC Toolkit open?', false);
       if(cb) cb(Object.assign({pairs:h.pairs,chars:h.text.length,via:h.via,apiPairs:h.apiPairs||0,apiError:h.apiError},res||{}));
