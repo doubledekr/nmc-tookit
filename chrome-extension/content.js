@@ -43,7 +43,7 @@
   const NEVER_RE=/\b(ssn|social security|birth ?date|date of birth|dob|age|marital|income|salary|employer)\b/i;
   function scrub(text){ const out=[]; const lines=String(text||'').split(/\r?\n/);
     for(let i=0;i<lines.length;i++){ const l=lines[i].trim();
-      if(NEVER_RE.test(l) && l.length<60 && !/[$]\s?\d/.test(l)){ const m=l.match(/^([^:]{1,50}):\s*(.+)$/); if(m&&NEVER_RE.test(m[1])) continue; if(!m){ i++; continue; } }
+      if(NEVER_RE.test(l) && l.length<80 && !/[$]\s?\d/.test(l)){ if(/^[A-Za-z #\-\/()'?.]+$/.test(l)) i++; continue; }   /* bare label: drop it and its value line; label+value on one line: drop the line */
       out.push(lines[i]); }
     return out.join('\n').replace(/\b\d{3}-\d{2}-\d{4}\b/g,'\u2022\u2022\u2022-\u2022\u2022-\u2022\u2022\u2022\u2022').replace(/(?<![\d$,.])\d{9}(?![\d,.])/g,'\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022'); }
 

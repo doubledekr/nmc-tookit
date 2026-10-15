@@ -913,7 +913,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.7.9";
+const TOOLKIT_VERSION = "1.8.0";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1493,7 +1493,7 @@ function sfNever(l){ return SF_NEVER.includes(l) || (SF_NEVER_RE.test(l) && l.le
 /* strip the same things from raw Salesforce text before it is stored anywhere (the extension already does this on the page; belt and braces) */
 function scrubSF(text){ const out=[]; const lines=String(text||"").split(/\r?\n/);
   for(let i=0;i<lines.length;i++){ const l=lines[i].trim();
-    if(SF_NEVER_RE.test(l) && l.length<60 && !/[$]\s?\d/.test(l)){ const m=l.match(/^([^:]{1,50}):\s*(.+)$/); if(m&&SF_NEVER_RE.test(m[1])) continue; if(!m){ i++; continue; } }
+    if(SF_NEVER_RE.test(l) && l.length<80 && !/[$]\s?\d/.test(l)){ if(/^[A-Za-z #\-\/()'?.]+$/.test(l)) i++; continue; }   /* bare label: drop it and its value line; label+value on one line: drop the line */
     out.push(lines[i]); }
   return out.join("\n").replace(/\b\d{3}-\d{2}-\d{4}\b/g,"\u2022\u2022\u2022-\u2022\u2022-\u2022\u2022\u2022\u2022").replace(/(?<![\d$,.])\d{9}(?![\d,.])/g,"\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022"); }
 const SF_NOISE=/^(tabs|\*.*|client details.*|client information|i\.p\.a\.c\.t\.?|-{2,})$/i;
