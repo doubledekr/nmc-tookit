@@ -57,7 +57,7 @@
   const API_FIELDS = [
     ['FirstName','First Name'],['LastName','Last Name'],['Email','Email'],['Email_2__c','Email #2'],['Phone','Phone'],['MobilePhone','Mobile Phone'],['Phone_2__c','Phone +'],
     ['Street','Street'],['City','City'],['State','State'],['PostalCode','Zip'],
-    ['Current_Balance_Of_1st_Mortgage__c','Current Mortgage Balance'],['Current_Balance_of_Most_Recent_Mortgage__c','Total Mortgage(s) Balance'],['imbus__Current_Loan_Balance__c','Current Loan Balance'],
+    ['Open_Mortgage_Balance__c','Open Mortgage Balance'],['Current_Balance_Of_1st_Mortgage__c','Current Mortgage Balance'],['Current_Balance_of_Most_Recent_Mortgage__c','Total Mortgage(s) Balance'],['imbus__Current_Loan_Balance__c','Current Loan Balance'],
     ['Current_Mortgage_Interest_Rate__c','Interest Rate'],['First_Mortgage_Interest_Rate__c','First Mortgage Interest Rate'],['imbus__CurrentNoteRate__c','Current Rate'],
     ['Monthly_Payment_of_Recent_Mortgage__c','Mortgage Payment'],['Monthly_payment_of_1st_Mortgage__c','Monthly Payment of 1st Mortgage'],['imbus__Current_Monthly_Payment__c','Current Monthly Payment'],
     ['Estimated_Monthly_P_and_I__c','Estimated Monthly P and I'],['imbus__Current_P_I__c','Current P & I'],

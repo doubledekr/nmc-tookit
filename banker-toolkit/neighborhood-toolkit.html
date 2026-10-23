@@ -913,7 +913,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.8.2";
+const TOOLKIT_VERSION = "1.8.3";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1460,7 +1460,7 @@ function labelToField(label){
 /* NMC Salesforce profile — exact field labels as they paste (label on one line, value on the next).
    Anything not listed falls back to the editable label map in Settings for other CRMs. */
 const SF_NMC={ "name":"name","email":"email","phone":"phone","phone +":"phone","phone 2":"phone","phone 3":"phone",
-  "total mortgage(s) balance":"balance","open mortgage balance":"balanceAlt","current loan amount":"balanceAlt2","loan amount":"balanceAlt2",
+  "open mortgage balance":"balance","total mortgage(s) balance":"balanceTotal","current loan amount":"balanceAlt2","loan amount":"balanceAlt2",
   "interest rate":"rate","mortgage payment":"paymentTotal","property value":"value","fico score":"fico",
   "first mortgage servicer":"servicer","subject property address":"address","property address":"address","lead source":"leadSource","mortgage loan type":"mortType","lead status":"leadStatus",
   "close date":"closeDate","months since close date":"monthsSince","loan purpose":"purpose","rate to beat":"rateToBeat",
@@ -1469,7 +1469,7 @@ const SF_NMC={ "name":"name","email":"email","phone":"phone","phone +":"phone","
   "total loan(s) balance":"instBal","# of loans":"loanCount","total installment debt payments":"instPay",
   "occupancy br":"occupancy","email #2":"email2",
   /* fields the Chrome extension reads straight from the Salesforce record */
-  "current mortgage balance":"balance","current loan balance":"balance","first mortgage interest rate":"rate","current rate":"rate",
+  "current mortgage balance":"balance1st","current loan balance":"balance1st","first mortgage interest rate":"rate","current rate":"rate",
   "monthly payment of 1st mortgage":"paymentTotalAlt","current monthly payment":"paymentTotalAlt",
   "estimated monthly p and i":"payment","current p & i":"payment","current p &amp; i":"payment",
   "annual tax amount":"taxAnnual","current property tax - monthly":"taxMonthly","current hazard insurance - monthly":"insMonthly","current mortgage insurance payment":"miMonthly",
@@ -1483,7 +1483,7 @@ const SF_NMC={ "name":"name","email":"email","phone":"phone","phone +":"phone","
   "call back date":"callBack","market watch":"marketWatch","proposed rate":"propRate","proposed pi":"propPI","proposed piti":"propPITI","proposed loan amount":"propAmt","chosen lender":"chosenLender",
   "first name":"firstName","last name":"lastName","mobile phone":"phone","street":"street","city":"city","state":"state","zip":"zip",
   /* a converted lead's Loan (Opportunity) record */
-  "current balance of recent mortgage":"balance","monthly payment of recent mortgage":"paymentTotal","current mortgage interest rate":"rate","loan type of most recent mortgage":"mortType",
+  "current balance of recent mortgage":"balance1st","monthly payment of recent mortgage":"paymentTotal","current mortgage interest rate":"rate","loan type of most recent mortgage":"mortType",
   "open cc balance last 12 months":"ccBal","# of open cc trades":"ccCount","total balance of revolving debt":"ccBalAlt","monthly payment of hel":"helPay","amount of hel last year":"helBal","dti ratio":"dti","proposed program type/name":"propProgram",
   "borrower first name":"firstName","borrower last name":"lastName","borrower email":"email","borrower phone":"phone","borrower cell":"phone","borrower mobile":"phone","account name":"nameAlt",
   "property taxes (annual)":"taxAnnual","hazard insurance (annual)":"insAnnual","total revolving debt":"ccBalAlt","# of liabilities":"liabCount","loan stage":"leadStatus","converted date":"convertedDate","application date":"appDate",
@@ -1546,7 +1546,8 @@ function parseSFText(text){
   if(!raw.name && (raw.firstName||raw.lastName)) found.name=titleCase(((raw.firstName||"")+" "+(raw.lastName||"")).trim());
   else if(!raw.name && raw.nameAlt) found.name=titleCase(raw.nameAlt.trim());   /* converted loan: the Account name */
   if(!raw.address && raw.street) found.address=[raw.street, raw.city, [raw.state, raw.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ");
-  found.balance = n(raw.balance) ?? n(raw.balanceAlt) ?? n(raw.balanceAlt2);
+  /* first-mortgage balance: Open Mortgage Balance first, then the 1st-mortgage field, then Total Mortgage(s) (which can include a 2nd lien), then the loan amount */
+  found.balance = n(raw.balance) ?? n(raw.balance1st) ?? n(raw.balanceTotal) ?? n(raw.balanceAlt2);
   if(n(raw.balanceAlt2)>0 && found.balance>0 && n(raw.balanceAlt2)>found.balance) found.origAmount=n(raw.balanceAlt2);
   found.rate=n(raw.rate); if(found.rate!=null && found.rate>25) found.rate=null;
   found.payment=n(raw.payment); found.paymentTotal=n(raw.paymentTotal) ?? n(raw.paymentTotalAlt); found.value=n(raw.value); found.fico=n(raw.fico);
@@ -1563,7 +1564,8 @@ function parseSFText(text){
   if(/fha/i.test(src)) found.loanType="FHA"; else if(/\bva\b/i.test(src)) found.loanType="VA"; else if(/jumbo/i.test(src)) found.loanType="Jumbo"; else if(raw.leadSource||raw.loanType) found.loanType="Conventional";
   if(raw.monthsLeft!=null) found.monthsLeft=n(raw.monthsLeft);
   else if(n(raw.monthsSince)!=null) found.monthsLeft=Math.max(0,360-n(raw.monthsSince));
-  const noteBits=[]; if(raw.leadStatus) noteBits.push("Lead status: "+raw.leadStatus); if(raw.closeDate) noteBits.push("Closed "+raw.closeDate);
+  const noteBits=[]; if(raw.leadStatus) noteBits.push("Lead status: "+raw.leadStatus);
+  if(n(raw.balanceTotal)>0 && found.balance>0 && n(raw.balanceTotal)-found.balance>1000) noteBits.push("Total mortgages "+money(n(raw.balanceTotal))+" \u2014 about "+money(n(raw.balanceTotal)-found.balance)+" beyond the first (2nd lien?)"); if(raw.closeDate) noteBits.push("Closed "+raw.closeDate);
   if(raw.purpose) noteBits.push(raw.purpose); if(n(raw.rateToBeat)) noteBits.push("Rate to beat "+raw.rateToBeat);
   if(n(raw.loanCount)) noteBits.push(raw.loanCount+" loans on credit"+(n(raw.instBal)?", "+money(n(raw.instBal))+" total":""));
   if(/^(yes|true)$/i.test(raw.vaElig||"")||/^(yes|true)$/i.test(raw.military||"")) noteBits.push("VA eligible");
