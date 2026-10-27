@@ -731,6 +731,40 @@ Discover 6,100 190 24.9"></textarea>
         </div>
         <div id="amortOut" style="margin-top:10px"></div>
       </div>
+
+      <div class="panel" id="purchPanel">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap"><h2>Purchase estimate — before pre-approval</h2>
+          <div class="btnrow"><button class="btn ghost small" onclick="purchClear()">Clear</button><button class="btn small" onclick="copyImage('purchase')">Copy as image</button><button class="btn ghost small" onclick="exportImage('purchase')">Download</button><button class="btn ghost small" onclick="emailImage('purchase')">Email</button></div></div>
+        <div class="hint" style="margin-bottom:12px">Rough numbers to share while the application is still ahead of you. Everything recalculates as you type — change the down payment and watch the payment move. Loan amount and P&amp;I are worked out for you; type over either one if you have a quote.</div>
+        <div class="grid2">
+          <div><div class="tstep"><span class="tnum">1</span>The purchase</div>
+            <div class="grid2">
+              <div class="field" style="grid-column:1/-1"><label>Prepared for <span class="hint" style="display:inline">(optional)</span></label><input type="text" data-pu="who" placeholder="Maria &amp; Luis" oninput="purchCalc()"></div>
+              <div class="field"><label>Purchase price</label><input type="number" class="num" data-pu="price" placeholder="325,000" step="1000" oninput="purchCalc()"></div>
+              <div class="field"><label>Down payment</label><div class="chiprow"><input type="number" class="num" data-pu="down" placeholder="5" step="any" style="flex:1" oninput="purchCalc()"><select data-pu="downMode" style="width:70px;flex:0 0 70px" onchange="purchCalc()"><option value="pct">%</option><option value="usd">$</option></select></div></div>
+              <div class="field"><label>Loan type</label><select data-pu="type" onchange="purchTypeDefaults(); purchCalc()"><option value="conv">Conventional</option><option value="fha">FHA</option><option value="va">VA</option><option value="usda">USDA</option></select></div>
+              <div class="field"><label>Financed fee % <span class="hint" style="display:inline">(FHA UFMIP / VA funding fee)</span></label><input type="number" class="num" data-pu="feePct" placeholder="0" step="0.01" oninput="purchCalc()"></div>
+              <div class="field"><label>Interest rate %</label><input type="number" class="num" data-pu="rate" placeholder="6.5" step="0.125" oninput="purchCalc()"></div>
+              <div class="field"><label>Term</label><select data-pu="term" onchange="purchCalc()"><option value="360">30 years</option><option value="300">25 years</option><option value="240">20 years</option><option value="180">15 years</option><option value="120">10 years</option></select></div>
+              <div class="field"><label>Total loan amount <span class="hint" style="display:inline">(auto — type to override)</span></label><input type="number" class="num" data-pu="loanOv" placeholder="auto" step="1000" oninput="purchCalc()"></div>
+              <div class="field"><label>Monthly P&amp;I <span class="hint" style="display:inline">(auto — type to override)</span></label><input type="number" class="num" data-pu="payOv" placeholder="auto" step="1" oninput="purchCalc()"></div>
+            </div></div>
+          <div><div class="tstep"><span class="tnum">2</span>Monthly picture &amp; extras</div>
+            <div class="grid2">
+              <div class="field" style="grid-column:1/-1"><label>Taxes &amp; insurance</label><select data-pu="escrow" onchange="purchCalc()"><option value="escrow">Escrowed — collected with the payment</option><option value="own">Paid on their own — not in the payment</option><option value="none">Leave out of this estimate</option></select></div>
+              <div class="field"><label>Property taxes / year</label><input type="number" class="num" data-pu="tax" placeholder="4,200" step="100" oninput="purchCalc()"></div>
+              <div class="field"><label>Homeowner’s insurance / year</label><input type="number" class="num" data-pu="ins" placeholder="1,500" step="50" oninput="purchCalc()"></div>
+              <div class="field"><label>HOA / month</label><input type="number" class="num" data-pu="hoa" placeholder="0" step="10" oninput="purchCalc()"></div>
+              <div class="field"><label>Mortgage insurance / month <span class="hint" style="display:inline">(auto if under 20% down)</span></label><input type="number" class="num" data-pu="mi" placeholder="auto" step="5" oninput="purchCalc()"></div>
+              <div class="field"><label>Extra paid / month <span class="hint" style="display:inline">(optional)</span></label><input type="number" class="num" data-pu="extra" placeholder="0" step="25" oninput="purchCalc()"></div>
+              <div class="field"><label>Est. closing costs <span class="hint" style="display:inline">(optional, for cash to close)</span></label><input type="number" class="num" data-pu="costs" placeholder="e.g. 3% of price" step="500" oninput="purchCalc()"></div>
+            </div>
+            <div class="hint" style="margin-top:4px">Highlights on the estimate — flip them on as you say them:</div>
+            <div class="benef" id="purchBen" style="margin-top:6px"></div>
+          </div>
+        </div>
+        <div id="purchOut" style="margin-top:12px"></div>
+      </div>
     </section>
 
     <section class="screen" id="s-blocks">
@@ -2613,14 +2647,14 @@ async function buildSheetSVG(html,W,marks){
     fr.remove(); }catch(e){}
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml"><style>${sheetCSS(W).replace(/</g,"\\3c ")}</style>${xhtml}</div></foreignObject>${over}</svg>`;
   return {svg,W,H}; }
-function sheetTitle(kind,c,r){ if(kind==="amort") return "Amortization Comparison"+(c&&c.name?" \u2014 "+c.name:""); if(kind==="present") return "Today vs New"+(c&&c.name?" \u2014 "+c.name:""); const multi=c&&kind==="proposal"&&propSelected(c).length>=2;
+function sheetTitle(kind,c,r){ if(kind==="purchase"){ const w=(state.purch&&state.purch.who||"").trim(); return "Purchase Estimate"+(w?" \u2014 "+w:""); } if(kind==="amort") return "Amortization Comparison"+(c&&c.name?" \u2014 "+c.name:""); if(kind==="present") return "Today vs New"+(c&&c.name?" \u2014 "+c.name:""); const multi=c&&kind==="proposal"&&propSelected(c).length>=2;
   return (kind==="compare"||multi?"Your Options":(r&&r.fc?"Cash-Out Proposal":r&&r.second?(r.secType==="heloc"?"HELOC Proposal":"Home Equity Loan Proposal"):"Savings Proposal"))+(c&&c.name?" \u2014 "+c.name:""); }
 async function renderSheet(kind, snap){ const c=cur();
-  const html = snap ? snap.html : (kind==="compare" ? compareHTML() : kind==="amort" ? amortSheetHTML() : kind==="present" ? presentSheetHTML() : proposalHTML());
+  const html = snap ? snap.html : (kind==="compare" ? compareHTML() : kind==="amort" ? amortSheetHTML() : kind==="present" ? presentSheetHTML() : kind==="purchase" ? purchSheetHTML() : proposalHTML());
   if(html.includes('class="empty"')) throw new Error(kind==="compare"?"Add at least two complete scenarios first":"Finish the analysis first");
   const r=c&&!snap&&computeAnalysis(c);
   const title= snap ? snap.title : sheetTitle(kind,c,r);
-  if(!snap && (kind!=="amort" || c)) libraryAdd(kind, html, title);          /* every proposal that leaves the app is on record for that client */
+  if(!snap && (kind!=="amort" && kind!=="purchase" || c)) libraryAdd(kind, html, title);          /* every proposal that leaves the app is on record for that client */
   const name=title.replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"");
   const {svg,W,H}=await buildSheetSVG(html,880, (kind==="proposal"&&!snap&&c&&c.prop&&c.prop.marks)||null);
   const img=new Image(); await new Promise((ok,bad)=>{ img.onload=ok; img.onerror=()=>bad(new Error("render")); img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg); });
@@ -2681,8 +2715,8 @@ async function exportImage(kind, snapId){
     toast("Saved "+fname+" to your Downloads folder");
   }catch(e){ toast(e.message==="render"||e.message==="canvas" ? "Couldn\u2019t build the image in this browser \u2014 use Export PDF (Chrome or Edge recommended)" : e.message); }
 }
-function emailBodyFor(c,r,kind){ const s=state.settings; const first=c&&c.name? c.name.split(/[ ,&]/)[0] : "there";
-  const what = kind==="compare" ? "the side-by-side of your options" : (r&&r.second ? "the home equity proposal" : "the savings proposal");
+function emailBodyFor(c,r,kind){ const s=state.settings; const first= kind==="purchase" && state.purch&&state.purch.who ? String(state.purch.who).split(/[ ,&]/)[0] : c&&c.name? c.name.split(/[ ,&]/)[0] : "there";
+  const what = kind==="purchase" ? "the purchase estimate" : kind==="compare" ? "the side-by-side of your options" : (r&&r.second ? "the home equity proposal" : "the savings proposal");
   return `Hi ${first},\n\nHere is ${what} we talked about \u2014 the image below has the full breakdown.\n\nCall or text me with any questions.\n\n${s.loName||""}\nNeighborhood Mortgage Company\nNMLS #${s.loNmls||""}${s.loPhone?" \u00b7 "+s.loPhone:""}${s.loEmail?" \u00b7 "+s.loEmail:""}`; }
 async function emailImage(kind, snapId){
   toast("Building the image\u2026");
@@ -3750,6 +3784,58 @@ function amortAutofill(){ const c=cur(); if(!c){ toast("Pick a client first"); r
 function amortFromDate(side){ const v=amortVals(); const d=v.cClosed; if(!d) return; const since=Math.max(0,Math.round((Date.now()-new Date(d+"T00:00:00").getTime())/2629800000)); amortSet("cInto", since); amortCalc(); }
 function amortClear(){ document.querySelectorAll("#amortPanel [data-am]").forEach(el=>{ if(el.type==="checkbox") el.checked=false; else if(el.tagName==="SELECT") el.value="360"; else el.value=""; }); state.amort={}; save(); amortCalc(); }
 function amortRestore(){ const v=state.amort||{}; Object.keys(v).forEach(k=>amortSet(k,v[k])); amortCalc(); }
+
+/* ---- purchase estimate: rough numbers before pre-approval. Loan amount and P&I are computed unless typed over. ---- */
+const PURCH_BENEFITS=[["noPrepay","No prepayment penalty \u2014 pay extra or pay it off early, no fee"],["escrow","Taxes & insurance escrowed \u2014 one payment, nothing to remember"],["own","Taxes & insurance paid on your own \u2014 lower mortgage payment, you control the bills"],["fixed","Fixed rate \u2014 the P&I never changes"],["gift","Gift funds allowed toward the down payment"],["seller","Seller credits can cover closing costs"],["lock","Rate lock once you\u2019re under contract"],["noPMI","No monthly mortgage insurance"]];
+const PURCH_FEES={conv:0, fha:1.75, va:2.15, usda:1.0};
+function purchVals(){ const v={}; document.querySelectorAll("#purchPanel [data-pu]").forEach(el=>{ v[el.dataset.pu]= el.type==="checkbox" ? el.checked : el.value; }); v.ben=(state.purch&&state.purch.ben)||null; return v; }
+function purchSet(k,val){ const el=document.querySelector(`#purchPanel [data-pu="${k}"]`); if(!el) return; if(el.type==="checkbox") el.checked=!!val; else el.value=val==null?"":val; }
+function purchTypeDefaults(){ const v=purchVals(); const fee=PURCH_FEES[v.type]??0; purchSet("feePct", fee||""); const b=purchBenState(); if(v.type==="va"||v.type==="conv"&&purchDownPct(v)>=20){ b.noPMI=true; } else delete b.noPMI; state.purch=Object.assign(state.purch||{},{ben:b}); }
+function purchDownPct(v){ const price=+v.price||0; if(!(price>0)) return 0; return v.downMode==="usd" ? (+v.down||0)/price*100 : (+v.down||0); }
+function purchBenState(){ state.purch=state.purch||{}; if(!state.purch.ben){ state.purch.ben={noPrepay:true,fixed:true,escrow:true}; } return state.purch.ben; }
+function purchBen(k,on){ const b=purchBenState(); b[k]=!!on; if(k==="escrow"&&on){ b.own=false; purchSet("escrow","escrow"); } if(k==="own"&&on){ b.escrow=false; purchSet("escrow","own"); } save(); purchCalc(); }
+function purchModel(v){ const price=+v.price||0, rate=+v.rate||0, n=+v.term||360; if(!(price>0)||!(rate>0)) return {ok:false};
+  const downPct=purchDownPct(v); const down=Math.round(price*downPct/100); const base=price-down; const feePct=+v.feePct||0; const fee=Math.round(base*feePct/100);
+  const loanAuto=base+fee; const loanTyped=+v.loanOv>0; const loan=loanTyped?+v.loanOv:loanAuto;
+  const piAuto=pmt(loan,rate,n); const piTyped=+v.payOv>0; const pi=piTyped?+v.payOv:piAuto;
+  const ltv=price>0?loan/price*100:0;
+  const tax=(+v.tax||0)/12, ins=(+v.ins||0)/12, hoa=+v.hoa||0;
+  let mi=+v.mi; let miAuto=false; if(!(mi>=0)||v.mi===""){ mi=0; if(v.type==="conv"&&downPct<20){ mi=Math.round(loan*0.006/12); miAuto=true; } else if(v.type==="fha"){ mi=Math.round(loan*0.0055/12); miAuto=true; } else if(v.type==="usda"){ mi=Math.round(loan*0.0035/12); miAuto=true; } }
+  const esc=v.escrow||"escrow"; const ti=tax+ins; const inPay = esc==="escrow" ? ti : 0;
+  const total = pi + inPay + hoa + mi; const allIn = pi + ti + hoa + mi;
+  const extra=+v.extra||0; const sched=amort(loan,rate,n); let ex=null; if(extra>0&&pi>0){ const es=amort(loan,rate,n,extra,pi); ex={extra, months:es.months, saved:Math.max(0,sched.interest-es.interest), cut:n-es.months}; }
+  const costs=+v.costs||0; const cashToClose = costs>0 ? down+costs : null;
+  return {ok:true, price, downPct, down, base, feePct, fee, loan, loanAuto, loanTyped, pi, piAuto, piTyped, rate, n, ltv, tax, ins, hoa, mi, miAuto, esc, ti, inPay, total, allIn, extra, ex, costs, cashToClose, interest:sched.interest, type:v.type||"conv", who:(v.who||"").trim()}; }
+function purchCalc(){ const v=purchVals(); state.purch=Object.assign(state.purch||{},v,{ben:purchBenState()}); save(); const m=purchModel(v); renderPurchBen(m); const box=$("purchOut"); if(!box) return;
+  box.innerHTML = m.ok ? purchHTML(m,true) : `<div class="empty">Enter the purchase price and a rate \u2014 the rest fills in.</div>`; }
+function renderPurchBen(m){ const el=$("purchBen"); if(!el) return; const b=purchBenState();
+  el.innerHTML=PURCH_BENEFITS.map(([k,l])=>`<label class="${b[k]?"on":""}"><input type="checkbox" ${b[k]?"checked":""} onchange="purchBen('${k}',this.checked)"> ${l}</label>`).join(""); }
+function purchTypeName(t){ return ({conv:"Conventional",fha:"FHA",va:"VA",usda:"USDA"})[t]||"Conventional"; }
+function purchHTML(m,screen){ const b=purchBenState(); const yrs=m.n/12;
+  const tiles=[[money(m.loan),"Total loan amount"+(m.fee>0?` <span class="hint">incl. ${money(m.fee)} financed fee</span>`:"")+(m.loanTyped?` <span class="hint">(typed; auto ${money(m.loanAuto)})</span>`:"")],
+    [pct(m.rate),"Interest rate \u00b7 "+purchTypeName(m.type)+" \u00b7 "+yrs+"-year fixed"],
+    [money(m.down),"Down payment \u00b7 "+m.downPct.toFixed(m.downPct%1?1:0)+"% of "+money(m.price)],
+    [money(Math.round(m.pi))+"/mo","Principal & interest"+(m.piTyped?` <span class="hint">(typed; auto ${money(Math.round(m.piAuto))})</span>`:"")],
+    [money(Math.round(m.total))+"/mo", m.esc==="escrow" ? "Total payment with taxes, insurance"+(m.hoa?", HOA":"")+(m.mi?" & MI":"") : m.esc==="own" ? "Mortgage payment"+(m.mi?" incl. MI":"")+(m.hoa?" + HOA":"")+" \u2014 taxes & insurance paid separately" : "Monthly payment"+(m.mi||m.hoa?" incl. "+[m.mi?"MI":"",m.hoa?"HOA":""].filter(Boolean).join(" & "):"")],
+    [m.cashToClose!=null?money(m.cashToClose):yrs+" yr", m.cashToClose!=null?"Est. cash to close \u00b7 "+money(m.down)+" down + "+money(m.costs)+" costs":"Term"]];
+  const rows=[["Purchase price",money(m.price)],["Down payment",money(m.down)+" ("+m.downPct.toFixed(m.downPct%1?1:0)+"%)"],["Base loan",money(m.base)]].concat(m.fee>0?[["Financed "+(m.type==="fha"?"FHA upfront MIP":m.type==="va"?"VA funding fee":"guarantee fee")+" ("+m.feePct+"%)",money(m.fee)]]:[])
+    .concat([["Total loan amount",money(m.loan)],["LTV",m.ltv.toFixed(1)+"%"],["Rate \u00b7 term",pct(m.rate)+" \u00b7 "+yrs+" years"],["Principal & interest",money(Math.round(m.pi))+"/mo"]])
+    .concat(m.esc!=="none"&&m.ti>0?[["Taxes & insurance", money(Math.round(m.ti))+"/mo"+(m.esc==="own"?" \u2014 paid on your own, not in the payment":" \u2014 escrowed")]]:[])
+    .concat(m.mi>0?[["Mortgage insurance", money(m.mi)+"/mo"+(m.miAuto?" (est.)":"")]]:[]).concat(m.hoa>0?[["HOA", money(m.hoa)+"/mo"]]:[])
+    .concat([["<b>Monthly payment</b>","<b>"+money(Math.round(m.total))+"/mo</b>"+(m.esc==="own"&&m.ti>0?" <span class='hint'>(+ "+money(Math.round(m.ti))+" taxes & insurance on your own = "+money(Math.round(m.allIn))+" all-in)</span>":"")]]);
+  const bens=PURCH_BENEFITS.filter(([k])=>b[k]&&!(k==="escrow"&&m.esc!=="escrow")&&!(k==="own"&&m.esc!=="own")&&!(k==="noPMI"&&m.mi>0)).map(([,l])=>l);
+  return `<div class="statline">${tiles.map(([v,l])=>`<div><div class="v">${v}</div><div class="l">${l}</div></div>`).join("")}</div>
+    <table class="${screen?"data":""}"><tbody>${rows.map(([a,b])=>`<tr><td>${a}</td><td class="num">${b}</td></tr>`).join("")}</tbody></table>
+    ${m.ex?`<div class="recbox" style="margin-top:10px"><b>Pay ${money(m.extra)} extra a month</b> and the loan is paid off in <b>${yrsMo(m.ex.months)}</b> \u2014 ${yrsMo(m.ex.cut)} sooner, saving about <b>${money(m.ex.saved)}</b> in interest. No prepayment penalty, so it\u2019s entirely up to you.</div>`:""}
+    ${bens.length?`<h2>Good to know</h2><ul style="margin:4px 0 4px 18px;font-size:12.5px;line-height:1.7">${bens.map(x=>`<li>${x}</li>`).join("")}</ul>`:""}`; }
+function purchSheetHTML(){ const v=state.purch||purchVals(); const m=purchModel(v); if(!m.ok) return `<div class="empty">Enter the purchase price and a rate first.</div>`; const s=state.settings;
+  return `<div class="brandbar"><div><img src="${s.logo||NMC_LOGO}" alt="${esc(s.co)}"><div class="tag">${esc(s.tag)}</div></div>
+    <div class="lo"><b>${esc(s.loName||"Your Loan Officer")}</b>${s.loNmls?` \u00b7 NMLS #${esc(s.loNmls)}`:""}<br>${esc(s.loPhone||"")}${s.loPhone&&s.loEmail?" \u00b7 ":""}${esc(s.loEmail||"")}<br>Prepared ${new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}</div></div>
+    <div class="eyebrow">Purchase estimate</div><h1>What a ${money(m.price)} home could look like${m.who?" \u2014 "+esc(m.who):""} <span class="tag-flat" style="font-size:11px;vertical-align:middle">Estimate</span></h1>
+    ${purchHTML(m,false)}
+    <div class="disc">This is a rough estimate for discussion only, based on the numbers you gave me and today\u2019s market pricing, which changes daily. It is not a pre-approval, a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval; a pre-approval requires an application and credit review. Taxes, insurance, HOA and mortgage insurance are estimates until the property and policy are known. All loans subject to credit approval. Equal Housing Opportunity. ${esc(s.footer)}${s.loNmls?` \u00b7 Loan Officer NMLS #${esc(s.loNmls)}`:""}</div>`; }
+function purchClear(){ document.querySelectorAll("#purchPanel [data-pu]").forEach(el=>{ if(el.tagName==="SELECT") el.value=el.dataset.pu==="term"?"360":el.dataset.pu==="downMode"?"pct":el.dataset.pu==="escrow"?"escrow":"conv"; else el.value=""; }); state.purch={ben:{noPrepay:true,fixed:true,escrow:true}}; save(); purchCalc(); }
+function purchRestore(){ const v=state.purch||{}; Object.keys(v).forEach(k=>{ if(k!=="ben") purchSet(k,v[k]); }); purchCalc(); }
 /* ======== Presentation: the live T-chart ======== */
 const CLOSES_SEED=["I send you the application link, you e-sign it, and we lock this rate in today.","All I need is a few documents and a signature \u2014 I\u2019ll handle the rest.","Honestly, this is one of the cleaner ones I\u2019ve seen this month.","If the numbers make sense to you, I can lock this in today and we\u2019re done talking about it.","You\u2019re paying it either way \u2014 this just stops so much of it going to interest.","Want me to lock this in before the market moves?","Let\u2019s get the application started while it\u2019s fresh \u2014 ten minutes."];
 const PRESENT_BENEFITS=[["noOut","No out-of-pocket \u2014 nothing due at closing"],["noAppr","No appraisal"],["noInc","No income re-verification"],["quick","Closes quick \u2014 a couple of weeks, signing comes to you"],["skip","Skip a payment (or two) at closing"],["noPrepay","No prepayment penalty"],["one","One payment instead of several"],["cash","Cash to you at closing"],["escrow","Escrow refund from your current servicer"],["noOrig","No origination fee (lender-paid costs)"]];
@@ -4112,7 +4198,7 @@ if(DEMO && state.clients.length===0 && !seededFlag){
   seedDemo(); try{ localStorage.setItem("nmc_demo_seeded","1"); }catch(e){}
 }
 if(!state.currentId && state.clients.length) state.currentId=state.clients[0].id;
-bindClientFields(); applyBrandCss(); fillSettingsUI(); updateRatePill(); refreshAll(); setupPolling(); maybeSetup(); renderBmStatus(); maybeBmUpdate(); renderBrandStatus(); amortRestore(); setTimeout(()=>fetchBrandAssets(false).catch(()=>{}), 3000); initAutosave();
+bindClientFields(); applyBrandCss(); fillSettingsUI(); updateRatePill(); refreshAll(); setupPolling(); maybeSetup(); renderBmStatus(); maybeBmUpdate(); renderBrandStatus(); amortRestore(); purchRestore(); setTimeout(()=>fetchBrandAssets(false).catch(()=>{}), 3000); initAutosave();
 if(DEMO){ try{ sampleTeam(); }catch(e){} }
 if(state.settings.poll && state.settings.feedUrl) fetchRates();
 
