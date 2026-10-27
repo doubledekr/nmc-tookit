@@ -412,7 +412,7 @@ table.data tr.rec td{background:var(--cream)}
             <div class="field cur-loan"><label>P&amp;I <span class="hint" style="display:inline">(auto from balance, rate, months — or from the total)</span></label><input type="number" data-f="payment" step="10" placeholder="auto"></div>
             <div class="field cur-loan"><label>Escrow — taxes &amp; insurance <span class="hint" style="display:inline">(auto = total minus P&amp;I)</span></label><input type="number" data-f="escrow" step="10"></div>
             <div class="hint" id="payHint" style="grid-column:1/-1;margin-top:-4px"></div>
-            <div class="field cur-loan"><label>Months remaining <span class="hint" style="display:inline">(30 years unless you type it — or auto from the original amount or P&amp;I)</span></label><input type="number" data-f="monthsLeft"></div>
+            <div class="field cur-loan"><label>Months remaining <span class="hint" style="display:inline">(30 years unless you type it — or auto from the original amount or P&amp;I)</span></label><input type="number" data-f="monthsLeft"><div class="hint" id="mlHint"></div></div>
             <div id="loanCheck" class="cur-loan" style="grid-column:1/-1"></div>
             <div class="field"><label>Est. annual property taxes ($) <span class="hint" style="display:inline">(for new-loan escrow estimates)</span></label><input type="number" data-f="taxAnnual" step="100"></div>
             <div class="field"><label>Est. annual homeowner’s insurance ($)</label><input type="number" data-f="insAnnual" step="100"></div>
@@ -915,7 +915,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.8.6";
+const TOOLKIT_VERSION = "1.8.7";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1172,7 +1172,7 @@ function loanCheck(c){
   const io=B*r/1200;
   const fromPay = !(c.monthsLeft>0) && P>io+0.01;   /* months blank but P&I typed: the term comes from the P&I, so there's nothing to compare it against */
   const n = c.monthsLeft>0 ? c.monthsLeft : fromPay ? Math.max(1,Math.round(debtMonths(B,r,P))) : 360;
-  const nSrc = c.monthsLeft>0 ? (c.monthsLeftAuto?"worked out from the original amount":"as entered") : fromPay ? "worked out from the P&amp;I" : "30 years assumed";
+  const nSrc = c.monthsLeft>0 ? (c.monthsLeftAuto?"worked out from the original amount":c.monthsLeftFrom?"estimated from the "+esc(c.monthsLeftFrom):"as entered") : fromPay ? "worked out from the P&amp;I" : "30 years assumed";
   const need=pmt(B,r,n);
   const fmtRate=x=>x==null?"\u2014":pct(Math.round(x*8)/8);   /* nearest eighth, the way rates are quoted */
   const alt=(gapP)=>{ /* what each single input would have to be for the P&I to fit */
@@ -1318,6 +1318,7 @@ function bindClientFields(){
     el.addEventListener("input", ()=>{ const c=cur(); if(!c) return;
       if(el.type==="number" && el.validity && el.validity.badInput) return;   /* "6." on the way to 6.25 — leave the field alone until it's a number */
       const f=el.dataset.f; c[f] = el.type==="checkbox" ? el.checked : (el.type==="number") ? num(el.value) : el.value;
+      if(f==="monthsLeft"){ c.monthsLeftFrom=""; const h=$("mlHint"); if(h) h.innerHTML=""; }
       if(f==="freeClear"){ if(c.freeClear){ c.balance=0; c.rate=null; c.payment=null; c.paymentTotal=null; c.escrow=null; c.monthsLeft=null; c.origAmount=null; c.analysis.anLien="fc"; c.analysis.anProgram="standard"; }
         else if(c.analysis.anLien==="fc"){ c.analysis.anLien="refi"; } fillClientForm(); }
       if(f==="status") applyDispo(c);
@@ -1348,6 +1349,7 @@ function fillClientForm(){ const c=cur();
     ? `<span class="tag-warn">Not in pipeline</span> <button class="btn small" onclick="promoteQuick()">Save to pipeline</button>`
     : `<span class="tag-good">In pipeline</span>`);
   ltvHint(); const vs=$("valueSrc"); if(vs) vs.innerHTML=valueSrcText(c);
+  { const h=$("mlHint"); if(h) h.innerHTML = c&&c.monthsLeft>0&&c.monthsLeftFrom ? `<span style="color:#8A6D00">Estimated from the ${esc(c.monthsLeftFrom)} \u2014 type the real number, or clear it to assume 30 years.</span> <a href="#" onclick="const c=cur(); if(c){ c.monthsLeft=null; c.monthsLeftFrom=''; save(); fillClientForm(); refreshAll(); } return false" style="color:var(--brand)">Clear</a>` : ""; }
   const ph=$("payHint"); if(ph) ph.innerHTML=payHintText(c); { const lc=$("loanCheck"); if(lc) lc.innerHTML=loanCheckHTML(c); flagLoanFields(c); }
   renderStreamQuick(c);
   { const sh=$("seasonHint"); if(sh){ const si=c?seasonInfo(c):null; sh.innerHTML = si ? `<span class="${si.tag}">${si.txt}</span>` : ""; } }
@@ -1564,7 +1566,11 @@ function parseSFText(text){
   { const esc_=(n(raw.taxMonthly)||(taxA>0?taxA/12:0))+(n(raw.insMonthly)||0)+(n(raw.miMonthly)||0); if(esc_>0 && (n(raw.taxMonthly)>0||n(raw.insMonthly)>0)) found.escrow=Math.round(esc_); }
   if(n(raw.origAmount)>0 && !(found.origAmount>0)) found.origAmount=n(raw.origAmount);
   { const yrs=n(raw.origTermYears), mos=n(raw.origTermMonths); const t = yrs>0 ? (yrs>60? Math.round(yrs/12) : Math.round(yrs)) : mos>0 ? Math.round(mos/12) : null; if(t&&[10,15,20,25,30,40].includes(t)) found.origTerm=t; }
-  /* the close date / months-since-close are kept as a note only: today's P&I assumes a 30-year term unless months remaining is on the record or typed by the banker */
+  /* no months remaining on the record: estimate it from the close date (or "months since close") against the original term, flagged so the banker can clear or correct it */
+  if(raw.monthsLeft==null){ let since=null, why="";
+    if(raw.closeDate){ const d=new Date(raw.closeDate); if(!isNaN(d)){ since=Math.max(0,Math.round((Date.now()-d.getTime())/2629800000)); why="closed "+raw.closeDate; } }
+    if(since==null && n(raw.monthsSince)>0){ since=Math.round(n(raw.monthsSince)); why=raw.monthsSince+" months since close"; }
+    if(since!=null){ const term=(found.origTerm||30)*12; if(since<term){ found.monthsLeft=term-since; found.monthsLeftFrom=why; } } }
   if(raw.servicer) found.servicer=raw.servicer; if(raw.address) found.address=raw.address;
   const src=(raw.leadSource||"")+" "+(raw.mortType||"")+" "+(raw.loanType||"");
   if(/fha/i.test(src)) found.loanType="FHA"; else if(/\bva\b/i.test(src)) found.loanType="VA"; else if(/jumbo/i.test(src)) found.loanType="Jumbo"; else if(raw.leadSource||raw.loanType) found.loanType="Conventional";
@@ -1589,11 +1595,11 @@ function parseSFText(text){
   if(n(raw.instBal2)>0 && !(n(raw.instBal)>0)) debts.push({name:"Installment loan(s)", type:"installment", acct:"", extra:0, balance:n(raw.instBal2), apr:11, aprEst:true, pay:n(raw.instPay)});
   Object.keys(found).forEach(k=>{ if(found[k]==null||found[k]==="") delete found[k]; });
   lastSF={fields:found, debts};
-  const keys=Object.keys(found); const cc=null;   /* a paste never targets the selected client */
+  const keys=Object.keys(found).filter(k=>k!=="monthsLeftFrom"); const cc=null;   /* a paste never targets the selected client */
   const digits=v=>String(v||"").replace(/\D/g,"").slice(-10);
   const dup=state.clients.find(x=>!x.quick&&((found.phone&&digits(x.phone)&&digits(x.phone)===digits(found.phone))||(found.email&&x.email&&x.email.toLowerCase()===found.email.toLowerCase())));
   const fmt=(k,v)=> ["balance","payment","paymentTotal","escrow","value","origAmount","taxAnnual","insAnnual"].includes(k)? money(v) : k==="rate"||k==="targetRate"? pct(v) : esc(v);
-  const mlNote = (raw.closeDate||n(raw.monthsSince)>0) && raw.monthsLeft==null ? `<div class="hint">Today\u2019s P&amp;I assumes 30 years remaining. The record\u2019s close date is in the notes \u2014 type the real months remaining (or the P&amp;I from the statement) if you want the payment to reflect it.</div>` : "";
+  const mlNote = found.monthsLeftFrom ? `<div class="hint">Months remaining (${found.monthsLeft}) is estimated from the record\u2019s ${esc(found.monthsLeftFrom)} against a ${found.origTerm||30}-year term \u2014 untick it to assume 30 years, or correct it on the client after importing.</div>` : "";
   const fcHint = (found.balance==null||found.balance===0) ? `<div class="hint" style="margin-bottom:6px">No mortgage balance on this lead \u2014 if the home is paid off, tick <b>Owns the home free and clear</b> on the client after creating it.</div>` : "";
   const hdr = fcHint + (dup ? `<div style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:13px"><b>${esc(dup.name)}</b> is already in your pipeline with this ${found.phone&&digits(dup.phone)===digits(found.phone)?"phone number":"email"}. <button class="btn small" onclick="pickClient('${dup.id}'); go('client'); toast('Opened '+${JSON.stringify(dup.name)})">Open ${esc(dup.name)}</button> <button class="btn ghost small" onclick="applySFTo('${dup.id}')">Update ${esc(dup.name.split(/[ ,&]/)[0])} with this paste</button></div>` : "");
   $("sfPreview").innerHTML = !keys.length && !debts.length ? `<div class="empty">Nothing recognized \u2014 make sure the lead page was in front when you clicked the bookmarklet, then try again. If it keeps happening, send the page to your admin.</div>` :
@@ -1614,7 +1620,8 @@ function applySF(asNew,onto){
   if(asNew||!c){ c=blankClient(); state.clients.unshift(c); state.currentId=c.id; }
   const F=lastSF.fields||lastSF;
   document.querySelectorAll("#sfPreview [data-sfk]").forEach(cb=>{ if(!cb.checked&&!asNew) return; const k=cb.dataset.sfk;   /* a brand-new client takes every recognized field */
-    if(k==="notes") c.notes = c.notes? (c.notes.includes(F.notes)? c.notes : c.notes+"\n"+F.notes) : F.notes; else c[k]=F[k]; });
+    if(k==="notes") c.notes = c.notes? (c.notes.includes(F.notes)? c.notes : c.notes+"\n"+F.notes) : F.notes; else c[k]=F[k];
+    if(k==="monthsLeft"){ c.monthsLeftFrom=F.monthsLeftFrom||""; c.monthsLeftAuto=false; } });
   document.querySelectorAll("#sfPreview [data-sfd]").forEach(cb=>{ if(!cb.checked) return; const d=lastSF.debts[+cb.dataset.sfd]; if(!d) return;
     const ex=c.debts.find(x=>x.name===d.name); if(ex){ ex.balance=d.balance; if(d.pay!=null) ex.pay=d.pay; } else c.debts.push(Object.assign({},d)); });
   if(asNew && !F.name) c.name="Pasted client";
@@ -1851,7 +1858,7 @@ function renderCreditParsed(rows,intro){
    `</tbody></table><div class="btnrow" style="margin-top:8px"><button class="btn small" onclick="addParsedDebts()">Add checked debts</button><span class="hint">Everything with a balance is checked; untick what they\u2019re keeping.</span></div>`; }
 function crType(i,t){ const d=lastDebts[i]; if(!d) return; d.type=t; d.apr=(DEBT_TYPES[t]||DEBT_TYPES.other).apr; d.aprEst=true; renderCreditParsed(lastDebts); }
 function crUseMortgage(i){ const c=cur(); const d=lastDebts[i]; if(!c||!d) return;
-  c.balance=d.balance; if(d.pay>0&&!(c.paymentTotal>0)) c.paymentTotal=d.pay;   /* the bureau's scheduled payment is usually the full PITI */ if(d.high>d.balance) c.origAmount=d.high; /* months remaining stays at the 30-year default unless the banker types it */
+  c.balance=d.balance; if(d.pay>0&&!(c.paymentTotal>0)) c.paymentTotal=d.pay;   /* the bureau's scheduled payment is usually the full PITI */ if(d.high>d.balance) c.origAmount=d.high; if(d.term>0&&d.opened&&!(c.monthsLeft>0)){ const ms=Math.max(0,Math.round((Date.now()-new Date(d.opened).getTime())/2629800000)); if(ms<d.term){ c.monthsLeft=d.term-ms; c.monthsLeftFrom="credit report: opened "+d.opened+", "+d.term+"-month term"; c.monthsLeftAuto=false; } }
   normalizePayment(c,"balance"); save(); refreshAll(); toast("Current mortgage set from the credit report: "+money(d.balance)+(d.pay?" / "+money(d.pay)+" per mo as the total payment":"")+" \u2014 check the rate and P&amp;I on the Client workspace"); }
 function addParsedDebts(){ const c=cur(); if(!c){ toast("Pick a client first"); return; } let n=0;
   let u=0; document.querySelectorAll("#debtParsed [data-di]").forEach(cb=>{ if(!cb.checked) return; const d=lastDebts[+cb.dataset.di];
