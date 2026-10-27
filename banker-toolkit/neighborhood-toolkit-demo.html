@@ -92,7 +92,7 @@ body.mode-fha #debtPanel,body.mode-va #debtPanel{display:none}
 .greet{font-family:var(--serif);font-size:19px;line-height:1.4;color:var(--ink)}
 .hlswatch{width:22px;height:22px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--line);cursor:pointer;padding:0}.hlswatch.on{box-shadow:0 0 0 2px var(--brand)}#propPreview.customize #propHL{display:none}
 .equitybox{margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}.equitybox .eqhead{margin-bottom:8px}.eqrows{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
-.eqrow{background:var(--cream-soft);border-radius:8px;padding:8px 10px;border:1px solid transparent}.eqrow.mine{border-color:#2E6B4F;background:#E3F1E7}.eqrow .eqtag{display:inline-block;margin-top:3px;background:#2E6B4F;color:#fff;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:600}.eqrow .eql{font-size:12px;color:#5C616E}.eqrow .eqv{font-family:var(--serif);font-size:22px;color:#2E6B4F}.eqrow.none .eqv{color:#999}.eqrow .chip{margin-top:4px;font-size:11px}
+#debtTable{overflow-x:auto}.eqrow{background:var(--cream-soft);border-radius:8px;padding:8px 10px;border:1px solid transparent}.eqrow.mine{border-color:#2E6B4F;background:#E3F1E7}.eqrow .eqtag{display:inline-block;margin-top:3px;background:#2E6B4F;color:#fff;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:600}.eqrow .eql{font-size:12px;color:#5C616E}.eqrow .eqv{font-family:var(--serif);font-size:22px;color:#2E6B4F}.eqrow.none .eqv{color:#999}.eqrow .chip{margin-top:4px;font-size:11px}
 .objflow{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}.objbox{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;position:relative}.objbox .objl{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#5C616E;margin-bottom:4px}.objbox .objt{font-size:14px;line-height:1.5}
 .objbox.tr{background:#F4EFE6}.objbox.ag{background:#E3F1E7}.objbox.rs{background:#FFF8EC}.objbox.tn{background:#EEF2F7}.objbox.cl{background:var(--brand);color:#fff;border-color:var(--brand)}.objbox.cl .objl{color:#F7D9D3}.objbox.cl .objt{font-family:var(--serif);font-size:18px}.objbox.cl .hint{color:#F7D9D3}
 body.present-mode .objbox .objt{font-size:17px}body.present-mode .objbox.cl .objt{font-size:22px}.cashline{background:#FFF3C4;border-radius:10px;padding:10px 12px;margin-top:10px;font-size:14px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 10px}.cashline b{font-family:var(--serif);font-size:22px;font-weight:400}.cashline .hint{flex-basis:100%}
@@ -444,6 +444,7 @@ table.data tr.rec td{background:var(--cream)}
           <div id="sfPreview" style="margin-top:12px"></div>
         </div>
       </div>
+      <div id="debtHostClient"></div>
     </section>
 
     <!-- ================= PRICING ================= -->
@@ -516,6 +517,7 @@ table.data tr.rec td{background:var(--cream)}
         </div>
       </div>
 
+      <div id="debtHome"></div>
       <div class="panel" id="debtPanel">
         <h2>Client's other debts (credit cards, autos, personal loans)</h2>
         <div class="hint" style="margin-bottom:8px">APR is optional — leave it blank if you don't know it and the blended rate is figured from the debts you do know. Monthly payment should be the minimum; put anything they pay on top in the box below.</div>
@@ -913,7 +915,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.8.5";
+const TOOLKIT_VERSION = "1.8.6";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1699,7 +1701,7 @@ function updDebt(i,k,v){ const c=cur(); if(!c) return; const d=c.debts[i];
   if(k==="payMode"){ d.payMode=v||""; save(); renderDebts(); runAnalysis(); return; }
   d[k]=(k==="name"||k==="acct")?v:(String(v).trim()===""?null:num(v));
   if(k==="apr"){ if(d.apr==null&&DEBT_TYPES[d.type||"other"]){ d.apr=DEBT_TYPES[d.type||"other"].apr; d.aprEst=true; } else d.aprEst=false; }   /* blank → back to the type average */
-  save(); if(k==="extra"||k==="pay"||k==="balance") renderDebtTotals(); runAnalysis(); }
+  save(); if(k==="extra"||k==="pay"||k==="balance") renderDebtTotals(); if(k==="balance"&&$("clientLtv")) ltvHint(); runAnalysis(); }
 function toggleDebtPaste(){ const w=$("debtPasteWrap"); w.style.display=w.style.display==="none"?"block":"none"; }
 let lastDebts=[];
 /* tri-merge credit report (as copied from the PDF): "J-2  CAPITAL ONE  2026-09-21  2026-09-16  Revolving" then
@@ -4048,12 +4050,16 @@ function toolsToQuote(){ const m=toolsModel(); if(!m.ok){ toast("Fill in today's
   toast("New client created from the tool \u2014 add their name on the Client workspace"); }
 
 /* ---------- nav & boot ---------- */
+/* one debts panel (table, Add debt, Paste a list) shared by the Client workspace and the Savings analysis: it moves to whichever screen is open */
+function placeDebtPanel(s){ const p=$("debtPanel"); if(!p) return; if(s==="client"){ const h=$("debtHostClient"); if(h&&p.parentNode!==h) h.appendChild(p); }
+  else if(s==="analysis"){ const m=$("debtHome"); if(m&&p.previousElementSibling!==m) m.insertAdjacentElement("afterend",p); } }
 function go(s){ document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));
-  $("s-"+s).classList.add("active");
+  $("s-"+s).classList.add("active"); placeDebtPanel(s);
   if(s==="tmpl") renderTemplates();
   if(s==="tools") toolsInit();
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.s===s));
   if(s==="analysis"){ fillAnalysisInputs(); renderDebts(); runAnalysis(); }
+  if(s==="client"){ renderDebts(); }
   if(s==="proposal") renderProposalPreview();
   if(s==="present") renderPresent();
   if(s==="pricing") renderSavedOptions();
