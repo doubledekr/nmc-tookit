@@ -92,7 +92,7 @@ body.mode-fha #debtPanel,body.mode-va #debtPanel{display:none}
 .greet{font-family:var(--serif);font-size:19px;line-height:1.4;color:var(--ink)}
 .hlswatch{width:22px;height:22px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--line);cursor:pointer;padding:0}.hlswatch.on{box-shadow:0 0 0 2px var(--brand)}#propPreview.customize #propHL{display:none}
 .equitybox{margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}.equitybox .eqhead{margin-bottom:8px}.eqrows{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
-.eqrow{background:var(--cream-soft);border-radius:8px;padding:8px 10px}.eqrow .eql{font-size:12px;color:#5C616E}.eqrow .eqv{font-family:var(--serif);font-size:22px;color:#2E6B4F}.eqrow.none .eqv{color:#999}.eqrow .chip{margin-top:4px;font-size:11px}
+.eqrow{background:var(--cream-soft);border-radius:8px;padding:8px 10px;border:1px solid transparent}.eqrow.mine{border-color:#2E6B4F;background:#E3F1E7}.eqrow .eqtag{display:inline-block;margin-top:3px;background:#2E6B4F;color:#fff;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:600}.eqrow .eql{font-size:12px;color:#5C616E}.eqrow .eqv{font-family:var(--serif);font-size:22px;color:#2E6B4F}.eqrow.none .eqv{color:#999}.eqrow .chip{margin-top:4px;font-size:11px}
 .objflow{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}.objbox{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;position:relative}.objbox .objl{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#5C616E;margin-bottom:4px}.objbox .objt{font-size:14px;line-height:1.5}
 .objbox.tr{background:#F4EFE6}.objbox.ag{background:#E3F1E7}.objbox.rs{background:#FFF8EC}.objbox.tn{background:#EEF2F7}.objbox.cl{background:var(--brand);color:#fff;border-color:var(--brand)}.objbox.cl .objl{color:#F7D9D3}.objbox.cl .objt{font-family:var(--serif);font-size:18px}.objbox.cl .hint{color:#F7D9D3}
 body.present-mode .objbox .objt{font-size:17px}body.present-mode .objbox.cl .objt{font-size:22px}.cashline{background:#FFF3C4;border-radius:10px;padding:10px 12px;margin-top:10px;font-size:14px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:4px 10px}.cashline b{font-family:var(--serif);font-size:22px;font-weight:400}.cashline .hint{flex-basis:100%}
@@ -913,7 +913,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.8.4";
+const TOOLKIT_VERSION = "1.8.5";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1326,7 +1326,7 @@ function bindClientFields(){
       if(f==="seasonDate"&&c.seasonDate&&isInelig(c)){ c.ineligSeason=true; c.ineligFull=false; }
       if(["ineligRate","ineligSeason","ineligFull","targetRate","seasonDate","futureWhen","futureWindow","futureProduct","futurePrice","hot"].includes(f)){ fillClientForm(); }
       if(["loanType","rate","balance","payment","monthsLeft","freeClear"].includes(f)) renderStreamQuick(c);
-      if(["balance","value","freeClear"].includes(f)) ltvHint();
+      if(["balance","value","freeClear","fico"].includes(f)) ltvHint();
       normalizePayment(c,f);
       if(f==="value") c.valueSrc={type:"manual",when:todayStr()};
       ["payment","escrow","paymentTotal","monthsLeft","origAmount"].forEach(k=>{ if(k!==f){ const o=document.querySelector(`#s-client [data-f="${k}"]`); if(o) o.value=c[k]==null?"":c[k]; } });
@@ -1358,14 +1358,18 @@ function fillClientForm(){ const c=cur();
 }
 /* equity available at 80 / 85 / 90% combined LTV: value × cap − what's owed (first mortgage + any HELOC / home-equity debt on the list) */
 const EQUITY_CAPS=[80,85,90];
+/* how much of the home's value a home-equity loan can go up to, by credit score: 680\u2013699 \u2192 80%, 700\u2013739 \u2192 85%, 740+ \u2192 90% */
+const EQUITY_TIERS=[{min:740,p:90,label:"740+"},{min:700,p:85,label:"700\u2013739"},{min:680,p:80,label:"680\u2013699"}];
+function equityTier(fico){ fico=+fico||0; if(!(fico>0)) return null; const t=EQUITY_TIERS.find(t=>fico>=t.min); return t ? Object.assign({fico},t) : {fico,p:null,label:"below 680"}; }
 function equityRows(c){ const v=+c.value||0; if(!(v>0)) return null; const first=c.freeClear?0:(+c.balance||0);
   const liens=(c.debts||[]).filter(d=>d.type==="heloc"&&d.balance>0); const second=liens.reduce((s,d)=>s+(+d.balance||0),0); const owed=first+second;
-  return {v, first, second, owed, ltv: owed/v*100, rows: EQUITY_CAPS.map(p=>({p, max:Math.round(v*p/100), avail:Math.max(0,Math.round(v*p/100-owed))}))}; }
+  const tier=equityTier(c.fico);
+  return {v, first, second, owed, tier, ltv: owed/v*100, rows: EQUITY_CAPS.map(p=>({p, max:Math.round(v*p/100), avail:Math.max(0,Math.round(v*p/100-owed)), mine: !!(tier&&tier.p===p)}))}; }
 function ltvHint(){ const c=cur(); const el=$("clientLtv"); if(!el) return; const e=c?equityRows(c):null;
   if(!e){ el.innerHTML = c&&c.balance&&!c.value ? `<span class="hint">Enter the home value to see equity available at 80 / 85 / 90% LTV.</span>` : ""; return; }
   el.innerHTML=`<div class="equitybox"><div class="eqhead"><b>Equity</b> <span class="hint">home ${money(e.v)} \u00b7 owed ${money(e.owed)}${e.second>0?" (first "+money(e.first)+" + HELOC/HEL "+money(e.second)+")":""} \u00b7 LTV <b>${e.ltv.toFixed(1)}%</b>${e.ltv<=80?" \u2014 conventional cash-out territory":e.ltv>97?" \u2014 above standard limits":""}</span></div>
-    <div class="eqrows">${e.rows.map(r=>`<div class="eqrow${r.avail>0?"":" none"}"><div class="eql">up to <b>${r.p}%</b> LTV</div><div class="eqv">${r.avail>0?money(r.avail):"\u2014"}</div><div class="hint">max ${money(r.max)} total liens</div>${r.avail>0?`<button class="chip" title="Set this as the cash out on the savings analysis (rounded down to the thousand)" onclick="useEquity(${r.p})">\u2192 cash out</button>`:""}</div>`).join("")}</div>
-    <div class="hint" style="margin-top:4px">Gross equity before closing costs; program limits vary (VA cash-out to 100%, FHA 80%, most HELs 85\u201390%). A new HEL/HELOC counts against the same cap as the first mortgage.</div></div>`; }
+    <div class="eqrows">${e.rows.map(r=>`<div class="eqrow${r.avail>0?"":" none"}${r.mine?" mine":""}"><div class="eql">up to <b>${r.p}%</b> LTV <span class="hint">\u00b7 FICO ${(EQUITY_TIERS.find(t=>t.p===r.p)||{}).label}</span>${r.mine?`<div class="eqtag">\u2713 this client \u2014 FICO ${e.tier.fico}</div>`:""}</div><div class="eqv">${r.avail>0?money(r.avail):"\u2014"}</div><div class="hint">${money(e.v)} \u00d7 ${r.p}% = ${money(r.max)} \u2212 ${money(e.owed)} owed</div>${r.avail>0?`<button class="chip" title="Set this as the cash out on the savings analysis (rounded down to the thousand)" onclick="useEquity(${r.p})">\u2192 cash out</button>`:""}</div>`).join("")}</div>
+    <div class="hint" style="margin-top:4px">${!e.tier?"Add the credit score to mark which tier applies (680\u2013699 \u2192 80%, 700\u2013739 \u2192 85%, 740+ \u2192 90%). ":e.tier.p==null?`<b style="color:var(--warn)">FICO ${e.tier.fico} is below 680</b> \u2014 under the home-equity tiers; check the lender\u2019s floor before quoting. `:""}Gross equity before closing costs; a new HEL/HELOC counts against the same cap as the first mortgage. Other programs differ (VA cash-out to 100%, FHA 80%).</div></div>`; }
 function useEquity(p){ const c=cur(); if(!c) return; const e=equityRows(c); if(!e) return; const row=e.rows.find(r=>r.p===p); if(!row||!(row.avail>0)) return;
   const amt=Math.floor(row.avail/1000)*1000; if(!(amt>0)){ toast("Less than $1,000 available at "+p+"%"); return; }
   c.analysis=c.analysis||{}; c.analysis.anCashOut=amt; save(); if($("anCashOut")) $("anCashOut").value=amt; toast("Cash out set to "+money(amt)+" (up to "+p+"% LTV) \u2014 see the Savings analysis"); }
