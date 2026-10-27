@@ -89,7 +89,7 @@ body.mode-fha #debtPanel,body.mode-va #debtPanel{display:none}
 .tchart .paid{color:#2E6B4F;font-weight:600}.tchart .muted{color:#7A6F5B}
 .tchart .trow.d6{grid-template-columns:1.4fr 1fr .9fr .9fr .85fr 24px}.tchart .trow input[type=number]{padding:4px 5px;-moz-appearance:textfield}.tchart .trow input[type=number]::-webkit-inner-spin-button,.tchart .trow input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.tchart .trow input[type=text]{padding:4px 6px}.tchart .trow.gap{margin-top:8px}.tchart .trow.tsum{border-bottom:0;border-top:1px solid var(--line);padding-top:6px}.tchart .trow .hint{font-size:10.5px}
 .tchart h3 .side{font-family:var(--sans);font-size:12px;color:#A53222;background:#FBECE9;border-radius:999px;padding:2px 9px;vertical-align:middle;margin-left:6px}.tchart h3 .side.good{color:#2E6B4F;background:#E3F1E7}
-.greet{font-family:var(--serif);font-size:19px;line-height:1.4;color:var(--ink)}
+.greet{font-family:var(--serif);font-size:19px;line-height:1.4;color:var(--ink)}#purchOut .keep{background:#E3F1E7;color:#2E6B4F;border-radius:10px;padding:10px 12px;font-size:14px}#purchOut .keep b{font-weight:700}
 .hlswatch{width:22px;height:22px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--line);cursor:pointer;padding:0}.hlswatch.on{box-shadow:0 0 0 2px var(--brand)}#propPreview.customize #propHL{display:none}
 .equitybox{margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}.equitybox .eqhead{margin-bottom:8px}.eqrows{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
 #debtTable{overflow-x:auto}.eqrow{background:var(--cream-soft);border-radius:8px;padding:8px 10px;border:1px solid transparent}.eqrow.mine{border-color:#2E6B4F;background:#E3F1E7}.eqrow .eqtag{display:inline-block;margin-top:3px;background:#2E6B4F;color:#fff;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:600}.eqrow .eql{font-size:12px;color:#5C616E}.eqrow .eqv{font-family:var(--serif);font-size:22px;color:#2E6B4F}.eqrow.none .eqv{color:#999}.eqrow .chip{margin-top:4px;font-size:11px}
@@ -949,7 +949,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.8.7";
+const TOOLKIT_VERSION = "1.9.0";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -3824,10 +3824,10 @@ function purchHTML(m,screen){ const b=purchBenState(); const yrs=m.n/12;
     .concat(m.mi>0?[["Mortgage insurance", money(m.mi)+"/mo"+(m.miAuto?" (est.)":"")]]:[]).concat(m.hoa>0?[["HOA", money(m.hoa)+"/mo"]]:[])
     .concat([["<b>Monthly payment</b>","<b>"+money(Math.round(m.total))+"/mo</b>"+(m.esc==="own"&&m.ti>0?" <span class='hint'>(+ "+money(Math.round(m.ti))+" taxes & insurance on your own = "+money(Math.round(m.allIn))+" all-in)</span>":"")]]);
   const bens=PURCH_BENEFITS.filter(([k])=>b[k]&&!(k==="escrow"&&m.esc!=="escrow")&&!(k==="own"&&m.esc!=="own")&&!(k==="noPMI"&&m.mi>0)).map(([,l])=>l);
-  return `<div class="statline">${tiles.map(([v,l])=>`<div><div class="v">${v}</div><div class="l">${l}</div></div>`).join("")}</div>
-    <table class="${screen?"data":""}"><tbody>${rows.map(([a,b])=>`<tr><td>${a}</td><td class="num">${b}</td></tr>`).join("")}</tbody></table>
-    ${m.ex?`<div class="recbox" style="margin-top:10px"><b>Pay ${money(m.extra)} extra a month</b> and the loan is paid off in <b>${yrsMo(m.ex.months)}</b> \u2014 ${yrsMo(m.ex.cut)} sooner, saving about <b>${money(m.ex.saved)}</b> in interest. No prepayment penalty, so it\u2019s entirely up to you.</div>`:""}
-    ${bens.length?`<h2>Good to know</h2><ul style="margin:4px 0 4px 18px;font-size:12.5px;line-height:1.7">${bens.map(x=>`<li>${x}</li>`).join("")}</ul>`:""}`; }
+  return `${screen?`<div class="grid3">${tiles.map(([v,l],i)=>`<div class="stat${i===3||i===4?" green":i===0?" highlight":""}"><div class="v">${v}</div><div class="l">${l}</div></div>`).join("")}</div>`:`<div class="statline">${tiles.map(([v,l])=>`<div><div class="v">${v}</div><div class="l">${l}</div></div>`).join("")}</div>`}
+    <table class="${screen?"data":""}" style="margin-top:10px"><tbody>${rows.map(([a,b])=>`<tr><td>${a}</td><td class="num">${b}</td></tr>`).join("")}</tbody></table>
+    ${m.ex?`<div class="${screen?"keep":"recbox"}" style="margin-top:10px"><b>Pay ${money(m.extra)} extra a month</b> and the loan is paid off in <b>${yrsMo(m.ex.months)}</b> \u2014 ${yrsMo(m.ex.cut)} sooner, saving about <b>${money(m.ex.saved)}</b> in interest. No prepayment penalty, so it\u2019s entirely up to you.</div>`:""}
+    ${bens.length?`<h2 style="margin-top:12px">Good to know</h2><ul style="margin:4px 0 4px 18px;font-size:${screen?"13.5":"12.5"}px;line-height:1.7">${bens.map(x=>`<li>${x}</li>`).join("")}</ul>`:""}`; }
 function purchSheetHTML(){ const v=state.purch||purchVals(); const m=purchModel(v); if(!m.ok) return `<div class="empty">Enter the purchase price and a rate first.</div>`; const s=state.settings;
   return `<div class="brandbar"><div><img src="${s.logo||NMC_LOGO}" alt="${esc(s.co)}"><div class="tag">${esc(s.tag)}</div></div>
     <div class="lo"><b>${esc(s.loName||"Your Loan Officer")}</b>${s.loNmls?` \u00b7 NMLS #${esc(s.loNmls)}`:""}<br>${esc(s.loPhone||"")}${s.loPhone&&s.loEmail?" \u00b7 ":""}${esc(s.loEmail||"")}<br>Prepared ${new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}</div></div>
