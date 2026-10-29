@@ -89,7 +89,8 @@ body.mode-fha #debtPanel,body.mode-va #debtPanel{display:none}
 .tchart .paid{color:#2E6B4F;font-weight:600}.tchart .muted{color:#7A6F5B}
 .tchart .trow.d6{grid-template-columns:1.4fr 1fr .9fr .9fr .85fr 24px}.tchart .trow input[type=number]{padding:4px 5px;-moz-appearance:textfield}.tchart .trow input[type=number]::-webkit-inner-spin-button,.tchart .trow input[type=number]::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.tchart .trow input[type=text]{padding:4px 6px}.tchart .trow.gap{margin-top:8px}.tchart .trow.tsum{border-bottom:0;border-top:1px solid var(--line);padding-top:6px}.tchart .trow .hint{font-size:10.5px}
 .tchart h3 .side{font-family:var(--sans);font-size:12px;color:#A53222;background:#FBECE9;border-radius:999px;padding:2px 9px;vertical-align:middle;margin-left:6px}.tchart h3 .side.good{color:#2E6B4F;background:#E3F1E7}
-.greet{font-family:var(--serif);font-size:19px;line-height:1.4;color:var(--ink)}#purchOut .keep{background:#E3F1E7;color:#2E6B4F;border-radius:10px;padding:10px 12px;font-size:14px}#purchOut .keep b{font-weight:700}
+.greet{font-family:var(--serif);font-size:19px;line-height:1.4;color:var(--ink)}
+#emailMenu{background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.14);padding:6px;width:290px;display:flex;flex-direction:column;gap:2px}#emailMenu button{all:unset;display:block;cursor:pointer;padding:8px 10px;border-radius:8px;font-size:13.5px;line-height:1.3}#emailMenu button:hover{background:var(--cream-soft)}#emailMenu button b{display:block;font-weight:600}#emailMenu button .hint{font-size:11.5px}#purchOut .keep{background:#E3F1E7;color:#2E6B4F;border-radius:10px;padding:10px 12px;font-size:14px}#purchOut .keep b{font-weight:700}
 .hlswatch{width:22px;height:22px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px var(--line);cursor:pointer;padding:0}.hlswatch.on{box-shadow:0 0 0 2px var(--brand)}#propPreview.customize #propHL{display:none}
 .equitybox{margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}.equitybox .eqhead{margin-bottom:8px}.eqrows{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
 #debtTable{overflow-x:auto}.eqrow{background:var(--cream-soft);border-radius:8px;padding:8px 10px;border:1px solid transparent}.eqrow.mine{border-color:#2E6B4F;background:#E3F1E7}.eqrow .eqtag{display:inline-block;margin-top:3px;background:#2E6B4F;color:#fff;border-radius:999px;padding:1px 8px;font-size:11px;font-weight:600}.eqrow .eql{font-size:12px;color:#5C616E}.eqrow .eqv{font-family:var(--serif);font-size:22px;color:#2E6B4F}.eqrow.none .eqv{color:#999}.eqrow .chip{margin-top:4px;font-size:11px}
@@ -558,7 +559,7 @@ Discover 6,100 190 24.9"></textarea>
               <button class="btn ghost small" onclick="addScenario('heloc')">+ HELOC</button>
               <button class="btn ghost small" onclick="addScenario('refi')">+ Cash-out refi</button>
               <button class="btn" onclick="copyImage('compare')">Copy comparison</button><button class="btn ghost" onclick="exportComparePDF()">PDF</button>
-              <button class="btn ghost" onclick="exportImage('compare')">Save as image</button><button class="btn ghost" onclick="emailImage('compare')">Email as image</button>
+              <button class="btn ghost" onclick="exportImage('compare')">Save as image</button><button class="btn ghost" onclick="emailMenu(event,'compare')">Email as image \u25BE</button>
             </div>
           </div>
         </div>
@@ -575,7 +576,7 @@ Discover 6,100 190 24.9"></textarea>
         <div class="grid3">
           <div class="field"><label>Client</label><select id="propClientPicker" onchange="pickClient(this.value)"></select></div>
           <div class="field" style="display:none"><label>Pricing option on proposal</label><select id="propOption" onchange="renderProposalPreview()"></select></div>
-          <div class="field" style="align-self:end"><div class="btnrow"><button class="btn" onclick="copyImage('proposal')">Copy proposal</button><button class="btn ghost" onclick="emailImage('proposal')">Email</button><button class="btn ghost" onclick="exportImage('proposal')">Save image</button><button class="btn ghost" onclick="exportPDF()">PDF</button><button class="btn ghost" onclick="librarySave('proposal')">Save to library</button><button class="btn ghost" id="propSaveOpt" onclick="addSnapScenario(); renderProposalPreview()" title="Keep this proposal's set-up as a saved option, so it can sit side by side with others">Save as an option</button><button class="btn ghost" onclick="librarySave('proposal'); markSentLatest('text')" title="Logs this proposal as sent by text (Email marks itself automatically)">Mark sent by text</button></div></div>
+          <div class="field" style="align-self:end"><div class="btnrow"><button class="btn" onclick="copyImage('proposal')">Copy proposal</button><button class="btn ghost" onclick="emailMenu(event,'proposal')">Email \u25BE</button><button class="btn ghost" onclick="exportImage('proposal')">Save image</button><button class="btn ghost" onclick="exportPDF()">PDF</button><button class="btn ghost" onclick="librarySave('proposal')">Save to library</button><button class="btn ghost" id="propSaveOpt" onclick="addSnapScenario(); renderProposalPreview()" title="Keep this proposal's set-up as a saved option, so it can sit side by side with others">Save as an option</button><button class="btn ghost" onclick="librarySave('proposal'); markSentLatest('text')" title="Logs this proposal as sent by text (Email marks itself automatically)">Mark sent by text</button></div></div>
         </div>
         <div class="field"><div class="chiprow" style="gap:16px">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="propBadge" style="width:auto;min-height:0" onchange="setPropFlag('badge',this.checked)"> NMC mortgage badge</label>
@@ -949,7 +950,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.9.1";
+const TOOLKIT_VERSION = "1.9.2";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2695,7 +2696,7 @@ function renderLibrary(){ const el=$("propLibrary"); if(!el) return; const c=cur
   el.innerHTML = !L.length ? `<div class="empty">Nothing saved yet. Every proposal you copy, email, print, or save is kept here for this client automatically \u2014 or click Save to library.</div>` :
   `<table class="data"><thead><tr><th>Saved</th><th>Proposal</th><th>Status</th><th></th></tr></thead><tbody>`+L.map(e=>`<tr><td class="hint" style="white-space:nowrap">${esc(e.when)}</td><td><b>${esc(e.title)}</b> <span class="hint">\u00b7 ${e.kind==="compare"?"comparison":"proposal"} \u00b7 v${esc(e.version||"")}</span></td>
    <td style="white-space:nowrap">${e.sent?`<span class="tag-good" title="${esc(e.sent.when)}">Sent ${esc(e.sent.how)} ${esc(e.sent.when.slice(0,10))}</span> <button class="btn ghost small" title="Clear" onclick="libSent('${e.id}',null)">\u2715</button>`:`<span class="hint">not sent</span> <button class="chip" onclick="libSent('${e.id}','text')">Sent by text</button><button class="chip" onclick="libSent('${e.id}','email')">by email</button><button class="chip" onclick="libSent('${e.id}','other')">other</button>`}</td>
-   <td><div class="btnrow" style="gap:6px;flex-wrap:nowrap"><button class="btn ghost small" onclick="libraryView('${e.id}')">View</button><button class="btn small" onclick="copyImage('${e.kind}','${e.id}')">Copy</button><button class="btn ghost small" onclick="exportImage('${e.kind}','${e.id}')">Save image</button><button class="btn ghost small" onclick="emailImage('${e.kind}','${e.id}')">Email</button><button class="btn ghost small" onclick="exportSnapPDF('${e.id}')">PDF</button><button class="btn ghost small" title="Remove" onclick="libraryDel('${e.id}')">\u2715</button></div></td></tr>`).join("")+`</tbody></table>`; }
+   <td><div class="btnrow" style="gap:6px;flex-wrap:nowrap"><button class="btn ghost small" onclick="libraryView('${e.id}')">View</button><button class="btn small" onclick="copyImage('${e.kind}','${e.id}')">Copy</button><button class="btn ghost small" onclick="exportImage('${e.kind}','${e.id}')">Save image</button><button class="btn ghost small" onclick="emailMenu(event,'${e.kind}','${e.id}')">Email \u25BE</button><button class="btn ghost small" onclick="exportSnapPDF('${e.id}')">PDF</button><button class="btn ghost small" title="Remove" onclick="libraryDel('${e.id}')">\u2715</button></div></td></tr>`).join("")+`</tbody></table>`; }
 function exportSnapPDF(id){ const e=libSnap(id); if(!e) return; printAs(e.title, e.html); }
 /* proposal sent status: on the library entry, mirrored to the client (latest) and the activity log */
 function libSent(id,how){ const c=cur(); const e=c&&c.library.find(x=>x.id===id); if(!e) return;
@@ -2725,21 +2726,54 @@ async function exportImage(kind, snapId){
     toast("Saved "+fname+" to your Downloads folder");
   }catch(e){ toast(e.message==="render"||e.message==="canvas" ? "Couldn\u2019t build the image in this browser \u2014 use Export PDF (Chrome or Edge recommended)" : e.message); }
 }
-function emailBodyFor(c,r,kind){ const s=state.settings; const first= kind==="purchase" && state.purch&&state.purch.who ? String(state.purch.who).split(/[ ,&]/)[0] : c&&c.name? c.name.split(/[ ,&]/)[0] : "there";
+/* ---- the options on the proposal, as products the email can talk about ---- */
+function emailProducts(c,r,kind){ const out=[]; const push=(x)=>{ if(!x) return; const k=x.fhaS?"fha_streamline":x.prog==="va_irrrl"&&!x.second?"va_irrrl":x.second?(x.secType==="heloc"?"heloc":"hel"):x.fc?"fc":(x.cashOut>0?"cashout":"refi");
+    out.push({k, r:x, label: k==="fha_streamline"?"FHA Streamline":k==="va_irrrl"?"VA IRRRL (streamline)":k==="heloc"?"HELOC":k==="hel"?"home equity loan":k==="fc"?"cash-out loan on your paid-off home":k==="cashout"?"cash-out refinance":"rate-and-term refinance"}); };
+  if(c && (kind==="proposal"||kind==="compare")){ const sel=propSelected(c); if(sel.length>=1 && (kind==="compare"||sel.length>=2)){ sel.forEach(sc=>push(computeSnap(c,sc))); } }
+  if(!out.length && r) push(r);
+  return out; }
+function emailDocsFor(k){ return (k==="fha_streamline"||k==="va_irrrl") ? {docs:"your most recent mortgage statement and a few e-signatures \u2014 that\u2019s it. No appraisal, no pay stubs, no tax returns.", close:"typically closes in about a week"}
+  : (k==="hel"||k==="heloc") ? {docs:"last year\u2019s W-2, your two most recent pay stubs, your most recent mortgage statement, and e-signatures.", close:"generally closes in 3\u20137 days"}
+  : {docs:"your two most recent pay stubs, last year\u2019s W-2, your most recent mortgage statement, and e-signatures.", close:"typically closes in a few weeks"}; }
+function emailOptionLine(p){ const r=p.r; const bits=[]; if(r.a&&r.a.anRate) bits.push(pct(r.a.anRate)); if(r.newPay>0) bits.push(money(Math.round(r.newPay))+"/mo"); if(r.saveMo>0) bits.push("frees up "+money(Math.round(r.saveMo))+"/mo"); if(r.cashOut>0) bits.push(money(r.cashOut)+" cash to you"); if(r.roll&&r.debts&&r.debts.length) bits.push(r.debts.length+" debt"+(r.debts.length>1?"s":"")+" paid off"); if(r.skipCash>0) bits.push("skip "+r.skipN+" payment"+(r.skipN>1?"s":""));
+  return p.label.charAt(0).toUpperCase()+p.label.slice(1)+(bits.length?" \u2014 "+bits.join(", "):""); }
+const NMC_WHY="Why Neighborhood Mortgage: we\u2019re a wholesale mortgage broker, not a retail lender. We don\u2019t sell one bank\u2019s rate sheet \u2014 we shop your file across dozens of lenders and let them compete for it, which is how we deliver better-than-retail pricing and the most competitive terms available on the day you lock.";
+function emailBodyFor(c,r,kind,variant){ const s=state.settings; variant=variant||"blank";
+  const first= kind==="purchase" && state.purch&&state.purch.who ? String(state.purch.who).split(/[ ,&]/)[0] : c&&c.name? c.name.split(/[ ,&]/)[0] : "there";
+  const sig=`${s.loName||""}\nNeighborhood Mortgage Company\nNMLS #${s.loNmls||""}${s.loPhone?" \u00b7 "+s.loPhone:""}${s.loEmail?" \u00b7 "+s.loEmail:""}`;
+  const phone=s.loPhone||"my number below";
   const what = kind==="purchase" ? "the purchase estimate" : kind==="compare" ? "the side-by-side of your options" : (r&&r.second ? "the home equity proposal" : "the savings proposal");
-  return `Hi ${first},\n\nHere is ${what} we talked about \u2014 the image below has the full breakdown.\n\nCall or text me with any questions.\n\n${s.loName||""}\nNeighborhood Mortgage Company\nNMLS #${s.loNmls||""}${s.loPhone?" \u00b7 "+s.loPhone:""}${s.loEmail?" \u00b7 "+s.loEmail:""}`; }
-async function emailImage(kind, snapId){
+  if(variant==="blank" || kind==="purchase" || kind==="amort" || kind==="present") return `Hi ${first},\n\nHere is ${what} we talked about \u2014 the image below has the full breakdown.\n\nCall or text me with any questions.\n\n${sig}`;
+  const prods=emailProducts(c,r,kind); const multi=prods.length>1; const kinds=[...new Set(prods.map(p=>p.k))];
+  const stream=kinds.some(k=>k==="fha_streamline"||k==="va_irrrl"), he=kinds.some(k=>k==="hel"||k==="heloc"), other=kinds.some(k=>!["fha_streamline","va_irrrl","hel","heloc"].includes(k));
+  const docLines=[]; if(stream) docLines.push("Streamline: "+emailDocsFor("va_irrrl").docs+" It "+emailDocsFor("va_irrrl").close+"."); if(he) docLines.push((kinds.includes("heloc")&&!kinds.includes("hel")?"HELOC":kinds.includes("hel")&&kinds.includes("heloc")?"Home equity loan / HELOC":"Home equity loan")+": "+emailDocsFor("hel").docs+" It "+emailDocsFor("hel").close+"."); if(other) docLines.push("Refinance: "+emailDocsFor("refi").docs+" It "+emailDocsFor("refi").close+".");
+  const headline = prods.length ? (multi ? prods.length+" ways to do this, side by side" : emailOptionLine(prods[0])) : what;
+  if(variant==="cold"){
+    return `Hi ${first},\n\nThis is what I was reaching out about. The image below is a quick look at ${multi?"the options":"the option"} I put together for you \u2014 ${headline}.\n\nGive me a ring or text at ${phone}, or just reply to this email, and we\u2019ll turn it into real numbers for your situation. Ten minutes is usually all it takes.\n\nA few things worth knowing up front:\n\u2022 No out-of-pocket costs on ${multi?"any of these options":"this option"} \u2014 nothing due at closing.\n${docLines.map(l=>"\u2022 "+l).join("\n")}\n\u2022 No prepayment penalty \u2014 pay extra, pay it off early, or refinance again whenever it makes sense.\n\n${NMC_WHY}\n\nLooking forward to it,\n${sig}`; }
+  /* full */
+  const optList = prods.length ? prods.map((p,i)=>(multi?(i+1)+". ":"")+emailOptionLine(p)).join("\n") : "";
+  return `Hi ${first},\n\nThank you for the time today \u2014 I enjoyed the conversation. As promised, the image below has the full breakdown${multi?" of the "+prods.length+" options we talked through":""}. Here\u2019s the short version:\n\n${optList}\n\nWhat it costs you up front: nothing. ${multi?"Every option here is":"This is"} structured with no out-of-pocket costs \u2014 nothing due at closing \u2014 and there is no prepayment penalty, so you can pay extra, pay it off early, or refinance again whenever it makes sense.\n\nWhat I\u2019ll need from you:\n${docLines.map(l=>"\u2022 "+l).join("\n")}\n\nNext steps are simple: I send you the application link, you e-sign it, and we lock your rate. From there I handle the rest and keep you posted at every step.\n\n${NMC_WHY}\n\nCall or text me at ${phone}, or reply here, with any questions \u2014 or if you\u2019re ready, just say the word and I\u2019ll get the application link over to you.\n\nBlessings,\n${sig}`; }
+/* the Email button: pick the message that goes with the image */
+function emailMenu(ev, kind, snapId){ ev.preventDefault(); ev.stopPropagation(); const old=$("emailMenu"); if(old){ old.remove(); if(old.dataset.for===kind+"|"+(snapId||"")) return; }
+  const b=ev.currentTarget||ev.target; const rect=b.getBoundingClientRect(); const m=document.createElement("div"); m.id="emailMenu"; m.dataset.for=kind+"|"+(snapId||"");
+  const opt=(v,title,sub)=>`<button type="button" onclick="document.getElementById('emailMenu').remove(); emailImage('${kind}',${snapId?"'"+snapId+"'":"null"},'${v}')"><b>${title}</b><span class="hint">${sub}</span></button>`;
+  m.innerHTML=opt("blank","Blank email","Just the image and a one-line note")+opt("cold","Cold reach-out","\u201cThis is what I was reaching out about\u201d \u2014 call/text, key benefits, why NMC")+opt("full","Full email","Options recapped, what I need from you, next steps, why NMC")+`<button type="button" onclick="document.getElementById('emailMenu').remove(); copyEmailText('${kind}',${snapId?"'"+snapId+"'":"null"},'full')"><b>Copy full email text</b><span class="hint">Paste it anywhere \u2014 no image</span></button>`;
+  m.style.cssText=`position:fixed;left:${Math.min(rect.left, window.innerWidth-300)}px;top:${rect.bottom+4}px;z-index:9000`; document.body.appendChild(m);
+  setTimeout(()=>document.addEventListener("click", function h(e){ if(!m.contains(e.target)){ m.remove(); document.removeEventListener("click",h); } }),0); }
+async function copyEmailText(kind, snapId, variant){ const c=cur(); const r=c&&computeAnalysis(c); const t=emailBodyFor(c, r&&!r.tooSmall?r:null, kind, variant); try{ await navigator.clipboard.writeText(t); toast("Email text copied"); }catch(e){ toast("Couldn\u2019t reach the clipboard"); } }
+async function emailImage(kind, snapId, variant){
   toast("Building the image\u2026");
   try{ const {c,r,title,name,cv,jpg}=await renderSheet(kind, snapId?libSnap(snapId):null);
     if(c){ const e=snapId?libSnap(snapId):c.library[0]; if(e&&!e.sent) libSent(e.id,"email"); }
     const to=(c&&c.email)||"";                                   /* client email auto-filled when it's on file */
-    const mailto="mailto:"+encodeURIComponent(to)+"?subject="+encodeURIComponent(title)+"&body="+encodeURIComponent(emailBodyFor(c,r,kind));
+    const body=emailBodyFor(c,r,kind,variant); const subject = variant==="cold" ? ((c&&c.name?c.name.split(/[ ,&]/)[0]+", ":"")+"the numbers I mentioned \u2014 "+title) : title;
+    const mailto="mailto:"+encodeURIComponent(to)+"?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body);
     const file=new File([jpg],name+".jpg",{type:"image/jpeg"});
     /* system share sheet (Windows, Mac, phones): Mail/Outlook gets the JPG as a real attachment with subject + note.
        It can't prefill the recipient, so the client's address goes on the clipboard for the To field. */
     if(navigator.canShare && navigator.canShare({files:[file]})){
       if(to){ try{ await navigator.clipboard.writeText(to); }catch(e){} }
-      try{ await navigator.share({files:[file],title,text:emailBodyFor(c,r,kind)}); toast(to?"Pick Mail or Outlook \u2014 the client\u2019s address ("+to+") is copied for the To field":"Pick Mail or Outlook"); return; }
+      try{ await navigator.share({files:[file],title:subject,text:body}); toast(to?"Pick Mail or Outlook \u2014 the client\u2019s address ("+to+") is copied for the To field":"Pick Mail or Outlook"); return; }
       catch(e){ if(e&&e.name==="AbortError") return; } }
     /* no share sheet: copy the image to the clipboard, open an addressed email, banker pastes it in */
     let copied=false;
