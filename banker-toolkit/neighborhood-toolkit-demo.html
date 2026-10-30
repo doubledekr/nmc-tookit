@@ -951,7 +951,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.9.8";
+const TOOLKIT_VERSION = "1.9.9";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2280,55 +2280,67 @@ function applyHides(html,c,edit){ if(!c||/class="empty"/.test(html)) return html
    sheet is re-rendered at export width. Saved with the client; drawn into Copy / Save image / Email. ---- */
 const HL_COLORS=[["yellow","#FFE600"],["green","#8CF08C"],["pink","#FF8FD0"],["blue","#8CD4FF"]];
 const HL_BLOCKS="li,tr,.statline>div,h1,h2,h3,p,.recbox,.keep,.pw,.trow,.tot,.cashline,.disc,.brandbar>div";
+const HL_FILL={yellow:"#FFEB7A",green:"#BFF0BF",pink:"#FFC2E3",blue:"#BFE3FF"};
 const hl={on:false,color:"yellow",width:18,drawing:false,cur:null};
-function hlMarks(){ const c=cur(); if(!c) return []; c.prop=c.prop||{}; c.prop.marks=c.prop.marks||[]; return c.prop.marks; }
+/* a highlight is a run of whole words inside one block: {bi, s, e, color, t} — character offsets into the block's text plus the
+   words themselves, so the same words light up in the preview, the image, the PDF and the email no matter how they wrap */
+function hlMarks(){ const c=cur(); if(!c) return []; c.prop=c.prop||{}; c.prop.marks=(c.prop.marks||[]).filter(m=>m&&typeof m.s==="number"&&typeof m.e==="number"); return c.prop.marks; }
 function hlBlocks(root){ return [...root.querySelectorAll(HL_BLOCKS)]; }
 function hlSetOn(on){ hl.on=!!on; if(hl.on&&propCustomize) setPropCustomize(false); hlMount(); renderHLBar(); }
 function hlSetColor(k){ hl.color=k; if(!hl.on) hlSetOn(true); else renderHLBar(); }
 function hlUndo(){ const m=hlMarks(); if(!m.length) return; m.pop(); save(); hlMount(); renderHLBar(); }
 function hlClear(){ const m=hlMarks(); if(!m.length) return; m.length=0; save(); hlMount(); renderHLBar(); }
 function renderHLBar(){ const bar=$("propHLBar"); if(!bar) return; const n=hlMarks().length;
-  bar.innerHTML=`<button class="btn small${hl.on?"":" ghost"}" onclick="hlSetOn(${hl.on?"false":"true"})" title="Draw highlighter strokes on the preview \u2014 they go out with Copy, Save image and Email">\uD83D\uDD8D ${hl.on?"Highlighting \u2014 draw on the preview":"Highlighter"}</button>
+  bar.innerHTML=`<button class="btn small${hl.on?"":" ghost"}" onclick="hlSetOn(${hl.on?"false":"true"})" title="Draw across words on the preview — the stroke snaps to the whole words it covers and goes out with Copy, Save image, PDF and Email">🖍 ${hl.on?"Highlighting — draw on the preview":"Highlighter"}</button>
     ${HL_COLORS.map(([k,hex])=>`<button class="hlswatch${hl.color===k?" on":""}" style="background:${hex}" title="${k}" onclick="hlSetColor('${k}')"></button>`).join("")}
     <button class="btn ghost small" onclick="hlUndo()" ${n?"":"disabled"}>Undo</button><button class="btn ghost small" onclick="hlClear()" ${n?"":"disabled"}>Clear</button>
-    ${n?`<span class="hint">${n} highlight${n===1?"":"s"} \u2014 saved with ${esc(cur().name)}, included in the image</span>`:hl.on?`<span class="hint">Drag across anything on the preview. Esc to stop.</span>`:""}`; }
+    ${n?`<span class="hint">${n} highlight${n===1?"":"s"} — saved with ${esc(cur().name)}, included in the image, PDF and email</span>`:hl.on?`<span class="hint">Draw across the words you want — the stroke snaps to whole words. Click a highlight to remove it. Esc to stop.</span>`:""}`; }
+function hlTextNodes(block){ const out=[]; const w=block.ownerDocument.createTreeWalker(block, 4); let n; while((n=w.nextNode())) out.push(n); return out; }
+function hlUnapply(root){ root.querySelectorAll("mark.hl").forEach(m=>{ const p=m.parentNode; if(!p) return; while(m.firstChild) p.insertBefore(m.firstChild,m); p.removeChild(m); p.normalize(); }); }
+/* wrap each mark's words in <mark class="hl"> inside a rendered copy of the sheet (preview, export iframe, email DOM, PDF) */
+function hlApply(root, marks){ hlUnapply(root); if(!marks||!marks.length) return; const blocks=hlBlocks(root); const doc=root.ownerDocument||document;
+  marks.forEach((m,mi)=>{ const b=blocks[m.bi]; if(!b) return; const txt=b.textContent; let s=m.s,e=m.e; if(m.t&&txt.substr(s,e-s)!==m.t){ const i=txt.indexOf(m.t); if(i<0) return; s=i; e=i+m.t.length; }
+    const nodes=hlTextNodes(b); let pos=0;
+    nodes.forEach(n=>{ const L=n.data.length, start=pos; pos+=L; const a=Math.max(s,start), z=Math.min(e,start+L); if(z<=a) return;
+      let t=n; if(a-start>0) t=t.splitText(a-start); if(z-a<t.data.length) t.splitText(z-a);
+      const mk=doc.createElement("mark"); mk.className="hl"; mk.setAttribute("data-hl",m.color); mk.setAttribute("data-mi",String(mi)); mk.style.cssText=`background-color:${HL_FILL[m.color]||HL_FILL.yellow};color:inherit;padding:0 1px;border-radius:2px`;
+      t.parentNode.insertBefore(mk,t); mk.appendChild(t); }); }); }
+function hlApplyHTML(html, marks){ if(!marks||!marks.length) return html; const d=document.createElement("div"); d.innerHTML=html; hlApply(d,marks); return d.innerHTML; }
+/* the canvas only shows the live stroke; once the pen lifts the stroke snaps to words and becomes text highlights */
 function hlCanvas(){ const pv=$("propPreview"); if(!pv) return null; let cv=$("propHL");
   if(!cv){ cv=document.createElement("canvas"); cv.id="propHL"; pv.appendChild(cv); cv.addEventListener("pointerdown",hlDown); cv.addEventListener("pointermove",hlMove); cv.addEventListener("pointerup",hlUp); cv.addEventListener("pointercancel",hlUp); cv.addEventListener("pointerleave",hlUp); }
   pv.style.position="relative"; const W=pv.clientWidth, H=pv.clientHeight; if(cv.width!==W||cv.height!==H){ cv.width=W; cv.height=H; }
   cv.style.cssText=`position:absolute;left:0;top:0;width:${W}px;height:${H}px;pointer-events:${hl.on?"auto":"none"};mix-blend-mode:multiply;cursor:${hl.on?"crosshair":"default"};z-index:4;touch-action:none`; return cv; }
 function hlPos(ev){ const pv=$("propPreview"); const r=pv.getBoundingClientRect(); return {x:ev.clientX-r.left-pv.clientLeft, y:ev.clientY-r.top-pv.clientTop}; }
+function hlUnder(ev){ const cv=$("propHL"); if(!cv) return null; cv.style.pointerEvents="none"; const el=document.elementFromPoint(ev.clientX,ev.clientY); cv.style.pointerEvents="auto"; return el; }
 function hlDown(ev){ if(!hl.on) return; ev.preventDefault(); const cv=hlCanvas(); try{ cv.setPointerCapture(ev.pointerId); }catch(e){}
-  const pv=$("propPreview"); cv.style.pointerEvents="none"; const under=document.elementFromPoint(ev.clientX,ev.clientY); cv.style.pointerEvents="auto";
-  const block=under&&pv.contains(under)?under.closest(HL_BLOCKS):null; const blocks=hlBlocks(pv); const bi=block?blocks.indexOf(block):-1;
-  const el=bi>=0?block:pv; const base=el.getBoundingClientRect(); const pvr=pv.getBoundingClientRect(); const lh=hlLineH(el);
-  hl.cur={bi, color:hl.color, w:hl.width/lh, base:{x:base.left-pvr.left-pv.clientLeft, y:base.top-pvr.top-pv.clientTop, w:base.width, h:base.height, lh}, pts:[]}; hl.drawing=true; hlAdd(ev); }
-/* a block's line height: strokes are anchored to a line of text (line index + position within it), so a bullet that wraps
-   differently at export width still gets a one-line-thick stroke on the right line instead of a blob across the block */
-function hlLineH(el){ const cs=((el.ownerDocument&&el.ownerDocument.defaultView)||window).getComputedStyle(el); let lh=parseFloat(cs.lineHeight); const fs=parseFloat(cs.fontSize)||12.5; if(!(lh>0)) lh=fs*1.5; return lh; }
-function hlAdd(ev){ const p=hlPos(ev); const b=hl.cur.base; const fx=(p.x-b.x)/b.w, yy=p.y-b.y; const li=Math.floor(yy/b.lh), fyl=(yy-li*b.lh)/b.lh; const last=hl.cur.pts[hl.cur.pts.length-1];
-  if(last && Math.abs(last[0]-fx)*b.w<2 && last[1]===li && Math.abs(last[2]-fyl)*b.lh<2) return; hl.cur.pts.push([+fx.toFixed(4),li,+fyl.toFixed(3)]); hlDraw(); }
+  hl.cur={color:hl.color, pts:[], downEv:{clientX:ev.clientX,clientY:ev.clientY}}; hl.drawing=true; hlAdd(ev); }
+function hlAdd(ev){ const p=hlPos(ev); const last=hl.cur.pts[hl.cur.pts.length-1]; if(last && Math.abs(last[0]-p.x)<2 && Math.abs(last[1]-p.y)<2) return; hl.cur.pts.push([p.x,p.y]); hlDraw(); }
 function hlMove(ev){ if(!hl.drawing||!hl.cur) return; ev.preventDefault(); hlAdd(ev); }
-function hlUp(ev){ if(!hl.drawing) return; hl.drawing=false; const st=hl.cur; hl.cur=null; if(!st||st.pts.length<2) { hlDraw(); return; }
-  hlMarks().push({bi:st.bi,color:st.color,w:+st.w.toFixed(4),pts:st.pts}); save(); hlDraw(); renderHLBar(); }
+function hlUp(ev){ if(!hl.drawing) return; hl.drawing=false; const st=hl.cur; hl.cur=null; if(!st) return;
+  if(st.pts.length<3){ /* a tap: remove the highlight under it */ const el=hlUnder(st.downEv); const mk=el&&el.closest&&el.closest("mark.hl"); const mi=mk?+mk.getAttribute("data-mi"):-1; if(mi>=0){ hlMarks().splice(mi,1); save(); hlMount(); renderHLBar(); } else hlDraw(); return; }
+  const found=hlSnap(st.pts, st.color); if(found.length){ const m=hlMarks(); found.forEach(f=>{ if(!m.some(o=>o.bi===f.bi&&o.s===f.s&&o.e===f.e)) m.push(f); }); save(); hlMount(); renderHLBar(); } else hlDraw(); }
+/* snap a stroke to words: every word whose box the stroke passed through, grouped into runs (one unhit word between two hit
+   words on the same line is bridged, so a quick pass that skipped "a" still reads as one run) */
+function hlSnap(pts, color){ const pv=$("propPreview"); const pvr=pv.getBoundingClientRect(); const abs=pts.map(([x,y])=>[x+pvr.left+pv.clientLeft, y+pvr.top+pv.clientTop]);
+  const xs=abs.map(p=>p[0]), ys=abs.map(p=>p[1]); const bx=Math.min(...xs)-6, bX=Math.max(...xs)+6, by=Math.min(...ys)-6, bY=Math.max(...ys)+6;
+  const blocks=hlBlocks(pv); const cand=blocks.filter(b=>{ const r=b.getBoundingClientRect(); return r.width>0&&r.right>bx&&r.left<bX&&r.bottom>by&&r.top<bY; });
+  const inner=cand.filter(b=>!cand.some(o=>o!==b&&b.contains(o))); const out=[]; const rng=document.createRange();
+  inner.forEach(b=>{ const bi=blocks.indexOf(b); const words=[]; let pos=0;
+    hlTextNodes(b).forEach(n=>{ if(n.parentElement&&n.parentElement.closest("button,input,select,textarea")){ pos+=n.data.length; return; } const re=/\S+/g; let m; while((m=re.exec(n.data))){ rng.setStart(n,m.index); rng.setEnd(n,m.index+m[0].length); const rects=[...rng.getClientRects()].filter(r=>r.width>0);
+        const hit=rects.some(r=>abs.some(([x,y])=>x>=r.left-3&&x<=r.right+3&&y>=r.top-2&&y<=r.bottom+2)); words.push({s:pos+m.index,e:pos+m.index+m[0].length,hit,top:rects[0]?Math.round(rects[0].top):-1}); } pos+=n.data.length; });
+    const nextHit=(j)=>{ let k=j+1; while(k<words.length && !words[k].hit){ if(words[k].top!==words[j].top||words[k].top<0) return -1; k++; } return k<words.length?k:-1; };   /* bridge unhit words only along the same line */
+    let i=0; while(i<words.length){ if(!words[i].hit){ i++; continue; } let j=i; for(;;){ const k=nextHit(j); if(k<0) break; j=k; }
+      out.push({bi, s:words[i].s, e:words[j].e, color, t:b.textContent.slice(words[i].s,words[j].e)}); i=j+1; } });
+  return out; }
 function hlStroke(ctx, pts, width, hex, alpha){ if(pts.length<2) return; ctx.save(); ctx.globalAlpha=alpha; ctx.strokeStyle=hex; ctx.lineWidth=width; ctx.lineCap="round"; ctx.lineJoin="round"; ctx.beginPath(); ctx.moveTo(pts[0][0],pts[0][1]);
   for(let i=1;i<pts.length-1;i++){ const mx=(pts[i][0]+pts[i+1][0])/2, my=(pts[i][1]+pts[i+1][1])/2; ctx.quadraticCurveTo(pts[i][0],pts[i][1],mx,my); } const l=pts[pts.length-1]; ctx.lineTo(l[0],l[1]); ctx.stroke(); ctx.restore(); }
-/* resolve a mark's points to pixels inside a rendered copy of the sheet (preview or the export's measuring div) */
-function hlResolve(mark, root, blocks){ const block=mark.bi>=0?blocks[mark.bi]:null; const el=block||root; const rr=root.getBoundingClientRect(); const b=el.getBoundingClientRect();
-  const ox=b.left-rr.left+(block?0:root.clientLeft), oy=b.top-rr.top+(block?0:root.clientTop); const lh=hlLineH(el); const nL=Math.max(1,Math.round(b.height/lh));
-  return {pts:mark.pts.map(([fx,li,fyl])=>[ox+fx*b.width, oy+Math.min(li,nL-1)*lh+fyl*lh]), width:Math.max(6,mark.w*lh)}; }
-function hlDraw(){ const pv=$("propPreview"); const cv=hlCanvas(); if(!cv) return; const ctx=cv.getContext&&cv.getContext("2d"); if(!ctx) return; ctx.clearRect(0,0,cv.width,cv.height);
-  const blocks=hlBlocks(pv); const hexOf=k=>(HL_COLORS.find(c=>c[0]===k)||HL_COLORS[0])[1];
-  hlMarks().forEach(m=>{ const r=hlResolve(m,pv,blocks); hlStroke(ctx,r.pts,r.width,hexOf(m.color),0.65); });
-  if(hl.cur&&hl.cur.pts.length>1){ const b=hl.cur.base; hlStroke(ctx,hl.cur.pts.map(([fx,li,fyl])=>[b.x+fx*b.w,b.y+li*b.lh+fyl*b.lh]),Math.max(6,hl.cur.w*b.lh),hexOf(hl.cur.color),0.65); } }
-function hlMount(){ const pv=$("propPreview"); if(!pv) return; if(!cur()){ const old=$("propHL"); if(old) old.remove(); return; } hlCanvas(); hlDraw(); }
-/* the preview's innerHTML is replaced from many places: put the canvas back whenever that happens */
-document.addEventListener("DOMContentLoaded",()=>{ const pv=$("propPreview"); if(!pv) return; new MutationObserver(()=>{ if(!$("propHL")||!pv.contains($("propHL"))) requestAnimationFrame(()=>{ hlMount(); renderHLBar(); }); }).observe(pv,{childList:true}); window.addEventListener("resize",()=>{ if($("propHL")) hlDraw(); }); });
+function hlDraw(){ const cv=hlCanvas(); if(!cv) return; const ctx=cv.getContext&&cv.getContext("2d"); if(!ctx) return; ctx.clearRect(0,0,cv.width,cv.height);
+  if(hl.cur&&hl.cur.pts.length>1){ const hex=(HL_COLORS.find(c=>c[0]===hl.cur.color)||HL_COLORS[0])[1]; hlStroke(ctx,hl.cur.pts,hl.width,hex,0.65); } }
+function hlMount(){ const pv=$("propPreview"); if(!pv) return; if(!cur()){ const old=$("propHL"); if(old) old.remove(); return; } hlApply(pv, hlMarks()); hlCanvas(); hlDraw(); }
+/* the preview's innerHTML is replaced from many places: put the highlights and the canvas back whenever that happens */
+document.addEventListener("DOMContentLoaded",()=>{ const pv=$("propPreview"); if(!pv) return; new MutationObserver(()=>{ if(!$("propHL")||!pv.contains($("propHL"))) requestAnimationFrame(()=>{ hlMount(); renderHLBar(); }); }).observe(pv,{childList:true}); window.addEventListener("resize",()=>{ if($("propHL")) hlCanvas(); }); });
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&hl.on) hlSetOn(false); });
-/* strokes for the export: measure the same HTML at export width, then draw the paths over the foreignObject */
-function hlExportSVG(root, marks, win){ if(!marks||!marks.length) return ""; const blocks=hlBlocks(root); const hexOf=k=>(HL_COLORS.find(c=>c[0]===k)||HL_COLORS[0])[1];
-  return `<g fill="none" stroke-linecap="round" stroke-linejoin="round" style="mix-blend-mode:multiply">`+marks.map(m=>{ const r=hlResolve(m,root,blocks); if(r.pts.length<2) return ""; let d="M"+r.pts[0][0].toFixed(1)+" "+r.pts[0][1].toFixed(1);
-    for(let i=1;i<r.pts.length-1;i++){ const mx=(r.pts[i][0]+r.pts[i+1][0])/2, my=(r.pts[i][1]+r.pts[i+1][1])/2; d+=" Q"+r.pts[i][0].toFixed(1)+" "+r.pts[i][1].toFixed(1)+" "+mx.toFixed(1)+" "+my.toFixed(1); } const l=r.pts[r.pts.length-1]; d+=" L"+l[0].toFixed(1)+" "+l[1].toFixed(1);
-    return `<path d="${d}" stroke="${hexOf(m.color)}" stroke-opacity="0.55" stroke-width="${r.width.toFixed(1)}"/>`; }).join("")+`</g>`; }
 function propPreviewClick(ev){ if(!propCustomize) return; const el=ev.target.closest("[data-hid]"); if(!el||!$("propPreview").contains(el)) return; ev.preventDefault(); ev.stopPropagation(); hideProp(el.getAttribute("data-hid"), el.getAttribute("data-hlabel")); }
 let propCustomize=false;
 function setPropCustomize(on){ propCustomize=!!on; if(propCustomize&&hl.on){ hl.on=false; } const el=$("propPreview"); if(el) el.classList.toggle("customize",propCustomize); renderProposalPreview(); }
@@ -2649,7 +2661,7 @@ function sheetCSS(W){ let css="";
   #printSheet,#printSheet *{font-family:Arial,Helvetica,sans-serif!important}
   #printSheet h1,#printSheet h2,#printSheet h3,#printSheet .brandbar .co,#printSheet .statline .v,#printSheet .tchart h3,#printSheet .tot b,#printSheet .keep b,#printSheet .cashline b,#printSheet .recbox b.serif{font-family:Georgia,"Times New Roman",serif!important}`; }
 async function buildSheetSVG(html,W,marks){
-  const wrap=document.createElement("div"); wrap.id="printSheet"; wrap.innerHTML=html;
+  const wrap=document.createElement("div"); wrap.id="printSheet"; wrap.innerHTML=html; if(marks&&marks.length) hlApply(wrap, marks);
   const xhtml=new XMLSerializer().serializeToString(wrap); const css=sheetCSS(W);
   /* measure in a bare iframe that has only the export's CSS — the same thing the SVG renders — so the height
      and the highlight positions line up with the picture, not with the app's styling of the preview */
@@ -2658,7 +2670,7 @@ async function buildSheetSVG(html,W,marks){
     document.body.appendChild(fr);
     await new Promise(res=>{ fr.onload=res; fr.srcdoc=`<!doctype html><html><head><meta charset="utf-8"><style>${css}</style></head><body style="margin:0;background:#fff">${xhtml}</body></html>`; setTimeout(res,1500); });
     const m2=fr.contentDocument&&fr.contentDocument.getElementById("printSheet");
-    if(m2){ H=Math.max(400,(m2.scrollHeight||1400)+24); over=hlExportSVG(m2, marks, fr.contentWindow); }
+    if(m2){ H=Math.max(400,(m2.scrollHeight||1400)+24); }
     fr.remove(); }catch(e){}
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml"><style>${sheetCSS(W).replace(/</g,"\\3c ")}</style>${xhtml}</div></foreignObject>${over}</svg>`;
   return {svg,W,H}; }
@@ -2803,7 +2815,7 @@ function emailSanitize(el){ /* inner markup of a text block: keep b/i/br/span te
   const out=[]; el.childNodes.forEach(n=>{ if(n.nodeType===3){ out.push(esc(n.textContent)); return; } if(n.nodeType!==1) return; const t=n.tagName.toLowerCase();
     if(["button","input","select","textarea","img","svg","script","style"].includes(t)) return;
     if(t==="br"){ out.push("<br>"); return; } const inner=emailSanitize(n);
-    if(t==="b"||t==="strong") out.push("<b>"+inner+"</b>"); else if(t==="i"||t==="em") out.push("<i>"+inner+"</i>"); else if(t==="mark") out.push(emHL(inner));
+    if(t==="b"||t==="strong") out.push("<b>"+inner+"</b>"); else if(t==="i"||t==="em") out.push("<i>"+inner+"</i>"); else if(t==="mark") out.push(`<span style="background-color:${EM_HL_COLORS[n.getAttribute("data-hl")]||EM_HL};padding:0 2px">${inner}</span>`);
     else if(n.classList&&(n.classList.contains("hint")||n.classList.contains("tag-flat")||n.classList.contains("tag-good"))) out.push(` <span style="${EM_SANS};font-size:12px;color:#5C616E">${inner}</span> `);
     else if(n.classList&&n.classList.contains("paid")) out.push(`<span style="color:#2E6B4F;font-weight:bold">${inner}</span>`);
     else if(t==="span"&&n.getAttribute("style")&&/border-radius|background/.test(n.getAttribute("style"))) out.push(` <span style="${EM_SANS};font-size:12px;color:#5C616E">${inner}</span> `);
@@ -2834,9 +2846,8 @@ function emailBlock(el, hl){ const t=el.tagName.toLowerCase(); const cl=el.class
   if(el.children.length && [...el.children].some(ch=>/^(H[1-3]|UL|OL|TABLE)$/.test(ch.tagName)||ch.classList.contains("statline")||ch.classList.contains("recbox")||ch.classList.contains("tchart"))) return [...el.children].map(ch=>emailBlock(ch,hl)).join("");
   const txt=body(); return txt ? emP(wrapHL(txt),"6px 0",T) : ""; }
 function emailProposalHTML(html, marks){ const root=document.createElement("div"); root.innerHTML=html;
-  root.querySelectorAll("button,input,select,textarea,script,style,canvas").forEach(x=>x.remove());
-  const blocks=hlBlocks(root); const map=new Map(); (marks||[]).forEach(m=>{ if(m.bi>=0&&blocks[m.bi]&&!map.has(blocks[m.bi])) map.set(blocks[m.bi], EM_HL_COLORS[m.color]||EM_HL); });   /* first stroke on a block sets its color */
-  const hl={blocks:map, color:(el)=>map.get(el)||""}; const kids=[...root.children]; const discEl=kids.find(x=>x.classList.contains("disc")); const inner=kids.filter(x=>x!==discEl).map(ch=>emailBlock(ch, hl)).join("");
+  hlApply(root, marks); root.querySelectorAll("button,input,select,textarea,script,style,canvas").forEach(x=>x.remove());   /* the same words the banker highlighted, as background-color spans */
+  const hl={color:()=>""}; const kids=[...root.children]; const discEl=kids.find(x=>x.classList.contains("disc")); const inner=kids.filter(x=>x!==discEl).map(ch=>emailBlock(ch, hl)).join("");
   const wrap=x=>`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:640px"><tr><td style="${EM_SANS};font-size:14px;line-height:1.5;color:#26262E">${x}</td></tr></table>`;
   return {main:wrap(inner), disc: discEl?wrap(emailBlock(discEl,hl)):""}; }
 /* message + proposal, as one editable email: the note's opening on top, the proposal, then the rest of the note and the signature */
@@ -2903,7 +2914,7 @@ async function emailImage(kind, snapId, variant){
   }catch(e){ toast(e.message==="render"||e.message==="canvas" ? "Couldn\u2019t build the image in this browser \u2014 use Export PDF (Chrome or Edge recommended)" : e.message); }
 }
 function exportPDF(){ const html=proposalHTML(); if(html.includes('class="empty"')){ toast("Finish the analysis first"); return; }
-  const c=cur(); const r=c&&computeAnalysis(c); libraryAdd("proposal", html, sheetTitle("proposal",c,r)); printAs(sheetTitle("proposal",c,r), html); }
+  const c=cur(); const r=c&&computeAnalysis(c); libraryAdd("proposal", html, sheetTitle("proposal",c,r)); printAs(sheetTitle("proposal",c,r), hlApplyHTML(html, c.prop&&c.prop.marks)); }
 
 /* ---------- call blocks ---------- */
 function startBlock(){ state.live={start:Date.now(),label:(schedNow().label||"Off-schedule"),dials:0,contacts:0,interested:0,folders:0,calls:[]}; save(); renderBlocks(); }
