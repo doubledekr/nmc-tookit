@@ -951,7 +951,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.9.6";
+const TOOLKIT_VERSION = "1.9.7";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2777,57 +2777,69 @@ function emailParts(c,r,kind,variant,opts){ const s=state.settings; variant=vari
 const strip=x=>String(x).replace(/[\u00ab\u00bb]/g,"");
 function emailRenderText(parts){ let out=""; parts.forEach((p,i)=>{ if(p.t==="img") return; const next=parts[i+1]; let t; if(p.t==="h") t=strip(p.x)+":"; else if(p.t==="ul") t=p.x.map(l=>"\u2022 "+strip(l)).join("\n"); else if(p.t==="ol") t=p.x.map((l,i)=>(i+1)+". "+strip(l)).join("\n"); else if(p.t==="sig") t=p.x.join("\n"); else t=strip(p.x);
   out += t + (next ? ((p.t==="h")||(next.t==="sig") ? "\n" : (next.t==="img"&&parts[i+2]) ? "\n\n" : "\n\n") : ""); }); return out; }
-function emailRenderHTML(parts, imgSrc){ const hl=x=>esc(String(x)).replace(/\u00ab([^\u00bb]*)\u00bb/g,'<mark style="background:#FFF3C4;color:#1f1f1f;padding:0 2px;border-radius:3px;font-weight:600">$1</mark>');
-  const F='font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:#26262E'; const H="font-family:Georgia,'Times New Roman',serif;font-size:17px;font-weight:700;color:#A53222;margin:18px 0 6px";
-  return `<div style="${F};max-width:640px">`+parts.map(p=>{ if(p.t==="img") return imgSrc?`<p style="margin:14px 0"><img src="${imgSrc}" alt="Proposal" style="max-width:100%;width:620px;border:1px solid #E2DCCF;border-radius:8px"></p>`:""; if(p.t==="h") return `<p style="${H}">${hl(p.x)}</p>`;
-    if(p.t==="ul") return `<ul style="margin:6px 0 12px 22px;padding:0">${p.x.map(l=>`<li style="margin:4px 0">${hl(l)}</li>`).join("")}</ul>`; if(p.t==="ol") return `<ol style="margin:6px 0 12px 22px;padding:0">${p.x.map(l=>`<li style="margin:4px 0">${hl(l)}</li>`).join("")}</ol>`;
-    if(p.t==="sig") return `<p style="margin:14px 0 0"><b style="font-family:Georgia,'Times New Roman',serif;font-size:16px">${esc(p.x[0])}</b><br>${esc(p.x[1])}<br><span style="color:#5C616E;font-size:13px">${esc(p.x[2])}</span></p>`; return `<p style="margin:10px 0">${hl(p.x)}</p>`; }).join("")+`</div>`; }
+/* Outlook-safe conventions used for every email: fonts and sizes on <p> AND an inner <span> (Outlook drops them from <div>s),
+   highlights as <span style="background-color"> (it doesn't know <mark>), backgrounds on table cells via bgcolor + background-color. */
+const EM_HL_COLORS={yellow:"#FFF3C4",green:"#DCF5DC",pink:"#FFE0F1",blue:"#DDF0FF"};
+const EM_SANS="font-family:Arial,Helvetica,sans-serif"; const EM_SERIF="font-family:Georgia,'Times New Roman',serif"; const EM_HL="#FFF3C4";
+const EM_BODY=`${EM_SANS};font-size:15px;line-height:1.55;color:#26262E`;
+const emP=(inner,extra,st)=>`<p style="margin:${extra||"0 0 10px"};${st||EM_BODY}"><span style="${st||EM_BODY}">${inner}</span></p>`;
+const emHL=(x,col)=>`<span style="background-color:${col||EM_HL};font-weight:bold;padding:0 2px">${x}</span>`;
+function emailRenderHTML(parts, imgSrc){ const hl=x=>esc(String(x)).replace(/«([^»]*)»/g,(m,g)=>emHL(g));
+  const H=`${EM_SERIF};font-size:17px;font-weight:bold;color:#A53222;line-height:1.3`;
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:640px"><tr><td style="${EM_BODY}">`+parts.map(p=>{
+    if(p.t==="img") return imgSrc?`<p style="margin:14px 0"><img src="${imgSrc}" alt="Proposal" width="620" style="max-width:100%;width:620px;border:1px solid #E2DCCF"></p>`:"";
+    if(p.t==="h") return emP(hl(p.x),"18px 0 6px",H);
+    if(p.t==="ul"||p.t==="ol") return `<${p.t} style="margin:6px 0 12px 22px;padding:0">${p.x.map(l=>`<li style="margin:4px 0;${EM_BODY}"><span style="${EM_BODY}">${hl(l)}</span></li>`).join("")}</${p.t}>`;
+    if(p.t==="sig") return `<p style="margin:14px 0 0;${EM_BODY}"><span style="${EM_SERIF};font-size:16px;font-weight:bold;color:#26262E">${esc(p.x[0])}</span><br><span style="${EM_BODY}">${esc(p.x[1])}</span><br><span style="${EM_SANS};font-size:13px;color:#5C616E">${esc(p.x[2])}</span></p>`;
+    return emP(hl(p.x)); }).join("")+`</td></tr></table>`; }
 const NMC_WHY_BODY="We\u2019re a \u00abwholesale mortgage broker\u00bb, not a retail lender. We don\u2019t sell one bank\u2019s rate sheet \u2014 we shop your file across \u00abdozens of lenders\u00bb and let them compete for it, which is how we deliver better-than-retail pricing and the most competitive terms available on the day you lock.";
 function emailBodyFor(c,r,kind,variant){ return emailRenderText(emailParts(c,r,kind,variant)); }
 /* ---- the proposal itself as email: the rendered proposal (hides applied) converted to table HTML with inline styles and no images,
    with the highlighter strokes turned into a highlight on the block they were drawn on. Pasted into a compose window it stays editable. ---- */
-const EM_HL_COLORS={yellow:"#FFF3C4",green:"#DCF5DC",pink:"#FFE0F1",blue:"#DDF0FF"};
-const EM_SANS="font-family:Arial,Helvetica,sans-serif"; const EM_SERIF="font-family:Georgia,'Times New Roman',serif"; const EM_HL="#FFF3C4";
-function emailSanitize(el){ /* inner markup of a text block: keep b/i/u/br/span/mark text, drop everything else */
+function emailSanitize(el){ /* inner markup of a text block: keep b/i/br/span text, drop everything else; highlights become background-color spans */
   const out=[]; el.childNodes.forEach(n=>{ if(n.nodeType===3){ out.push(esc(n.textContent)); return; } if(n.nodeType!==1) return; const t=n.tagName.toLowerCase();
     if(["button","input","select","textarea","img","svg","script","style"].includes(t)) return;
     if(t==="br"){ out.push("<br>"); return; } const inner=emailSanitize(n);
-    if(t==="b"||t==="strong") out.push("<b>"+inner+"</b>"); else if(t==="i"||t==="em") out.push("<i>"+inner+"</i>"); else if(t==="mark") out.push(`<mark style="background:${EM_HL}">${inner}</mark>`);
-    else if(n.classList&&(n.classList.contains("hint")||n.classList.contains("tag-flat")||n.classList.contains("tag-good"))) out.push(` <span style="font-size:12px;color:#5C616E">${inner}</span> `);
+    if(t==="b"||t==="strong") out.push("<b>"+inner+"</b>"); else if(t==="i"||t==="em") out.push("<i>"+inner+"</i>"); else if(t==="mark") out.push(emHL(inner));
+    else if(n.classList&&(n.classList.contains("hint")||n.classList.contains("tag-flat")||n.classList.contains("tag-good"))) out.push(` <span style="${EM_SANS};font-size:12px;color:#5C616E">${inner}</span> `);
     else if(n.classList&&n.classList.contains("paid")) out.push(`<span style="color:#2E6B4F;font-weight:bold">${inner}</span>`);
-    else if(t==="span"&&n.getAttribute("style")&&/border-radius|background/.test(n.getAttribute("style"))) out.push(` <span style="font-size:12px;color:#5C616E">${inner}</span> `);
+    else if(t==="span"&&n.getAttribute("style")&&/border-radius|background/.test(n.getAttribute("style"))) out.push(` <span style="${EM_SANS};font-size:12px;color:#5C616E">${inner}</span> `);
     else out.push(inner); }); return out.join("").replace(/\s+/g," ").trim(); }
-function emailBlock(el, hl){ const t=el.tagName.toLowerCase(); const cl=el.classList; const col=hl.color(el); const bg=col?`background:${col};`:""; const body=()=>emailSanitize(el);
+function emailBlock(el, hl){ const t=el.tagName.toLowerCase(); const cl=el.classList; const col=hl.color(el); const body=()=>emailSanitize(el);
+  const T=`${EM_SANS};font-size:14px;line-height:1.5;color:#26262E`;                       /* proposal body text */
+  const wrapHL=(x)=> col ? emHL(x,col).replace("font-weight:bold;","") : x;                 /* a highlighted block: the text itself carries the color (survives every editor) */
+  const cell=(style,inner,bgc)=>`<td${bgc?` bgcolor="${bgc}"`:""} style="${style}${bgc?`;background-color:${bgc}`:""}">${inner}</td>`;
   if(cl.contains("brandbar")){ const lo=el.querySelector(".lo"); const tag=el.querySelector(".tag"); const s=state.settings;
-    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-bottom:3px solid #26262E;margin:0 0 8px"><tr><td valign="top" style="padding:0 0 10px"><div style="${EM_SERIF};font-size:22px;color:#26262E">${esc(s.co||"Neighborhood Mortgage Company")}</div><div style="font-size:12px;color:#5C616E">${tag?emailSanitize(tag):""}</div></td><td valign="top" align="right" style="padding:0 0 10px;font-size:12px;color:#444;line-height:1.55">${lo?emailSanitize(lo):""}</td></tr></table>`; }
-  if(cl.contains("eyebrow")) return `<div style="font-size:11px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#A53222;margin:14px 0 2px;${bg}">${body()}</div>`;
-  if(t==="h1") return `<div style="${EM_SERIF};font-size:22px;line-height:1.3;color:#26262E;margin:2px 0 4px;${bg}">${body()}</div>`;
-  if(t==="h2") return `<div style="${EM_SERIF};font-size:17px;font-weight:bold;color:#A53222;margin:16px 0 6px;${bg}">${body().replace(/^\u276F\s*/,"")}</div>`;
-  if(t==="h3") return `<div style="${EM_SERIF};font-size:16px;font-weight:bold;color:#26262E;margin:12px 0 4px;${bg}">${body()}</div>`;
-  if(t==="ul"||t==="ol"){ const blocks=hl.blocks; return `<${t} style="margin:4px 0 8px 20px;padding:0">${[...el.children].filter(li=>li.tagName==="LI").map(li=>`<li style="margin:0 0 6px;${hl.color(li)?"background:"+hl.color(li)+";":""}">${emailSanitize(li)}</li>`).join("")}</${t}>`; }
+    return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 8px"><tr><td valign="top" style="padding:0 0 10px;border-bottom:3px solid #26262E"><span style="${EM_SERIF};font-size:22px;color:#26262E">${esc(s.co||"Neighborhood Mortgage Company")}</span><br><span style="${EM_SANS};font-size:12px;color:#5C616E">${tag?emailSanitize(tag):""}</span></td><td valign="top" align="right" style="padding:0 0 10px;border-bottom:3px solid #26262E"><span style="${EM_SANS};font-size:12px;color:#444;line-height:1.55">${lo?emailSanitize(lo):""}</span></td></tr></table>`; }
+  if(cl.contains("eyebrow")) return emP(wrapHL(body()),"14px 0 2px",`${EM_SANS};font-size:11px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#A53222`);
+  if(t==="h1") return emP(wrapHL(body()),"2px 0 4px",`${EM_SERIF};font-size:22px;line-height:1.3;color:#26262E`);
+  if(t==="h2") return emP(wrapHL(body().replace(/^❯\s*/,"")),"16px 0 6px",`${EM_SERIF};font-size:17px;font-weight:bold;color:#A53222;line-height:1.3`);
+  if(t==="h3") return emP(wrapHL(body()),"12px 0 4px",`${EM_SERIF};font-size:16px;font-weight:bold;color:#26262E`);
+  if(t==="ul"||t==="ol") return `<${t} style="margin:4px 0 8px 20px;padding:0">${[...el.children].filter(li=>li.tagName==="LI").map(li=>{ const c_=hl.color(li); const inner=emailSanitize(li); return `<li style="margin:0 0 6px;${T}"><span style="${T}${c_?`;background-color:${c_}`:""}">${inner}</span></li>`; }).join("")}</${t}>`;
   if(cl.contains("statline")){ const tiles=[...el.children]; let out=`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:10px 0 4px">`; for(let i=0;i<tiles.length;i+=3){ const row=tiles.slice(i,i+3);
-      out+=`<tr>`+row.map((d,j)=>{ const v=d.querySelector(".v"), l=d.querySelector(".l"); const tb=hl.color(d)||"#F8F2E8"; return (j?`<td width="6" style="font-size:0;line-height:0">&nbsp;</td>`:"")+`<td width="${Math.floor(100/row.length)}%" valign="top" style="background:${tb};border:1px solid #E2DCCF;padding:10px"><div style="${EM_SERIF};font-size:22px;color:#A53222;line-height:1.2">${v?emailSanitize(v):""}</div><div style="font-size:12px;color:#5C616E;line-height:1.35">${l?emailSanitize(l):""}</div></td>`; }).join("")+`</tr>`+(i+3<tiles.length?`<tr><td colspan="${row.length*2-1}" style="font-size:0;line-height:0;height:6px">&nbsp;</td></tr>`:""); }
+      out+=`<tr>`+row.map((d,j)=>{ const v=d.querySelector(".v"), l=d.querySelector(".l"); const tb=hl.color(d)||"#F8F2E8"; return (j?`<td width="6" style="font-size:0;line-height:0">&nbsp;</td>`:"")+cell(`width:${Math.floor(100/row.length)}%;border:1px solid #E2DCCF;padding:10px;vertical-align:top`,`<span style="${EM_SERIF};font-size:22px;color:#A53222;line-height:1.2">${v?emailSanitize(v):""}</span><br><span style="${EM_SANS};font-size:12px;color:#5C616E;line-height:1.35">${l?emailSanitize(l):""}</span>`,tb); }).join("")+`</tr>`+(i+3<tiles.length?`<tr><td colspan="${row.length*2-1}" style="font-size:0;line-height:0;height:6px">&nbsp;</td></tr>`:""); }
     return out+`</table>`; }
-  if(t==="table"){ const rows=[...el.querySelectorAll("tr")]; return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:14px;border-collapse:collapse;margin:4px 0 6px">`+rows.map(tr=>{ const isHead=tr.parentElement&&tr.parentElement.tagName==="THEAD"||tr.querySelector("th"); const rb=hl.color(tr)||(isHead?"#EFE6D6":(tr.classList.contains("rec")?"#F8F2E8":""));
-      return `<tr${rb?` style="background:${rb}"`:""}>`+[...tr.children].map(td=>{ const num=td.classList.contains("num")||/^[\s$\d.,%\u2014\u2212-]+(\/mo)?$/.test(td.textContent.trim()); const bold=isHead||td.querySelector("b")&&td.textContent.trim()===td.querySelector("b").textContent.trim(); return `<td${num?' align="right"':""} style="padding:6px 8px;border-bottom:${isHead?"2px solid #A53222":"1px solid #E2DCCF"};${bold?"font-weight:bold;":""}${td.classList.contains("reccol")?"background:#F8F2E8;":""}">${emailSanitize(td)||"&nbsp;"}</td>`; }).join("")+`</tr>`; }).join("")+`</table>`; }
-  if(cl.contains("recbox")||cl.contains("keep")||cl.contains("pw")||cl.contains("cashline")) return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:10px 0"><tr><td style="background:${hl.color(el)||(cl.contains("keep")?"#E3F1E7":"#F8F2E8")};border:1px solid #E2DCCF;border-left:4px solid ${cl.contains("keep")?"#2E6B4F":"#A53222"};padding:10px 12px;font-size:14px;line-height:1.5">${body()}</td></tr></table>`;
-  if(cl.contains("disc")) return `<div style="border-top:1px solid #E2DCCF;margin-top:14px;padding-top:10px;font-size:11px;line-height:1.5;color:#7A7F8A">${body()}</div>`;
-  if(cl.contains("hint")) return `<div style="font-size:12.5px;color:#5C616E;margin:4px 0;${bg}">${body()}</div>`;
-  if(cl.contains("tchart")){ return [...el.children].map(side=>[...side.children].map(ch=>emailBlock(ch,hl)).join("")).join(`<div style="height:10px"></div>`); }
-  if(cl.contains("trow")) return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:14px"><tr>${[...el.children].map((c_,i)=>`<td${i?' align="right"':""} style="padding:4px 0;border-bottom:1px dashed #EFEAE0;${bg}">${emailSanitize(c_)||"&nbsp;"}</td>`).join("")}</tr></table>`;
-  if(cl.contains("tot")) return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:15px;border-top:2px solid #E2DCCF;margin-top:6px"><tr>${[...el.children].map((c_,i)=>`<td${i?' align="right"':""} style="padding:8px 0;${i?EM_SERIF+";font-size:20px":""}">${emailSanitize(c_)}</td>`).join("")}</tr></table>`;
+  if(t==="table"){ const rows=[...el.querySelectorAll("tr")]; return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;margin:4px 0 6px">`+rows.map(tr=>{ const isHead=tr.parentElement&&tr.parentElement.tagName==="THEAD"||tr.querySelector("th"); const rb=hl.color(tr)||(isHead?"#EFE6D6":(tr.classList.contains("rec")?"#F8F2E8":""));
+      return `<tr>`+[...tr.children].map(td=>{ const num=td.classList.contains("num")||/^[\s$\d.,%—−-]+(\/mo)?$/.test(td.textContent.trim()); const bold=isHead||td.querySelector("b")&&td.textContent.trim()===td.querySelector("b").textContent.trim(); const bgc=rb||(td.classList.contains("reccol")?"#F8F2E8":"");
+        return cell(`padding:6px 8px;border-bottom:${isHead?"2px solid #A53222":"1px solid #E2DCCF"};${num?"text-align:right;":""}${EM_SANS};font-size:14px;color:#26262E${bold?";font-weight:bold":""}`,`<span style="${EM_SANS};font-size:14px${bold?";font-weight:bold":""}">${emailSanitize(td)||"&nbsp;"}</span>`,bgc).replace("<td ",`<td${num?' align="right"':""} `); }).join("")+`</tr>`; }).join("")+`</table>`; }
+  if(cl.contains("recbox")||cl.contains("keep")||cl.contains("pw")||cl.contains("cashline")){ const bgc=hl.color(el)||(cl.contains("keep")?"#E3F1E7":"#F8F2E8"); return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:10px 0"><tr>${cell(`border:1px solid #E2DCCF;border-left:4px solid ${cl.contains("keep")?"#2E6B4F":"#A53222"};padding:10px 12px;${T}`,`<span style="${T}">${body()}</span>`,bgc)}</tr></table>`; }
+  if(cl.contains("disc")) return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:14px"><tr><td style="border-top:1px solid #E2DCCF;padding-top:10px"><p style="margin:0;${EM_SANS};font-size:11px;line-height:1.5;color:#7A7F8A"><span style="${EM_SANS};font-size:11px;line-height:1.5;color:#7A7F8A">${body()}</span></p></td></tr></table>`;
+  if(cl.contains("hint")) return emP(wrapHL(body()),"4px 0",`${EM_SANS};font-size:12.5px;color:#5C616E`);
+  if(cl.contains("tchart")){ return [...el.children].map(side=>[...side.children].map(ch=>emailBlock(ch,hl)).join("")).join(`<p style="margin:0;font-size:10px;line-height:10px">&nbsp;</p>`); }
+  if(cl.contains("trow")) return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>${[...el.children].map((c_,i)=>cell(`padding:4px 0;border-bottom:1px dashed #EFEAE0;${i?"text-align:right;":""}${T}`,`<span style="${T}">${emailSanitize(c_)||"&nbsp;"}</span>`,col||"").replace("<td ",`<td${i?' align="right"':""} `)).join("")}</tr></table>`;
+  if(cl.contains("tot")) return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:2px solid #E2DCCF;margin-top:6px"><tr>${[...el.children].map((c_,i)=>`<td${i?' align="right"':""} style="padding:8px 0;${i?EM_SERIF+";font-size:20px":T}"><span style="${i?EM_SERIF+";font-size:20px":T}">${emailSanitize(c_)}</span></td>`).join("")}</tr></table>`;
   if(el.children.length && [...el.children].some(ch=>/^(H[1-3]|UL|OL|TABLE)$/.test(ch.tagName)||ch.classList.contains("statline")||ch.classList.contains("recbox")||ch.classList.contains("tchart"))) return [...el.children].map(ch=>emailBlock(ch,hl)).join("");
-  const txt=body(); return txt ? `<div style="margin:6px 0;font-size:14px;line-height:1.5;${bg}">${txt}</div>` : ""; }
+  const txt=body(); return txt ? emP(wrapHL(txt),"6px 0",T) : ""; }
 function emailProposalHTML(html, marks){ const root=document.createElement("div"); root.innerHTML=html;
   root.querySelectorAll("button,input,select,textarea,script,style,canvas").forEach(x=>x.remove());
   const blocks=hlBlocks(root); const map=new Map(); (marks||[]).forEach(m=>{ if(m.bi>=0&&blocks[m.bi]&&!map.has(blocks[m.bi])) map.set(blocks[m.bi], EM_HL_COLORS[m.color]||EM_HL); });   /* first stroke on a block sets its color */
   const hl={blocks:map, color:(el)=>map.get(el)||""}; const kids=[...root.children]; const discEl=kids.find(x=>x.classList.contains("disc")); const inner=kids.filter(x=>x!==discEl).map(ch=>emailBlock(ch, hl)).join("");
-  const wrap=x=>`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:640px;${EM_SANS};font-size:14px;line-height:1.5;color:#26262E"><tr><td>${x}</td></tr></table>`;
+  const wrap=x=>`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:640px"><tr><td style="${EM_SANS};font-size:14px;line-height:1.5;color:#26262E">${x}</td></tr></table>`;
   return {main:wrap(inner), disc: discEl?wrap(emailBlock(discEl,hl)):""}; }
 /* message + proposal, as one editable email: the note's opening on top, the proposal, then the rest of the note and the signature */
 function emailProposalMessage(c,r,kind,variant,html,marks){ const parts=emailParts(c,r,kind,variant,{noImage:true}); const i=parts.findIndex(p=>p.t==="img"); const top=i>=0?parts.slice(0,i):parts; const rest=i>=0?parts.slice(i+1):[];
-  const prop=emailProposalHTML(html, marks);
-  const body=emailRenderHTML(top,null).replace(/<\/div>$/,"") + `<div style="height:14px"></div>` + prop.main + `<div style="height:8px"></div>` + emailRenderHTML(rest,null).replace(/^<div[^>]*>/,"") + prop.disc;
+  const prop=emailProposalHTML(html, marks); const gap=`<p style="margin:0;font-size:12px;line-height:12px">&nbsp;</p>`;
+  const body=emailRenderHTML(top,null) + gap + prop.main + gap + emailRenderHTML(rest,null) + prop.disc;
   const text=emailRenderText(parts); return {html:body, text}; }
 async function emailProposal(kind, snapId, variant){ const c=cur(); const snap=snapId?libSnap(snapId):null; variant=variant||"blank";
   try{ const html = snap ? snap.html : (kind==="compare" ? compareHTML() : proposalHTML()); if(html.includes('class="empty"')){ toast(kind==="compare"?"Add at least two complete scenarios first":"Finish the analysis first"); return; }
