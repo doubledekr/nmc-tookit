@@ -951,7 +951,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.9.16";
+const TOOLKIT_VERSION = "1.9.17";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2816,10 +2816,10 @@ const NMC_WHY_BODY="We\u2019re a \u00abwholesale mortgage broker\u00bb, not a re
 function emailBodyFor(c,r,kind,variant){ return emailRenderText(emailParts(c,r,kind,variant)); }
 /* ---- the proposal itself as email: the rendered proposal (hides applied) converted to table HTML with inline styles and no images,
    with the highlighter strokes turned into a highlight on the block they were drawn on. Pasted into a compose window it stays editable. ---- */
-function emailSanitize(el){ /* inner markup of a text block: keep b/i/br/mark text, drop everything else */
+function emailSanitize(el, nested){ /* inner markup of a text block: keep b/i/br/mark text, drop everything else. Only the whole block is trimmed — a nested run keeps its edge spaces ("Free up " before a bold number) */
   const out=[]; el.childNodes.forEach(n=>{ if(n.nodeType===3){ out.push(esc(n.textContent)); return; } if(n.nodeType!==1) return; const t=n.tagName.toLowerCase();
     if(["button","input","select","textarea","img","svg","script","style","canvas"].includes(t)) return;
-    if(t==="br"){ out.push("<br>"); return; } const inner=emailSanitize(n);
+    if(t==="br"){ out.push("<br>"); return; } const inner=emailSanitize(n, true);
     if(t==="b"||t==="strong") out.push("<b>"+inner+"</b>"); else if(t==="i"||t==="em") out.push("<i>"+inner+"</i>");
     else if(t==="mark") out.push(emHL(inner, EM_HL_COLORS[n.getAttribute("data-hl")]||EM_HL, false));
     else if(n.classList&&(n.classList.contains("hint")||n.classList.contains("tag-flat")||n.classList.contains("tag-good"))) out.push(" "+emF(inner,{px:12,color:"#5C616E"})+" ");
@@ -2828,7 +2828,7 @@ function emailSanitize(el){ /* inner markup of a text block: keep b/i/br/mark te
     else out.push(inner); });
   /* paste filters drop whitespace-only text between two tags ("Free up</span><b>$114"): fold such a space into the tag before it */
   const parts=[]; out.forEach(x=>{ if(/^\s+$/.test(x) && parts.length && /<\/(b|i|span|font)>$/.test(parts[parts.length-1])) parts[parts.length-1]=parts[parts.length-1].replace(/(<\/(?:b|i|span|font)>)$/," $1"); else parts.push(x); });
-  return parts.join("").replace(/\s+/g," ").trim(); }
+  const joined=parts.join("").replace(/\s+/g," "); return nested ? joined : joined.trim(); }
 function emailBlock(el){ const t=el.tagName.toLowerCase(); const cl=el.classList; const body=()=>emailSanitize(el); const T=x=>emF(x,{px:14,lh:1.5});
   const box=(inner,bgc,accent)=>`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:8px 0"><tr>${accent?`<td width="4" bgcolor="${accent}" style="background-color:${accent};width:4px"></td>`:""}<td bgcolor="${bgc}" style="background-color:${bgc};border:1px solid #E2DCCF;padding:10px 12px"><table role="presentation" cellpadding="10" cellspacing="0" border="0" width="100%"><tr><td bgcolor="${bgc}">${inner}</td></tr></table></td></tr></table>`;
   if(cl.contains("brandbar")){ const lo=el.querySelector(".lo"); const tag=el.querySelector(".tag"); const st=state.settings;
