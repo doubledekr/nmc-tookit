@@ -951,7 +951,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.9.4";
+const TOOLKIT_VERSION = "1.9.5";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2744,18 +2744,18 @@ function emailProductName(c,r,kind){ const prods=emailProducts(c,r,kind); if(!pr
 function emailSubjectFor(c,r,kind,variant,title){ const first=c&&c.name?c.name.split(/[ ,&]/)[0]:""; if(variant!=="cold"&&variant!=="full") return title; const name=emailProductName(c,r,kind); const multi=/^\d+ options$/.test(name);
   return (first?first+" \u2014 ":"")+(variant==="cold" ? (multi?name+", quick look":name+" quick look") : (multi?"your "+name+", the details":"your "+name+", the details")); }
 /* the message as parts: p = paragraph, h = heading, ul = bullets, ol = numbered, sig = signature. Same parts feed the plain-text and the formatted email. */
-function emailParts(c,r,kind,variant){ const s=state.settings; variant=variant||"blank";
+function emailParts(c,r,kind,variant,opts){ const s=state.settings; variant=variant||"blank"; const noImg=!!(opts&&opts.noImage);
   const first= kind==="purchase" && state.purch&&state.purch.who ? String(state.purch.who).split(/[ ,&]/)[0] : c&&c.name? c.name.split(/[ ,&]/)[0] : "there";
   const sig=[s.loName||"","Neighborhood Mortgage Company",`NMLS #${s.loNmls||""}${s.loPhone?" \u00b7 "+s.loPhone:""}${s.loEmail?" \u00b7 "+s.loEmail:""}`];
   const phone=s.loPhone||"my number below";
   const what = kind==="purchase" ? "the purchase estimate" : kind==="compare" ? "the side-by-side of your options" : (r&&r.second ? "the home equity proposal" : "the savings proposal");
-  if(variant==="blank" || kind==="purchase" || kind==="amort" || kind==="present") return [{t:"p",x:`Hi ${first},`},{t:"p",x:`Here is ${what} we talked about \u2014 the image below has the full breakdown.`},{t:"img"},{t:"p",x:"Call or text me with any questions."},{t:"sig",x:sig}];
+  if(variant==="blank" || kind==="purchase" || kind==="amort" || kind==="present") return [{t:"p",x:`Hi ${first},`},{t:"p",x:noImg?`Here is ${what} we talked about \u2014 the full breakdown is right below.`:`Here is ${what} we talked about \u2014 the image below has the full breakdown.`},{t:"img"},{t:"p",x:"Call or text me with any questions."},{t:"sig",x:sig}];
   const prods=emailProducts(c,r,kind); const multi=prods.length>1; const kinds=[...new Set(prods.map(p=>p.k))];
   const stream=kinds.some(k=>k==="fha_streamline"||k==="va_irrrl"), he=kinds.some(k=>k==="hel"||k==="heloc"), other=kinds.some(k=>!["fha_streamline","va_irrrl","hel","heloc"].includes(k));
   const docLines=[]; if(stream) docLines.push("Streamline: "+emailDocsFor("va_irrrl").docs+" It "+emailDocsFor("va_irrrl").close+"."); if(he) docLines.push((kinds.includes("heloc")&&!kinds.includes("hel")?"HELOC":kinds.includes("hel")&&kinds.includes("heloc")?"Home equity loan / HELOC":"Home equity loan")+": "+emailDocsFor("hel").docs+" It "+emailDocsFor("hel").close+"."); if(other) docLines.push("Refinance: "+emailDocsFor("refi").docs+" It "+emailDocsFor("refi").close+".");
   const headline = prods.length ? (multi ? prods.length+" ways to do this, side by side" : emailOptionLine(prods[0])) : what;
   if(variant==="cold") return [{t:"p",x:`Hi ${first},`},
-    {t:"p",x:`This is what I was reaching out about. The image below is a quick look at ${multi?"the options":"the option"} I put together for you \u2014 ${headline}.`},
+    {t:"p",x:`This is what I was reaching out about. ${noImg?"Below is":"The image below is"} a quick look at ${multi?"the options":"the option"} I put together for you \u2014 ${headline}.`},
     {t:"img"},
     {t:"p",x:`Give me a ring or text at \u00ab${phone}\u00bb, or just reply to this email, and we\u2019ll turn it into real numbers for your situation. Ten minutes is usually all it takes.`},
     {t:"h",x:"A few things worth knowing up front"},
@@ -2764,7 +2764,7 @@ function emailParts(c,r,kind,variant){ const s=state.settings; variant=variant||
     {t:"p",x:"Looking forward to it,"},{t:"sig",x:sig}];
   const optList = prods.map(p=>emailOptionLine(p));
   return [{t:"p",x:`Hi ${first},`},
-    {t:"p",x:`Thank you for the time today \u2014 I enjoyed the conversation. As promised, the image below has the full breakdown${multi?" of the "+prods.length+" options we talked through":""}. Here\u2019s the short version:`},
+    {t:"p",x:`Thank you for the time today \u2014 I enjoyed the conversation. As promised, ${noImg?"the full breakdown is below":"the image below has the full breakdown"}${multi?" of the "+prods.length+" options we talked through":""}. Here\u2019s the short version:`},
     {t:multi?"ol":"ul",x:optList},
     {t:"img"},
     {t:"h",x:"What it costs you up front: nothing"},
@@ -2792,10 +2792,11 @@ function emailSanitize(el){ /* inner markup of a text block: keep b/i/u/br/span/
     if(["button","input","select","textarea","img","svg","script","style"].includes(t)) return;
     if(t==="br"){ out.push("<br>"); return; } const inner=emailSanitize(n);
     if(t==="b"||t==="strong") out.push("<b>"+inner+"</b>"); else if(t==="i"||t==="em") out.push("<i>"+inner+"</i>"); else if(t==="mark") out.push(`<mark style="background:${EM_HL}">${inner}</mark>`);
-    else if(n.classList&&(n.classList.contains("hint")||n.classList.contains("tag-flat")||n.classList.contains("tag-good"))) out.push(`<span style="font-size:12px;color:#5C616E">${inner}</span>`);
+    else if(n.classList&&(n.classList.contains("hint")||n.classList.contains("tag-flat")||n.classList.contains("tag-good"))) out.push(` <span style="font-size:12px;color:#5C616E">${inner}</span> `);
     else if(n.classList&&n.classList.contains("paid")) out.push(`<span style="color:#2E6B4F;font-weight:bold">${inner}</span>`);
+    else if(t==="span"&&n.getAttribute("style")&&/border-radius|background/.test(n.getAttribute("style"))) out.push(` <span style="font-size:12px;color:#5C616E">${inner}</span> `);
     else out.push(inner); }); return out.join("").replace(/\s+/g," ").trim(); }
-function emailBlock(el, hl){ const t=el.tagName.toLowerCase(); const cl=el.classList; const bg=hl?`background:${EM_HL};`:""; const body=()=>emailSanitize(el);
+function emailBlock(el, hl){ const t=el.tagName.toLowerCase(); const cl=el.classList; const on=hl.blocks.has(el); const bg=on?`background:${EM_HL};`:""; const body=()=>emailSanitize(el);
   if(cl.contains("brandbar")){ const lo=el.querySelector(".lo"); const tag=el.querySelector(".tag"); const s=state.settings;
     return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-bottom:3px solid #26262E;margin:0 0 8px"><tr><td valign="top" style="padding:0 0 10px"><div style="${EM_SERIF};font-size:22px;color:#26262E">${esc(s.co||"Neighborhood Mortgage Company")}</div><div style="font-size:12px;color:#5C616E">${tag?emailSanitize(tag):""}</div></td><td valign="top" align="right" style="padding:0 0 10px;font-size:12px;color:#444;line-height:1.55">${lo?emailSanitize(lo):""}</td></tr></table>`; }
   if(cl.contains("eyebrow")) return `<div style="font-size:11px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#A53222;margin:14px 0 2px;${bg}">${body()}</div>`;
@@ -2819,11 +2820,13 @@ function emailBlock(el, hl){ const t=el.tagName.toLowerCase(); const cl=el.class
 function emailProposalHTML(html, marks){ const root=document.createElement("div"); root.innerHTML=html;
   root.querySelectorAll("button,input,select,textarea,script,style,canvas").forEach(x=>x.remove());
   const blocks=hlBlocks(root); const set=new Set(); (marks||[]).forEach(m=>{ if(m.bi>=0&&blocks[m.bi]) set.add(blocks[m.bi]); });
-  const hl={blocks:set}; const inner=[...root.children].map(ch=>emailBlock(ch, Object.assign({},hl, {has:set.has(ch)}) )).join("");
-  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:640px;${EM_SANS};font-size:14px;line-height:1.5;color:#26262E"><tr><td>${inner}</td></tr></table>`; }
+  const hl={blocks:set}; const kids=[...root.children]; const discEl=kids.find(x=>x.classList.contains("disc")); const inner=kids.filter(x=>x!==discEl).map(ch=>emailBlock(ch, hl)).join("");
+  const wrap=x=>`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:640px;${EM_SANS};font-size:14px;line-height:1.5;color:#26262E"><tr><td>${x}</td></tr></table>`;
+  return {main:wrap(inner), disc: discEl?wrap(emailBlock(discEl,hl)):""}; }
 /* message + proposal, as one editable email: the note's opening on top, the proposal, then the rest of the note and the signature */
-function emailProposalMessage(c,r,kind,variant,html,marks){ const parts=emailParts(c,r,kind,variant); const i=parts.findIndex(p=>p.t==="img"); const top=i>=0?parts.slice(0,i):parts; const rest=i>=0?parts.slice(i+1):[];
-  const body=emailRenderHTML(top,null).replace(/<\/div>$/,"") + `<div style="height:14px"></div>` + emailProposalHTML(html, marks) + `<div style="height:8px"></div>` + emailRenderHTML(rest,null).replace(/^<div[^>]*>/,"");
+function emailProposalMessage(c,r,kind,variant,html,marks){ const parts=emailParts(c,r,kind,variant,{noImage:true}); const i=parts.findIndex(p=>p.t==="img"); const top=i>=0?parts.slice(0,i):parts; const rest=i>=0?parts.slice(i+1):[];
+  const prop=emailProposalHTML(html, marks);
+  const body=emailRenderHTML(top,null).replace(/<\/div>$/,"") + `<div style="height:14px"></div>` + prop.main + `<div style="height:8px"></div>` + emailRenderHTML(rest,null).replace(/^<div[^>]*>/,"") + prop.disc;
   const text=emailRenderText(parts); return {html:body, text}; }
 async function emailProposal(kind, snapId, variant){ const c=cur(); const snap=snapId?libSnap(snapId):null; variant=variant||"blank";
   try{ const html = snap ? snap.html : (kind==="compare" ? compareHTML() : proposalHTML()); if(html.includes('class="empty"')){ toast(kind==="compare"?"Add at least two complete scenarios first":"Finish the analysis first"); return; }
