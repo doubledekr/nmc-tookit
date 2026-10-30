@@ -951,7 +951,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.9.11";
+const TOOLKIT_VERSION = "1.9.12";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2791,14 +2791,14 @@ const strip=x=>String(x).replace(/[\u00ab\u00bb]/g,"");
 function emailRenderText(parts){ let out=""; parts.forEach((p,i)=>{ if(p.t==="img") return; const next=parts[i+1]; let t; if(p.t==="h") t=strip(p.x)+":"; else if(p.t==="ul") t=p.x.map(l=>"\u2022 "+strip(l)).join("\n"); else if(p.t==="ol") t=p.x.map((l,i)=>(i+1)+". "+strip(l)).join("\n"); else if(p.t==="sig") t=p.x.join("\n"); else t=strip(p.x);
   out += t + (next ? ((p.t==="h")||(next.t==="sig") ? "\n" : (next.t==="img"&&parts[i+2]) ? "\n\n" : "\n\n") : ""); }); return out; }
 /* Email markup rule: say everything twice — as an HTML attribute or tag (<font face size color>, <b>, bgcolor, cellpadding,
-   border, <mark>) AND as an inline style. Some paste filters (new Outlook, Word in some setups) throw away every style
+   border) AND as an inline style; highlights are plain spans. Some paste filters (new Outlook, Word in some setups) throw away every style
    attribute but keep tags and attributes, so the attribute form is what makes fonts, boxes and highlights survive there. */
 const EM_HL_COLORS={yellow:"#FFF3C4",green:"#DCF5DC",pink:"#FFE0F1",blue:"#DDF0FF"};
 const EM_HL="#FFF3C4"; const EM_FS="Arial, Helvetica, sans-serif"; const EM_FG="Georgia, 'Times New Roman', serif";
 /* text run: <font> carries face/size/color as attributes; the style repeats them in px for clients that honor it. HTML sizes: 1≈10px 2≈13px 3≈16px 4≈18px 5≈24px */
 function emF(inner, o){ o=o||{}; const face=o.serif?EM_FG:EM_FS; const px=o.px||15; const size=o.size||(px<=11?1:px<=13?2:px<=16?3:px<=19?4:5); const color=o.color||"#26262E";
   const st=`font-family:${face};font-size:${px}px;color:${color}${o.lh?`;line-height:${o.lh}`:""}`; const x=o.b?`<b>${inner}</b>`:inner; return `<font face="${face}" size="${size}" color="${color}" style="${st}">${x}</font>`; }
-const emHL=(x,col,bold)=>`<mark style="background-color:${col||EM_HL};color:inherit;padding:0 2px">${bold===false?x:`<b>${x}</b>`}</mark>`;
+const emHL=(x,col,bold)=>`<span style="background-color:${col||EM_HL};color:inherit">${bold===false?x:`<b>${x}</b>`}</span>`;   /* a span: Office's "merge formatting" paste hollows <mark> into bars and line breaks */
 /* layout: one outer table, one row per block, explicit spacer rows (height attribute) instead of margins */
 const emRow=(inner,pad)=>`<tr><td${pad?` style="padding-top:${pad}px"`:""}>${inner}</td></tr>`;
 const emGap=(h)=>`<tr><td height="${h}" style="height:${h}px;font-size:${h}px;line-height:${h}px">&nbsp;</td></tr>`;
