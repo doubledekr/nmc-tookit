@@ -420,7 +420,7 @@ table.data tr.rec td{background:var(--cream)}
             <div class="field"><label>Est. home value ($)</label>
               <div class="chiprow"><input type="number" data-f="value" step="5000" style="flex:1;min-width:120px">
                 <button class="chip" onclick="fetchAVM()" title="Ask the hub's AVM provider for this address">Estimate value</button>
-                <a class="chip" href="https://tpo.pennymac.com/home-value-estimator" target="_blank" rel="noopener" style="text-decoration:none">Pennymac ↗</a></div>
+                <a class="chip" href="https://tpo.pennymac.com/home-value-estimator" target="_blank" rel="noopener" style="text-decoration:none" onclick="pennymacCopy()" title="Opens Pennymac and copies the client’s address so you can paste it in">Pennymac ↗</a></div>
               <div class="hint" id="valueSrc" style="margin-top:4px"></div></div>
             <div class="field"><label>Credit score</label><input type="number" data-f="fico"></div>
             <div class="field"><label>Current servicer</label><input type="text" data-f="servicer"></div>
@@ -951,7 +951,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.9.7";
+const TOOLKIT_VERSION = "1.9.8";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1304,6 +1304,9 @@ function normalizePayment(c,changed){
 function valueSrcText(c){ const s=c&&c.valueSrc; if(!c||!c.value) return "";
   if(!s) return ""; if(s.type==="avm") return "AVM from "+esc(s.source||"provider")+" on "+esc(s.asOf||"")+(s.low&&s.high?" \u00b7 range "+money(s.low)+"\u2013"+money(s.high):"")+" \u2014 an estimate, not an appraisal.";
   return "Entered by hand"+(s.when?" "+esc(s.when):"")+"."; }
+function pennymacCopy(){ /* the link opens in a new tab on its own; copy the address so it's ready to paste into the estimator */
+  const c=cur(); const addr=String(c&&c.address||"").replace(/\s+/g," ").trim(); if(!addr){ toast("No address on this client yet \u2014 type it into the estimator"); return; }
+  (navigator.clipboard&&navigator.clipboard.writeText ? navigator.clipboard.writeText(addr) : Promise.reject()).then(()=>toast("Address copied \u2014 paste it into Pennymac"),()=>toast("Couldn\u2019t reach the clipboard")); }
 async function fetchAVM(){ const c=cur(); if(!c){ toast("Pick a client first"); return; }
   const addr=(c.address||"").trim(); if(!addr){ toast("Enter the property address first"); return; }
   const b=apiBase(); const vs=$("valueSrc");
