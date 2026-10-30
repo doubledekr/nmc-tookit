@@ -951,7 +951,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.9.14";
+const TOOLKIT_VERSION = "1.9.15";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2917,10 +2917,8 @@ function emailMenu(ev, kind, snapId){ ev.preventDefault(); ev.stopPropagation();
   const optD=(v,title,sub)=>`<button type="button" onclick="document.getElementById('emailMenu').remove(); emailDraftEML('${kind}',${snapId?"'"+snapId+"'":"null"},'${v}')"><b>${title}</b><span class="hint">${sub}</span></button>`;
   const optP=(v,title,sub)=>`<button type="button" onclick="document.getElementById('emailMenu').remove(); emailProposal('${kind}',${snapId?"'"+snapId+"'":"null"},'${v}')"><b>${title}</b><span class="hint">${sub}</span></button>`;
   const group=(t)=>`<div class="hint" style="padding:6px 10px 2px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px">${t}</div>`;
-  m.innerHTML=group("Proposal as email \u00b7 text you can edit, no image")+optP("blank","Blank + proposal","One-line note, then the proposal itself")+optP("cold","Cold reach-out + proposal","\u201cThis is what I was reaching out about\u201d, the proposal, benefits, why NMC")+optP("full","Full email + proposal","Thanks, the proposal, what I need from you, next steps, why NMC")
-    +group("Proposal as mail draft \u00b7 opens in Outlook, nothing to paste")+optD("blank","Blank + proposal","Draft with the proposal in it")+optD("cold","Cold reach-out + proposal","Draft with the reach-out and the proposal")+optD("full","Full email + proposal","Draft with the full email and the proposal")
-    +group("Proposal as image")+opt("blank","Blank email","Just the image and a one-line note")+opt("cold","Cold reach-out","Call/text, key benefits, why NMC"+richNote)+opt("full","Full email","Options recapped, what I need, next steps, why NMC"+richNote)
-    +`<button type="button" onclick="document.getElementById('emailMenu').remove(); copyProposalEmail('${kind}',${snapId?"'"+snapId+"'":"null"},'full')"><b>Copy proposal email</b><span class="hint">Formatted, to the clipboard \u2014 paste anywhere</span></button>`;
+  m.innerHTML=group("Proposal as mail draft \u00b7 opens in Outlook, nothing to paste")+optD("blank","Blank + proposal","Draft with the proposal in it")+optD("cold","Cold reach-out + proposal","Draft with the reach-out and the proposal")+optD("full","Full email + proposal","Draft with the full email and the proposal")
+    +group("Proposal as image")+opt("blank","Blank email","Just the image and a one-line note")+opt("cold","Cold reach-out","Call/text, key benefits, why NMC"+richNote)+opt("full","Full email","Options recapped, what I need, next steps, why NMC"+richNote);
   m.style.cssText=`position:fixed;left:${Math.min(rect.left, window.innerWidth-300)}px;top:${rect.bottom+4}px;z-index:9000`; document.body.appendChild(m);
   setTimeout(()=>document.addEventListener("click", function h(e){ if(!m.contains(e.target)){ m.remove(); document.removeEventListener("click",h); } }),0); }
 async function copyEmailText(kind, snapId, variant){ const c=cur(); const r=c&&computeAnalysis(c); const t=emailBodyFor(c, r&&!r.tooSmall?r:null, kind, variant); try{ await navigator.clipboard.writeText(t); toast("Email text copied"); }catch(e){ toast("Couldn\u2019t reach the clipboard"); } }
