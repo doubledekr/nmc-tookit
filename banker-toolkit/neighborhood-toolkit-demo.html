@@ -951,7 +951,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.9.5";
+const TOOLKIT_VERSION = "1.9.6";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2786,6 +2786,7 @@ const NMC_WHY_BODY="We\u2019re a \u00abwholesale mortgage broker\u00bb, not a re
 function emailBodyFor(c,r,kind,variant){ return emailRenderText(emailParts(c,r,kind,variant)); }
 /* ---- the proposal itself as email: the rendered proposal (hides applied) converted to table HTML with inline styles and no images,
    with the highlighter strokes turned into a highlight on the block they were drawn on. Pasted into a compose window it stays editable. ---- */
+const EM_HL_COLORS={yellow:"#FFF3C4",green:"#DCF5DC",pink:"#FFE0F1",blue:"#DDF0FF"};
 const EM_SANS="font-family:Arial,Helvetica,sans-serif"; const EM_SERIF="font-family:Georgia,'Times New Roman',serif"; const EM_HL="#FFF3C4";
 function emailSanitize(el){ /* inner markup of a text block: keep b/i/u/br/span/mark text, drop everything else */
   const out=[]; el.childNodes.forEach(n=>{ if(n.nodeType===3){ out.push(esc(n.textContent)); return; } if(n.nodeType!==1) return; const t=n.tagName.toLowerCase();
@@ -2796,31 +2797,31 @@ function emailSanitize(el){ /* inner markup of a text block: keep b/i/u/br/span/
     else if(n.classList&&n.classList.contains("paid")) out.push(`<span style="color:#2E6B4F;font-weight:bold">${inner}</span>`);
     else if(t==="span"&&n.getAttribute("style")&&/border-radius|background/.test(n.getAttribute("style"))) out.push(` <span style="font-size:12px;color:#5C616E">${inner}</span> `);
     else out.push(inner); }); return out.join("").replace(/\s+/g," ").trim(); }
-function emailBlock(el, hl){ const t=el.tagName.toLowerCase(); const cl=el.classList; const on=hl.blocks.has(el); const bg=on?`background:${EM_HL};`:""; const body=()=>emailSanitize(el);
+function emailBlock(el, hl){ const t=el.tagName.toLowerCase(); const cl=el.classList; const col=hl.color(el); const bg=col?`background:${col};`:""; const body=()=>emailSanitize(el);
   if(cl.contains("brandbar")){ const lo=el.querySelector(".lo"); const tag=el.querySelector(".tag"); const s=state.settings;
     return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-bottom:3px solid #26262E;margin:0 0 8px"><tr><td valign="top" style="padding:0 0 10px"><div style="${EM_SERIF};font-size:22px;color:#26262E">${esc(s.co||"Neighborhood Mortgage Company")}</div><div style="font-size:12px;color:#5C616E">${tag?emailSanitize(tag):""}</div></td><td valign="top" align="right" style="padding:0 0 10px;font-size:12px;color:#444;line-height:1.55">${lo?emailSanitize(lo):""}</td></tr></table>`; }
   if(cl.contains("eyebrow")) return `<div style="font-size:11px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#A53222;margin:14px 0 2px;${bg}">${body()}</div>`;
   if(t==="h1") return `<div style="${EM_SERIF};font-size:22px;line-height:1.3;color:#26262E;margin:2px 0 4px;${bg}">${body()}</div>`;
   if(t==="h2") return `<div style="${EM_SERIF};font-size:17px;font-weight:bold;color:#A53222;margin:16px 0 6px;${bg}">${body().replace(/^\u276F\s*/,"")}</div>`;
   if(t==="h3") return `<div style="${EM_SERIF};font-size:16px;font-weight:bold;color:#26262E;margin:12px 0 4px;${bg}">${body()}</div>`;
-  if(t==="ul"||t==="ol"){ const blocks=hl.blocks; return `<${t} style="margin:4px 0 8px 20px;padding:0">${[...el.children].filter(li=>li.tagName==="LI").map(li=>`<li style="margin:0 0 6px;${blocks.has(li)?"background:"+EM_HL+";":""}">${emailSanitize(li)}</li>`).join("")}</${t}>`; }
+  if(t==="ul"||t==="ol"){ const blocks=hl.blocks; return `<${t} style="margin:4px 0 8px 20px;padding:0">${[...el.children].filter(li=>li.tagName==="LI").map(li=>`<li style="margin:0 0 6px;${hl.color(li)?"background:"+hl.color(li)+";":""}">${emailSanitize(li)}</li>`).join("")}</${t}>`; }
   if(cl.contains("statline")){ const tiles=[...el.children]; let out=`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:10px 0 4px">`; for(let i=0;i<tiles.length;i+=3){ const row=tiles.slice(i,i+3);
-      out+=`<tr>`+row.map((d,j)=>{ const v=d.querySelector(".v"), l=d.querySelector(".l"); const tb=hl.blocks.has(d)?EM_HL:"#F8F2E8"; return (j?`<td width="6" style="font-size:0;line-height:0">&nbsp;</td>`:"")+`<td width="${Math.floor(100/row.length)}%" valign="top" style="background:${tb};border:1px solid #E2DCCF;padding:10px"><div style="${EM_SERIF};font-size:22px;color:#A53222;line-height:1.2">${v?emailSanitize(v):""}</div><div style="font-size:12px;color:#5C616E;line-height:1.35">${l?emailSanitize(l):""}</div></td>`; }).join("")+`</tr>`+(i+3<tiles.length?`<tr><td colspan="${row.length*2-1}" style="font-size:0;line-height:0;height:6px">&nbsp;</td></tr>`:""); }
+      out+=`<tr>`+row.map((d,j)=>{ const v=d.querySelector(".v"), l=d.querySelector(".l"); const tb=hl.color(d)||"#F8F2E8"; return (j?`<td width="6" style="font-size:0;line-height:0">&nbsp;</td>`:"")+`<td width="${Math.floor(100/row.length)}%" valign="top" style="background:${tb};border:1px solid #E2DCCF;padding:10px"><div style="${EM_SERIF};font-size:22px;color:#A53222;line-height:1.2">${v?emailSanitize(v):""}</div><div style="font-size:12px;color:#5C616E;line-height:1.35">${l?emailSanitize(l):""}</div></td>`; }).join("")+`</tr>`+(i+3<tiles.length?`<tr><td colspan="${row.length*2-1}" style="font-size:0;line-height:0;height:6px">&nbsp;</td></tr>`:""); }
     return out+`</table>`; }
-  if(t==="table"){ const rows=[...el.querySelectorAll("tr")]; return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:14px;border-collapse:collapse;margin:4px 0 6px">`+rows.map(tr=>{ const isHead=tr.parentElement&&tr.parentElement.tagName==="THEAD"||tr.querySelector("th"); const rb=hl.blocks.has(tr)?EM_HL:(isHead?"#EFE6D6":(tr.classList.contains("rec")?"#F8F2E8":""));
+  if(t==="table"){ const rows=[...el.querySelectorAll("tr")]; return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:14px;border-collapse:collapse;margin:4px 0 6px">`+rows.map(tr=>{ const isHead=tr.parentElement&&tr.parentElement.tagName==="THEAD"||tr.querySelector("th"); const rb=hl.color(tr)||(isHead?"#EFE6D6":(tr.classList.contains("rec")?"#F8F2E8":""));
       return `<tr${rb?` style="background:${rb}"`:""}>`+[...tr.children].map(td=>{ const num=td.classList.contains("num")||/^[\s$\d.,%\u2014\u2212-]+(\/mo)?$/.test(td.textContent.trim()); const bold=isHead||td.querySelector("b")&&td.textContent.trim()===td.querySelector("b").textContent.trim(); return `<td${num?' align="right"':""} style="padding:6px 8px;border-bottom:${isHead?"2px solid #A53222":"1px solid #E2DCCF"};${bold?"font-weight:bold;":""}${td.classList.contains("reccol")?"background:#F8F2E8;":""}">${emailSanitize(td)||"&nbsp;"}</td>`; }).join("")+`</tr>`; }).join("")+`</table>`; }
-  if(cl.contains("recbox")||cl.contains("keep")||cl.contains("pw")||cl.contains("cashline")) return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:10px 0"><tr><td style="background:${hl.blocks.has(el)?EM_HL:cl.contains("keep")?"#E3F1E7":"#F8F2E8"};border:1px solid #E2DCCF;border-left:4px solid ${cl.contains("keep")?"#2E6B4F":"#A53222"};padding:10px 12px;font-size:14px;line-height:1.5">${body()}</td></tr></table>`;
+  if(cl.contains("recbox")||cl.contains("keep")||cl.contains("pw")||cl.contains("cashline")) return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:10px 0"><tr><td style="background:${hl.color(el)||(cl.contains("keep")?"#E3F1E7":"#F8F2E8")};border:1px solid #E2DCCF;border-left:4px solid ${cl.contains("keep")?"#2E6B4F":"#A53222"};padding:10px 12px;font-size:14px;line-height:1.5">${body()}</td></tr></table>`;
   if(cl.contains("disc")) return `<div style="border-top:1px solid #E2DCCF;margin-top:14px;padding-top:10px;font-size:11px;line-height:1.5;color:#7A7F8A">${body()}</div>`;
   if(cl.contains("hint")) return `<div style="font-size:12.5px;color:#5C616E;margin:4px 0;${bg}">${body()}</div>`;
   if(cl.contains("tchart")){ return [...el.children].map(side=>[...side.children].map(ch=>emailBlock(ch,hl)).join("")).join(`<div style="height:10px"></div>`); }
-  if(cl.contains("trow")) return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:14px"><tr>${[...el.children].map((c_,i)=>`<td${i?' align="right"':""} style="padding:4px 0;border-bottom:1px dashed #EFEAE0;${hl.blocks.has(el)?"background:"+EM_HL+";":""}">${emailSanitize(c_)||"&nbsp;"}</td>`).join("")}</tr></table>`;
+  if(cl.contains("trow")) return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:14px"><tr>${[...el.children].map((c_,i)=>`<td${i?' align="right"':""} style="padding:4px 0;border-bottom:1px dashed #EFEAE0;${bg}">${emailSanitize(c_)||"&nbsp;"}</td>`).join("")}</tr></table>`;
   if(cl.contains("tot")) return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-size:15px;border-top:2px solid #E2DCCF;margin-top:6px"><tr>${[...el.children].map((c_,i)=>`<td${i?' align="right"':""} style="padding:8px 0;${i?EM_SERIF+";font-size:20px":""}">${emailSanitize(c_)}</td>`).join("")}</tr></table>`;
   if(el.children.length && [...el.children].some(ch=>/^(H[1-3]|UL|OL|TABLE)$/.test(ch.tagName)||ch.classList.contains("statline")||ch.classList.contains("recbox")||ch.classList.contains("tchart"))) return [...el.children].map(ch=>emailBlock(ch,hl)).join("");
   const txt=body(); return txt ? `<div style="margin:6px 0;font-size:14px;line-height:1.5;${bg}">${txt}</div>` : ""; }
 function emailProposalHTML(html, marks){ const root=document.createElement("div"); root.innerHTML=html;
   root.querySelectorAll("button,input,select,textarea,script,style,canvas").forEach(x=>x.remove());
-  const blocks=hlBlocks(root); const set=new Set(); (marks||[]).forEach(m=>{ if(m.bi>=0&&blocks[m.bi]) set.add(blocks[m.bi]); });
-  const hl={blocks:set}; const kids=[...root.children]; const discEl=kids.find(x=>x.classList.contains("disc")); const inner=kids.filter(x=>x!==discEl).map(ch=>emailBlock(ch, hl)).join("");
+  const blocks=hlBlocks(root); const map=new Map(); (marks||[]).forEach(m=>{ if(m.bi>=0&&blocks[m.bi]&&!map.has(blocks[m.bi])) map.set(blocks[m.bi], EM_HL_COLORS[m.color]||EM_HL); });   /* first stroke on a block sets its color */
+  const hl={blocks:map, color:(el)=>map.get(el)||""}; const kids=[...root.children]; const discEl=kids.find(x=>x.classList.contains("disc")); const inner=kids.filter(x=>x!==discEl).map(ch=>emailBlock(ch, hl)).join("");
   const wrap=x=>`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:640px;${EM_SANS};font-size:14px;line-height:1.5;color:#26262E"><tr><td>${x}</td></tr></table>`;
   return {main:wrap(inner), disc: discEl?wrap(emailBlock(discEl,hl)):""}; }
 /* message + proposal, as one editable email: the note's opening on top, the proposal, then the rest of the note and the signature */
