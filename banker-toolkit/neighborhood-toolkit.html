@@ -903,6 +903,7 @@ Discover 6,100 190 24.9"></textarea>
             <div class="field"><label>Phone</label><input type="text" id="setLoPhone"></div>
             <div class="field"><label>Email</label><input type="text" id="setLoEmail"></div>
           </div>
+          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;margin:8px 0 4px;line-height:1.45"><input type="checkbox" id="setEmailRich" style="width:auto;min-height:0;margin-top:3px"><span><b>Formatted emails</b> for the Cold reach-out and Full email — bold headings, highlighted numbers, brand fonts, and the proposal image, all in one paste. The email opens addressed with the subject filled in and you paste the body (Ctrl+V / ⌘V). <span class="hint">Off = the current way: the text goes straight into the email and the image is on the clipboard to paste.</span></span></label>
           <div class="btnrow"><button class="btn" onclick="saveSettingsFromUI(true)">Save</button></div>
         </div>
       </div>
@@ -950,7 +951,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.9.3";
+const TOOLKIT_VERSION = "1.9.4";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2735,29 +2736,60 @@ function emailProducts(c,r,kind){ const out=[]; const push=(x)=>{ if(!x) return;
 function emailDocsFor(k){ return (k==="fha_streamline"||k==="va_irrrl") ? {docs:"your most recent mortgage statement and a few e-signatures \u2014 that\u2019s it. No appraisal, no pay stubs, no tax returns.", close:"typically closes in about a week"}
   : (k==="hel"||k==="heloc") ? {docs:"last year\u2019s W-2, your two most recent pay stubs, your most recent mortgage statement, and e-signatures.", close:"generally closes in 3\u20137 days"}
   : {docs:"your two most recent pay stubs, last year\u2019s W-2, your most recent mortgage statement, and e-signatures.", close:"typically closes in a few weeks"}; }
-function emailOptionLine(p){ const r=p.r; const bits=[]; if(r.a&&r.a.anRate) bits.push(pct(r.a.anRate)); if(r.newPay>0) bits.push(money(Math.round(r.newPay))+"/mo"); if(r.saveMo>0) bits.push("frees up "+money(Math.round(r.saveMo))+"/mo"); if(r.cashOut>0) bits.push(money(r.cashOut)+" cash to you"); if(r.roll&&r.debts&&r.debts.length) bits.push(r.debts.length+" debt"+(r.debts.length>1?"s":"")+" paid off"); if(r.skipCash>0) bits.push("skip "+r.skipN+" payment"+(r.skipN>1?"s":""));
+/* \u00ab \u00bb mark the numbers worth highlighting; the text renderer strips them, the HTML renderer turns them into a highlight */
+function emailOptionLine(p){ const r=p.r; const bits=[]; const hl=x=>"\u00ab"+x+"\u00bb"; if(r.a&&r.a.anRate) bits.push(hl(pct(r.a.anRate))); if(r.newPay>0) bits.push(hl(money(Math.round(r.newPay))+"/mo")); if(r.saveMo>0) bits.push("frees up "+hl(money(Math.round(r.saveMo))+"/mo")); if(r.cashOut>0) bits.push(hl(money(r.cashOut))+" cash to you"); if(r.roll&&r.debts&&r.debts.length) bits.push(r.debts.length+" debt"+(r.debts.length>1?"s":"")+" paid off"); if(r.skipCash>0) bits.push("skip "+hl(r.skipN+" payment"+(r.skipN>1?"s":"")));
   return p.label.charAt(0).toUpperCase()+p.label.slice(1)+(bits.length?" \u2014 "+bits.join(", "):""); }
-const NMC_WHY="Why Neighborhood Mortgage: we\u2019re a wholesale mortgage broker, not a retail lender. We don\u2019t sell one bank\u2019s rate sheet \u2014 we shop your file across dozens of lenders and let them compete for it, which is how we deliver better-than-retail pricing and the most competitive terms available on the day you lock.";
-function emailBodyFor(c,r,kind,variant){ const s=state.settings; variant=variant||"blank";
+function emailProductName(c,r,kind){ const prods=emailProducts(c,r,kind); if(!prods.length) return kind==="compare"?"your options":"your proposal"; if(prods.length>1) return prods.length+" options"; const k=prods[0].k;
+  return k==="va_irrrl"?"VA Streamline":k==="fha_streamline"?"FHA Streamline":k==="hel"?"Home Equity Loan":k==="heloc"?"HELOC":k==="cashout"?"Cash-Out Refinance":k==="fc"?"Cash-Out Loan":"Refinance"; }
+function emailSubjectFor(c,r,kind,variant,title){ const first=c&&c.name?c.name.split(/[ ,&]/)[0]:""; if(variant!=="cold"&&variant!=="full") return title; const name=emailProductName(c,r,kind); const multi=/^\d+ options$/.test(name);
+  return (first?first+" \u2014 ":"")+(variant==="cold" ? (multi?name+", quick look":name+" quick look") : (multi?"your "+name+", the details":"your "+name+", the details")); }
+/* the message as parts: p = paragraph, h = heading, ul = bullets, ol = numbered, sig = signature. Same parts feed the plain-text and the formatted email. */
+function emailParts(c,r,kind,variant){ const s=state.settings; variant=variant||"blank";
   const first= kind==="purchase" && state.purch&&state.purch.who ? String(state.purch.who).split(/[ ,&]/)[0] : c&&c.name? c.name.split(/[ ,&]/)[0] : "there";
-  const sig=`${s.loName||""}\nNeighborhood Mortgage Company\nNMLS #${s.loNmls||""}${s.loPhone?" \u00b7 "+s.loPhone:""}${s.loEmail?" \u00b7 "+s.loEmail:""}`;
+  const sig=[s.loName||"","Neighborhood Mortgage Company",`NMLS #${s.loNmls||""}${s.loPhone?" \u00b7 "+s.loPhone:""}${s.loEmail?" \u00b7 "+s.loEmail:""}`];
   const phone=s.loPhone||"my number below";
   const what = kind==="purchase" ? "the purchase estimate" : kind==="compare" ? "the side-by-side of your options" : (r&&r.second ? "the home equity proposal" : "the savings proposal");
-  if(variant==="blank" || kind==="purchase" || kind==="amort" || kind==="present") return `Hi ${first},\n\nHere is ${what} we talked about \u2014 the image below has the full breakdown.\n\nCall or text me with any questions.\n\n${sig}`;
+  if(variant==="blank" || kind==="purchase" || kind==="amort" || kind==="present") return [{t:"p",x:`Hi ${first},`},{t:"p",x:`Here is ${what} we talked about \u2014 the image below has the full breakdown.`},{t:"img"},{t:"p",x:"Call or text me with any questions."},{t:"sig",x:sig}];
   const prods=emailProducts(c,r,kind); const multi=prods.length>1; const kinds=[...new Set(prods.map(p=>p.k))];
   const stream=kinds.some(k=>k==="fha_streamline"||k==="va_irrrl"), he=kinds.some(k=>k==="hel"||k==="heloc"), other=kinds.some(k=>!["fha_streamline","va_irrrl","hel","heloc"].includes(k));
   const docLines=[]; if(stream) docLines.push("Streamline: "+emailDocsFor("va_irrrl").docs+" It "+emailDocsFor("va_irrrl").close+"."); if(he) docLines.push((kinds.includes("heloc")&&!kinds.includes("hel")?"HELOC":kinds.includes("hel")&&kinds.includes("heloc")?"Home equity loan / HELOC":"Home equity loan")+": "+emailDocsFor("hel").docs+" It "+emailDocsFor("hel").close+"."); if(other) docLines.push("Refinance: "+emailDocsFor("refi").docs+" It "+emailDocsFor("refi").close+".");
   const headline = prods.length ? (multi ? prods.length+" ways to do this, side by side" : emailOptionLine(prods[0])) : what;
-  if(variant==="cold"){
-    return `Hi ${first},\n\nThis is what I was reaching out about. The image below is a quick look at ${multi?"the options":"the option"} I put together for you \u2014 ${headline}.\n\nGive me a ring or text at ${phone}, or just reply to this email, and we\u2019ll turn it into real numbers for your situation. Ten minutes is usually all it takes.\n\nA few things worth knowing up front:\n\u2022 No out-of-pocket costs on ${multi?"any of these options":"this option"} \u2014 nothing due at closing.\n${docLines.map(l=>"\u2022 "+l).join("\n")}\n\u2022 No prepayment penalty \u2014 pay extra, pay it off early, or refinance again whenever it makes sense.\n\n${NMC_WHY}\n\nLooking forward to it,\n${sig}`; }
-  /* full */
-  const optList = prods.length ? prods.map((p,i)=>(multi?(i+1)+". ":"")+emailOptionLine(p)).join("\n") : "";
-  return `Hi ${first},\n\nThank you for the time today \u2014 I enjoyed the conversation. As promised, the image below has the full breakdown${multi?" of the "+prods.length+" options we talked through":""}. Here\u2019s the short version:\n\n${optList}\n\nWhat it costs you up front: nothing. ${multi?"Every option here is":"This is"} structured with no out-of-pocket costs \u2014 nothing due at closing \u2014 and there is no prepayment penalty, so you can pay extra, pay it off early, or refinance again whenever it makes sense.\n\nWhat I\u2019ll need from you:\n${docLines.map(l=>"\u2022 "+l).join("\n")}\n\nNext steps are simple: I send you the application link, you e-sign it, and we lock your rate. From there I handle the rest and keep you posted at every step.\n\n${NMC_WHY}\n\nCall or text me at ${phone}, or reply here, with any questions \u2014 or if you\u2019re ready, just say the word and I\u2019ll get the application link over to you.\n\nBlessings,\n${sig}`; }
+  if(variant==="cold") return [{t:"p",x:`Hi ${first},`},
+    {t:"p",x:`This is what I was reaching out about. The image below is a quick look at ${multi?"the options":"the option"} I put together for you \u2014 ${headline}.`},
+    {t:"img"},
+    {t:"p",x:`Give me a ring or text at \u00ab${phone}\u00bb, or just reply to this email, and we\u2019ll turn it into real numbers for your situation. Ten minutes is usually all it takes.`},
+    {t:"h",x:"A few things worth knowing up front"},
+    {t:"ul",x:[`\u00abNo out-of-pocket costs\u00bb on ${multi?"any of these options":"this option"} \u2014 nothing due at closing.`].concat(docLines).concat(["No prepayment penalty \u2014 pay extra, pay it off early, or refinance again whenever it makes sense."])},
+    {t:"h",x:"Why Neighborhood Mortgage"},{t:"p",x:NMC_WHY_BODY},
+    {t:"p",x:"Looking forward to it,"},{t:"sig",x:sig}];
+  const optList = prods.map(p=>emailOptionLine(p));
+  return [{t:"p",x:`Hi ${first},`},
+    {t:"p",x:`Thank you for the time today \u2014 I enjoyed the conversation. As promised, the image below has the full breakdown${multi?" of the "+prods.length+" options we talked through":""}. Here\u2019s the short version:`},
+    {t:multi?"ol":"ul",x:optList},
+    {t:"img"},
+    {t:"h",x:"What it costs you up front: nothing"},
+    {t:"p",x:`${multi?"Every option here is":"This is"} structured with \u00abno out-of-pocket costs\u00bb \u2014 nothing due at closing \u2014 and there is no prepayment penalty, so you can pay extra, pay it off early, or refinance again whenever it makes sense.`},
+    {t:"h",x:"What I\u2019ll need from you"},{t:"ul",x:docLines},
+    {t:"h",x:"Next steps are simple"},{t:"p",x:"I send you the application link, you e-sign it, and we lock your rate. From there I handle the rest and keep you posted at every step."},
+    {t:"h",x:"Why Neighborhood Mortgage"},{t:"p",x:NMC_WHY_BODY},
+    {t:"p",x:`Call or text me at \u00ab${phone}\u00bb, or reply here, with any questions \u2014 or if you\u2019re ready, just say the word and I\u2019ll get the application link over to you.`},
+    {t:"p",x:"Blessings,"},{t:"sig",x:sig}]; }
+const strip=x=>String(x).replace(/[\u00ab\u00bb]/g,"");
+function emailRenderText(parts){ let out=""; parts.forEach((p,i)=>{ if(p.t==="img") return; const next=parts[i+1]; let t; if(p.t==="h") t=strip(p.x)+":"; else if(p.t==="ul") t=p.x.map(l=>"\u2022 "+strip(l)).join("\n"); else if(p.t==="ol") t=p.x.map((l,i)=>(i+1)+". "+strip(l)).join("\n"); else if(p.t==="sig") t=p.x.join("\n"); else t=strip(p.x);
+  out += t + (next ? ((p.t==="h")||(next.t==="sig") ? "\n" : (next.t==="img"&&parts[i+2]) ? "\n\n" : "\n\n") : ""); }); return out; }
+function emailRenderHTML(parts, imgSrc){ const hl=x=>esc(String(x)).replace(/\u00ab([^\u00bb]*)\u00bb/g,'<mark style="background:#FFF3C4;color:#1f1f1f;padding:0 2px;border-radius:3px;font-weight:600">$1</mark>');
+  const F='font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.55;color:#26262E'; const H="font-family:Georgia,'Times New Roman',serif;font-size:17px;font-weight:700;color:#A53222;margin:18px 0 6px";
+  return `<div style="${F};max-width:640px">`+parts.map(p=>{ if(p.t==="img") return imgSrc?`<p style="margin:14px 0"><img src="${imgSrc}" alt="Proposal" style="max-width:100%;width:620px;border:1px solid #E2DCCF;border-radius:8px"></p>`:""; if(p.t==="h") return `<p style="${H}">${hl(p.x)}</p>`;
+    if(p.t==="ul") return `<ul style="margin:6px 0 12px 22px;padding:0">${p.x.map(l=>`<li style="margin:4px 0">${hl(l)}</li>`).join("")}</ul>`; if(p.t==="ol") return `<ol style="margin:6px 0 12px 22px;padding:0">${p.x.map(l=>`<li style="margin:4px 0">${hl(l)}</li>`).join("")}</ol>`;
+    if(p.t==="sig") return `<p style="margin:14px 0 0"><b style="font-family:Georgia,'Times New Roman',serif;font-size:16px">${esc(p.x[0])}</b><br>${esc(p.x[1])}<br><span style="color:#5C616E;font-size:13px">${esc(p.x[2])}</span></p>`; return `<p style="margin:10px 0">${hl(p.x)}</p>`; }).join("")+`</div>`; }
+const NMC_WHY_BODY="We\u2019re a \u00abwholesale mortgage broker\u00bb, not a retail lender. We don\u2019t sell one bank\u2019s rate sheet \u2014 we shop your file across \u00abdozens of lenders\u00bb and let them compete for it, which is how we deliver better-than-retail pricing and the most competitive terms available on the day you lock.";
+function emailBodyFor(c,r,kind,variant){ return emailRenderText(emailParts(c,r,kind,variant)); }
 /* the Email button: pick the message that goes with the image */
 function emailMenu(ev, kind, snapId){ ev.preventDefault(); ev.stopPropagation(); const old=$("emailMenu"); if(old){ old.remove(); if(old.dataset.for===kind+"|"+(snapId||"")) return; }
   const b=ev.currentTarget||ev.target; const rect=b.getBoundingClientRect(); const m=document.createElement("div"); m.id="emailMenu"; m.dataset.for=kind+"|"+(snapId||"");
   const opt=(v,title,sub)=>`<button type="button" onclick="document.getElementById('emailMenu').remove(); emailImage('${kind}',${snapId?"'"+snapId+"'":"null"},'${v}')"><b>${title}</b><span class="hint">${sub}</span></button>`;
-  m.innerHTML=opt("blank","Blank email","Just the image and a one-line note")+opt("cold","Cold reach-out","\u201cThis is what I was reaching out about\u201d \u2014 call/text, key benefits, why NMC")+opt("full","Full email","Options recapped, what I need from you, next steps, why NMC")+`<button type="button" onclick="document.getElementById('emailMenu').remove(); copyEmailText('${kind}',${snapId?"'"+snapId+"'":"null"},'full')"><b>Copy full email text</b><span class="hint">Paste it anywhere \u2014 no image</span></button>`;
+  const richNote = state.settings.emailRich ? " \u00b7 formatted, paste once" : "";
+  m.innerHTML=opt("blank","Blank email","Just the image and a one-line note")+opt("cold","Cold reach-out","\u201cThis is what I was reaching out about\u201d \u2014 call/text, key benefits, why NMC"+richNote)+opt("full","Full email","Options recapped, what I need from you, next steps, why NMC"+richNote)+`<button type="button" onclick="document.getElementById('emailMenu').remove(); copyEmailText('${kind}',${snapId?"'"+snapId+"'":"null"},'full')"><b>Copy full email text</b><span class="hint">Paste it anywhere \u2014 no image</span></button>`;
   m.style.cssText=`position:fixed;left:${Math.min(rect.left, window.innerWidth-300)}px;top:${rect.bottom+4}px;z-index:9000`; document.body.appendChild(m);
   setTimeout(()=>document.addEventListener("click", function h(e){ if(!m.contains(e.target)){ m.remove(); document.removeEventListener("click",h); } }),0); }
 async function copyEmailText(kind, snapId, variant){ const c=cur(); const r=c&&computeAnalysis(c); const t=emailBodyFor(c, r&&!r.tooSmall?r:null, kind, variant); try{ await navigator.clipboard.writeText(t); toast("Email text copied"); }catch(e){ toast("Couldn\u2019t reach the clipboard"); } }
@@ -2766,7 +2798,15 @@ async function emailImage(kind, snapId, variant){
   try{ const {c,r,title,name,cv,jpg}=await renderSheet(kind, snapId?libSnap(snapId):null);
     if(c){ const e=snapId?libSnap(snapId):c.library[0]; if(e&&!e.sent) libSent(e.id,"email"); }
     const to=(c&&c.email)||"";                                   /* client email auto-filled when it's on file */
-    const body=emailBodyFor(c,r,kind,variant); const subject = variant==="cold" ? ((c&&c.name?c.name.split(/[ ,&]/)[0]+", ":"")+"the numbers I mentioned \u2014 "+title) : title;
+    const body=emailBodyFor(c,r,kind,variant); const subject=emailSubjectFor(c,r,kind,variant,title);
+    const rich = !!state.settings.emailRich && (variant==="cold"||variant==="full") && navigator.clipboard && window.ClipboardItem && !/Android|iPhone|iPad/i.test(navigator.userAgent);
+    if(rich){ /* formatted body + image on the clipboard as one paste; the email opens addressed with the subject */
+      try{ const dataUrl=await new Promise((ok,bad)=>{ const fr=new FileReader(); fr.onload=()=>ok(fr.result); fr.onerror=()=>bad(new Error("read")); fr.readAsDataURL(jpg); });
+        const html=emailRenderHTML(emailParts(c,r,kind,variant), dataUrl);
+        await navigator.clipboard.write([new ClipboardItem({"text/html":new Blob([html],{type:"text/html"}),"text/plain":new Blob([body],{type:"text/plain"})})]);
+        window.location.href="mailto:"+encodeURIComponent(to)+"?subject="+encodeURIComponent(subject);
+        toast("Email opened"+(to?" to "+to:"")+" \u2014 click into the body and paste (Ctrl+V / \u2318V) for the formatted message with the image. If the image doesn\u2019t come through, use Copy as image and paste again."); return;
+      }catch(e){ /* fall through to the plain flow */ } }
     const mailto="mailto:"+encodeURIComponent(to)+"?subject="+encodeURIComponent(subject)+"&body="+encodeURIComponent(body);
     const file=new File([jpg],name+".jpg",{type:"image/jpeg"});
     /* system share sheet (Windows, Mac, phones): Mail/Outlook gets the JPG as a real attachment with subject + note.
@@ -2949,7 +2989,7 @@ function shade(hex,f){ const m=hex.replace("#",""); if(m.length!==6) return hex;
   return "#"+c.map(x=>x.toString(16).padStart(2,"0")).join(""); }
 function fillSettingsUI(){ const s=state.settings;
   $("setLoName").value=s.loName; $("setLoNmls").value=s.loNmls;
-  $("setLoPhone").value=s.loPhone; $("setLoEmail").value=s.loEmail; $("setFeed").value=s.feedUrl; $("setPoll").checked=!!s.poll;
+  $("setLoPhone").value=s.loPhone; $("setLoEmail").value=s.loEmail; $("setFeed").value=s.feedUrl; $("setPoll").checked=!!s.poll; if($("setEmailRich")) $("setEmailRich").checked=!!s.emailRich;
   $("setReport").value=s.reportUrl||""; $("setGoal").value=s.folderGoal||15; if($("setSeasonLead")) $("setSeasonLead").value=s.seasonLead||7; $("setTeam").value=s.teamUrl||"";
   if($("setHub")) $("setHub").value=s.hub||""; if($("setHubKey")) $("setHubKey").value=s.hubKey||""; updateHubStatus(); updateMirrorStatus();
   const ed=$("sfMapEditor"); if(ed) ed.innerHTML=Object.keys(DEFAULT_SFMAP).map(f=>
@@ -2957,7 +2997,7 @@ function fillSettingsUI(){ const s=state.settings;
 }
 function saveSettingsFromUI(announce){ const s=state.settings;
   s.loName=$("setLoName").value; s.loNmls=$("setLoNmls").value; s.loPhone=$("setLoPhone").value; s.loEmail=$("setLoEmail").value;
-  s.feedUrl=$("setFeed").value.trim(); s.poll=$("setPoll").checked;
+  s.feedUrl=$("setFeed").value.trim(); s.poll=$("setPoll").checked; if($("setEmailRich")) s.emailRich=$("setEmailRich").checked;
   s.reportUrl=$("setReport").value.trim(); s.folderGoal=num($("setGoal").value)||15; if($("setSeasonLead")) s.seasonLead=num($("setSeasonLead").value)||7; s.teamUrl=$("setTeam").value.trim();
   const hub=$("setHub")? $("setHub").value.trim().replace(/\/+$/,"") : (s.hub||"");
   const key=$("setHubKey")? $("setHubKey").value.trim() : (s.hubKey||""); const keyChanged=key!==(s.hubKey||""); s.hubKey=key;
