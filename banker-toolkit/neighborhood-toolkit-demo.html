@@ -951,7 +951,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.9.13";
+const TOOLKIT_VERSION = "1.9.14";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2883,12 +2883,18 @@ async function emailProposal(kind, snapId, variant){ const c=cur(); const snap=s
   }catch(e){ toast(e.message==="nocb" ? "This browser can\u2019t copy formatted text \u2014 use the image version" : e.message); } }
 /* Open the proposal as a mail draft: an .eml file whose body IS the formatted HTML, with X-Unsent so Outlook opens it as a
    draft to send rather than a received message. No paste, so no paste filter. Desktop: written to temp and opened; browser: downloaded. */
-function emlB64(str){ const b=btoa(unescape(encodeURIComponent(str))); return b.replace(/(.{76})/g,"$1\r\n"); }
+/* quoted-printable: every mail client decodes it, and a viewer that doesn't still shows readable text (base64 shows as a wall of characters) */
+function emlQP(str){ const bytes=new TextEncoder().encode(str.replace(/\r?\n/g,"\r\n")); let out="", line="";
+  const push=(tok)=>{ if(line.length+tok.length>74){ out+=line+"=\r\n"; line=""; } line+=tok; };
+  for(let i=0;i<bytes.length;i++){ const b=bytes[i];
+    if(b===13&&bytes[i+1]===10){ out+=line.replace(/[ \t]$/,m=>"="+m.charCodeAt(0).toString(16).toUpperCase().padStart(2,"0"))+"\r\n"; line=""; i++; continue; }
+    if((b>=33&&b<=126&&b!==61)||b===32||b===9) push(String.fromCharCode(b)); else push("="+b.toString(16).toUpperCase().padStart(2,"0")); }
+  return out+line; }
 function emlHeader(v){ return /^[\x20-\x7e]*$/.test(v) ? v : "=?utf-8?B?"+btoa(unescape(encodeURIComponent(v)))+"?="; }
 function buildEML(to, subject, html, text){ const b="----=_nmc_"+Date.now().toString(36); const s=state.settings; const from=(s.loEmail||"").trim();
   return [ from?`From: ${emlHeader(s.loName||"")} <${from}>`:"", to?`To: ${to}`:"", `Subject: ${emlHeader(subject)}`, "X-Unsent: 1", "MIME-Version: 1.0", `Content-Type: multipart/alternative; boundary="${b}"`, "",
-    `--${b}`, "Content-Type: text/plain; charset=utf-8", "Content-Transfer-Encoding: base64", "", emlB64(text), `--${b}`, "Content-Type: text/html; charset=utf-8", "Content-Transfer-Encoding: base64", "",
-    emlB64(`<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;padding:12px;background:#ffffff">${html}</body></html>`), `--${b}--`, "" ].filter(l=>l!==null).join("\r\n"); }
+    `--${b}`, "Content-Type: text/plain; charset=utf-8", "Content-Transfer-Encoding: quoted-printable", "", emlQP(text), `--${b}`, "Content-Type: text/html; charset=utf-8", "Content-Transfer-Encoding: quoted-printable", "",
+    emlQP(`<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;padding:12px;background:#ffffff">${html}</body></html>`), `--${b}--`, "" ].filter(l=>l!==null).join("\r\n"); }
 async function emailDraftEML(kind, snapId, variant){ const c=cur(); const snap=snapId?libSnap(snapId):null; variant=variant||"blank";
   const html = snap ? snap.html : (kind==="compare" ? compareHTML() : proposalHTML()); if(html.includes('class="empty"')){ toast(kind==="compare"?"Add at least two complete scenarios first":"Finish the analysis first"); return; }
   const r=c&&!snap&&computeAnalysis(c); const title=snap?snap.title:sheetTitle(kind,c,r); if(!snap&&c) libraryAdd(kind, html, title);
