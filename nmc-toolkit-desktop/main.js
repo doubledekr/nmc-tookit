@@ -48,6 +48,9 @@ ipcMain.handle("data:path", () => dataDir());
 ipcMain.on("data:pathSync", e => { e.returnValue = dataDir(); });
 ipcMain.on("app:versionSync", e => { e.returnValue = app.getVersion(); });
 ipcMain.handle("data:openFolder", () => shell.openPath(dataDir()));
+/* proposal email as an .eml draft: written to temp, opened with the default mail app (Outlook shows X-Unsent files as drafts) */
+ipcMain.handle("mail:openDraft", async (e, name, eml) => { try { const dir = path.join(app.getPath("temp"), "nmc-toolkit-drafts"); fs.mkdirSync(dir, { recursive: true });
+  const file = path.join(dir, String(name || "proposal.eml").replace(/[^a-z0-9._-]+/gi, "-")); fs.writeFileSync(file, eml, "utf8"); const err = await shell.openPath(file); return !err; } catch (err) { return false; } });
 ipcMain.handle("data:findOld", () => findOldExports());
 ipcMain.handle("data:readFile", (e, p) => { try { return fs.readFileSync(p, "utf8"); } catch (err) { return null; } });
 ipcMain.handle("data:pickAndRead", async () => {

@@ -21,4 +21,5 @@ contextBridge.exposeInMainWorld("nmcDesktop", {
   sfStatus: () => ipcRenderer.sendSync("sf:statusSync"),
   extensionPath: () => ipcRenderer.sendSync("sf:extensionPathSync"),
   openExtensionFolder: () => ipcRenderer.invoke("sf:openExtensionFolder"),
+  openDraft: (name, eml) => ipcRenderer.invoke("mail:openDraft", name, eml),   /* .eml draft → default mail app */
 });
