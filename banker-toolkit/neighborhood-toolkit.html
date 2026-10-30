@@ -951,7 +951,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.9.15";
+const TOOLKIT_VERSION = "1.9.16";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2747,7 +2747,7 @@ function emailProducts(c,r,kind){ const out=[]; const push=(x)=>{ if(!x) return;
   if(!out.length && r) push(r);
   return out; }
 function emailDocsFor(k){ return (k==="fha_streamline"||k==="va_irrrl") ? {docs:"your most recent mortgage statement and a few e-signatures \u2014 that\u2019s it. No appraisal, no pay stubs, no tax returns.", close:"typically closes in about a week"}
-  : (k==="hel"||k==="heloc") ? {docs:"last year\u2019s W-2, your two most recent pay stubs, your most recent mortgage statement, and e-signatures.", close:"generally closes in 3\u20137 days"}
+  : (k==="hel"||k==="heloc") ? {docs:"last year\u2019s W-2, your two most recent pay stubs, your most recent mortgage statement, your homeowners insurance declaration page, and e-signatures.", close:"generally closes in 3\u20137 days"}
   : {docs:"your two most recent pay stubs, last year\u2019s W-2, your most recent mortgage statement, and e-signatures.", close:"typically closes in a few weeks"}; }
 /* \u00ab \u00bb mark the numbers worth highlighting; the text renderer strips them, the HTML renderer turns them into a highlight */
 function emailOptionLine(p){ const r=p.r; const bits=[]; const hl=x=>"\u00ab"+x+"\u00bb"; if(r.a&&r.a.anRate) bits.push(hl(pct(r.a.anRate))); if(r.newPay>0) bits.push(hl(money(Math.round(r.newPay))+"/mo")); if(r.saveMo>0) bits.push("frees up "+hl(money(Math.round(r.saveMo))+"/mo")); if(r.cashOut>0) bits.push(hl(money(r.cashOut))+" cash to you"); if(r.roll&&r.debts&&r.debts.length) bits.push(r.debts.length+" debt"+(r.debts.length>1?"s":"")+" paid off"); if(r.skipCash>0) bits.push("skip "+hl(r.skipN+" payment"+(r.skipN>1?"s":"")));
