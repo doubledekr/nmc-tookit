@@ -576,7 +576,7 @@ Discover 6,100 190 24.9"></textarea>
         <div class="grid3">
           <div class="field"><label>Client</label><select id="propClientPicker" onchange="pickClient(this.value)"></select></div>
           <div class="field" style="display:none"><label>Pricing option on proposal</label><select id="propOption" onchange="renderProposalPreview()"></select></div>
-          <div class="field" style="align-self:end"><div class="btnrow"><button class="btn" onclick="copyImage('proposal')">Copy proposal</button><button class="btn ghost" onclick="emailMenu(event,'proposal')">Email ▾</button><button class="btn ghost" onclick="exportImage('proposal')">Save image</button><button class="btn ghost" onclick="exportPDF()">PDF</button><button class="btn ghost" onclick="librarySave('proposal')">Save to library</button><button class="btn ghost" id="propSaveOpt" onclick="addSnapScenario(); renderProposalPreview()" title="Keep this proposal's set-up as a saved option, so it can sit side by side with others">Save as an option</button><button class="btn ghost" onclick="librarySave('proposal'); markSentLatest('text')" title="Logs this proposal as sent by text (Email marks itself automatically)">Mark sent by text</button></div></div>
+          <div class="field" style="align-self:end"><div class="btnrow"><button class="btn" onclick="copyImage('proposal')">Copy proposal</button><button class="btn ghost" onclick="emailMenu(event,'proposal')">Email ▾</button><button class="btn ghost" onclick="textMenu(event,'proposal')" title="A short text to send with the email, copied to the clipboard">Text ▾</button><button class="btn ghost" onclick="exportImage('proposal')">Save image</button><button class="btn ghost" onclick="exportPDF()">PDF</button><button class="btn ghost" onclick="librarySave('proposal')">Save to library</button><button class="btn ghost" id="propSaveOpt" onclick="addSnapScenario(); renderProposalPreview()" title="Keep this proposal's set-up as a saved option, so it can sit side by side with others">Save as an option</button><button class="btn ghost" onclick="librarySave('proposal'); markSentLatest('text')" title="Logs this proposal as sent by text (Email marks itself automatically)">Mark sent by text</button></div></div>
         </div>
         <div class="field"><div class="chiprow" style="gap:16px">
           <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="propBadge" style="width:auto;min-height:0" onchange="setPropFlag('badge',this.checked)"> NMC mortgage badge</label>
@@ -951,7 +951,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.9.18";
+const TOOLKIT_VERSION = "1.9.19";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2757,8 +2757,9 @@ function debtsPhrase(debts){ const L={card:["credit card","credit cards"],auto:[
   const counts={}; ds.forEach(d=>{ const k=L[d.type]?d.type:"other"; counts[k]=(counts[k]||0)+1; });
   const parts=Object.keys(counts).map(k=>{ const n=counts[k]; const lab=L[k][n>1?1:0]; return n>1 ? n+" "+lab : (/^[aeiou]/i.test(lab)?"an ":"a ")+lab; });
   return parts.length>1 ? parts.slice(0,-1).join(", ")+" and "+parts[parts.length-1] : parts[0]; }
-function emailOptionLine(p){ const r=p.r; const bits=[]; const hl=x=>"\u00ab"+x+"\u00bb"; if(r.a&&r.a.anRate) bits.push(hl(pct(r.a.anRate))); if(r.newPay>0) bits.push(hl(money(Math.round(r.newPay))+"/mo")); if(r.saveMo>0) bits.push("frees up "+hl(money(Math.round(r.saveMo))+"/mo")); if(r.cashOut>0) bits.push(hl(money(r.cashOut))+" cash to you"); if(r.roll&&r.debts&&r.debts.length) bits.push("pays off "+debtsPhrase(r.debts)+(r.dBal>0?" ("+hl(money(r.dBal))+")":"")); if(r.skipCash>0) bits.push("skip "+hl(r.skipN+" payment"+(r.skipN>1?"s":"")));
-  return p.label.charAt(0).toUpperCase()+p.label.slice(1)+(bits.length?" \u2014 "+bits.join(", "):""); }
+function emailOptionBits(p){ const r=p.r; const bits=[]; const hl=x=>"\u00ab"+x+"\u00bb"; if(r.a&&r.a.anRate) bits.push(hl(pct(r.a.anRate))); if(r.newPay>0) bits.push(hl(money(Math.round(r.newPay))+"/mo")); if(r.saveMo>0) bits.push("frees up "+hl(money(Math.round(r.saveMo))+"/mo")); if(r.cashOut>0) bits.push(hl(money(r.cashOut))+" cash to you"); if(r.roll&&r.debts&&r.debts.length) bits.push("pays off "+debtsPhrase(r.debts)+(r.dBal>0?" ("+hl(money(r.dBal))+")":"")); if(r.skipCash>0) bits.push("skip "+hl(r.skipN+" payment"+(r.skipN>1?"s":"")));
+  return bits; }
+function emailOptionLine(p){ const bits=emailOptionBits(p); return p.label.charAt(0).toUpperCase()+p.label.slice(1)+(bits.length?" \u2014 "+bits.join(", "):""); }
 function emailProductName(c,r,kind){ const prods=emailProducts(c,r,kind); if(!prods.length) return kind==="compare"?"your options":"your proposal"; if(prods.length>1) return prods.length+" options"; const k=prods[0].k;
   return k==="va_irrrl"?"VA Streamline":k==="fha_streamline"?"FHA Streamline":k==="hel"?"Home Equity Loan":k==="heloc"?"HELOC":k==="cashout"?"Cash-Out Refinance":k==="fc"?"Cash-Out Loan":"Refinance"; }
 function emailSubjectFor(c,r,kind,variant,title){ const first=c&&c.name?c.name.split(/[ ,&]/)[0]:""; if(variant!=="cold"&&variant!=="full") return title; const name=emailProductName(c,r,kind); const multi=/^\d+ options$/.test(name);
@@ -2917,6 +2918,23 @@ async function copyProposalEmail(kind, snapId, variant){ const c=cur(); const sn
   let copied=false; try{ if(navigator.clipboard && window.ClipboardItem){ await navigator.clipboard.write([new ClipboardItem({"text/html":new Blob([emailHtml],{type:"text/html"}),"text/plain":new Blob([text],{type:"text/plain"})})]); copied=true; } }catch(e){}
   if(!copied) copied=copyRichHTML(emailHtml); toast(copied ? "Formatted email copied \u2014 paste into any message"+hlCountNote(marks) : "Couldn\u2019t reach the clipboard"); }
 /* the Email button: pick the message that goes with the image */
+/* ---- the text that goes with the email: one short SMS per product, same numbers as the email's option line ---- */
+function textFor(c,r,kind,variant){ const s=state.settings; const first=c&&c.name?c.name.split(/[ ,&]/)[0]:"there"; const prods=emailProducts(c,r,kind); const multi=prods.length>1;
+  const nums = multi ? prods.length+" ways to do this, side by side" : prods.length ? emailOptionBits(prods[0]).join(", ").replace(/[«»]/g,"") : "";
+  const name = emailProductName(c,r,kind); const what = multi ? "options" : name.toLowerCase().replace(/\bva\b/g,"VA").replace(/\bfha\b/g,"FHA").replace(/\bheloc\b/g,"HELOC").replace(/\b(VA|FHA) streamline/g,"$1 Streamline");   /* "VA Streamline", "home equity loan", "cash-out refinance" */
+  const me=`${s.loName||"Dave"} with ${s.co||"Neighborhood Mortgage"}`; const phone=s.loPhone?` or call ${s.loPhone}`:""; const colon=nums?`: ${nums}.`:".";
+  if(variant==="cold") return `Hi ${first}, this is ${me} — this is what I was reaching out about. I put together ${multi?"a few options":"a "+what} for you${colon} The details are in your email. Want me to walk you through it? Ten minutes is all it takes — reply here${phone}.`;
+  if(variant==="nudge") return `Hi ${first}, ${me}. Did the email with your ${what} come through? Quick recap${colon} Happy to answer any questions — reply here${phone}.`;
+  return `Hi ${first}, ${me}. I just emailed you the ${what} I put together for you${colon} Take a look when you get a minute — reply here${phone} with any questions.`; }
+async function copyText(kind, variant){ const c=cur(); if(!c){ toast("Pick a client first"); return; } const r=computeAnalysis(c); if(!r||r.tooSmall&&kind!=="compare"){ toast("Finish the analysis first"); return; }
+  const t=textFor(c, r, kind, variant); try{ await navigator.clipboard.writeText(t); toast("Text copied ("+t.length+" characters) — paste it into your texting app"); }catch(e){ prompt("Copy this:", t); } }
+function textMenu(ev, kind){ ev.preventDefault(); ev.stopPropagation(); const old=$("emailMenu"); if(old){ old.remove(); if(old.dataset.for==="text|"+kind) return; }
+  const b=ev.currentTarget||ev.target; const rect=b.getBoundingClientRect(); const m=document.createElement("div"); m.id="emailMenu"; m.dataset.for="text|"+kind;
+  const c=cur(); const r=c&&computeAnalysis(c); const prev=(v)=>c&&r&&!r.tooSmall?esc(textFor(c,r,kind,v)):"";
+  const opt=(v,title)=>`<button type="button" onclick="document.getElementById('emailMenu').remove(); copyText('${kind}','${v}')"><b>${title}</b><span class="hint" style="white-space:normal">${prev(v)}</span></button>`;
+  m.innerHTML=`<div class="hint" style="padding:6px 10px 2px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px">Text to go with the email · copied to clipboard</div>`+opt("with","Email’s on its way")+opt("cold","Cold text")+opt("nudge","Nudge — did it come through?");
+  m.style.cssText=`position:fixed;left:${Math.min(rect.left, window.innerWidth-360)}px;top:${rect.bottom+4}px;z-index:9000;max-width:360px`; document.body.appendChild(m);
+  setTimeout(()=>document.addEventListener("click", function h(e){ if(!m.contains(e.target)){ m.remove(); document.removeEventListener("click",h); } }),0); }
 function emailMenu(ev, kind, snapId){ ev.preventDefault(); ev.stopPropagation(); const old=$("emailMenu"); if(old){ old.remove(); if(old.dataset.for===kind+"|"+(snapId||"")) return; }
   const b=ev.currentTarget||ev.target; const rect=b.getBoundingClientRect(); const m=document.createElement("div"); m.id="emailMenu"; m.dataset.for=kind+"|"+(snapId||"");
   const opt=(v,title,sub)=>`<button type="button" onclick="document.getElementById('emailMenu').remove(); emailImage('${kind}',${snapId?"'"+snapId+"'":"null"},'${v}')"><b>${title}</b><span class="hint">${sub}</span></button>`;
