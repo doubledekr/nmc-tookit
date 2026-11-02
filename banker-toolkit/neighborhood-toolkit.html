@@ -356,6 +356,9 @@ table.data tr.rec td{background:var(--cream)}
           <select id="pipeFilter" onchange="renderPipeline()" style="width:auto">
             <option value="">All statuses</option>
           </select>
+          <select id="pipeProduct" onchange="renderPipeline()" style="width:auto" title="Filter by the product in the client’s analysis">
+            <option value="">All products</option><option value="va_irrrl">VA Streamline</option><option value="fha_streamline">FHA Streamline</option><option value="refi">Refinance</option><option value="cashout">Cash-out</option><option value="hel">Home equity loan</option><option value="heloc">HELOC</option><option value="fc">Cash-out (free &amp; clear)</option><option value="none">No analysis yet</option>
+          </select>
         </div>
         <div id="pipeTable"></div>
       </div>
@@ -951,7 +954,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.9.20";
+const TOOLKIT_VERSION = "1.9.21";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1469,6 +1472,10 @@ function pipeAlerts(){
     return fr!=null&&c.rate!=null&&c.rate-fr>0&&c.rate-fr<0.5; });
   return {hot,due,watch,season,ratewatch,future,futureDue,flagged};
 }
+/* the product a client's current analysis points at — for the pipeline's product filter and search ("streamline", "hel") */
+const PRODUCT_LABELS={va_irrrl:"VA Streamline (IRRRL)",fha_streamline:"FHA Streamline",refi:"Refinance",cashout:"Cash-out refinance",hel:"Home equity loan",heloc:"HELOC",fc:"Cash-out (free & clear)",none:""};
+function clientProduct(c){ const a=c&&c.analysis; if(!a||!(a.anRate>0)) return "none";
+  if(a.anLien==="fc") return "fc"; if(a.anLien==="second") return a.anSecondType==="heloc"?"heloc":"hel"; if(a.anProgram==="va_irrrl") return "va_irrrl"; if(a.anProgram==="fha_streamline") return "fha_streamline"; return (+a.anCashOut||0)>0?"cashout":"refi"; }
 function renderPipeline(){
   const filt=$("pipeFilter"); if(filt.options.length<=1)
     STATUSES.forEach(s=>{const o=document.createElement("option");o.textContent=s;filt.appendChild(o);});
@@ -1478,9 +1485,9 @@ function renderPipeline(){
     const chip=(v,l,n)=>`<button class="btn small ${pipeView===v?"":"ghost "}" onclick="setPipeView('${v}')">${l}${n!=null?" ("+n+")":""}</button>`;
     const sentN=state.clients.filter(c=>!c.quick&&c.proposalSent&&!isDone(c)).length;
     chips.innerHTML=chip("all","All")+chip("hot","\uD83D\uDD25 Hot now",al.hot.length)+chip("due","Follow-ups due",al.due.length)+chip("flag","\uD83D\uDD25 Hot leads",al.flagged.length)+chip("ratewatch","\u23F3 Rate watch",al.ratewatch.length)+chip("season","\uD83D\uDCC5 Seasoning",al.season.length)+chip("future","\uD83C\uDFE1 Future buyers",al.future.length)+(al.watch.length?chip("watch","Watching",al.watch.length):"")+chip("sent","Proposal sent",sentN); }
-  const f=filt.value;
+  const f=filt.value; const pf=$("pipeProduct")?$("pipeProduct").value:"";
   const q=($("pipeSearch")?$("pipeSearch").value:"").trim().toLowerCase(); const qd=q.replace(/\D/g,"");
-  const hit=c=>{ if(!q) return true; const hay=[c.name,c.email,c.address,c.servicer,c.loanType,c.status,c.notes,c.futureProduct].map(x=>String(x||"").toLowerCase()).join(" \u2022 ");
+  const hit=c=>{ if(pf && clientProduct(c)!==pf) return false; if(!q) return true; const hay=[c.name,c.email,c.address,c.servicer,c.loanType,c.status,c.notes,c.futureProduct,PRODUCT_LABELS[clientProduct(c)]].map(x=>String(x||"").toLowerCase()).join(" \u2022 ");
     if(hay.includes(q)) return true; if(qd.length>=3 && String(c.phone||"").replace(/\D/g,"").includes(qd)) return true; return false; };
   const rows=state.clients.filter(c=>!c.quick && (!f||c.status===f) && hit(c) &&
     (pipeView==="all" || (pipeView==="hot"&&hs.has(c.id)) || (pipeView==="due"&&ds.has(c.id)) || (pipeView==="watch"&&ws.has(c.id)) || (pipeView==="ratewatch"&&rs.has(c.id)) || (pipeView==="season"&&ss.has(c.id)) || (pipeView==="sent"&&c.proposalSent&&!isDone(c)) || (pipeView==="flag"&&c.hot) || (pipeView==="future"&&fs_.has(c.id))))
