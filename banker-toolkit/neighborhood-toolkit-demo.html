@@ -951,7 +951,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.9.19";
+const TOOLKIT_VERSION = "1.9.20";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2925,14 +2925,23 @@ function textFor(c,r,kind,variant){ const s=state.settings; const first=c&&c.nam
   const me=`${s.loName||"Dave"} with ${s.co||"Neighborhood Mortgage"}`; const phone=s.loPhone?` or call ${s.loPhone}`:""; const colon=nums?`: ${nums}.`:".";
   if(variant==="cold") return `Hi ${first}, ${me} here — this is what I was reaching out about. I put together ${multi?"a few options":"a "+what} for you${colon} The details are in your email. Want me to walk you through it? Ten minutes is all it takes — reply here${phone}.`;
   if(variant==="nudge") return `Hi ${first}, ${me}. Did the email with your ${what} come through? Quick recap${colon} Happy to answer any questions — reply here${phone}.`;
+  if(variant==="img"||variant==="full"){ /* no email: the text itself carries the numbers, the benefits, who we are and the direct line */
+    const kinds=prods.map(p=>p.k); const stream=kinds.some(k=>k==="va_irrrl"||k==="fha_streamline"), he=kinds.some(k=>k==="hel"||k==="heloc");
+    const docs = stream&&!he&&kinds.length===1 ? "Streamline \u2014 just your latest mortgage statement and e-signatures, closes in about a week." : he&&kinds.length===1 ? "Needs last year\u2019s W-2, 2 pay stubs, your mortgage statement, insurance dec page and e-signatures \u2014 closes in 3\u20137 days." : kinds.length===1 ? "Needs 2 pay stubs, last year\u2019s W-2, your mortgage statement and e-signatures \u2014 closes in a few weeks." : "Paperwork is light: pay stubs, W-2, mortgage statement and e-signatures.";
+    const lines = multi ? prods.map((p,i)=>`${i+1}) ${emailOptionLine(p).replace(/[\u00ab\u00bb]/g,"")}`) : (()=>{ const b=emailOptionBits(prods[0]||{r:{}}).map(x=>x.replace(/[\u00ab\u00bb]/g,"")); if(b.length>1&&/%$/.test(b[0])&&/\/mo$/.test(b[1])) b.splice(0,2,b[0]+" \u2014 "+b[1]); return b.map(x=>"\u2022 "+x.charAt(0).toUpperCase()+x.slice(1)); })();
+    const who=`${s.loName||"Dave Maxwell"} with ${s.co||"Neighborhood Mortgage Company"}${s.loNmls?" (NMLS #"+s.loNmls+")":""}`;
+    const tail=`We\u2019re a wholesale broker \u2014 we shop your file across dozens of lenders for better-than-retail pricing. This is my direct office line, ${s.loPhone||"(313) 251-6455"} \u2014 reply here or call anytime. ${s.co||"Neighborhood Mortgage Company"} NMLS #2484730 \u00b7 neighborhoodmc.com`;
+    if(variant==="img") return `Hi ${first}, ${who}. Here\u2019s the ${what} I put together for you \u2014 the full breakdown is in the image${nums?`: ${nums}.`:"."} No out-of-pocket costs and no prepayment penalty. ${docs} ${tail}`;
+    return `Hi ${first}, ${who}. Here\u2019s the ${what} I put together for you:\n${lines.join("\n")}\n\u2022 No out-of-pocket costs, no prepayment penalty\n${docs}\n${tail}`; }
   return `Hi ${first}, ${me}. I just emailed you the ${what} I put together for you${colon} Take a look when you get a minute — reply here${phone} with any questions.`; }
 async function copyText(kind, variant){ const c=cur(); if(!c){ toast("Pick a client first"); return; } const r=computeAnalysis(c); if(!r||r.tooSmall&&kind!=="compare"){ toast("Finish the analysis first"); return; }
   const t=textFor(c, r, kind, variant); try{ await navigator.clipboard.writeText(t); toast("Text copied ("+t.length+" characters) — paste it into your texting app"); }catch(e){ prompt("Copy this:", t); } }
 function textMenu(ev, kind){ ev.preventDefault(); ev.stopPropagation(); const old=$("emailMenu"); if(old){ old.remove(); if(old.dataset.for==="text|"+kind) return; }
   const b=ev.currentTarget||ev.target; const rect=b.getBoundingClientRect(); const m=document.createElement("div"); m.id="emailMenu"; m.dataset.for="text|"+kind;
   const c=cur(); const r=c&&computeAnalysis(c); const prev=(v)=>c&&r&&!r.tooSmall?esc(textFor(c,r,kind,v)):"";
-  const opt=(v,title)=>`<button type="button" onclick="document.getElementById('emailMenu').remove(); copyText('${kind}','${v}')"><b>${title}</b><span class="hint" style="white-space:normal">${prev(v)}</span></button>`;
-  m.innerHTML=`<div class="hint" style="padding:6px 10px 2px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px">Text to go with the email · copied to clipboard</div>`+opt("with","Email’s on its way")+opt("cold","Cold text")+opt("nudge","Nudge — did it come through?");
+  const opt=(v,title)=>`<button type="button" onclick="document.getElementById('emailMenu').remove(); copyText('${kind}','${v}')"><b>${title}</b><span class="hint" style="white-space:pre-wrap">${prev(v)}</span></button>`;
+  m.innerHTML=`<div class="hint" style="padding:6px 10px 2px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px">Text to go with the email · copied to clipboard</div>`+opt("with","Email’s on its way")+opt("cold","Cold text")+opt("nudge","Nudge — did it come through?")
+    +`<div class="hint" style="padding:8px 10px 2px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px">No email \u00b7 the text carries the details, NMLS and your direct line</div>`+opt("img","With the proposal image attached")+opt("full","Details in the text itself");
   m.style.cssText=`position:fixed;left:${Math.min(rect.left, window.innerWidth-360)}px;top:${rect.bottom+4}px;z-index:9000;max-width:360px`; document.body.appendChild(m);
   setTimeout(()=>document.addEventListener("click", function h(e){ if(!m.contains(e.target)){ m.remove(); document.removeEventListener("click",h); } }),0); }
 function emailMenu(ev, kind, snapId){ ev.preventDefault(); ev.stopPropagation(); const old=$("emailMenu"); if(old){ old.remove(); if(old.dataset.for===kind+"|"+(snapId||"")) return; }
