@@ -951,7 +951,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.9.17";
+const TOOLKIT_VERSION = "1.9.18";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2494,7 +2494,7 @@ function proposalSingleHTML(){
   if(r.fhaS) benefits.push(`<b>No appraisal and no income re-verification</b> \u2014 the FHA Streamline is built to be simple`);
   if(r.prog==="va_irrrl"&&!r.second) benefits.push(`<b>VA IRRRL</b> \u2014 typically no appraisal or income re-verification, and the VA funding fee drops to 0.5% (waived for exempt veterans)`);
   if((r.a.anPrepay||"yes")==="yes") benefits.push(`<b>No prepayment penalty</b> \u2014 pay extra, pay it off early, or refinance again whenever it makes sense, with no fee`);
-  if(r.roll&&r.debts.length) benefits.push(`Consolidate <b>${r.debts.length} debt${r.debts.length===1?"":"s"} (${money(r.dBal)})</b> \u2014 balances paid to zero at closing`);
+  if(r.roll&&r.debts.length) benefits.push(`Pay off <b>${debtsPhrase(r.debts)} (${money(r.dBal)})</b> \u2014 balances paid to zero at closing`);
   if(r.roll&&r.dMinCards&&isFinite(r.dMinMonths)&&r.dMinMonths>r.n) benefits.push(`On minimum payments alone, ${r.dMinCards===1?"that card":"those "+r.dMinCards+" cards"} (${money(r.dMinBal)}) would take <b>${yrsMo(r.dMinMonths)}</b> and cost <b>${money(r.dMinInt)}</b> in interest \u2014 this loan puts an end date on it`);
   if(r.roll&&r.debts.length&&r.blended!=null&&r.a.anRate<r.blended) benefits.push(r.second
     ? `Replace a <b>${pct(r.blended)}</b> blended APR on those debts with one <b>${pct(r.a.anRate)}</b> ${r.secName}`
@@ -2750,7 +2750,14 @@ function emailDocsFor(k){ return (k==="fha_streamline"||k==="va_irrrl") ? {docs:
   : (k==="hel"||k==="heloc") ? {docs:"last year\u2019s W-2, your two most recent pay stubs, your most recent mortgage statement, your homeowners insurance declaration page, and e-signatures.", close:"generally closes in 3\u20137 days"}
   : {docs:"your two most recent pay stubs, last year\u2019s W-2, your most recent mortgage statement, and e-signatures.", close:"typically closes in a few weeks"}; }
 /* \u00ab \u00bb mark the numbers worth highlighting; the text renderer strips them, the HTML renderer turns them into a highlight */
-function emailOptionLine(p){ const r=p.r; const bits=[]; const hl=x=>"\u00ab"+x+"\u00bb"; if(r.a&&r.a.anRate) bits.push(hl(pct(r.a.anRate))); if(r.newPay>0) bits.push(hl(money(Math.round(r.newPay))+"/mo")); if(r.saveMo>0) bits.push("frees up "+hl(money(Math.round(r.saveMo))+"/mo")); if(r.cashOut>0) bits.push(hl(money(r.cashOut))+" cash to you"); if(r.roll&&r.debts&&r.debts.length) bits.push(r.debts.length+" debt"+(r.debts.length>1?"s":"")+" paid off"); if(r.skipCash>0) bits.push("skip "+hl(r.skipN+" payment"+(r.skipN>1?"s":"")));
+/* "3 credit cards and an auto loan" instead of "4 debts": the client recognises their own debts in the first line */
+function debtsPhrase(debts){ const L={card:["credit card","credit cards"],auto:["auto loan","auto loans"],student:["student loan","student loans"],personal:["personal loan","personal loans"],installment:["installment loan","installment loans"],heloc:["HELOC","HELOCs"],other:["debt","debts"]};
+  const ds=(debts||[]).filter(d=>d&&(d.balance>0||d.name)); if(!ds.length) return "";
+  if(ds.length===1){ const d=ds[0]; const lab=(L[d.type]||L.other)[0]; const n=String(d.name||"").trim(); if(n&&!/^(credit card|card|auto|loan|other|debt)s?$/i.test(n)) return "your "+n+(/\b(loan|card|heloc|line|debt|financing|mortgage)s?\b/i.test(n)?"":" "+lab); return "your "+lab; }
+  const counts={}; ds.forEach(d=>{ const k=L[d.type]?d.type:"other"; counts[k]=(counts[k]||0)+1; });
+  const parts=Object.keys(counts).map(k=>{ const n=counts[k]; const lab=L[k][n>1?1:0]; return n>1 ? n+" "+lab : (/^[aeiou]/i.test(lab)?"an ":"a ")+lab; });
+  return parts.length>1 ? parts.slice(0,-1).join(", ")+" and "+parts[parts.length-1] : parts[0]; }
+function emailOptionLine(p){ const r=p.r; const bits=[]; const hl=x=>"\u00ab"+x+"\u00bb"; if(r.a&&r.a.anRate) bits.push(hl(pct(r.a.anRate))); if(r.newPay>0) bits.push(hl(money(Math.round(r.newPay))+"/mo")); if(r.saveMo>0) bits.push("frees up "+hl(money(Math.round(r.saveMo))+"/mo")); if(r.cashOut>0) bits.push(hl(money(r.cashOut))+" cash to you"); if(r.roll&&r.debts&&r.debts.length) bits.push("pays off "+debtsPhrase(r.debts)+(r.dBal>0?" ("+hl(money(r.dBal))+")":"")); if(r.skipCash>0) bits.push("skip "+hl(r.skipN+" payment"+(r.skipN>1?"s":"")));
   return p.label.charAt(0).toUpperCase()+p.label.slice(1)+(bits.length?" \u2014 "+bits.join(", "):""); }
 function emailProductName(c,r,kind){ const prods=emailProducts(c,r,kind); if(!prods.length) return kind==="compare"?"your options":"your proposal"; if(prods.length>1) return prods.length+" options"; const k=prods[0].k;
   return k==="va_irrrl"?"VA Streamline":k==="fha_streamline"?"FHA Streamline":k==="hel"?"Home Equity Loan":k==="heloc"?"HELOC":k==="cashout"?"Cash-Out Refinance":k==="fc"?"Cash-Out Loan":"Refinance"; }
