@@ -910,6 +910,7 @@ Discover 6,100 190 24.9"></textarea>
             <div class="field"><label>Office line <span class="hint" style="display:inline">(on your card)</span></label><input type="text" id="setLoOffice" placeholder="(844) 210-3644"></div>
             <div class="field"><label>Website</label><input type="text" id="setCoSite" placeholder="neighborhoodmc.com"></div>
             <div class="field"><label>Partner line <span class="hint" style="display:inline">(under the logo, blank to hide)</span></label><input type="text" id="setPartnerLine" placeholder="Powered by Rocket Mortgage"></div>
+            <div class="field"><label>Partner logo <span class="hint" style="display:inline">(the “Powered by Rocket Mortgage” image — replaces the text line on the card)</span></label><div class="chiprow"><input type="file" accept="image/*" onchange="loadPartnerLogo(this)" style="flex:1"><button class="btn ghost small" onclick="clearPartnerLogo()" id="clearPartnerLogoBtn">Remove</button></div><div id="partnerLogoPreview" style="margin-top:6px"></div></div>
             <div class="field" style="grid-column:1/-1"><label>Your card <span class="hint" style="display:inline">— the widget in the top bar. Drag it into a text, or click it to copy.</span></label>
               <div id="loCardPreview" style="border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;max-width:600px"></div>
               <div class="btnrow" style="margin-top:6px"><button class="btn ghost small" onclick="loCardCopy()">Copy card</button><button class="btn ghost small" onclick="loCardSave()">Save PNG</button></div></div>
@@ -963,7 +964,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.9.26";
+const TOOLKIT_VERSION = "1.9.27";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1186,13 +1187,13 @@ setInterval(()=>{ if(cur()) renderClientBar(); }, 60*1000);
 /* ---- the loan-officer card: rendered from Settings, shown as a widget in the top bar. Drag it into a text (desktop: a real
    file drag; browser: Chrome's drag-out), or click it to copy the PNG. ---- */
 let loCardCache={key:"",url:"",blob:null,busy:false};
-function loCardKey(){ const s=state.settings; return [s.logo||"",s.co,s.tag,s.loName,s.loTitle,s.loNmls,s.loPhone,s.loOffice,s.loEmail,s.coSite,s.partnerLine].join("|"); }
+function loCardKey(){ const s=state.settings; return [s.logo||"",s.partnerLogo||"",s.co,s.tag,s.loName,s.loTitle,s.loNmls,s.loPhone,s.loOffice,s.loEmail,s.coSite,s.partnerLine].join("|"); }
 function loCardHTML(){ const s=state.settings; const F="font-family:Arial,Helvetica,sans-serif"; const G="font-family:Georgia,'Times New Roman',serif";
   const row=(l,v,extra)=>v?`<tr><td style="${F};font-size:15px;letter-spacing:2px;color:#5C616E;text-transform:uppercase;padding:14px 0;border-top:1px solid #E2DCCF;width:110px;vertical-align:middle">${l}</td><td style="padding:14px 0;border-top:1px solid #E2DCCF;vertical-align:middle">${v}${extra||""}</td></tr>`:"";
   return `<div style="width:1200px;height:600px;background:#fff;position:relative;overflow:hidden">
     <div style="position:absolute;left:0;top:0;width:570px;height:600px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px">
       <img src="${s.logo||NMC_LOGO}" style="width:490px;height:auto;display:block" alt="">
-      ${s.partnerLine?`<div style="${F};font-size:30px;color:#26262E;text-align:center">${esc(s.partnerLine)}</div>`:""}
+      ${s.partnerLogo?`<img src="${s.partnerLogo}" style="max-width:420px;max-height:110px;display:block" alt="">`:s.partnerLine?`<div style="${F};font-size:30px;color:#26262E;text-align:center">${esc(s.partnerLine)}</div>`:""}
     </div>
     <div style="position:absolute;left:570px;top:80px;width:1px;height:440px;background:#B8B8B8"></div>
     <div style="position:absolute;left:604px;top:120px;width:540px">
@@ -3267,7 +3268,7 @@ function shade(hex,f){ const m=hex.replace("#",""); if(m.length!==6) return hex;
   return "#"+c.map(x=>x.toString(16).padStart(2,"0")).join(""); }
 function fillSettingsUI(){ const s=state.settings;
   $("setLoName").value=s.loName; $("setLoNmls").value=s.loNmls;
-  $("setLoPhone").value=s.loPhone; $("setLoEmail").value=s.loEmail; if($("setLoTitle")){ $("setLoTitle").value=s.loTitle||""; $("setLoOffice").value=s.loOffice||""; $("setCoSite").value=s.coSite||""; $("setPartnerLine").value=s.partnerLine==null?"Powered by Rocket Mortgage":s.partnerLine; } loCardRender(); $("setFeed").value=s.feedUrl; $("setPoll").checked=!!s.poll; if($("setEmailRich")) $("setEmailRich").checked=!!s.emailRich; if($("setCalTime")) $("setCalTime").value=s.calTime||"10:00"; if($("setCalLen")) $("setCalLen").value=String(s.calLen||30);
+  $("setLoPhone").value=s.loPhone; $("setLoEmail").value=s.loEmail; if($("setLoTitle")){ $("setLoTitle").value=s.loTitle||""; $("setLoOffice").value=s.loOffice||""; $("setCoSite").value=s.coSite||""; $("setPartnerLine").value=s.partnerLine==null?"Powered by Rocket Mortgage":s.partnerLine; const pp=$("partnerLogoPreview"); if(pp) pp.innerHTML=s.partnerLogo?`<img src="${s.partnerLogo}" style="max-height:60px;max-width:300px;display:block">`:`<span class="hint">No partner logo — the card shows the text line.</span>`; } loCardRender(); $("setFeed").value=s.feedUrl; $("setPoll").checked=!!s.poll; if($("setEmailRich")) $("setEmailRich").checked=!!s.emailRich; if($("setCalTime")) $("setCalTime").value=s.calTime||"10:00"; if($("setCalLen")) $("setCalLen").value=String(s.calLen||30);
   $("setReport").value=s.reportUrl||""; $("setGoal").value=s.folderGoal||15; if($("setSeasonLead")) $("setSeasonLead").value=s.seasonLead||7; $("setTeam").value=s.teamUrl||"";
   if($("setHub")) $("setHub").value=s.hub||""; if($("setHubKey")) $("setHubKey").value=s.hubKey||""; updateHubStatus(); updateMirrorStatus();
   const ed=$("sfMapEditor"); if(ed) ed.innerHTML=Object.keys(DEFAULT_SFMAP).map(f=>
@@ -3291,6 +3292,8 @@ function saveSfMap(){ document.querySelectorAll("[data-map]").forEach(el=>{
 function loadLogo(input){ const f=input.files[0]; if(!f) return; const rd=new FileReader();
   rd.onload=()=>{ state.settings.logo=rd.result; save(); fillSettingsUI(); applyBrandCss(); renderProposalPreview(); toast("Logo saved into your data file"); };
   rd.readAsDataURL(f); }
+function loadPartnerLogo(input){ const f=input.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=()=>{ state.settings.partnerLogo=rd.result; save(); fillSettingsUI(); toast("Partner logo saved — it’s on your card"); }; rd.readAsDataURL(f); }
+function clearPartnerLogo(){ state.settings.partnerLogo=""; save(); fillSettingsUI(); toast("Partner logo removed — the card shows the text line"); }
 function clearLogo(){ state.settings.logo=""; save(); fillSettingsUI(); applyBrandCss(); renderProposalPreview(); toast("Back to the official NMC logo"); }
 
 /* ---------- data file ---------- */
