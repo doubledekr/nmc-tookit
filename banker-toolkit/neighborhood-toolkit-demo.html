@@ -984,7 +984,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.10.4";
+const TOOLKIT_VERSION = "1.10.5";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -3392,12 +3392,18 @@ function targetHit(c){ const fr=feedRateFor(c); return onRateWatch(c) && fr!=nul
 const RD_TIERS=["640+","620-639","580-619","<580"];
 /* the rate desk moved from 7 tiers to 4; an old-format publish (or an old history entry) is mapped onto the new names: 680+ → 640+, 600-619 → 580-619 */
 const RD_OLD_MAP={"680+":"640+","620-639":"620-639","600-619":"580-619","<580":"<580"};
-function rdNormTiers(t){ if(!t) return null; if(RD_TIERS.every(k=>t[k]!=null)) return t; if(!("680+" in t)) return t; const out={}; Object.entries(RD_OLD_MAP).forEach(([o,n])=>{ if(t[o]!=null&&out[n]==null) out[n]=t[o]; }); RD_TIERS.forEach(k=>{ if(t[k]!=null) out[k]=t[k]; }); return out; }
+/* Tier normalizer. The rates.json format is decided by its "format" field ONLY — never by which tier names are present:
+   no "format" field = format 1 (the seven old tier names, mapped onto the four); "format": 2 = the four tiers, and any old
+   names the rate desk also writes for not-yet-updated toolkits are ignored. Called without a format for tiers this toolkit
+   already stored (prevTiers, history), which are normalized already. */
+function rdNormTiers(t, fmt){ if(!t) return null; const out={};
+  if(fmt==null || +fmt>=2){ RD_TIERS.forEach(k=>{ if(t[k]!=null) out[k]=t[k]; }); if(Object.keys(out).length || fmt!=null) return out; }
+  Object.entries(RD_OLD_MAP).forEach(([o,n])=>{ if(t[o]!=null&&out[n]==null) out[n]=t[o]; }); return out; }
 function rdNormTierKey(k){ return RD_TIERS.includes(k)?k:k==="680+"||k==="660-679"||k==="640-659"?"640+":k==="600-619"||k==="580-599"?"580-619":"620-639"; }
 const RD_TIER_LABEL={"640+":"640+","620-639":"620–639","580-619":"580–619","<580":"below 580"};
 let rdTimer=null, rdSSE=null, rdSSETopic="", rdBusy=false;
 function rdData(){ return state.rateDesk||null; }
-function rdTiers(d){ d=d||rdData(); return d&&d.products&&d.products.va_irrrl?rdNormTiers(d.products.va_irrrl.tiers):null; }
+function rdTiers(d){ d=d||rdData(); return d&&d.products&&d.products.va_irrrl?rdNormTiers(d.products.va_irrrl.tiers, d.format==null?1:d.format):null; }
 function rdTierFor(score){ const f=+score; if(!(f>0)) return null; return f>=640?"640+":f>=620?"620-639":f>=580?"580-619":"<580"; }
 function rdRateFor(c, tiers){ tiers=tiers||rdTiers(); if(!tiers) return null; const t=rdTierFor(c.fico); const key=t||rdNormTierKey(state.settings.rdTier||"620-639"); return {tier:key, rate:tiers[key], assumed:!t}; }
 /* eligible under the rates that are live now (VA only at launch) */

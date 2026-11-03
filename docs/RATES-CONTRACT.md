@@ -48,3 +48,10 @@ A JSON array, newest first, each entry the same object as rates.json (without `p
 2. **Renaming or removing** a field, or changing tier names: bump `format`. Ship the Toolkit that reads the new format *first*, wait until bankers have updated (the Toolkit auto-updates within minutes), then ship the Rate Desk that writes it. The Toolkit must keep reading the previous format for at least one release.
 3. Never change the meaning of an existing field without a bump.
 4. A Rate Desk update that doesn't touch this file can ship any time; a Toolkit update that doesn't touch its reader can ship any time.
+
+## How the toolkit reads the file (v1.10.5+)
+
+- The format is decided by the `format` field only — never by which tier names are present.
+- No `format` field = format 1: the seven old tier names, mapped onto the four (680+ → 640+, 620-639, 600-619 → 580-619, <580).
+- `format: 2`: only `640+`, `620-639`, `580-619`, `<580` are read. The old names a format-2 publish also carries (for toolkits that haven't updated) are ignored.
+- A format higher than the toolkit knows is left unread; the last good rates stay in place and Settings says to update.
