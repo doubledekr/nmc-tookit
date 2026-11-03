@@ -929,8 +929,8 @@ Discover 6,100 190 24.9"></textarea>
             <div class="field"><label>Title <span class="hint" style="display:inline">(on your card)</span></label><input type="text" id="setLoTitle" oninput="loCardLive()" placeholder="Mortgage Loan Officer"></div>
             <div class="field"><label>Office line <span class="hint" style="display:inline">(on your card)</span></label><input type="text" id="setLoOffice" oninput="loCardLive()" placeholder="(844) 210-3644"></div>
             <div class="field"><label>Website</label><input type="text" id="setCoSite" oninput="loCardLive()" placeholder="neighborhoodmc.com"></div>
-            <div class="field"><label>Partner line <span class="hint" style="display:inline">(under the logo, blank to hide)</span></label><input type="text" id="setPartnerLine" oninput="loCardLive()" placeholder="Powered by Rocket Mortgage"></div>
-            <div class="field"><label>Partner logo <span class="hint" style="display:inline">(built in — upload only to replace it)</span></label><div class="chiprow"><input type="file" accept="image/*" onchange="loadPartnerLogo(this)" style="flex:1"><button class="btn ghost small" onclick="clearPartnerLogo()" id="clearPartnerLogoBtn">Hide</button></div><div id="partnerLogoPreview" style="margin-top:6px"></div></div>
+            
+            <div class="field"><label>Partner logo <span class="hint" style="display:inline">(built in — upload only to replace it)</span></label><div class="chiprow"><input type="file" accept="image/*" onchange="loadPartnerLogo(this)" style="flex:1"><button class="btn ghost small" onclick="togglePartnerLogo()" id="clearPartnerLogoBtn">Hide</button></div><div id="partnerLogoPreview" style="margin-top:6px"></div></div>
             <div class="field" style="grid-column:1/-1"><label>Your card <span class="hint" style="display:inline">— the widget in the top bar. Drag it into a text, or click it to copy.</span></label>
               <div id="loCardPreview" style="border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;max-width:600px"></div>
               <div class="btnrow" style="margin-top:6px"><button class="btn ghost small" onclick="loCardCopy()">Copy (still image)</button><button class="btn ghost small" onclick="loCardSaveGIF()">Save animated GIF</button><button class="btn ghost small" onclick="loCardSave()">Save PNG</button><span class="hint">Dragging the card sends the animated GIF; clipboard copies are always still images.</span></div></div>
@@ -984,7 +984,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.10.5";
+const TOOLKIT_VERSION = "1.10.6";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1209,16 +1209,16 @@ setInterval(()=>{ if(cur()) renderClientBar(); }, 60*1000);
 /* ---- the loan-officer card: rendered from Settings, shown as a widget in the top bar. Drag it into a text (desktop: a real
    file drag; browser: Chrome's drag-out), or click it to copy the PNG. ---- */
 let loCardCache={key:"",url:"",blob:null,busy:false};
-function loCardKey(){ const s=loCardSettings(false); return [s.logo||"",s.partnerLogo||"",s.co,s.tag,s.loName,s.loTitle,s.loNmls,s.loPhone,s.loOffice,s.loEmail,s.coSite,s.partnerLine].join("|"); }
+function loCardKey(){ const s=loCardSettings(false); return [s.logo||"",s.partnerLogo||"",s.partnerHidden?"hidden":"shown",s.co,s.tag,s.loName,s.loTitle,s.loNmls,s.loPhone,s.loOffice,s.loEmail,s.coSite,s.partnerLine].join("|"); }
 const LO_CARD_DEFAULTS={loTitle:"Mortgage Loan Officer",loOffice:"(844) 210-3644",coSite:"neighborhoodmc.com"};
-function loCardSettings(live){ const s=Object.assign({},state.settings); if(live&&$("setLoTitle")){ s.loName=$("setLoName").value; s.loNmls=$("setLoNmls").value; s.loPhone=$("setLoPhone").value; s.loEmail=$("setLoEmail").value; s.loTitle=$("setLoTitle").value; s.loOffice=$("setLoOffice").value; s.coSite=$("setCoSite").value; s.partnerLine=$("setPartnerLine").value; }
+function loCardSettings(live){ const s=Object.assign({},state.settings); if(live&&$("setLoTitle")){ s.loName=$("setLoName").value; s.loNmls=$("setLoNmls").value; s.loPhone=$("setLoPhone").value; s.loEmail=$("setLoEmail").value; s.loTitle=$("setLoTitle").value; s.loOffice=$("setLoOffice").value; s.coSite=$("setCoSite").value; }
   Object.keys(LO_CARD_DEFAULTS).forEach(k=>{ if(!String(s[k]||"").trim()) s[k]=LO_CARD_DEFAULTS[k]; }); return s; }
 function loCardHTML(live){ const s=loCardSettings(live); const F="font-family:Arial,Helvetica,sans-serif"; const G="font-family:Georgia,'Times New Roman',serif";
   const row=(l,v,extra)=>v?`<tr><td style="${F};font-size:15px;letter-spacing:2px;color:#5C616E;text-transform:uppercase;padding:14px 0;border-top:1px solid #E2DCCF;width:110px;vertical-align:middle">${l}</td><td style="padding:14px 0;border-top:1px solid #E2DCCF;vertical-align:middle">${v}${extra||""}</td></tr>`:"";
   return `<div style="width:1200px;height:600px;background:#fff;position:relative;overflow:hidden">
     <div style="position:absolute;left:0;top:0;width:570px;height:600px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px">
       <img src="${s.logo||NMC_LOGO}" style="width:490px;height:auto;display:block" alt="">
-      ${s.partnerLogo!=="none"?`<img src="${s.partnerLogo||NMC_PARTNER_LOGO}" style="max-width:420px;max-height:110px;display:block" alt="">`:s.partnerLine?`<div style="${F};font-size:30px;color:#26262E;text-align:center">${esc(s.partnerLine)}</div>`:""}
+      ${s.partnerHidden?"":`<img src="${s.partnerLogo||NMC_PARTNER_LOGO}" style="max-width:420px;max-height:110px;display:block" alt="">`}
     </div>
     <div style="position:absolute;left:570px;top:80px;width:1px;height:440px;background:#B8B8B8"></div>
     <div style="position:absolute;left:604px;top:120px;width:540px">
@@ -1289,7 +1289,7 @@ async function loCardRender(force){ if(loCardCache.busy){ loCardCache.again=true
   loCardPaint(loCardCache.url); loCardAnimate(); }
 function loCardPaint(url){ const w=$("loCardWidget"); if(w){ w.src=url; w.style.display=""; } const p=$("loCardPreview"); if(p) p.innerHTML=`<img src="${url}" style="width:100%;display:block" draggable="true" ondragstart="loCardDrag(event)" title="Drag into a text, or click to copy" onclick="loCardCopy()">`; }
 let loCardLiveT=null; function loCardLive(){ clearTimeout(loCardLiveT); loCardLiveT=setTimeout(()=>{ const s=state.settings; if(!$("setLoTitle")) return;
-  s.loName=$("setLoName").value.trim(); s.loNmls=$("setLoNmls").value.trim(); s.loPhone=$("setLoPhone").value.trim(); s.loEmail=$("setLoEmail").value.trim(); s.loTitle=$("setLoTitle").value.trim(); s.loOffice=$("setLoOffice").value.trim(); s.coSite=$("setCoSite").value.trim(); s.partnerLine=$("setPartnerLine").value.trim();
+  s.loName=$("setLoName").value.trim(); s.loNmls=$("setLoNmls").value.trim(); s.loPhone=$("setLoPhone").value.trim(); s.loEmail=$("setLoEmail").value.trim(); s.loTitle=$("setLoTitle").value.trim(); s.loOffice=$("setLoOffice").value.trim(); s.coSite=$("setCoSite").value.trim();
   save(); applyBrandCss&&applyBrandCss(); loCardRender(true); renderClientBar(); },600); }
 function loCardFileName(ext){ return ((state.settings.loName||"loan-officer")+"-card").replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"").toLowerCase()+(ext||".png"); }
 function loCardBest(){ const gif=loCardCache.gifUrl&&loCardCache.gifKey===loCardCache.key; return gif?{url:loCardCache.gifUrl,name:loCardFileName(".gif"),mime:"image/gif"}:{url:loCardCache.url,name:loCardFileName(".png"),mime:"image/png"}; }
@@ -1651,6 +1651,9 @@ function calAddMany(which){ const today=new Date().toISOString().slice(0,10); co
   calOpenICS(list.map(calEventFor).filter(Boolean), which==="due"?"Follow-ups due":which==="week"?"Follow-ups this week":"Follow-ups"); }
 /* the product a client's current analysis points at — for the pipeline's product filter and search ("streamline", "hel") */
 const PRODUCT_LABELS={va_irrrl:"VA Streamline (IRRRL)",fha_streamline:"FHA Streamline",refi:"Refinance",cashout:"Cash-out refinance",hel:"Home equity loan",heloc:"HELOC",fc:"Cash-out (free & clear)",none:""};
+/* VA lender ID, shown in the proposal footer whenever the current client’s loan or program is VA */
+const VA_LENDER_ID="7485220000";
+function vaLenderNote(){ const c=cur(); const a=c&&c.analysis; const va=!!(c&&(c.loanType==="VA"||(a&&a.anProgram==="va_irrrl"))); return va?" \u00b7 VA Lender ID #"+VA_LENDER_ID:""; }
 function clientProduct(c){ const a=c&&c.analysis; if(!a||!(a.anRate>0)) return "none";
   if(a.anLien==="fc") return "fc"; if(a.anLien==="second") return a.anSecondType==="heloc"?"heloc":"hel"; if(a.anProgram==="va_irrrl") return "va_irrrl"; if(a.anProgram==="fha_streamline") return "fha_streamline"; return (+a.anCashOut||0)>0?"cashout":"refi"; }
 function renderPipeline(){
@@ -2600,7 +2603,7 @@ function comparisonProposalHTML(c,sel){
   <div class="hint" style="margin-top:4px">${items.some(x=>x.r.escrowIsEst)?"* Taxes &amp; insurance estimated as today\u2019s total payment minus P&amp;I. ":""}${items.some(x=>x.r.aprEst)?"* APR estimated at the note rate + 0.25% until closing costs are priced; the exact APR comes with the lender\u2019s Loan Estimate. ":""}Interest totals include your current debts at today\u2019s minimum payments in every column, so the options are compared apples to apples.${c.escrow>0?" Taxes &amp; insurance escrow (~"+money(c.escrow)+"/mo) continues on any option and is not included above.":""}</div>
   ${recIt?`<div class="recbox"><b>\u2605 Our recommendation: ${esc(recIt.sc.label)}.</b> ${c.cmp&&c.cmp.why?esc(c.cmp.why):""}</div>`:""}
   ${awardsRowHTML(c)}
-  <div class="disc">This comparison is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. Figures exclude taxes, insurance, and escrows unless noted. Program eligibility (including FHA Streamline and VA IRRRL) is subject to lender and agency guidelines. ${esc(s.co)} \u00b7 NMLS #2484730 \u00b7 Equal Housing Lender.</div>`;
+  <div class="disc">This comparison is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. Figures exclude taxes, insurance, and escrows unless noted. Program eligibility (including FHA Streamline and VA IRRRL) is subject to lender and agency guidelines. ${esc(s.co)} \u00b7 NMLS #2484730${vaLenderNote()} \u00b7 Equal Housing Lender.</div>`;
 }
 function fcProposalHTML(c,r){
   const s=state.settings; const note=$("propNote")?$("propNote").value.trim():""; const tot=r.newPay+r.newEscrow;
@@ -2662,7 +2665,7 @@ function fcProposalHTML(c,r){
      return `<tr><td>Year ${y}</td><td class="num">${money(b(r.newSched.rows))}</td>${r.ladder.map(l=>`<td class="num">${b(l.rows)>0?money(b(l.rows)):"Paid in full"}</td>`).join("")}</tr>`;}).join("")}
   </tbody></table>`}
   ${awardsRowHTML(c)}
-  <div class="disc">${r.aprEst?"APR is estimated at the note rate + 0.25% until closing costs are priced; the exact APR comes with the lender\u2019s Loan Estimate. ":""}This proposal is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. ${r.noc?"Figures exclude taxes, insurance, and escrows.":"Taxes and insurance are estimates and will be set by the actual escrow analysis."} Cash-out eligibility and maximum loan-to-value are subject to lender and program guidelines. ${esc(s.co)} \u00b7 NMLS #2484730 \u00b7 Equal Housing Lender.</div>`;
+  <div class="disc">${r.aprEst?"APR is estimated at the note rate + 0.25% until closing costs are priced; the exact APR comes with the lender\u2019s Loan Estimate. ":""}This proposal is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. ${r.noc?"Figures exclude taxes, insurance, and escrows.":"Taxes and insurance are estimates and will be set by the actual escrow analysis."} Cash-out eligibility and maximum loan-to-value are subject to lender and program guidelines. ${esc(s.co)} \u00b7 NMLS #2484730${vaLenderNote()} \u00b7 Equal Housing Lender.</div>`;
 }
 function proposalSingleHTML(){
   const c=cur(); if(!c) return `<div class="empty">Pick a client.</div>`;
@@ -2775,7 +2778,7 @@ function proposalSingleHTML(){
      return `<tr><td>Year ${y}</td><td class="num">${money(b1)}</td>${r.cust?`<td class="num">${b3>0?money(b3):"Paid in full"}</td>`:""}<td class="num">${b2>0?money(b2):"Paid in full"}</td></tr>`;}).join("")}
   </tbody></table>`}
   ${awardsRowHTML(c)}
-  <div class="disc">${r.aprEst?"APR is estimated at the note rate + 0.25% until closing costs are priced; the exact APR comes with the lender\u2019s Loan Estimate. ":""}This proposal is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. Figures exclude taxes, insurance, and escrows unless noted; skipped-payment amounts reflect standard refinance timing and any escrow refund comes from your current servicer. Consolidating short-term debt into a mortgage or home equity loan may increase the total interest paid on that debt over the life of the loan and converts unsecured debt into debt secured by your home. All loans subject to credit approval. Equal Housing Opportunity. ${esc(s.footer)}${s.loNmls?` \u00b7 Loan Officer NMLS #${esc(s.loNmls)}`:""}</div>`;
+  <div class="disc">${r.aprEst?"APR is estimated at the note rate + 0.25% until closing costs are priced; the exact APR comes with the lender\u2019s Loan Estimate. ":""}This proposal is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. Figures exclude taxes, insurance, and escrows unless noted; skipped-payment amounts reflect standard refinance timing and any escrow refund comes from your current servicer. Consolidating short-term debt into a mortgage or home equity loan may increase the total interest paid on that debt over the life of the loan and converts unsecured debt into debt secured by your home. All loans subject to credit approval. Equal Housing Opportunity. ${esc(s.footer)}${vaLenderNote()}${s.loNmls?` \u00b7 Loan Officer NMLS #${esc(s.loNmls)}`:""}</div>`;
 }
 function toggleInclude(id,on){ const c=cur(); if(!c) return; const P=c.prop;
   P.included=P.included.filter(x=>x!==id); if(on) P.included.push(id);
@@ -3525,7 +3528,7 @@ function shade(hex,f){ const m=hex.replace("#",""); if(m.length!==6) return hex;
   return "#"+c.map(x=>x.toString(16).padStart(2,"0")).join(""); }
 function fillSettingsUI(){ const s=state.settings;
   $("setLoName").value=s.loName; $("setLoNmls").value=s.loNmls;
-  $("setLoPhone").value=s.loPhone; $("setLoEmail").value=s.loEmail; if($("setLoTitle")){ $("setLoTitle").value=s.loTitle||LO_CARD_DEFAULTS.loTitle; $("setLoOffice").value=s.loOffice||LO_CARD_DEFAULTS.loOffice; $("setCoSite").value=s.coSite||LO_CARD_DEFAULTS.coSite; $("setPartnerLine").value=s.partnerLine==null?"Powered by Rocket Mortgage":s.partnerLine; const pp=$("partnerLogoPreview"); if(pp) pp.innerHTML=s.partnerLogo==="none"?`<span class="hint">Hidden \u2014 the card shows the text line. <a href="#" onclick="resetPartnerLogo();return false">Use the built-in logo</a></span>`:`<img src="${s.partnerLogo||NMC_PARTNER_LOGO}" style="max-height:60px;max-width:300px;display:block">${s.partnerLogo?`<span class="hint">Your upload \u00b7 <a href="#" onclick="resetPartnerLogo();return false">back to the built-in logo</a></span>`:`<span class="hint">Built in \u2014 ships with the toolkit.</span>`}`; } loCardRender(); $("setFeed").value=s.feedUrl; $("setPoll").checked=!!s.poll; if($("setEmailRich")) $("setEmailRich").checked=!!s.emailRich; if($("setRdTier")){ $("setRdTier").value=rdNormTierKey(s.rdTier||"620-639"); $("setRdDrop").value=s.rdDrop==null?0.5:s.rdDrop; $("setRdBanner").checked=s.rdBanner!==false; $("setRdNotify").checked=s.rdNotify!==false; $("setRdWindow").value=s.rdWindow||7; $("setRdKeepNA").checked=s.rdKeepNoAnswer!==false; $("setRdSound").checked=s.rdSound!==false; } rdStatusLine(); if($("setCalTime")) $("setCalTime").value=s.calTime||"10:00"; if($("setCalLen")) $("setCalLen").value=String(s.calLen||30);
+  $("setLoPhone").value=s.loPhone; $("setLoEmail").value=s.loEmail; if($("setLoTitle")){ $("setLoTitle").value=s.loTitle||LO_CARD_DEFAULTS.loTitle; $("setLoOffice").value=s.loOffice||LO_CARD_DEFAULTS.loOffice; $("setCoSite").value=s.coSite||LO_CARD_DEFAULTS.coSite; const pp=$("partnerLogoPreview"); if(pp) pp.innerHTML=s.partnerHidden?`<span class="hint">Hidden \u2014 the card has no partner logo. <a href="#" onclick="togglePartnerLogo();return false">Show it</a></span>`:`<img src="${s.partnerLogo||NMC_PARTNER_LOGO}" style="max-height:60px;max-width:300px;display:block">${s.partnerLogo?`<span class="hint">Your upload \u00b7 <a href="#" onclick="resetPartnerLogo();return false">back to the built-in logo</a></span>`:`<span class="hint">Built in \u2014 ships with the toolkit.</span>`}`; const hb=$("clearPartnerLogoBtn"); if(hb) hb.textContent=s.partnerHidden?"Show":"Hide"; } loCardRender(); $("setFeed").value=s.feedUrl; $("setPoll").checked=!!s.poll; if($("setEmailRich")) $("setEmailRich").checked=!!s.emailRich; if($("setRdTier")){ $("setRdTier").value=rdNormTierKey(s.rdTier||"620-639"); $("setRdDrop").value=s.rdDrop==null?0.5:s.rdDrop; $("setRdBanner").checked=s.rdBanner!==false; $("setRdNotify").checked=s.rdNotify!==false; $("setRdWindow").value=s.rdWindow||7; $("setRdKeepNA").checked=s.rdKeepNoAnswer!==false; $("setRdSound").checked=s.rdSound!==false; } rdStatusLine(); if($("setCalTime")) $("setCalTime").value=s.calTime||"10:00"; if($("setCalLen")) $("setCalLen").value=String(s.calLen||30);
   $("setReport").value=s.reportUrl||""; $("setGoal").value=s.folderGoal||15; if($("setSeasonLead")) $("setSeasonLead").value=s.seasonLead||7; $("setTeam").value=s.teamUrl||"";
   if($("setHub")) $("setHub").value=s.hub||""; if($("setHubKey")) $("setHubKey").value=s.hubKey||""; updateHubStatus(); updateMirrorStatus();
   const ed=$("sfMapEditor"); if(ed) ed.innerHTML=Object.keys(DEFAULT_SFMAP).map(f=>
@@ -3533,7 +3536,7 @@ function fillSettingsUI(){ const s=state.settings;
 }
 function saveSettingsFromUI(announce){ const s=state.settings;
   s.loName=$("setLoName").value; s.loNmls=$("setLoNmls").value; s.loPhone=$("setLoPhone").value; s.loEmail=$("setLoEmail").value;
-  if($("setLoTitle")){ s.loTitle=$("setLoTitle").value.trim(); s.loOffice=$("setLoOffice").value.trim(); s.coSite=$("setCoSite").value.trim(); s.partnerLine=$("setPartnerLine").value.trim(); } s.feedUrl=$("setFeed").value.trim(); s.poll=$("setPoll").checked; if($("setEmailRich")) s.emailRich=$("setEmailRich").checked; if($("setRdTier")){ s.rdTier=$("setRdTier").value; s.rdDrop=+$("setRdDrop").value||0.5; s.rdBanner=$("setRdBanner").checked; s.rdNotify=$("setRdNotify").checked; s.rdWindow=Math.max(1,Math.min(30,+$("setRdWindow").value||7)); s.rdKeepNoAnswer=$("setRdKeepNA").checked; s.rdSound=$("setRdSound").checked; } if($("setCalTime")) s.calTime=$("setCalTime").value||"10:00"; if($("setCalLen")) s.calLen=+$("setCalLen").value||30;
+  if($("setLoTitle")){ s.loTitle=$("setLoTitle").value.trim(); s.loOffice=$("setLoOffice").value.trim(); s.coSite=$("setCoSite").value.trim(); } s.feedUrl=$("setFeed").value.trim(); s.poll=$("setPoll").checked; if($("setEmailRich")) s.emailRich=$("setEmailRich").checked; if($("setRdTier")){ s.rdTier=$("setRdTier").value; s.rdDrop=+$("setRdDrop").value||0.5; s.rdBanner=$("setRdBanner").checked; s.rdNotify=$("setRdNotify").checked; s.rdWindow=Math.max(1,Math.min(30,+$("setRdWindow").value||7)); s.rdKeepNoAnswer=$("setRdKeepNA").checked; s.rdSound=$("setRdSound").checked; } if($("setCalTime")) s.calTime=$("setCalTime").value||"10:00"; if($("setCalLen")) s.calLen=+$("setCalLen").value||30;
   s.reportUrl=$("setReport").value.trim(); s.folderGoal=num($("setGoal").value)||15; if($("setSeasonLead")) s.seasonLead=num($("setSeasonLead").value)||7; s.teamUrl=$("setTeam").value.trim();
   const hub=$("setHub")? $("setHub").value.trim().replace(/\/+$/,"") : (s.hub||"");
   const key=$("setHubKey")? $("setHubKey").value.trim() : (s.hubKey||""); const keyChanged=key!==(s.hubKey||""); s.hubKey=key;
@@ -3549,9 +3552,9 @@ function saveSfMap(){ document.querySelectorAll("[data-map]").forEach(el=>{
 function loadLogo(input){ const f=input.files[0]; if(!f) return; const rd=new FileReader();
   rd.onload=()=>{ state.settings.logo=rd.result; save(); fillSettingsUI(); applyBrandCss(); renderProposalPreview(); toast("Logo saved into your data file"); };
   rd.readAsDataURL(f); }
-function loadPartnerLogo(input){ const f=input.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=()=>{ state.settings.partnerLogo=rd.result; save(); fillSettingsUI(); toast("Partner logo saved — it’s on your card"); }; rd.readAsDataURL(f); }
-function clearPartnerLogo(){ state.settings.partnerLogo="none"; save(); fillSettingsUI(); toast("Partner logo hidden \u2014 the card shows the text line"); }
-function resetPartnerLogo(){ state.settings.partnerLogo=""; save(); fillSettingsUI(); toast("Back to the built-in partner logo"); }
+function loadPartnerLogo(input){ const f=input.files[0]; if(!f) return; const rd=new FileReader(); rd.onload=()=>{ state.settings.partnerLogo=rd.result; state.settings.partnerHidden=false; save(); fillSettingsUI(); loCardRender(true); toast("Partner logo saved — it’s on your card"); }; rd.readAsDataURL(f); }
+function togglePartnerLogo(){ const s=state.settings; s.partnerHidden=!s.partnerHidden; if(s.partnerLogo==="none") s.partnerLogo=""; save(); fillSettingsUI(); loCardRender(true); renderClientBar(); toast(s.partnerHidden?"Partner logo hidden on the card":"Partner logo back on the card"); }
+function resetPartnerLogo(){ state.settings.partnerLogo=""; state.settings.partnerHidden=false; save(); fillSettingsUI(); loCardRender(true); renderClientBar(); toast("Back to the built-in partner logo"); }
 function clearLogo(){ state.settings.logo=""; save(); fillSettingsUI(); applyBrandCss(); renderProposalPreview(); toast("Back to the official NMC logo"); }
 
 /* ---------- data file ---------- */
@@ -3811,7 +3814,7 @@ function compareHTML(){
   ${compareMatrix(list.filter(x=>x.kind!=="snap"),curPay,cmpOpts(c))}
   ${cmpWhy}
   ${awardsRowHTML(c)}
-  <div class="disc">This comparison is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. Figures exclude taxes, insurance, and escrows unless noted. HELOC rates are variable and payments will change when the index changes. Borrowing against your home converts other spending or unsecured debt into debt secured by your home. All loans subject to credit approval. Equal Housing Opportunity. ${esc(s.footer)}${s.loNmls?` \u00b7 Loan Officer NMLS #${esc(s.loNmls)}`:""}</div>`;
+  <div class="disc">This comparison is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. Figures exclude taxes, insurance, and escrows unless noted. HELOC rates are variable and payments will change when the index changes. Borrowing against your home converts other spending or unsecured debt into debt secured by your home. All loans subject to credit approval. Equal Housing Opportunity. ${esc(s.footer)}${vaLenderNote()}${s.loNmls?` \u00b7 Loan Officer NMLS #${esc(s.loNmls)}`:""}</div>`;
 }
 function exportComparePDF(){ const html=compareHTML(); if(html.includes('class="empty"')){ toast("Add at least two complete scenarios first"); return; }
   const c=cur(); libraryAdd("compare", html, sheetTitle("compare",c,null)); printAs("Loan Options Comparison"+(c&&c.name?" \u2014 "+c.name:""), html); }
@@ -4397,7 +4400,7 @@ function amortSheetHTML(){ const v=state.amort||amortVals(); const m=amortModel(
     <div class="lo"><b>${esc(s.loName||"Your Loan Officer")}</b>${s.loNmls?` \u00b7 NMLS #${esc(s.loNmls)}`:""}<br>${esc(s.loPhone||"")}${s.loPhone&&s.loEmail?" \u00b7 ":""}${esc(s.loEmail||"")}<br>Prepared ${new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}</div></div>
     <div class="eyebrow">Amortization comparison</div><h1>Current loan vs. new loan${c?" \u2014 "+esc(c.name):""}</h1>
     ${amortHTML(m,false)}
-    <div class="disc">This comparison is an estimate for discussion purposes only. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. Figures exclude taxes, insurance and escrows. All loans subject to credit approval. Equal Housing Opportunity. ${esc(s.footer)}${s.loNmls?` \u00b7 Loan Officer NMLS #${esc(s.loNmls)}`:""}</div>`; }
+    <div class="disc">This comparison is an estimate for discussion purposes only. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. Figures exclude taxes, insurance and escrows. All loans subject to credit approval. Equal Housing Opportunity. ${esc(s.footer)}${vaLenderNote()}${s.loNmls?` \u00b7 Loan Officer NMLS #${esc(s.loNmls)}`:""}</div>`; }
 function amortAutofill(){ const c=cur(); if(!c){ toast("Pick a client first"); return; } const a=c.analysis||{};
   const n=c.monthsLeft>0?c.monthsLeft:null; const term=(c.origTerm||30)*12; const into=n?Math.max(0,term-n):0;
   amortSet("cAmt", c.origAmount>0?c.origAmount:c.balance||""); amortSet("cRate", c.rate||""); amortSet("cTerm", c.origAmount>0?term:(n?[120,180,240,300,360,480].reduce((b,t)=>Math.abs(t-n)<Math.abs(b-n)?t:b,360):360)); amortSet("cInto", c.origAmount>0?into:0); amortSet("cExtra", 0);
@@ -4456,7 +4459,7 @@ function purchSheetHTML(){ const v=state.purch||purchVals(); const m=purchModel(
     <div class="lo"><b>${esc(s.loName||"Your Loan Officer")}</b>${s.loNmls?` \u00b7 NMLS #${esc(s.loNmls)}`:""}<br>${esc(s.loPhone||"")}${s.loPhone&&s.loEmail?" \u00b7 ":""}${esc(s.loEmail||"")}<br>Prepared ${new Date().toLocaleDateString("en-US",{month:"long",day:"numeric",year:"numeric"})}</div></div>
     <div class="eyebrow">Purchase estimate</div><h1>What a ${money(m.price)} home could look like${m.who?" \u2014 "+esc(m.who):""} <span class="tag-flat" style="font-size:11px;vertical-align:middle">Estimate</span></h1>
     ${purchHTML(m,false)}
-    <div class="disc">This is a rough estimate for discussion only, based on the numbers you gave me and today\u2019s market pricing, which changes daily. It is not a pre-approval, a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval; a pre-approval requires an application and credit review. Taxes, insurance, HOA and mortgage insurance are estimates until the property and policy are known. All loans subject to credit approval. Equal Housing Opportunity. ${esc(s.footer)}${s.loNmls?` \u00b7 Loan Officer NMLS #${esc(s.loNmls)}`:""}</div>`; }
+    <div class="disc">This is a rough estimate for discussion only, based on the numbers you gave me and today\u2019s market pricing, which changes daily. It is not a pre-approval, a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval; a pre-approval requires an application and credit review. Taxes, insurance, HOA and mortgage insurance are estimates until the property and policy are known. All loans subject to credit approval. Equal Housing Opportunity. ${esc(s.footer)}${vaLenderNote()}${s.loNmls?` \u00b7 Loan Officer NMLS #${esc(s.loNmls)}`:""}</div>`; }
 function purchClear(){ document.querySelectorAll("#purchPanel [data-pu]").forEach(el=>{ if(el.tagName==="SELECT") el.value=el.dataset.pu==="term"?"360":el.dataset.pu==="downMode"?"pct":el.dataset.pu==="escrow"?"escrow":"conv"; else el.value=""; }); state.purch={ben:{noPrepay:true,fixed:true,escrow:true}}; save(); purchCalc(); }
 function purchRestore(){ const v=state.purch||{}; Object.keys(v).forEach(k=>{ if(k!=="ben") purchSet(k,v[k]); }); purchCalc(); }
 /* ======== Presentation: the live T-chart ======== */
@@ -4705,7 +4708,7 @@ function presentSheetHTML(){ const c=cur(); if(!c) return `<div class="empty">Pi
     ${bens.length?`<h2>What this does for you</h2><ul style="margin:4px 0 4px 18px;font-size:12px;line-height:1.7">${bens.map(b=>`<li>${b}</li>`).join("")}</ul>`:""}
     ${close?`<div class="recbox" style="margin-top:10px;font-family:var(--serif);font-size:16px">\u201c${esc(close)}\u201d</div>`:""}
     ${awardsRowHTML(c)}
-    <div class="disc">This presentation is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. Figures exclude taxes, insurance, and escrows unless noted. Consolidating short-term debt into a mortgage or home equity loan may increase the total interest paid on that debt over the life of the loan and converts unsecured debt into debt secured by your home. All loans subject to credit approval. Equal Housing Opportunity. ${esc(s.footer)}${s.loNmls?` \u00b7 Loan Officer NMLS #${esc(s.loNmls)}`:""}</div>`; }
+    <div class="disc">This presentation is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. Figures exclude taxes, insurance, and escrows unless noted. Consolidating short-term debt into a mortgage or home equity loan may increase the total interest paid on that debt over the life of the loan and converts unsecured debt into debt secured by your home. All loans subject to credit approval. Equal Housing Opportunity. ${esc(s.footer)}${vaLenderNote()}${s.loNmls?` \u00b7 Loan Officer NMLS #${esc(s.loNmls)}`:""}</div>`; }
 function toolsCalc(){
   const tv={_cid:(state.tools||{})._cid}; document.querySelectorAll("[data-t]").forEach(el=>{ tv[el.dataset.t]=el.value; }); state.tools=tv; save(); toolsUsing();
   const m=toolsModel(); const box=$("toolsCompare"); if(!box) return;
@@ -4821,7 +4824,7 @@ if(DEMO && state.clients.length===0 && !seededFlag){
   seedDemo(); try{ localStorage.setItem("nmc_demo_seeded","1"); }catch(e){}
 }
 if(!state.currentId && state.clients.length) state.currentId=state.clients[0].id;
-bindClientFields(); applyBrandCss(); fillSettingsUI(); updateRatePill(); refreshAll(); setupPolling(); rdMigrateTiers(); renderRdBanner(); setTimeout(rdStart, 1500); maybeSetup(); renderBmStatus(); maybeBmUpdate(); renderBrandStatus(); amortRestore(); purchRestore(); setTimeout(()=>fetchBrandAssets(false).catch(()=>{}), 3000); initAutosave();
+if(state.settings.partnerLogo==="none"){ state.settings.partnerLogo=""; state.settings.partnerHidden=true; save(); } bindClientFields(); applyBrandCss(); fillSettingsUI(); updateRatePill(); refreshAll(); setupPolling(); rdMigrateTiers(); renderRdBanner(); setTimeout(rdStart, 1500); maybeSetup(); renderBmStatus(); maybeBmUpdate(); renderBrandStatus(); amortRestore(); purchRestore(); setTimeout(()=>fetchBrandAssets(false).catch(()=>{}), 3000); initAutosave();
 if(DEMO){ try{ sampleTeam(); }catch(e){} }
 if(state.settings.poll && state.settings.feedUrl) fetchRates();
 
