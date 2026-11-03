@@ -43,6 +43,11 @@ nav button::before{content:"\276F";position:absolute;left:19px;top:13px;color:va
 nav button:hover{background:#fff}
 nav button.active{color:var(--brand);font-weight:700;background:#fff}
 nav button.active::before{opacity:1}
+#rdBanner{background:#FFF3C4;border:1px solid #E8D88A;border-radius:12px;padding:10px 14px;margin:0 0 12px;font-size:13.5px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+#rdBanner .tiers{display:flex;gap:10px;flex-wrap:wrap;font-family:var(--serif);font-size:15px}
+#rdBanner .up{color:#8F3223}#rdBanner .down{color:#2E6B4F}
+@keyframes rdBlink{0%,100%{background:transparent}50%{background:#FFF3C4}}
+tr.elig-today td{animation:rdBlink 1.2s ease-in-out 3;background:#FFFBEA}
 .rate-pill{
   margin:16px 16px 0;background:#fff;border:1px solid var(--line);border-radius:var(--radius);
   padding:11px 13px;font-size:12.5px;color:var(--muted);
@@ -339,6 +344,7 @@ table.data tr.rec td{background:var(--cream)}
   </aside>
 
   <main>
+    <div id="rdBanner" style="display:none"></div>
     <div id="clientBar" class="clientbar"></div>
     <div id="updBanner" style="display:none;background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px"></div>
     <div id="demoBanner" style="display:none;background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:13px"><b>Demo mode.</b> Sample clients, rates, team numbers, and templates — none of it is real. This file saves to its own separate slot and never touches a real toolkit on the same computer.</div>
@@ -799,7 +805,7 @@ Discover 6,100 190 24.9"></textarea>
       <div class="sub">Your month at a glance, and where rates are. Your banker details live under Settings &amp; data.</div>
       <div class="panel"><h2>Your month</h2><div id="deskStats"></div></div>
       <div class="panel"><h2>Hot leads &amp; future buyers</h2><div id="deskHot"></div></div>
-      <div class="panel"><h2>Rates — today and lately</h2><div id="deskRates"></div></div>
+      <div class="panel"><h2>Rates — today and lately</h2><div id="rdDesk"></div><div id="deskRates"></div></div>
     </section>
 
     <!-- ================= SETTINGS ================= -->
@@ -885,6 +891,17 @@ Discover 6,100 190 24.9"></textarea>
             <div class="field" style="margin-top:8px;max-width:220px"><label>Monthly folder goal</label><input type="number" id="setGoal" placeholder="15" onchange="saveSettingsFromUI()"></div>
             <div class="field" style="margin-top:8px;max-width:220px"><label>Seasoning heads-up (days before)</label><input type="number" id="setSeasonLead" placeholder="7" onchange="saveSettingsFromUI()"></div>
             <input type="hidden" id="setFeed"><input type="checkbox" id="setPoll" style="display:none"><input type="hidden" id="setReport"><input type="hidden" id="setTeam">
+            <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line)">
+              <h2 style="margin:0 0 4px">Rate Desk — live VA rates</h2>
+              <div class="hint" id="rdStatus" style="margin-bottom:8px"></div>
+              <div class="grid2">
+                <div class="field"><label>Score unknown → test against tier</label><select id="setRdTier" onchange="saveSettingsFromUI()"><option value="680+">680+</option><option value="660-679">660–679</option><option value="640-659">640–659 (median)</option><option value="620-639">620–639</option><option value="600-619">600–619</option><option value="580-599">580–599</option><option value="<580">Below 580</option></select></div>
+                <div class="field"><label>Minimum rate drop to count as eligible (%)</label><input type="number" id="setRdDrop" step="0.125" placeholder="0.5" onchange="saveSettingsFromUI()"></div>
+              </div>
+              <label style="display:flex;gap:8px;align-items:center;cursor:pointer;margin:4px 0"><input type="checkbox" id="setRdBanner" style="width:auto;min-height:0" onchange="saveSettingsFromUI()"><span>Show the banner when the rate desk publishes</span></label>
+              <label style="display:flex;gap:8px;align-items:center;cursor:pointer;margin:4px 0"><input type="checkbox" id="setRdNotify" style="width:auto;min-height:0" onchange="saveSettingsFromUI()"><span>Also raise a desktop notification</span></label>
+              <div class="btnrow" style="margin-top:6px"><button class="btn ghost small" onclick="rdPoll(true)">Check now</button><span class="hint">Checks every 2 minutes on its own; a publish from the rate desk arrives instantly.</span></div>
+            </div>
           </div>
         </div>
         <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
@@ -964,7 +981,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.9.32";
+const TOOLKIT_VERSION = "1.10.0";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1052,7 +1069,7 @@ let state = {
     brand:"#A53222", accent:"#DDE4F4",
     footer:"Neighborhood Mortgage Company LLC \u00b7 835 Mason St, Suite B300-M, Dearborn, MI 48124 \u00b7 NMLS #2484730 \u00b7 neighborhoodmc.com",
     loName:"", loNmls:"", loPhone:"", loEmail:"", loTitle:"Mortgage Loan Officer", loOffice:"(844) 210-3644", coSite:"neighborhoodmc.com", partnerLine:"Powered by Rocket Mortgage",
-    logo:"", feedUrl:"", poll:false, reportUrl:"", folderGoal:15, teamUrl:"", setupDone:false,
+    logo:"", feedUrl:"", poll:false, rdUrl:"https://raw.githubusercontent.com/doubledekr/nmc-rate-desk/main/rates/", rdTier:"640-659", rdDrop:0.5, rdBanner:true, rdNotify:true, reportUrl:"", folderGoal:15, teamUrl:"", setupDone:false,
     sfMap: JSON.parse(JSON.stringify(DEFAULT_SFMAP))
   },
   rates: null
@@ -1162,7 +1179,7 @@ function deleteClient(){ const c=cur(); if(!c) return;
   if(!confirm("Delete "+c.name+" and everything attached? This can't be undone.")) return;
   state.clients=state.clients.filter(x=>x.id!==c.id); state.currentId=state.clients[0]?state.clients[0].id:null;
   save(); refreshAll(); toast("Deleted"); }
-function pickClient(id){ if(!id) return; state.currentId=id; save(); refreshAll(); const ts=$("s-tools"); if(ts&&ts.classList.contains("active")) toolsInit(); }
+function pickClient(id){ if(!id) return; state.currentId=id; const pc=state.clients.find(c=>c.id===id); if(pc&&pc.eligibleSeen===false) pc.eligibleSeen=true; save(); refreshAll(); const ts=$("s-tools"); if(ts&&ts.classList.contains("active")) toolsInit(); }
 
 function renderPickers(){
   ["clientPicker","priceClientPicker","anClientPicker","propClientPicker","cmpClientPicker","gClientPicker"].forEach(pid=>{
@@ -1294,6 +1311,7 @@ function renderClientBar(){ const bar=$("clientBar"); if(!bar) return; const c=c
     if(c.proposalSent) facts.push(`<span class="tag-good">proposal sent ${esc(c.proposalSent)}</span>`);
     if(onRateWatch(c)) facts.push(`<span class="${targetHit(c)?"tag-good":"tag-flat"}">\u23F3 needs ${pct(c.targetRate)}</span>`);
     if(onSeasonWatch(c)) facts.push(`<span class="tag-flat">\uD83D\uDCC5 seasons ${esc(c.seasonDate)}</span>`);
+    { const e=rdEligibleNow(c); if(e) facts.push(`<span class="tag-good" title="Eligible under today\u2019s rate desk rates">\u2728 eligible since ${pct(e.rate)} (${RD_TIER_LABEL[e.tier]}${e.assumed?", score?":""})</span>`); }
     if(c.hot) facts.push(`<span class="tag-warn">\uD83D\uDD25 hot</span>`); { const fi=futureInfo(c); if(fi) facts.push(`<span class="${fi.tag}">${fi.txt.replace(/ \u2014 .*$/,"")}</span>`); }
     { const t=clientTime(c); const tz=clientTz(c); if(t) facts.push(`<span class="tag-flat" title="${esc(tz)}">\uD83D\uDD52 ${t}${tz!=="America/New_York"?" (their time)":""}</span>`); }
     bar.innerHTML=`<div class="inner">${card}<span class="hint" style="margin:0">Working with</span><span class="who">${esc(c.name)}</span><div class="facts">${facts.join("")}</div><span style="flex:1"></span>${sel}<button class="btn ghost small" onclick="go('client')">Open</button><button class="btn ghost small" onclick="clearClient()" title="Deselect">\u2715 Clear</button></div>`; }
@@ -1562,7 +1580,7 @@ function setPipeView(v){ pipeView=v; renderPipeline(); }
 /* sortable columns: click a header to sort, again to flip, a third time to clear */
 let pipeSort={key:null,dir:1};
 function setPipeSort(k){ if(pipeSort.key!==k){ pipeSort={key:k,dir:1}; } else if(pipeSort.dir===1){ pipeSort.dir=-1; } else { pipeSort={key:null,dir:1}; } renderPipeline(); }
-function sortVal(c,k){ if(k==="balance"||k==="rate"||k==="payment") return c[k]==null?(pipeSort.dir===1?1e12:-1):+c[k]; if(k==="followUp") return c.followUp||"9999"; return String(c[k]||"").toLowerCase(); }
+function sortVal(c,k){ if(k==="eligible"){ const e=rdEligibleNow(c); return e ? (c.eligibleDay===todayStr()?"0":"1")+String(c.eligibleSince||"") : "9"; } if(k==="balance"||k==="rate"||k==="payment") return c[k]==null?(pipeSort.dir===1?1e12:-1):+c[k]; if(k==="followUp") return c.followUp||"9999"; return String(c[k]||"").toLowerCase(); }
 function th(k,label,cls){ const on=pipeSort.key===k; return `<th class="${cls||""}" style="cursor:pointer;user-select:none;white-space:nowrap" title="Sort by ${label.replace(/&amp;/g,"&")}" onclick="setPipeSort('${k}')">${label}${on?(pipeSort.dir===1?" \u25b2":" \u25bc"):""}</th>`; }
 function pipeAlerts(){
   const today=new Date().toISOString().slice(0,10);
@@ -1639,15 +1657,15 @@ function renderPipeline(){
   const chips=$("pipeChips"); if(chips){
     const chip=(v,l,n)=>`<button class="btn small ${pipeView===v?"":"ghost "}" onclick="setPipeView('${v}')">${l}${n!=null?" ("+n+")":""}</button>`;
     const sentN=state.clients.filter(c=>!c.quick&&c.proposalSent&&!isDone(c)).length;
-    chips.innerHTML=chip("all","All")+chip("hot","\uD83D\uDD25 Hot now",al.hot.length)+chip("due","Follow-ups due",al.due.length)+chip("flag","\uD83D\uDD25 Hot leads",al.flagged.length)+chip("ratewatch","\u23F3 Rate watch",al.ratewatch.length)+chip("season","\uD83D\uDCC5 Seasoning",al.season.length)+chip("future","\uD83C\uDFE1 Future buyers",al.future.length)+(al.watch.length?chip("watch","Watching",al.watch.length):"")+chip("sent","Proposal sent",sentN); }
+    chips.innerHTML=chip("all","All")+chip("hot","\uD83D\uDD25 Hot now",al.hot.length)+chip("due","Follow-ups due",al.due.length)+chip("flag","\uD83D\uDD25 Hot leads",al.flagged.length)+chip("ratewatch","\u23F3 Rate watch",al.ratewatch.length)+chip("season","\uD83D\uDCC5 Seasoning",al.season.length)+chip("future","\uD83C\uDFE1 Future buyers",al.future.length)+(al.watch.length?chip("watch","Watching",al.watch.length):"")+chip("sent","Proposal sent",sentN)+(rdTiers()?chip("eligible","\u2728 Now eligible",rdEligibleIds().length):""); }
   const f=filt.value; const pf=$("pipeProduct")?$("pipeProduct").value:"";
   const q=($("pipeSearch")?$("pipeSearch").value:"").trim().toLowerCase(); const qd=q.replace(/\D/g,"");
   const hit=c=>{ if(pf && clientProduct(c)!==pf) return false; if(!q) return true; const hay=[c.name,c.email,c.address,c.servicer,c.loanType,c.status,c.notes,c.futureProduct,PRODUCT_LABELS[clientProduct(c)]].map(x=>String(x||"").toLowerCase()).join(" \u2022 ");
     if(hay.includes(q)) return true; if(qd.length>=3 && String(c.phone||"").replace(/\D/g,"").includes(qd)) return true; return false; };
   const rows=state.clients.filter(c=>!c.quick && (!f||c.status===f) && hit(c) &&
-    (pipeView==="all" || (pipeView==="hot"&&hs.has(c.id)) || (pipeView==="due"&&ds.has(c.id)) || (pipeView==="watch"&&ws.has(c.id)) || (pipeView==="ratewatch"&&rs.has(c.id)) || (pipeView==="season"&&ss.has(c.id)) || (pipeView==="sent"&&c.proposalSent&&!isDone(c)) || (pipeView==="flag"&&c.hot) || (pipeView==="future"&&fs_.has(c.id))))
+    (pipeView==="all" || (pipeView==="hot"&&hs.has(c.id)) || (pipeView==="due"&&ds.has(c.id)) || (pipeView==="watch"&&ws.has(c.id)) || (pipeView==="ratewatch"&&rs.has(c.id)) || (pipeView==="season"&&ss.has(c.id)) || (pipeView==="sent"&&c.proposalSent&&!isDone(c)) || (pipeView==="flag"&&c.hot) || (pipeView==="future"&&fs_.has(c.id)) || (pipeView==="eligible"&&rdEligibleNow(c))))
     .sort((a,b)=>{ if(pipeSort.key){ const va=sortVal(a,pipeSort.key), vb=sortVal(b,pipeSort.key); const cmp = typeof va==="number"&&typeof vb==="number" ? va-vb : String(va).localeCompare(String(vb)); return pipeSort.dir*cmp; }
-      return pipeView==="ratewatch" ? (rateDrop(a)??9)-(rateDrop(b)??9) : pipeView==="season" ? seasonDays(a)-seasonDays(b) : 0; });
+      return pipeView==="ratewatch" ? (rateDrop(a)??9)-(rateDrop(b)??9) : pipeView==="season" ? seasonDays(a)-seasonDays(b) : pipeView==="eligible" ? String(b.eligibleSince||"").localeCompare(String(a.eligibleSince||"")) : 0; });
   pipeRowsShown=rows;
   const bar=(al.hot.length||al.due.length)?`<div style="background:var(--cream);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.8">\uD83D\uDD14 ${al.hot.length?`<b>${al.hot.length} hot right now:</b> ${al.hot.map(c=>`<a href="#" onclick="pickClient('${c.id}');go('analysis');return false" style="color:var(--brand);font-weight:600">${esc(c.name)}</a>`).join(", ")}. `:""}${al.due.length?`<b>${al.due.length} follow-up${al.due.length===1?"":"s"} due:</b> ${al.due.map(c=>`<a href="#" onclick="pickClient('${c.id}');go('client');return false" style="color:var(--ink)">${esc(c.name)}</a>`).join(", ")}.`:""}</div>`:"";
   const seasonBar = al.season.length && pipeView!=="season" ? `<div style="background:var(--cream);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.8">\uD83D\uDCC5 <b>Seasoning:</b> ${al.season.map(c=>{ const n=seasonDays(c); return `<a href="#" onclick="pickClient('${c.id}');go('client');return false" style="color:var(--brand);font-weight:600">${esc(c.name)}</a> <span class="hint">(${n<=0?"eligible now":"in "+n+" day"+(n===1?"":"s")})</span>`; }).join(", ")} \u2014 <a href="#" onclick="setPipeView('season');return false">view</a></div>` : "";
@@ -1659,13 +1677,14 @@ function renderPipeline(){
     ${inbox.map(it=>`<div class="btnrow" style="margin-top:6px"><span><b>${esc(it.fields.name)}</b>${it.fields.balance?` \u00b7 ${money(num(it.fields.balance))}`:""}${it.fields.rate?` @ ${pct(num(it.fields.rate))}`:""}${it.fields.leadStatus?` \u00b7 ${esc(it.fields.leadStatus)}`:""}${it.converted?` <span class="tag-good" title="The lead was converted in Salesforce \u2014 this is the loan record, the most current numbers">Converted loan</span>`:""}${it.source==="chrome-extension"?` <span class="tag-flat">via Chrome${it.pairs?" \u00b7 "+it.pairs+" fields read, "+Object.keys(it.fields||{}).length+" recognized":""}</span>`:""}</span><span style="flex:1"></span>
       <button class="btn small" onclick="importInbox('${it.id}')">Import</button><button class="btn ghost small" onclick="ackInbox('${it.id}')">Ignore</button></div>`).join("")}</div>` : "";
   $("pipeTable").innerHTML = ib + bar + seasonBar + futBar + rwBar + (!rows.length ? `<div class="empty">${pipeView!=="all"?"Nothing in this view right now \u2014 that can change with the next rate push.":"No pipeline clients yet. Add one, paste a Salesforce record, or load the samples in Settings."}</div>` :
-  `<table class="data"><thead><tr>${th("name","Client")}${th("status","Status")}${th("loanType","Type")}${th("balance","Balance","num")}${th("rate","Rate","num")}${th("payment","P&amp;I","num")}${th("followUp","Follow-up")}<th>Opportunity</th><th></th></tr></thead><tbody>`+
+  `<table class="data"><thead><tr>${th("name","Client")}${th("status","Status")}${th("loanType","Type")}${th("balance","Balance","num")}${th("rate","Rate","num")}${th("payment","P&amp;I","num")}${th("followUp","Follow-up")}${rdTiers()?th("eligible","\u2728 Eligible"):""}<th>Opportunity</th><th></th></tr></thead><tbody>`+
   rows.map(c=>{ const op=opportunity(c);
-    return `<tr><td><b>${c.hot?'<span title="Hot lead">\uD83D\uDD25 </span>':""}${esc(c.name)}</b><br><span class="hint">${c.servicer?esc(c.servicer):""}${c.phone?(c.servicer?" \u00b7 ":"")+esc(c.phone):""}</span></td>
+    return `<tr class="${rdEligibleNow(c)&&c.eligibleDay===todayStr()&&!c.eligibleSeen?"elig-today":""}"><td><b>${c.hot?'<span title="Hot lead">\uD83D\uDD25 </span>':""}${esc(c.name)}</b><br><span class="hint">${c.servicer?esc(c.servicer):""}${c.phone?(c.servicer?" \u00b7 ":"")+esc(c.phone):""}</span></td>
     <td><span class="${c.status===S_DONE?"tag-good":c.status==="Lost"||(isInelig(c)&&ineligWhy(c)==="fully ineligible")?"tag-warn":"tag-flat"}">${isFuture(c)?"\uD83C\uDFE1 ":""}${esc(c.status)}${isInelig(c)&&ineligWhy(c)==="fully ineligible"?" \u00b7 no follow-up":""}</span>${onRateWatch(c)?`<br><span class="${targetHit(c)?"tag-good":"tag-flat"}" style="margin-top:3px" title="Rate watch">\u23F3 needs ${pct(c.targetRate)}${rateDrop(c)!=null?" (\u2212"+pct(rateDrop(c))+")":""}</span>`:""}${(()=>{ const si=seasonInfo(c); return si?`<br><span class="${si.tag}" style="margin-top:3px">${si.txt.replace(/ \u2014 .*$/,"")}</span>`:""; })()}${(()=>{ const fi=futureInfo(c); return fi?`<br><span class="${fi.tag}" style="margin-top:3px">${fi.txt.replace(/ \u2014 .*$/,"")}</span>`:""; })()}${c.hot&&c.hotNeed?`<br><span class="hint">need: ${esc(c.hotNeed)}</span>`:""}${c.proposalSent?`<br><span class="tag-good" style="margin-top:3px">proposal sent ${esc(c.proposalSent)}${c.proposalsSent>1?" ("+c.proposalsSent+")":""}</span>`:""}</td>
     <td>${esc(c.loanType||"")}${isFuture(c)&&c.futureProduct?`<br><span class="hint">\u2192 ${esc(c.futureProduct)}</span>`:""}</td>
     <td class="num">${c.freeClear?'<span class="tag-good">free &amp; clear</span>':money(c.balance)}</td><td class="num">${c.freeClear?"\u2014":pct(c.rate)}</td><td class="num">${c.freeClear?"\u2014":money(c.payment)}</td>
     <td>${esc(c.followUp||"\u2014")}${c.followUpTime?" "+esc(c.followUpTime):""}${calStatus(c)==="on"?' <span title="On your Outlook calendar">\uD83D\uDCC5</span>':calStatus(c)==="moved"?' <span title="Follow-up moved since it went on your calendar \u2014 re-add it" style="opacity:.6">\uD83D\uDCC5\u2047</span>':""}${(ds.has(c.id)||(fuPending&&fuPending.id===c.id))?`<div style="margin-top:4px">${fuButtons(c,true)}</div>`:""}</td>
+    ${rdTiers()?`<td>${(()=>{ const e=rdEligibleNow(c); return e?`<span class="tag-good" title="Eligible under today\u2019s rate desk rates">\u2728 ${RD_TIER_LABEL[e.tier]} ${pct(e.rate)}${e.assumed?" (score?)":""}</span><br><span class="hint">was ${pct(c.rate)} \u00b7 drop ${pct(e.drop)}${c.eligibleDay===todayStr()?" \u00b7 today":""}${e.seasonUnknown?" \u00b7 seasoning?":""}</span>`:""; })()}</td>`:""}
     <td>${op?`<span class="${op.tag}">${op.txt}</span>`:""}</td>
     <td><button class="btn small" onclick="pickClient('${c.id}');go('client')">Open</button></td></tr>`;}).join("")+`</tbody></table>`);
 }
@@ -3299,6 +3318,70 @@ function simulateDrop(){
   notifyNewEligible(before);
 }
 function targetHit(c){ const fr=feedRateFor(c); return onRateWatch(c) && fr!=null && fr<=c.targetRate; }
+/* ================= Rate Desk: live VA rates by credit tier =================
+   Source of truth: rates/rates.json in github.com/doubledekr/nmc-rate-desk (published by the Rate Desk app).
+   Instant path: the rate desk pings a relay topic named inside the file; we hold an SSE subscription and, on a ping,
+   read the fresh file from GitHub's API (no CDN cache). Fallback: poll the raw file every 2 minutes, cache-busted.
+   The banner and the eligibility pass run only when the file's version changes — never on a quiet check. */
+const RD_TIERS=["680+","660-679","640-659","620-639","600-619","580-599","<580"];
+const RD_TIER_LABEL={"680+":"680+","660-679":"660–679","640-659":"640–659","620-639":"620–639","600-619":"600–619","580-599":"580–599","<580":"below 580"};
+let rdTimer=null, rdSSE=null, rdSSETopic="", rdBusy=false;
+function rdData(){ return state.rateDesk||null; }
+function rdTiers(d){ d=d||rdData(); return d&&d.products&&d.products.va_irrrl?d.products.va_irrrl.tiers:null; }
+function rdTierFor(score){ const f=+score; if(!(f>0)) return null; return f>=680?"680+":f>=660?"660-679":f>=640?"640-659":f>=620?"620-639":f>=600?"600-619":f>=580?"580-599":"<580"; }
+function rdRateFor(c, tiers){ tiers=tiers||rdTiers(); if(!tiers) return null; const t=rdTierFor(c.fico); const key=t||(state.settings.rdTier||"640-659"); return {tier:key, rate:tiers[key], assumed:!t}; }
+/* eligible under the rates that are live now (VA only at launch) */
+function rdEligibleNow(c, tiers){ if(!c||c.quick||isDone(c)) return null; if(!/\bVA\b/i.test(c.loanType||"")) return null; if(!(c.rate>0)) return null;
+  if(isInelig(c)&&c.ineligFull) return null; const sd=seasonDays(c); if(sd!=null&&sd>0) return null;   /* seasoning in the future: not yet */
+  const r=rdRateFor(c,tiers); if(!r||r.rate==null) return null; const drop=+(c.rate-r.rate).toFixed(3); if(drop<(+state.settings.rdDrop||0.5)-1e-9) return null;
+  return {tier:r.tier, rate:r.rate, assumed:r.assumed, drop, seasonUnknown:!c.seasonDate&&!c.closeDate}; }
+function rdApply(j, how){ if(!j||!j.version||!j.products){ return false; } const prev=rdData(); if(prev&&prev.version===j.version) return false;
+  const today=todayStr(); const prevTiers=rdTiers(prev); const newT=rdTiers(j);
+  const fresh=[]; state.clients.forEach(c=>{ const e=rdEligibleNow(c,newT); if(!e) return; if(c.eligibleRate!=null && e.rate>=c.eligibleRate-1e-9) { c.eligibleTier=e.tier; return; }   /* already alerted at this rate or better */
+    c.eligibleSince=j.version; c.eligibleDay=today; c.eligibleRate=e.rate; c.eligibleTier=e.tier; c.eligibleAssumed=e.assumed; c.eligibleSeen=false; fresh.push(c); });
+  state.rateDesk=Object.assign({}, j, {prevTiers:prevTiers||null, receivedAt:new Date().toISOString(), how, freshIds:fresh.map(c=>c.id), dismissed:false});
+  state.rdHistory=(state.rdHistory||[]).filter(h=>h.version!==j.version); state.rdHistory.unshift({version:j.version,published:j.published,by:j.by,note:j.note,tiers:newT}); const cutoff=Date.now()-90*86400000; state.rdHistory=state.rdHistory.filter(h=>Date.parse(h.published)>cutoff).slice(0,2000);
+  save(); renderRdBanner(); updateRatePill(); renderPipeline(); renderClientBar(); renderRdDesk(); rdStatusLine();
+  if(prev && state.settings.rdNotify!==false) rdNotify(j, fresh);   /* no notification for the very first load */
+  if(j.ping&&j.ping.topic&&j.ping.topic!==rdSSETopic) rdSubscribe();
+  return true; }
+function rdNotify(j, fresh){ try{ const t=rdTiers(j)||{}; const body=`680+ ${pct(t["680+"])} · 640–659 ${pct(t["640-659"])}${fresh.length?` · ${fresh.length} client${fresh.length===1?"":"s"} now eligible`:""}`;
+    if(!("Notification" in window)) return; const show=()=>{ const n=new Notification("New VA rates from the rate desk",{body, tag:"nmc-rates", renotify:true}); n.onclick=()=>{ try{ window.focus(); }catch(e){} go("pipeline"); setPipeView("eligible"); }; };
+    if(Notification.permission==="granted") show(); else if(Notification.permission!=="denied") Notification.requestPermission().then(p=>{ if(p==="granted") show(); }); }catch(e){} }
+function rdArrow(now,prev){ if(prev==null||now==null) return ""; const d=+(now-prev).toFixed(3); if(Math.abs(d)<0.0005) return `<span class="hint" title="unchanged">—</span>`; return `<span class="${d>0?"up":"down"}" title="vs previous publish">${d>0?"▲":"▼"}${Math.abs(d).toFixed(3).replace(/0$/,"")}</span>`; }
+function rdWhen(iso){ try{ return new Date(iso).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}); }catch(e){ return ""; } }
+function renderRdBanner(){ const b=$("rdBanner"); if(!b) return; const d=rdData(); if(!d||d.dismissed||state.settings.rdBanner===false||!d.how||d.how==="first"){ b.style.display="none"; return; }
+  const t=rdTiers(d)||{}; const p=d.prevTiers||{}; const n=(d.freshIds||[]).filter(id=>state.clients.some(c=>c.id===id)).length; const assumed=(d.freshIds||[]).filter(id=>{ const c=state.clients.find(x=>x.id===id); return c&&c.eligibleAssumed; }).length;
+  b.style.display="flex"; b.innerHTML=`<b>🔔 New VA rates</b><span class="hint">${rdWhen(d.published)}${d.by?" · "+esc(d.by):""}</span><span class="tiers">${["680+","660-679","640-659","620-639"].map(k=>`<span><span class="hint" style="font-family:var(--sans);font-size:11px">${RD_TIER_LABEL[k]}</span> ${pct(t[k])} ${rdArrow(t[k],p[k])}</span>`).join("")}</span>
+    ${n?`<span class="tag-good" style="font-size:13px">✨ ${n} client${n===1?"":"s"} now eligible${assumed?` (${assumed} assumed mid-tier)`:""}</span>`:`<span class="hint">no saved clients newly eligible</span>`}${d.note?`<span class="hint" style="flex-basis:100%;margin-top:-4px"><i>${esc(d.note)}</i></span>`:""}
+    <span style="flex:1"></span>${n?`<button class="btn small" onclick="go('pipeline');setPipeView('eligible')">View</button>`:""}<button class="btn ghost small" onclick="rdDismiss()">Dismiss</button>`; }
+function rdDismiss(){ if(state.rateDesk){ state.rateDesk.dismissed=true; save(); } renderRdBanner(); }
+function rdStatusLine(){ const el=$("rdStatus"); if(!el) return; const d=rdData(); el.innerHTML = d ? `Live: published ${esc(new Date(d.published).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}))}${d.by?" by "+esc(d.by):""} · 680+ ${pct((rdTiers(d)||{})["680+"])} · received ${esc(d.how||"")} ${esc(rdWhen(d.receivedAt))} · relay ${rdSSE&&rdSSE.readyState===1?"<span class='dot on'></span>connected":"<span class='dot off'></span>reconnecting"}` : "No rates received yet — the rate desk hasn’t published, or this computer can’t reach GitHub."; }
+async function rdFetch(fresh){ const base=(state.settings.rdUrl||"https://raw.githubusercontent.com/doubledekr/nmc-rate-desk/main/rates/").replace(/\/+$/,"/");
+  if(fresh){ try{ const api=base.replace(/^https:\/\/raw\.githubusercontent\.com\/([^/]+)\/([^/]+)\/([^/]+)\/(.*)$/,"https://api.github.com/repos/$1/$2/contents/$4rates.json?ref=$3"); if(api!==base){ const r=await fetch(api,{headers:{"Accept":"application/vnd.github.raw+json"},cache:"no-store"}); if(r.ok) return await r.json(); } }catch(e){} }
+  const r=await fetch(base+"rates.json?t="+Date.now(),{cache:"no-store"}); if(!r.ok) throw new Error("HTTP "+r.status); return await r.json(); }
+async function rdPoll(manual){ if(rdBusy) return; rdBusy=true; try{ const j=await rdFetch(false); const changed=rdApply(j, rdData()?"poll":"first"); if(manual) toast(changed?"New rates received":"Rates are current ("+rdWhen((rdData()||{}).published)+")"); }
+  catch(e){ if(manual) toast("Couldn’t reach the rate desk feed ("+e.message+")"); } rdBusy=false; rdStatusLine(); if(!rdSSE) rdSubscribe(); }
+async function rdOnPing(){ for(let i=0;i<3;i++){ try{ const j=await rdFetch(true); if(rdApply(j,"ping")) return; if(rdData()&&j&&j.version===rdData().version&&i>0) return; }catch(e){} await new Promise(r=>setTimeout(r,2500*(i+1))); } }   /* the API can lag the commit by a second or two */
+function rdSubscribe(){ const d=rdData(); const topic=d&&d.ping&&d.ping.topic; const server=(d&&d.ping&&d.ping.server)||"https://ntfy.sh"; if(!topic||!("EventSource" in window)) return; if(rdSSE&&rdSSETopic===topic) return;
+  try{ if(rdSSE) rdSSE.close(); }catch(e){} rdSSETopic=topic; try{ rdSSE=new EventSource(server.replace(/\/+$/,"")+"/"+topic+"/sse"); rdSSE.onmessage=ev=>{ try{ const m=JSON.parse(ev.data); if(m.event==="message") rdOnPing(); }catch(e){} }; rdSSE.onopen=rdStatusLine; rdSSE.onerror=rdStatusLine; }catch(e){ rdSSE=null; } }
+function rdStart(){ clearInterval(rdTimer); rdPoll(false); rdTimer=setInterval(()=>rdPoll(false), 2*60*1000); window.addEventListener("online",()=>{ rdPoll(false); if(rdSSE){ try{ rdSSE.close(); }catch(e){} rdSSE=null; rdSSETopic=""; rdSubscribe(); } }); }
+function rdEligibleIds(){ const t=rdTiers(); if(!t) return []; return state.clients.filter(c=>rdEligibleNow(c,t)).map(c=>c.id); }
+function rdRowBadge(c){ const e=rdEligibleNow(c); if(!e) return ""; const today=c.eligibleDay===todayStr(); return `<br><span class="tag-good" style="margin-top:3px" title="Eligible under today’s rate desk rates">✨ ${RD_TIER_LABEL[e.tier]} ${pct(e.rate)}${e.assumed?" (score unknown)":""} · was ${pct(c.rate)} · drop ${pct(e.drop)}${today?" · today":""}${e.seasonUnknown?" · seasoning?":""}</span>`; }
+function renderRdDesk(){ const el=$("rdDesk"); if(!el) return; const d=rdData(); const H=state.rdHistory||[]; if(!d){ el.innerHTML=""; return; }
+  const t=rdTiers(d)||{}; const p=d.prevTiers||{}; const view=state.rdView||"today"; const tiersOn=state.rdTiersOn||["680+"];
+  const todayISO=todayStr(); const pts=(view==="today"?H.filter(h=>new Date(h.published).toLocaleDateString("en-CA")===todayISO):(()=>{ const byDay={}; H.slice().sort((a,b)=>Date.parse(a.published)-Date.parse(b.published)).forEach(h=>{ byDay[new Date(h.published).toLocaleDateString("en-CA")]=h; }); return Object.values(byDay); })()).slice().sort((a,b)=>Date.parse(a.published)-Date.parse(b.published));
+  const colors={"680+":"#A53222","660-679":"#C9663A","640-659":"#2E6B4F","620-639":"#3A6EA5","600-619":"#7A5BA5","580-599":"#8F8F3A","<580":"#555"};
+  let chart=""; if(pts.length>=2){ const W=560,HH=170,L=46,R=10,T=12,B=26; const vals=[]; pts.forEach(h=>tiersOn.forEach(k=>{ if(h.tiers&&h.tiers[k]!=null) vals.push(h.tiers[k]); })); let lo=Math.min(...vals),hi=Math.max(...vals); if(!(hi-lo>=0.25)){ const m=(hi+lo)/2; lo=m-0.125; hi=m+0.125; }
+    const t0=Date.parse(pts[0].published),t1=Date.parse(pts[pts.length-1].published); const X=x=>L+(x-t0)/Math.max(1,t1-t0)*(W-L-R), Y=v=>T+(hi-v)/(hi-lo)*(HH-T-B);
+    const ticks=[lo,(lo+hi)/2,hi]; chart=`<svg viewBox="0 0 ${W} ${HH}" style="width:100%;height:170px;display:block">`+ticks.map(v=>`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="#EFEAE0"/><text x="${L-6}" y="${Y(v)+4}" font-size="10" text-anchor="end" fill="#5C616E">${v.toFixed(3).replace(/0$/,"")}%</text>`).join("")
+      +tiersOn.map(k=>{ const ps=pts.filter(h=>h.tiers&&h.tiers[k]!=null); if(ps.length<2) return ""; const dd=ps.map((h,i)=>(i?"L":"M")+X(Date.parse(h.published)).toFixed(1)+" "+Y(h.tiers[k]).toFixed(1)).join(" "); return `<path d="${dd}" fill="none" stroke="${colors[k]}" stroke-width="2"/>`+ps.map(h=>`<circle cx="${X(Date.parse(h.published))}" cy="${Y(h.tiers[k])}" r="3" fill="${colors[k]}"><title>${RD_TIER_LABEL[k]} ${pct(h.tiers[k])} — ${new Date(h.published).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}${h.note?" — "+esc(h.note):""}</title></circle>`).join(""); }).join("")
+      +`<text x="${L}" y="${HH-8}" font-size="10" fill="#5C616E">${new Date(t0).toLocaleString("en-US",view==="today"?{hour:"numeric",minute:"2-digit"}:{month:"short",day:"numeric"})}</text><text x="${W-R}" y="${HH-8}" font-size="10" text-anchor="end" fill="#5C616E">${new Date(t1).toLocaleString("en-US",view==="today"?{hour:"numeric",minute:"2-digit"}:{month:"short",day:"numeric"})}</text></svg>`; }
+  else chart=`<div class="hint" style="padding:8px 0">${view==="today"?"One publish so far today — the line starts with the next one.":"The 30-day view fills in as the rate desk publishes on more days."}</div>`;
+  el.innerHTML=`<div class="grid4" style="margin-bottom:10px">${["680+","660-679","640-659","620-639"].map(k=>`<div class="stat"><div class="v">${pct(t[k])} <span style="font-size:13px">${rdArrow(t[k],p[k])}</span></div><div class="l">VA · ${RD_TIER_LABEL[k]} · ${esc(rdWhen(d.published))}</div></div>`).join("")}</div>
+    <div class="hint" style="margin-bottom:6px">${["600-619","580-599","<580"].map(k=>`${RD_TIER_LABEL[k]} ${pct(t[k])} ${rdArrow(t[k],p[k])}`).join(" · ")}${d.note?` · <i>${esc(d.note)}</i>`:""}${d.by?` · ${esc(d.by)}`:""}</div>
+    <div class="btnrow" style="gap:6px;margin-bottom:6px"><button class="btn small ${view==="today"?"":"ghost"}" onclick="state.rdView='today';save();renderRdDesk()">Today</button><button class="btn small ${view==="30d"?"":"ghost"}" onclick="state.rdView='30d';save();renderRdDesk()">30 days</button><span style="width:10px"></span>${RD_TIERS.map(k=>`<button class="btn small ${tiersOn.includes(k)?"":"ghost"}" style="${tiersOn.includes(k)?"background:"+colors[k]+";border-color:"+colors[k]:""}" onclick="rdToggleTier('${k}')">${RD_TIER_LABEL[k]}</button>`).join("")}</div>${chart}`; }
+function rdToggleTier(k){ let on=(state.rdTiersOn||["680+"]).slice(); if(on.includes(k)){ if(on.length>1) on=on.filter(x=>x!==k); } else on.push(k); state.rdTiersOn=on; save(); renderRdDesk(); }
 function eligibleIds(){ return state.clients.filter(c=>{ if(c.quick||isDone(c)) return false;
   if(isInelig(c)&&!onRateWatch(c)) return false;   /* seasoning or fully ineligible: the market alone doesn't make them hot */
   const fr=feedRateFor(c); return targetHit(c) || (fr!=null && c.rate!=null && c.rate-fr>=0.5); }).map(c=>c.id); }
@@ -3324,7 +3407,7 @@ function shade(hex,f){ const m=hex.replace("#",""); if(m.length!==6) return hex;
   return "#"+c.map(x=>x.toString(16).padStart(2,"0")).join(""); }
 function fillSettingsUI(){ const s=state.settings;
   $("setLoName").value=s.loName; $("setLoNmls").value=s.loNmls;
-  $("setLoPhone").value=s.loPhone; $("setLoEmail").value=s.loEmail; if($("setLoTitle")){ $("setLoTitle").value=s.loTitle||LO_CARD_DEFAULTS.loTitle; $("setLoOffice").value=s.loOffice||LO_CARD_DEFAULTS.loOffice; $("setCoSite").value=s.coSite||LO_CARD_DEFAULTS.coSite; $("setPartnerLine").value=s.partnerLine==null?"Powered by Rocket Mortgage":s.partnerLine; const pp=$("partnerLogoPreview"); if(pp) pp.innerHTML=s.partnerLogo==="none"?`<span class="hint">Hidden \u2014 the card shows the text line. <a href="#" onclick="resetPartnerLogo();return false">Use the built-in logo</a></span>`:`<img src="${s.partnerLogo||NMC_PARTNER_LOGO}" style="max-height:60px;max-width:300px;display:block">${s.partnerLogo?`<span class="hint">Your upload \u00b7 <a href="#" onclick="resetPartnerLogo();return false">back to the built-in logo</a></span>`:`<span class="hint">Built in \u2014 ships with the toolkit.</span>`}`; } loCardRender(); $("setFeed").value=s.feedUrl; $("setPoll").checked=!!s.poll; if($("setEmailRich")) $("setEmailRich").checked=!!s.emailRich; if($("setCalTime")) $("setCalTime").value=s.calTime||"10:00"; if($("setCalLen")) $("setCalLen").value=String(s.calLen||30);
+  $("setLoPhone").value=s.loPhone; $("setLoEmail").value=s.loEmail; if($("setLoTitle")){ $("setLoTitle").value=s.loTitle||LO_CARD_DEFAULTS.loTitle; $("setLoOffice").value=s.loOffice||LO_CARD_DEFAULTS.loOffice; $("setCoSite").value=s.coSite||LO_CARD_DEFAULTS.coSite; $("setPartnerLine").value=s.partnerLine==null?"Powered by Rocket Mortgage":s.partnerLine; const pp=$("partnerLogoPreview"); if(pp) pp.innerHTML=s.partnerLogo==="none"?`<span class="hint">Hidden \u2014 the card shows the text line. <a href="#" onclick="resetPartnerLogo();return false">Use the built-in logo</a></span>`:`<img src="${s.partnerLogo||NMC_PARTNER_LOGO}" style="max-height:60px;max-width:300px;display:block">${s.partnerLogo?`<span class="hint">Your upload \u00b7 <a href="#" onclick="resetPartnerLogo();return false">back to the built-in logo</a></span>`:`<span class="hint">Built in \u2014 ships with the toolkit.</span>`}`; } loCardRender(); $("setFeed").value=s.feedUrl; $("setPoll").checked=!!s.poll; if($("setEmailRich")) $("setEmailRich").checked=!!s.emailRich; if($("setRdTier")){ $("setRdTier").value=s.rdTier||"640-659"; $("setRdDrop").value=s.rdDrop==null?0.5:s.rdDrop; $("setRdBanner").checked=s.rdBanner!==false; $("setRdNotify").checked=s.rdNotify!==false; } rdStatusLine(); if($("setCalTime")) $("setCalTime").value=s.calTime||"10:00"; if($("setCalLen")) $("setCalLen").value=String(s.calLen||30);
   $("setReport").value=s.reportUrl||""; $("setGoal").value=s.folderGoal||15; if($("setSeasonLead")) $("setSeasonLead").value=s.seasonLead||7; $("setTeam").value=s.teamUrl||"";
   if($("setHub")) $("setHub").value=s.hub||""; if($("setHubKey")) $("setHubKey").value=s.hubKey||""; updateHubStatus(); updateMirrorStatus();
   const ed=$("sfMapEditor"); if(ed) ed.innerHTML=Object.keys(DEFAULT_SFMAP).map(f=>
@@ -3332,7 +3415,7 @@ function fillSettingsUI(){ const s=state.settings;
 }
 function saveSettingsFromUI(announce){ const s=state.settings;
   s.loName=$("setLoName").value; s.loNmls=$("setLoNmls").value; s.loPhone=$("setLoPhone").value; s.loEmail=$("setLoEmail").value;
-  if($("setLoTitle")){ s.loTitle=$("setLoTitle").value.trim(); s.loOffice=$("setLoOffice").value.trim(); s.coSite=$("setCoSite").value.trim(); s.partnerLine=$("setPartnerLine").value.trim(); } s.feedUrl=$("setFeed").value.trim(); s.poll=$("setPoll").checked; if($("setEmailRich")) s.emailRich=$("setEmailRich").checked; if($("setCalTime")) s.calTime=$("setCalTime").value||"10:00"; if($("setCalLen")) s.calLen=+$("setCalLen").value||30;
+  if($("setLoTitle")){ s.loTitle=$("setLoTitle").value.trim(); s.loOffice=$("setLoOffice").value.trim(); s.coSite=$("setCoSite").value.trim(); s.partnerLine=$("setPartnerLine").value.trim(); } s.feedUrl=$("setFeed").value.trim(); s.poll=$("setPoll").checked; if($("setEmailRich")) s.emailRich=$("setEmailRich").checked; if($("setRdTier")){ s.rdTier=$("setRdTier").value; s.rdDrop=+$("setRdDrop").value||0.5; s.rdBanner=$("setRdBanner").checked; s.rdNotify=$("setRdNotify").checked; } if($("setCalTime")) s.calTime=$("setCalTime").value||"10:00"; if($("setCalLen")) s.calLen=+$("setCalLen").value||30;
   s.reportUrl=$("setReport").value.trim(); s.folderGoal=num($("setGoal").value)||15; if($("setSeasonLead")) s.seasonLead=num($("setSeasonLead").value)||7; s.teamUrl=$("setTeam").value.trim();
   const hub=$("setHub")? $("setHub").value.trim().replace(/\/+$/,"") : (s.hub||"");
   const key=$("setHubKey")? $("setHubKey").value.trim() : (s.hubKey||""); const keyChanged=key!==(s.hubKey||""); s.hubKey=key;
@@ -3381,7 +3464,7 @@ async function fetchRates(){ const url=state.settings.feedUrl||$("setFeed").valu
   }catch(e){ $("feedStatus").textContent="Couldn't reach the feed ("+e.message+"). Check the URL and that the server sends Access-Control-Allow-Origin."; }
 }
 function hubLine(){ return apiBase()? "<br><span style=\"font-size:11px\"><span class=\"dot "+(hubOnline?"on":"off")+"\"></span>hub "+(hubOnline===true?"online":hubOnline===false?"offline":"\u2026")+"</span>" : ""; }
-function updateRatePill(){ const p=$("ratePill");
+function updateRatePill(){ const p=$("ratePill"); { const d=rdData(); if(d&&rdTiers(d)){ const t=rdTiers(d), pv=d.prevTiers||{}; const n=rdEligibleIds().length; p.innerHTML="VA rates \u00b7 "+esc(rdWhen(d.published))+"<br><b>680+ "+pct(t["680+"])+" <span style=\"font-size:12px\">"+rdArrow(t["680+"],pv["680+"])+"</span></b><span style=\"font-size:11.5px\">640\u2013659 "+pct(t["640-659"])+" "+rdArrow(t["640-659"],pv["640-659"])+"</span>"+(n?"<br><span class=\"tag-good\" style=\"margin-top:4px\">\u2728 "+n+" eligible</span>":"")+hubLine(); return; } }
   if(!state.rates||!state.rates.rates){ p.innerHTML="Rate feed<br><b>"+(apiBase()?"waiting for hub":"not connected")+"</b>"+hubLine(); return; }
   const e=Object.entries(state.rates.rates)[0];
   const hotN=eligibleIds().length;
@@ -3814,7 +3897,7 @@ function spark(hist){ if(!hist||hist.length<2) return "";
  if(mx-mn<0.05){mx+=0.05;mn-=0.05;}
  const pts=hist.map((p,i)=>((6+(W-12)*i/(hist.length-1)).toFixed(1))+","+((Hh-6-(Hh-12)*(p.y-mn)/(mx-mn)).toFixed(1))).join(" ");
  return `<svg viewBox="0 0 ${W} ${Hh}" style="width:${W}px;height:${Hh}px;flex:0 0 auto"><polyline points="${pts}" fill="none" stroke="#6B7DA8" stroke-width="2"/></svg>`; }
-function renderDesk(){ if(!$("deskStats")) return; updateMirrorStatus(); const s=state.settings;
+function renderDesk(){ if(!$("deskStats")) return; updateMirrorStatus(); renderRdDesk(); const s=state.settings;
  [["dskName","loName"],["dskNmls","loNmls"],["dskPhone","loPhone"],["dskEmail","loEmail"]].forEach(pair=>{
   const el=$(pair[0]); if(el&&document.activeElement!==el) el.value=s[pair[1]]||""; });
  { const al=pipeAlerts(); const el=$("deskHot"); if(el){ const hot=al.flagged, fut=al.futureDue;
@@ -4620,7 +4703,7 @@ if(DEMO && state.clients.length===0 && !seededFlag){
   seedDemo(); try{ localStorage.setItem("nmc_demo_seeded","1"); }catch(e){}
 }
 if(!state.currentId && state.clients.length) state.currentId=state.clients[0].id;
-bindClientFields(); applyBrandCss(); fillSettingsUI(); updateRatePill(); refreshAll(); setupPolling(); maybeSetup(); renderBmStatus(); maybeBmUpdate(); renderBrandStatus(); amortRestore(); purchRestore(); setTimeout(()=>fetchBrandAssets(false).catch(()=>{}), 3000); initAutosave();
+bindClientFields(); applyBrandCss(); fillSettingsUI(); updateRatePill(); refreshAll(); setupPolling(); renderRdBanner(); setTimeout(rdStart, 1500); maybeSetup(); renderBmStatus(); maybeBmUpdate(); renderBrandStatus(); amortRestore(); purchRestore(); setTimeout(()=>fetchBrandAssets(false).catch(()=>{}), 3000); initAutosave();
 if(DEMO){ try{ sampleTeam(); }catch(e){} }
 if(state.settings.poll && state.settings.feedUrl) fetchRates();
 

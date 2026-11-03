@@ -155,6 +155,7 @@ function createWindow(){
   win.on("close", flushWrites);
   return win;
 }
+app.setAppUserModelId("com.neighborhoodmc.toolkit");   /* Windows: lets desktop notifications show the app name */
 app.whenReady().then(() => {
   Menu.setApplicationMenu(Menu.buildFromTemplate([
     { label: "NMC Toolkit", submenu: [{ role: "reload" }, { role: "toggleDevTools" }, { type: "separator" }, { role: "quit" }] },
