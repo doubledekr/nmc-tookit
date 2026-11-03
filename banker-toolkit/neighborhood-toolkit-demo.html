@@ -351,6 +351,7 @@ table.data tr.rec td{background:var(--cream)}
           <button class="btn" onclick="newClient()">Add client</button>
           <button class="btn ghost" onclick="go('client')">Paste from Salesforce</button>
           <span id="pipeChips" class="btnrow" style="gap:6px;margin-left:6px"></span>
+          <button class="btn ghost" onclick="calMenu(event)" title="Put the follow-ups in this view on your Outlook calendar">📅 Outlook ▾</button>
           <span style="flex:1"></span>
           <input type="search" id="pipeSearch" placeholder="Search name, phone, email, address, loan type…" oninput="renderPipeline()" style="width:260px;min-height:36px">
           <select id="pipeFilter" onchange="renderPipeline()" style="width:auto">
@@ -430,7 +431,7 @@ table.data tr.rec td{background:var(--cream)}
             <div class="field"><label>Loan type</label><select data-f="loanType">
               <option>Conventional</option><option>FHA</option><option>VA</option><option>Jumbo</option><option>DSCR</option><option>Other</option></select></div>
             <div id="streamQuick" class="cur-loan" style="grid-column:1/-1;display:none"></div>
-            <div class="field"><label>Next follow-up</label><div class="chiprow"><input type="date" data-f="followUp" style="flex:1"><input type="time" data-f="followUpTime" style="width:120px;flex:0 0 120px" title="Optional time"></div></div>
+            <div class="field"><label>Next follow-up</label><div class="chiprow"><input type="date" data-f="followUp" style="flex:1"><input type="time" data-f="followUpTime" style="width:120px;flex:0 0 120px" title="Optional time"><button class="chip" onclick="calAddCurrent()" title="Put this follow-up on your Outlook calendar">📅 Add to Outlook</button></div><div class="hint" id="calHint" style="margin-top:4px"></div></div>
             <div class="field" style="grid-column:1/-1"><div id="fuActions"></div><div id="fuLog" class="hint" style="margin-top:4px"></div></div>
             <div class="field"><label>Client time zone <span class="hint" style="display:inline">(NMC is Eastern)</span></label><select data-f="tz">
               <option value="">Auto from phone / address</option><option value="America/New_York">Eastern</option><option value="America/Chicago">Central</option><option value="America/Denver">Mountain</option><option value="America/Phoenix">Arizona (no DST)</option><option value="America/Los_Angeles">Pacific</option><option value="America/Anchorage">Alaska</option><option value="Pacific/Honolulu">Hawaii</option></select></div>
@@ -906,6 +907,7 @@ Discover 6,100 190 24.9"></textarea>
             <div class="field"><label>Phone</label><input type="text" id="setLoPhone"></div>
             <div class="field"><label>Email</label><input type="text" id="setLoEmail"></div>
           </div>
+          <div class="chiprow" style="margin:8px 0 4px;align-items:center"><span><b>Calendar events</b> — follow-ups with no time go on the calendar at</span><input type="time" id="setCalTime" style="width:110px;flex:0 0 110px"><span>for</span><select id="setCalLen" style="width:auto"><option value="15">15 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">1 hour</option></select><span class="hint">A time typed on the follow-up always wins.</span></div>
           <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;margin:8px 0 4px;line-height:1.45"><input type="checkbox" id="setEmailRich" style="width:auto;min-height:0;margin-top:3px"><span><b>Formatted image emails</b> — for the “Proposal as image” Cold reach-out and Full email: bold headings, highlighted numbers, brand fonts, and the image, all in one paste. (The “Proposal as email” options are always formatted.) The email opens addressed with the subject filled in and you paste the body (Ctrl+V / ⌘V). <span class="hint">Off = the current way: the text goes straight into the email and the image is on the clipboard to paste.</span></span></label>
           <div class="btnrow"><button class="btn" onclick="saveSettingsFromUI(true)">Save</button></div>
         </div>
@@ -954,7 +956,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.9.24";
+const TOOLKIT_VERSION = "1.9.25";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1360,6 +1362,7 @@ function bindClientFields(){
     el.addEventListener("input", ()=>{ const c=cur(); if(!c) return;
       if(el.type==="number" && el.validity && el.validity.badInput) return;   /* "6." on the way to 6.25 — leave the field alone until it's a number */
       const f=el.dataset.f; c[f] = el.type==="checkbox" ? el.checked : (el.type==="number") ? num(el.value) : el.value;
+      if(f==="followUp"||f==="followUpTime") renderCalHint();
       if(f==="monthsLeft"){ c.monthsLeftFrom=""; const h=$("mlHint"); if(h) h.innerHTML=""; }
       if(f==="freeClear"){ if(c.freeClear){ c.balance=0; c.rate=null; c.payment=null; c.paymentTotal=null; c.escrow=null; c.monthsLeft=null; c.origAmount=null; c.analysis.anLien="fc"; c.analysis.anProgram="standard"; }
         else if(c.analysis.anLien==="fc"){ c.analysis.anLien="refi"; } fillClientForm(); }
@@ -1379,7 +1382,7 @@ function bindClientFields(){
       save(); if(f==="name") renderPickers(); renderPipeline(); ltvHint(); renderClientBar(); });
   });
 }
-function fillClientForm(){ const c=cur();
+function fillClientForm(){ const c=cur(); setTimeout(renderCalHint,0);
   document.querySelectorAll("#s-client [data-f]").forEach(el=>{
     if(el.type==="checkbox"){ el.checked=!!(c&&c[el.dataset.f]); el.disabled=!c; return; }
     const v = c ? (c[el.dataset.f]==null ? "" : c[el.dataset.f]) : "";
@@ -1472,6 +1475,53 @@ function pipeAlerts(){
     return fr!=null&&c.rate!=null&&c.rate-fr>0&&c.rate-fr<0.5; });
   return {hot,due,watch,season,ratewatch,future,futureDue,flagged};
 }
+/* ---- Outlook calendar: follow-ups become events. An .ics file (opened by Outlook as an appointment to save; several at once
+   from the pipeline) with a stable UID per client, so re-adding a moved follow-up updates the event instead of duplicating it.
+   Floating local times — no time zone block — so the event lands at the banker's wall-clock time wherever it's opened. ---- */
+function calEventFor(c){ if(!c||!c.followUp) return null; const s=state.settings; const time=(c.followUpTime||s.calTime||"10:00").slice(0,5); const len=+s.calLen||30;
+  const [Y,M,D]=c.followUp.split("-").map(Number); const [h,m]=time.split(":").map(Number); const st=new Date(Y,M-1,D,h,m,0); const en=new Date(st.getTime()+len*60000);
+  const prod=PRODUCT_LABELS[clientProduct(c)]||""; const r=c.analysis&&c.analysis.anRate>0?computeAnalysis(c):null; const prods=r&&!r.tooSmall?emailProducts(c,r,"proposal"):[];
+  const line=prods.length?emailOptionLine(prods[0]).replace(/[\u00ab\u00bb]/g,""):""; const last=(c.log||[])[0];
+  const body=[ c.phone?"Phone: "+c.phone:"", c.email?"Email: "+c.email:"", c.address?"Property: "+c.address:"", line?"Proposal: "+line:(prod?"Product: "+prod:""), c.hotNeed?"Need: "+c.hotNeed:"", last?"Last: "+(last.when||"")+" \u2014 "+(last.outcome||""):"", c.notes?"\nNotes: "+c.notes:"", "\nOpened from the NMC Toolkit" ].filter(Boolean).join("\n");
+  return {uid:"nmc-fu-"+c.id+"@nmc-toolkit", title:"Follow up \u2014 "+(c.name||"client")+(prod?" \u00b7 "+prod:""), start:st, end:en, body, location:c.phone||"", client:c}; }
+const icsDT=d=>d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0")+"T"+String(d.getHours()).padStart(2,"0")+String(d.getMinutes()).padStart(2,"0")+"00";
+const icsEsc=x=>String(x||"").replace(/\\/g,"\\\\").replace(/;/g,"\\;").replace(/,/g,"\\,").replace(/\r?\n/g,"\\n");
+function icsFold(line){ const out=[]; let l=line; while(l.length>74){ out.push(l.slice(0,74)); l=" "+l.slice(74); } out.push(l); return out.join("\r\n"); }
+function buildICS(events){ const now=new Date(); const stamp=now.toISOString().replace(/[-:]/g,"").slice(0,15)+"Z"; const seq=Math.floor(now.getTime()/1000);   /* sequence rises each time, so a re-add is seen as the newer version */
+  const v=events.map(e=>["BEGIN:VEVENT","UID:"+e.uid,"DTSTAMP:"+stamp,"SEQUENCE:"+seq,"LAST-MODIFIED:"+stamp,"DTSTART:"+icsDT(e.start),"DTEND:"+icsDT(e.end),"SUMMARY:"+icsEsc(e.title),e.location?"LOCATION:"+icsEsc(e.location):"","DESCRIPTION:"+icsEsc(e.body),"STATUS:CONFIRMED","BEGIN:VALARM","TRIGGER:-PT15M","ACTION:DISPLAY","DESCRIPTION:"+icsEsc(e.title),"END:VALARM","END:VEVENT"].filter(Boolean).map(icsFold).join("\r\n"));
+  return ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Neighborhood Mortgage//NMC Toolkit//EN","CALSCALE:GREGORIAN","METHOD:PUBLISH",...v,"END:VCALENDAR",""].join("\r\n"); }
+function calOutlookLink(e){ const iso=d=>{ const off=-d.getTimezoneOffset(); const sg=off>=0?"+":"-"; const a=Math.abs(off); return icsDT(d).replace(/^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})$/,"$1-$2-$3T$4:$5:$6")+sg+String(Math.floor(a/60)).padStart(2,"0")+":"+String(a%60).padStart(2,"0"); };
+  return "https://outlook.office.com/calendar/deeplink/compose?path=/calendar/action/compose&rru=addevent&subject="+encodeURIComponent(e.title)+"&startdt="+encodeURIComponent(iso(e.start))+"&enddt="+encodeURIComponent(iso(e.end))+"&body="+encodeURIComponent(e.body)+(e.location?"&location="+encodeURIComponent(e.location):""); }
+async function calOpenICS(events, label){ if(!events.length){ toast("No follow-ups with a date in this view"); return; } const ics=buildICS(events); const name=(label||"follow-ups").replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"")+".ics";
+  events.forEach(e=>{ e.client.calAdded=e.client.followUp+" "+(e.client.followUpTime||""); }); save();
+  const n=events.length; const what=n===1?"\u201c"+events[0].title+"\u201d":n+" follow-ups";
+  if(window.nmcDesktop&&window.nmcDesktop.openDraft){ const ok=await window.nmcDesktop.openDraft(name, ics); toast(ok?"Outlook is opening "+what+" \u2014 click Save (or Add to calendar)":"Couldn\u2019t open the calendar file \u2014 it was saved to your temp folder"); }
+  else { const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([ics],{type:"text/calendar"})); a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),2000); toast("Calendar file downloaded ("+name+") \u2014 open it and Outlook adds "+what); }
+  renderCalHint(); if($("pipeTable")) renderPipeline(); }
+function calAddCurrent(){ const c=cur(); if(!c){ toast("Pick a client first"); return; } if(!c.followUp){ toast("Set a follow-up date first"); return; } const e=calEventFor(c); calOpenICS([e], "Follow-up "+(c.name||"")); }
+function calOpenLink(){ const c=cur(); if(!c||!c.followUp){ toast("Set a follow-up date first"); return; } const e=calEventFor(c); c.calAdded=c.followUp+" "+(c.followUpTime||""); save(); window.open(calOutlookLink(e),"_blank","noopener"); renderCalHint(); }
+function calStatus(c){ if(!c||!c.followUp) return ""; const key=c.followUp+" "+(c.followUpTime||""); return c.calAdded===key ? "on" : c.calAdded ? "moved" : ""; }
+function renderCalHint(){ const el=$("calHint"); if(!el) return; const c=cur(); const st=calStatus(c); const s=state.settings;
+  el.innerHTML = !c||!c.followUp ? "" : st==="on" ? "\u2713 On your Outlook calendar for "+esc(c.followUp)+" "+esc(c.followUpTime||(s.calTime||"10:00")+" (default time)")+" \u00b7 <a href=\"#\" onclick=\"calOpenLink();return false\">open in Outlook web instead</a>"
+    : st==="moved" ? "Follow-up changed since it went on your calendar \u2014 <a href=\"#\" onclick=\"calAddCurrent();return false\">re-add it</a> to move the event" : "Goes on the calendar at "+esc(c.followUpTime||(s.calTime||"10:00")+" (default \u2014 set a time above to change it)")+" \u00b7 <a href=\"#\" onclick=\"calOpenLink();return false\">open in Outlook web instead</a>"; }
+let pipeRowsShown=[];
+function calMenu(ev){ ev.preventDefault(); ev.stopPropagation(); const old=$("emailMenu"); if(old){ old.remove(); if(old.dataset.for==="cal") return; }
+  const b=ev.currentTarget||ev.target; const rect=b.getBoundingClientRect(); const m=document.createElement("div"); m.id="emailMenu"; m.dataset.for="cal";
+  const today=new Date().toISOString().slice(0,10); const wk=new Date(); wk.setDate(wk.getDate()+7); const week=wk.toISOString().slice(0,10);
+  const shown=pipeRowsShown.filter(c=>c.followUp); const due=state.clients.filter(c=>!c.quick&&c.followUp&&c.followUp<=today&&!isDone(c)); const thisWeek=state.clients.filter(c=>!c.quick&&c.followUp&&c.followUp>=today&&c.followUp<=week&&!isDone(c));
+  const fresh=xs=>xs.filter(c=>calStatus(c)!=="on"); const opt=(fn,title,sub)=>`<button type="button" onclick="document.getElementById('emailMenu').remove(); ${fn}"><b>${title}</b><span class="hint">${sub}</span></button>`;
+  const viewName=(pipeView==="all"?"the pipeline":$("pipeChips")&&[...$("pipeChips").querySelectorAll("button")].find(x=>!x.classList.contains("ghost"))?[...$("pipeChips").querySelectorAll("button")].find(x=>!x.classList.contains("ghost")).textContent.replace(/\s*\(\d+\)$/,""):"this view");
+  m.innerHTML=`<div class="hint" style="padding:6px 10px 2px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px">Add follow-ups to Outlook \u00b7 one calendar file</div>`
+    +opt(`calAddMany('shown')`,`Everything shown in ${esc(viewName)} (${shown.length})`,`${fresh(shown).length} not on your calendar yet \u00b7 filters and search apply`)
+    +opt(`calAddMany('due')`,`Due today or overdue (${due.length})`,`${fresh(due).length} not on your calendar yet`)
+    +opt(`calAddMany('week')`,`Due in the next 7 days (${thisWeek.length})`,`${fresh(thisWeek).length} not on your calendar yet`)
+    +opt(`calAddMany('shownNew')`,`Only the new ones shown (${fresh(shown).length})`,`Skips follow-ups already added at their current date and time`);
+  m.style.cssText=`position:fixed;left:${Math.min(rect.left, window.innerWidth-340)}px;top:${rect.bottom+4}px;z-index:9000;max-width:340px`; document.body.appendChild(m);
+  setTimeout(()=>document.addEventListener("click", function h(e){ if(!m.contains(e.target)){ m.remove(); document.removeEventListener("click",h); } }),0); }
+function calAddMany(which){ const today=new Date().toISOString().slice(0,10); const wk=new Date(); wk.setDate(wk.getDate()+7); const week=wk.toISOString().slice(0,10);
+  let list = which==="due" ? state.clients.filter(c=>!c.quick&&c.followUp&&c.followUp<=today&&!isDone(c)) : which==="week" ? state.clients.filter(c=>!c.quick&&c.followUp&&c.followUp>=today&&c.followUp<=week&&!isDone(c)) : pipeRowsShown.filter(c=>c.followUp);
+  if(which==="shownNew") list=list.filter(c=>calStatus(c)!=="on");
+  calOpenICS(list.map(calEventFor).filter(Boolean), which==="due"?"Follow-ups due":which==="week"?"Follow-ups this week":"Follow-ups"); }
 /* the product a client's current analysis points at — for the pipeline's product filter and search ("streamline", "hel") */
 const PRODUCT_LABELS={va_irrrl:"VA Streamline (IRRRL)",fha_streamline:"FHA Streamline",refi:"Refinance",cashout:"Cash-out refinance",hel:"Home equity loan",heloc:"HELOC",fc:"Cash-out (free & clear)",none:""};
 function clientProduct(c){ const a=c&&c.analysis; if(!a||!(a.anRate>0)) return "none";
@@ -1493,6 +1543,7 @@ function renderPipeline(){
     (pipeView==="all" || (pipeView==="hot"&&hs.has(c.id)) || (pipeView==="due"&&ds.has(c.id)) || (pipeView==="watch"&&ws.has(c.id)) || (pipeView==="ratewatch"&&rs.has(c.id)) || (pipeView==="season"&&ss.has(c.id)) || (pipeView==="sent"&&c.proposalSent&&!isDone(c)) || (pipeView==="flag"&&c.hot) || (pipeView==="future"&&fs_.has(c.id))))
     .sort((a,b)=>{ if(pipeSort.key){ const va=sortVal(a,pipeSort.key), vb=sortVal(b,pipeSort.key); const cmp = typeof va==="number"&&typeof vb==="number" ? va-vb : String(va).localeCompare(String(vb)); return pipeSort.dir*cmp; }
       return pipeView==="ratewatch" ? (rateDrop(a)??9)-(rateDrop(b)??9) : pipeView==="season" ? seasonDays(a)-seasonDays(b) : 0; });
+  pipeRowsShown=rows;
   const bar=(al.hot.length||al.due.length)?`<div style="background:var(--cream);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.8">\uD83D\uDD14 ${al.hot.length?`<b>${al.hot.length} hot right now:</b> ${al.hot.map(c=>`<a href="#" onclick="pickClient('${c.id}');go('analysis');return false" style="color:var(--brand);font-weight:600">${esc(c.name)}</a>`).join(", ")}. `:""}${al.due.length?`<b>${al.due.length} follow-up${al.due.length===1?"":"s"} due:</b> ${al.due.map(c=>`<a href="#" onclick="pickClient('${c.id}');go('client');return false" style="color:var(--ink)">${esc(c.name)}</a>`).join(", ")}.`:""}</div>`:"";
   const seasonBar = al.season.length && pipeView!=="season" ? `<div style="background:var(--cream);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.8">\uD83D\uDCC5 <b>Seasoning:</b> ${al.season.map(c=>{ const n=seasonDays(c); return `<a href="#" onclick="pickClient('${c.id}');go('client');return false" style="color:var(--brand);font-weight:600">${esc(c.name)}</a> <span class="hint">(${n<=0?"eligible now":"in "+n+" day"+(n===1?"":"s")})</span>`; }).join(", ")} \u2014 <a href="#" onclick="setPipeView('season');return false">view</a></div>` : "";
   const futBar = al.futureDue.length && pipeView!=="future" ? `<div style="background:var(--cream);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.8">\uD83C\uDFE1 <b>Future buyers:</b> ${al.futureDue.map(c=>{ const n=futureDays(c); return `<a href="#" onclick="pickClient('${c.id}');go('client');return false" style="color:var(--brand);font-weight:600">${esc(c.name)}</a> <span class="hint">(${n<=0?"window open":"in "+n+" day"+(n===1?"":"s")}${c.futureProduct?" \u00b7 "+esc(c.futureProduct):""})</span>`; }).join(", ")} \u2014 <a href="#" onclick="setPipeView('future');return false">view</a></div>` : "";
@@ -1509,7 +1560,7 @@ function renderPipeline(){
     <td><span class="${c.status===S_DONE?"tag-good":c.status==="Lost"||(isInelig(c)&&ineligWhy(c)==="fully ineligible")?"tag-warn":"tag-flat"}">${isFuture(c)?"\uD83C\uDFE1 ":""}${esc(c.status)}${isInelig(c)&&ineligWhy(c)==="fully ineligible"?" \u00b7 no follow-up":""}</span>${onRateWatch(c)?`<br><span class="${targetHit(c)?"tag-good":"tag-flat"}" style="margin-top:3px" title="Rate watch">\u23F3 needs ${pct(c.targetRate)}${rateDrop(c)!=null?" (\u2212"+pct(rateDrop(c))+")":""}</span>`:""}${(()=>{ const si=seasonInfo(c); return si?`<br><span class="${si.tag}" style="margin-top:3px">${si.txt.replace(/ \u2014 .*$/,"")}</span>`:""; })()}${(()=>{ const fi=futureInfo(c); return fi?`<br><span class="${fi.tag}" style="margin-top:3px">${fi.txt.replace(/ \u2014 .*$/,"")}</span>`:""; })()}${c.hot&&c.hotNeed?`<br><span class="hint">need: ${esc(c.hotNeed)}</span>`:""}${c.proposalSent?`<br><span class="tag-good" style="margin-top:3px">proposal sent ${esc(c.proposalSent)}${c.proposalsSent>1?" ("+c.proposalsSent+")":""}</span>`:""}</td>
     <td>${esc(c.loanType||"")}${isFuture(c)&&c.futureProduct?`<br><span class="hint">\u2192 ${esc(c.futureProduct)}</span>`:""}</td>
     <td class="num">${c.freeClear?'<span class="tag-good">free &amp; clear</span>':money(c.balance)}</td><td class="num">${c.freeClear?"\u2014":pct(c.rate)}</td><td class="num">${c.freeClear?"\u2014":money(c.payment)}</td>
-    <td>${esc(c.followUp||"\u2014")}${c.followUpTime?" "+esc(c.followUpTime):""}${(ds.has(c.id)||(fuPending&&fuPending.id===c.id))?`<div style="margin-top:4px">${fuButtons(c,true)}</div>`:""}</td>
+    <td>${esc(c.followUp||"\u2014")}${c.followUpTime?" "+esc(c.followUpTime):""}${calStatus(c)==="on"?' <span title="On your Outlook calendar">\uD83D\uDCC5</span>':calStatus(c)==="moved"?' <span title="Follow-up moved since it went on your calendar \u2014 re-add it" style="opacity:.6">\uD83D\uDCC5\u2047</span>':""}${(ds.has(c.id)||(fuPending&&fuPending.id===c.id))?`<div style="margin-top:4px">${fuButtons(c,true)}</div>`:""}</td>
     <td>${op?`<span class="${op.tag}">${op.txt}</span>`:""}</td>
     <td><button class="btn small" onclick="pickClient('${c.id}');go('client')">Open</button></td></tr>`;}).join("")+`</tbody></table>`);
 }
@@ -3168,7 +3219,7 @@ function shade(hex,f){ const m=hex.replace("#",""); if(m.length!==6) return hex;
   return "#"+c.map(x=>x.toString(16).padStart(2,"0")).join(""); }
 function fillSettingsUI(){ const s=state.settings;
   $("setLoName").value=s.loName; $("setLoNmls").value=s.loNmls;
-  $("setLoPhone").value=s.loPhone; $("setLoEmail").value=s.loEmail; $("setFeed").value=s.feedUrl; $("setPoll").checked=!!s.poll; if($("setEmailRich")) $("setEmailRich").checked=!!s.emailRich;
+  $("setLoPhone").value=s.loPhone; $("setLoEmail").value=s.loEmail; $("setFeed").value=s.feedUrl; $("setPoll").checked=!!s.poll; if($("setEmailRich")) $("setEmailRich").checked=!!s.emailRich; if($("setCalTime")) $("setCalTime").value=s.calTime||"10:00"; if($("setCalLen")) $("setCalLen").value=String(s.calLen||30);
   $("setReport").value=s.reportUrl||""; $("setGoal").value=s.folderGoal||15; if($("setSeasonLead")) $("setSeasonLead").value=s.seasonLead||7; $("setTeam").value=s.teamUrl||"";
   if($("setHub")) $("setHub").value=s.hub||""; if($("setHubKey")) $("setHubKey").value=s.hubKey||""; updateHubStatus(); updateMirrorStatus();
   const ed=$("sfMapEditor"); if(ed) ed.innerHTML=Object.keys(DEFAULT_SFMAP).map(f=>
@@ -3176,7 +3227,7 @@ function fillSettingsUI(){ const s=state.settings;
 }
 function saveSettingsFromUI(announce){ const s=state.settings;
   s.loName=$("setLoName").value; s.loNmls=$("setLoNmls").value; s.loPhone=$("setLoPhone").value; s.loEmail=$("setLoEmail").value;
-  s.feedUrl=$("setFeed").value.trim(); s.poll=$("setPoll").checked; if($("setEmailRich")) s.emailRich=$("setEmailRich").checked;
+  s.feedUrl=$("setFeed").value.trim(); s.poll=$("setPoll").checked; if($("setEmailRich")) s.emailRich=$("setEmailRich").checked; if($("setCalTime")) s.calTime=$("setCalTime").value||"10:00"; if($("setCalLen")) s.calLen=+$("setCalLen").value||30;
   s.reportUrl=$("setReport").value.trim(); s.folderGoal=num($("setGoal").value)||15; if($("setSeasonLead")) s.seasonLead=num($("setSeasonLead").value)||7; s.teamUrl=$("setTeam").value.trim();
   const hub=$("setHub")? $("setHub").value.trim().replace(/\/+$/,"") : (s.hub||"");
   const key=$("setHubKey")? $("setHubKey").value.trim() : (s.hubKey||""); const keyChanged=key!==(s.hubKey||""); s.hubKey=key;
