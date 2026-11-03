@@ -319,6 +319,41 @@ table.data tr.rec td{background:var(--cream)}
   #propPreview .brandbar{flex-wrap:wrap;gap:8px}
   #propPreview .brandbar .lo{text-align:left}
 }
+
+/* ---- polish pass (v1.11): one spacing / typography system. Same palette and type, tightened and aligned. ---- */
+label{font-size:11.5px;font-weight:600;color:#5C616E;margin-bottom:4px;line-height:1.3}
+label .hint{display:inline;font-weight:400;font-size:11px;margin:0}
+input[type=text],input[type=number],input[type=email],input[type=tel],input[type=date],input[type=time],input[type=url],select{min-height:36px;padding:0 10px;border-radius:8px;font-size:14px;line-height:1.2}
+select{padding-right:26px}
+textarea{min-height:90px;padding:8px 10px;border-radius:8px}
+.field{margin-bottom:0}.field .chiprow input,.field .chiprow select{min-height:36px}
+.grid2,.grid3,.grid4{gap:10px 14px}#s-client .grid2{align-items:end}
+.grid2>.field,.grid3>.field,.grid4>.field{min-width:0}
+.panel{padding:16px 18px;margin-bottom:12px}
+.panel h2{margin-bottom:10px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}.panel h2 .hint{display:inline;margin:0}
+.screen>h1{font-size:26px;margin-bottom:4px}.screen>.sub{margin-bottom:14px;font-size:14px;max-width:760px}
+.row{gap:12px}.hint{line-height:1.45}
+.chip{min-height:30px;line-height:1.2;display:inline-flex;align-items:center}.btn.small{min-height:32px}
+.inelig .row{gap:8px}
+.benef label{min-height:32px;padding:0 12px}
+.closegrid{display:grid;grid-template-columns:1fr 1fr;gap:6px 8px;margin-bottom:8px}.closegrid .chip{white-space:normal;text-align:left;line-height:1.3;padding:5px 12px;height:auto}
+#presentSrc{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:-2px 0 12px}
+#presentFlow textarea{height:40px!important;min-height:0!important;font-family:inherit;font-size:13.5px}
+.tchart>div{padding:12px 14px}.tchart h3{margin-bottom:6px}
+.tchart .trow.r5{grid-template-columns:1.3fr 1fr .8fr .9fr .85fr}
+.tchart .trow input::placeholder{color:#B5AE9F;font-size:12px}
+.tchart .pw,.tchart .keep{margin-top:8px;padding:8px 11px}
+.docsline{background:var(--cream-soft);border-radius:10px;padding:9px 12px;margin-top:10px;font-size:13.5px;line-height:1.5}.docsline b{color:var(--brand)}
+/* push-back drawer: the T-chart stays on screen while the objection is worked */
+#objDrawer{position:fixed;top:0;right:0;height:100vh;width:380px;background:#fff;border-left:1px solid var(--line);box-shadow:-12px 0 30px rgba(0,0,0,.10);z-index:60;overflow:auto;padding:16px 18px 24px;display:none}
+body.obj-open #objDrawer{display:block}body.obj-open main{margin-right:380px}
+#objDrawer .objflow{grid-template-columns:1fr;gap:8px}#objDrawer h2{font-family:var(--serif);font-size:18px;font-weight:400;margin:0}
+#objDrawer .objbox .objt{font-size:14.5px}#objDrawer .objbox.cl .objt{font-size:17px}
+body.obj-open .tchart .trow{font-size:13px}body.obj-open .tchart .trow input,body.obj-open .tchart .trow select{font-size:13px;padding:4px 6px}
+#pipeTable table.data td{padding:9px 8px}#pipeTable .tag-good,#pipeTable .tag-warn,#pipeTable .tag-flat{white-space:nowrap}#pipeTable td:nth-child(7){white-space:nowrap}
+.dupbar{background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 12px;font-size:13.5px}
+#sfPanel .sfhead{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}#sfPanel .sfhead h2{margin:0;flex:1}#sfPanel .sfhead .tgl{font-size:12px;color:var(--muted)}
+#sfPanel.closed #sfBody{display:none}#sfPanel.closed{padding:12px 18px}
 </style>
 </head>
 <body>
@@ -356,7 +391,7 @@ table.data tr.rec td{background:var(--cream)}
       <div class="panel">
         <div class="btnrow" style="margin-bottom:12px">
           <button class="btn" onclick="newClient()">Add client</button>
-          <button class="btn ghost" onclick="go('client')">Paste from Salesforce</button>
+          <button class="btn ghost" onclick="go('client'); sfUserOpen=true; sfRefresh(); setTimeout(()=>{ const t=$('sfPaste'); if(t) t.focus(); },50)">Paste from Salesforce</button>
           <span id="pipeChips" class="btnrow" style="gap:6px;margin-left:6px"></span>
           <button class="btn ghost" onclick="calMenu(event)" title="Put the follow-ups in this view on your Outlook calendar">📅 Outlook ▾</button>
           <span style="flex:1"></span>
@@ -375,7 +410,7 @@ table.data tr.rec td{background:var(--cream)}
     <!-- ================= CLIENT ================= -->
     <section class="screen" id="s-client">
       <div class="eyebrow">One client, everything about them</div><h1>Client workspace</h1>
-      <div class="sub">Pick a client, or paste a Salesforce record below and the fields fill themselves.</div>
+      <div class="sub">Pick a client, or paste a Salesforce record and the client is created for you.</div>
       <div class="panel">
         <div class="grid3">
           <div class="field"><label>Working on</label><select id="clientPicker" onchange="pickClient(this.value)"></select></div>
@@ -389,7 +424,7 @@ table.data tr.rec td{background:var(--cream)}
           <div class="grid2">
             <div class="field"><label>Full name</label><input type="text" data-f="name"></div>
             <div class="field"><label>Status</label><select data-f="status"></select></div>
-            <div class="field" style="grid-column:1/-1"><label>Disposition <span class="hint" style="display:inline">(one click — Complete counts toward the monthly goal)</span></label>
+            <div class="field" style="grid-column:1/-1"><label>Disposition <span class="hint">· one click · Complete counts toward the monthly goal</span></label>
               <div class="chiprow" id="dispoChips"></div><div class="hint" id="dispoHint" style="margin-top:4px"></div>
               <div id="ineligBox" class="inelig">
                 <div class="t">Why ineligible? Tick what has to change — the pipeline watches for it.</div>
@@ -416,44 +451,49 @@ table.data tr.rec td{background:var(--cream)}
             <div class="field" style="grid-column:1/-1"><label>Property address</label><input type="text" data-f="address"></div>
             <div class="field" style="grid-column:1/-1"><label style="display:block;cursor:pointer;line-height:1.5"><input type="checkbox" data-f="freeClear" style="width:auto;vertical-align:middle;margin-right:6px">Owns the home <b>free and clear</b> (no mortgage) <span class="hint" style="display:inline">— hides the current-loan fields; home value is what matters</span></label></div>
             <div class="field cur-loan"><label>Current loan balance ($)</label><input type="number" data-f="balance" step="1000"></div>
-            <div class="field cur-loan"><label>Original loan amount ($) <span class="hint" style="display:inline">(lets the app work out P&amp;I and months remaining)</span></label>
+            <div class="field cur-loan" title="Lets the app work out P&amp;I and months remaining"><label>Original loan amount ($) <span class="hint">· optional</span></label>
               <div class="chiprow"><input type="number" data-f="origAmount" step="1000" style="flex:1"><select data-f="origTerm" style="width:96px;flex:0 0 96px" title="Original term"><option value="30">30 yr</option><option value="20">20 yr</option><option value="15">15 yr</option><option value="10">10 yr</option></select></div></div>
             <div class="field cur-loan"><label>Current rate (%)</label><input type="number" data-f="rate" step="0.125"></div>
             <div class="field cur-loan" style="grid-column:1/-1"><label style="display:block;cursor:pointer;line-height:1.5"><input type="checkbox" data-f="autoPay" style="width:auto;vertical-align:middle;margin-right:6px">Auto-calculate P&amp;I and escrow from the balance, rate and months <span class="hint" style="display:inline">— off by default; type the real numbers from the statement</span></label></div>
             <div class="field cur-loan"><label>Total monthly payment (PITI)</label><input type="number" data-f="paymentTotal" step="10" placeholder="what they actually pay"></div>
-            <div class="field cur-loan"><label>P&amp;I <span class="hint" style="display:inline">(auto from balance, rate, months — or from the total)</span></label><input type="number" data-f="payment" step="10" placeholder="auto"></div>
-            <div class="field cur-loan"><label>Escrow — taxes &amp; insurance <span class="hint" style="display:inline">(auto = total minus P&amp;I)</span></label><input type="number" data-f="escrow" step="10"></div>
-            <div class="hint" id="payHint" style="grid-column:1/-1;margin-top:-4px"></div>
-            <div class="field cur-loan"><label>Months remaining <span class="hint" style="display:inline">(30 years unless you type it — or auto from the original amount or P&amp;I)</span></label><input type="number" data-f="monthsLeft"><div class="hint" id="mlHint"></div></div>
+            <div class="field cur-loan" title="Auto from balance, rate and months — or from the total"><label>P&amp;I</label><input type="number" data-f="payment" step="10" placeholder="auto"></div>
+            <div class="field cur-loan" title="Auto = total minus P&amp;I"><label>Escrow (taxes &amp; insurance)</label><input type="number" data-f="escrow" step="10"></div>
+            <div class="field cur-loan" title="30 years unless you type it — or auto from the original amount or P&amp;I"><label>Months remaining</label><input type="number" data-f="monthsLeft"></div>
+            <div class="hint cur-loan" id="payHint" style="grid-column:1/-1;margin-top:-2px"></div><div class="hint cur-loan" id="mlHint" style="grid-column:1/-1;margin-top:-2px"></div>
             <div id="loanCheck" class="cur-loan" style="grid-column:1/-1"></div>
-            <div class="field"><label>Est. annual property taxes ($) <span class="hint" style="display:inline">(for new-loan escrow estimates)</span></label><input type="number" data-f="taxAnnual" step="100"></div>
-            <div class="field"><label>Est. annual homeowner’s insurance ($)</label><input type="number" data-f="insAnnual" step="100"></div>
-            <div class="field"><label>Est. home value ($)</label>
-              <div class="chiprow"><input type="number" data-f="value" step="5000" style="flex:1;min-width:120px">
+            <div class="field" title="For new-loan escrow estimates"><label>Annual property taxes ($)</label><input type="number" data-f="taxAnnual" step="100"></div>
+            <div class="field"><label>Annual homeowners insurance ($)</label><input type="number" data-f="insAnnual" step="100"></div>
+            <div class="field" style="grid-column:1/-1"><label>Est. home value ($)</label>
+              <div class="chiprow"><input type="number" data-f="value" step="5000" style="flex:0 1 220px;min-width:140px">
                 <button class="chip" onclick="fetchAVM()" title="Ask the hub's AVM provider for this address">Estimate value</button>
-                <a class="chip" href="https://tpo.pennymac.com/home-value-estimator" target="_blank" rel="noopener" style="text-decoration:none" onclick="pennymacCopy()" title="Opens Pennymac and copies the client’s address so you can paste it in">Pennymac ↗</a></div>
-              <div class="hint" id="valueSrc" style="margin-top:4px"></div></div>
+                <a class="chip" href="https://tpo.pennymac.com/home-value-estimator" target="_blank" rel="noopener" style="text-decoration:none" onclick="pennymacCopy()" title="Opens Pennymac and copies the client’s address so you can paste it in">Pennymac ↗</a>
+                <span class="hint" id="valueSrc" style="margin:0"></span></div></div>
             <div class="field"><label>Credit score</label><input type="number" data-f="fico"></div>
-            <div class="field"><label>Current servicer</label><input type="text" data-f="servicer"></div>
             <div class="field"><label>Loan type</label><select data-f="loanType">
               <option>Conventional</option><option>FHA</option><option>VA</option><option>Jumbo</option><option>DSCR</option><option>Other</option></select></div>
-            <div id="streamQuick" class="cur-loan" style="grid-column:1/-1;display:none"></div>
-            <div class="field"><label>Next follow-up</label><div class="chiprow"><input type="date" data-f="followUp" style="flex:1"><input type="time" data-f="followUpTime" style="width:120px;flex:0 0 120px" title="Optional time"><button class="chip" onclick="calAddCurrent()" title="Put this follow-up on your Outlook calendar">📅 Add to Outlook</button></div><div class="hint" id="calHint" style="margin-top:4px"></div></div>
-            <div class="field" style="grid-column:1/-1"><div id="fuActions"></div><div id="fuLog" class="hint" style="margin-top:4px"></div></div>
-            <div class="field"><label>Client time zone <span class="hint" style="display:inline">(NMC is Eastern)</span></label><select data-f="tz">
+            <div class="field"><label>Current servicer</label><input type="text" data-f="servicer"></div>
+            <div class="field"><label>Client time zone <span class="hint">· NMC is Eastern</span></label><select data-f="tz">
               <option value="">Auto from phone / address</option><option value="America/New_York">Eastern</option><option value="America/Chicago">Central</option><option value="America/Denver">Mountain</option><option value="America/Phoenix">Arizona (no DST)</option><option value="America/Los_Angeles">Pacific</option><option value="America/Anchorage">Alaska</option><option value="Pacific/Honolulu">Hawaii</option></select></div>
             <div class="field" style="grid-column:1/-1"><label>Notes</label><textarea data-f="notes" style="min-height:70px;font-family:inherit"></textarea></div>
           </div>
-          <div id="clientLtv" class="hint"></div>
         </div>
-        <div class="panel" style="flex:1">
-          <h2>Paste from Salesforce</h2>
-          <div class="field"><textarea id="sfPaste" placeholder="Copy the record from Salesforce and paste the whole thing here — labels, values, everything."></textarea></div>
-          <div class="btnrow">
-            <button class="btn" onclick="parseSF()">Parse paste</button><button class="btn ghost" onclick="pasteFromClipboard()">Paste from clipboard &amp; parse</button>
-            <span class="hint">Recognizes the Salesforce lead fields plus phones, emails, rates and dollar amounts. SSN, birthdate, age and marital status are never captured.</span>
+        <div style="flex:1;min-width:300px">
+          <div class="panel" id="sfPanel">
+            <div class="sfhead" onclick="sfToggle()"><h2>Paste from Salesforce</h2><span class="tgl" id="sfTgl">▾</span></div>
+            <div id="sfBody">
+              <div class="field"><textarea id="sfPaste" style="min-height:110px" placeholder="Paste the whole Salesforce record here — the client is created the moment it’s read." onpaste="setTimeout(parseSF,50)"></textarea></div>
+              <div class="btnrow" style="margin-top:8px">
+                <button class="btn small" onclick="parseSF()">Create client from paste</button><button class="btn ghost small" onclick="pasteFromClipboard()">Paste from clipboard</button>
+              </div>
+              <div class="hint" style="margin-top:6px">Reads the lead fields, phones, emails, rates and dollar amounts. SSN, birthdate, age and marital status are never captured. Fix anything on the form once it’s in.</div>
+              <div id="sfPreview" style="margin-top:10px"></div>
+            </div>
           </div>
-          <div id="sfPreview" style="margin-top:12px"></div>
+          <div class="panel" id="fuPanel"><h2>Follow-up <span class="hint">· goes on your Outlook calendar</span></h2>
+            <div class="field"><label>Next follow-up</label><div class="chiprow"><input type="date" data-f="followUp" style="flex:1;min-width:150px"><input type="time" data-f="followUpTime" style="width:118px;flex:0 0 118px" title="Optional time"><button class="chip" onclick="calAddCurrent()" title="Put this follow-up on your Outlook calendar">📅 Add to Outlook</button><span id="fuActions" style="display:inline-flex;gap:6px;align-items:center;margin-left:auto"></span></div><div class="hint" id="calHint" style="margin-top:4px"></div><div id="fuLog" class="hint" style="margin-top:2px"></div></div>
+          </div>
+          <div id="streamQuick" class="cur-loan" style="display:none"></div>
+          <div id="clientLtv" class="hint"></div>
         </div>
       </div>
       <div id="debtHostClient"></div>
@@ -607,14 +647,15 @@ Discover 6,100 190 24.9"></textarea>
     <!-- ================= CALL BLOCKS ================= -->
     <section class="screen" id="s-present">
       <div class="eyebrow">Talk it through, live</div><h1>Presentation <span class="hint" style="display:inline;font-size:14px">— the T-chart</span></h1>
-      <div class="sub">Today on the left, the new loan on the right, benefits and the close underneath. Every number is editable and recalculates as you type — fill it from the client or a saved option, or start blank and type it in: debt names, balances, payments (rate and extra paid optional), then the new payment and rate.</div>
+      <div class="sub">Today on the left, the new loan on the right, benefits and the close underneath — every number recalculates as you type.</div>
       <div class="panel" id="presentFlow"></div>
-      <div class="panel" id="presentSrc"></div>
+      <div id="presentSrc"></div>
       <div class="panel" id="presentChart"></div>
       <div class="panel" id="presentBenefits"></div>
       <div class="panel" id="presentClose"></div>
       <div class="panel" id="presentObj"></div>
     </section>
+    <div id="objDrawer"></div>
     <section class="screen" id="s-tools">
       <div class="eyebrow">Quick math, mid-call</div><h1>Tools</h1>
       <div class="sub">No client needed — everything recalculates as you type. Numbers stay filled in until you clear them.</div>
@@ -984,7 +1025,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.10.6";
+const TOOLKIT_VERSION = "1.11.0";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1170,7 +1211,7 @@ function blankClient(){ return {id:"c"+Date.now()+Math.floor(Math.random()*999),
   phone:"",email:"",address:"",balance:null,rate:null,payment:null,monthsLeft:null,value:null,fico:null,
   servicer:"",loanType:"Conventional",followUp:"",seasonDate:"",ineligRate:false,ineligSeason:false,ineligFull:false,hot:false,hotNeed:"",futureWhen:"",futureWindow:"",futureProduct:"",futurePrice:null,futureNote:"",notes:"",paymentTotal:null,escrow:null,autoPay:false,origAmount:null,origTerm:30,freeClear:false,taxAnnual:null,insAnnual:null,targetRate:null,tz:"",followUpTime:"",log:[],debts:[],debtsTrash:[],options:[],scenarios:[],library:[],prop:{included:[],rec:"",why:""},cmp:{pwypn:false,rec:"",why:"",include:false},
   analysis:{anRate:null,anTerm:30,anCosts:0,anCashOut:0,anSkip:1,anRoll:"yes",anLien:"refi"}}; }
-function newClient(){ const c=blankClient(); state.clients.unshift(c); state.currentId=c.id; save(); refreshAll(); go("client"); toast("New client added"); }
+function newClient(){ sfUserOpen=null; setTimeout(sfRefresh,0); const c=blankClient(); state.clients.unshift(c); state.currentId=c.id; save(); refreshAll(); go("client"); toast("New client added"); }
 function newQuickQuote(){ const c=blankClient(); c.quick=true;
   c.name="Quick quote \u2014 "+new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"});
   state.clients.unshift(c); state.currentId=c.id; save(); refreshAll(); go("client");
@@ -1182,7 +1223,7 @@ function deleteClient(){ const c=cur(); if(!c) return;
   if(!confirm("Delete "+c.name+" and everything attached? This can't be undone.")) return;
   state.clients=state.clients.filter(x=>x.id!==c.id); state.currentId=state.clients[0]?state.clients[0].id:null;
   save(); refreshAll(); toast("Deleted"); }
-function pickClient(id){ if(!id) return; state.currentId=id; const pc=state.clients.find(c=>c.id===id); if(pc&&pc.eligibleSeen===false) pc.eligibleSeen=true; save(); refreshAll(); const ts=$("s-tools"); if(ts&&ts.classList.contains("active")) toolsInit(); }
+function pickClient(id){ sfUserOpen=null; setTimeout(sfRefresh,0); if(!id) return; state.currentId=id; const pc=state.clients.find(c=>c.id===id); if(pc&&pc.eligibleSeen===false) pc.eligibleSeen=true; save(); refreshAll(); const ts=$("s-tools"); if(ts&&ts.classList.contains("active")) toolsInit(); }
 
 function renderPickers(){
   ["clientPicker","priceClientPicker","anClientPicker","propClientPicker","cmpClientPicker","gClientPicker"].forEach(pid=>{
@@ -1318,7 +1359,7 @@ function renderClientBar(){ const bar=$("clientBar"); if(!bar) return; const c=c
     { const e=rdEligibleNow(c); if(e) facts.push(`<span class="tag-good" title="Eligible under today\u2019s rate desk rates">\u2728 eligible since ${pct(e.rate)} (${RD_TIER_LABEL[e.tier]}${e.assumed?", score?":""})</span>`); }
     if(c.hot) facts.push(`<span class="tag-warn">\uD83D\uDD25 hot</span>`); { const fi=futureInfo(c); if(fi) facts.push(`<span class="${fi.tag}">${fi.txt.replace(/ \u2014 .*$/,"")}</span>`); }
     { const t=clientTime(c); const tz=clientTz(c); if(t) facts.push(`<span class="tag-flat" title="${esc(tz)}">\uD83D\uDD52 ${t}${tz!=="America/New_York"?" (their time)":""}</span>`); }
-    bar.innerHTML=`<div class="inner">${card}${bell}<span class="hint" style="margin:0">Working with</span><span class="who">${esc(c.name)}</span><div class="facts">${facts.join("")}</div><span style="flex:1"></span>${sel}<button class="btn ghost small" onclick="go('client')">Open</button><button class="btn ghost small" onclick="clearClient()" title="Deselect">\u2715 Clear</button></div>`; }
+    bar.innerHTML=`<div class="inner">${card}${bell}<span class="hint" style="margin:0">Working with</span><span class="who">${esc(c.name)}</span><div class="facts">${facts.join("")}</div><span style="flex:1"></span><span style="display:inline-flex;gap:6px;align-items:center;white-space:nowrap">${sel}<button class="btn ghost small" onclick="go('client')">Open</button><button class="btn ghost small" onclick="clearClient()" title="Deselect">\u2715</button></span></div>`; }
   const g=$("gClientPicker"); if(g){ g.innerHTML = state.clients.length ? `<option value="" ${!state.currentId?"selected":""}>\u2014 choose a client \u2014</option>`+state.clients.map(x=>`<option value="${x.id}" ${x.id===state.currentId?"selected":""}>${x.quick?"\u26A1 ":""}${esc(x.name)}</option>`).join("") : `<option value="">\u2014 no clients yet \u2014</option>`; }
 }
 /* P&I vs escrow: bankers usually know the total payment; we split it automatically from balance/rate/term */
@@ -1525,7 +1566,7 @@ function fillClientForm(){ const c=cur(); setTimeout(renderCalHint,0);
   const ph=$("payHint"); if(ph) ph.innerHTML=payHintText(c); { const lc=$("loanCheck"); if(lc) lc.innerHTML=loanCheckHTML(c); flagLoanFields(c); }
   renderStreamQuick(c);
   { const sh=$("seasonHint"); if(sh){ const si=c?seasonInfo(c):null; sh.innerHTML = si ? `<span class="${si.tag}">${si.txt}</span>` : ""; } }
-  const fa=$("fuActions"); if(fa) fa.innerHTML=c?fuButtons(c,false):""; const fl=$("fuLog"); if(fl) fl.innerHTML=c?fuLogHTML(c):"";
+  const fa=$("fuActions"); if(fa) fa.innerHTML=c?fuButtons(c,!!c.followUp):""; const fl=$("fuLog"); if(fl) fl.innerHTML=c?fuLogHTML(c):"";
   const dc=$("dispoChips"); if(dc){ dc.innerHTML = !c ? "" : STATUSES.map(st=>`<button class="chip${c.status===st?" on":""}" ${c.status===st?'style="background:var(--brand);color:#fff;border-color:var(--brand)"':''} onclick="dispo('${st.replace(/'/g,"\\'")}')">${st}</button>`).join("");
     const dh=$("dispoHint"); if(dh) dh.innerHTML = !c ? "" : c.status===S_RATE ? (c.ineligFull||(!c.ineligRate&&!c.ineligSeason) ? `Fully ineligible \u2014 off the watch lists. Tick a reason below if something could change that.`
         : [c.ineligRate?`\u23F3 On rate watch \u2014 needs <b>${c.targetRate>0?pct(c.targetRate):"a target rate"}</b>${rateDrop(c)!=null?" ("+pct(rateDrop(c))+" below today\u2019s "+pct(c.rate)+")":""}`:"", c.ineligSeason?`\uD83D\uDCC5 Seasoning \u2014 ${c.seasonDate?"eligible "+c.seasonDate:"set the date"}`:""].filter(Boolean).join(" \u00b7 "))
@@ -1630,7 +1671,7 @@ function calOpenLink(){ const c=cur(); if(!c||!c.followUp){ toast("Set a follow-
 function calStatus(c){ if(!c||!c.followUp) return ""; const key=c.followUp+" "+(c.followUpTime||""); return c.calAdded===key ? "on" : c.calAdded ? "moved" : ""; }
 function renderCalHint(){ const el=$("calHint"); if(!el) return; const c=cur(); const st=calStatus(c); const s=state.settings;
   el.innerHTML = !c||!c.followUp ? "" : st==="on" ? "\u2713 On your Outlook calendar for "+esc(c.followUp)+" "+esc(c.followUpTime||(s.calTime||"10:00")+" (default time)")+" \u00b7 <a href=\"#\" onclick=\"calOpenLink();return false\">open in Outlook web instead</a>"
-    : st==="moved" ? "Follow-up changed since it went on your calendar \u2014 <a href=\"#\" onclick=\"calAddCurrent();return false\">re-add it</a> to move the event" : "Goes on the calendar at "+esc(c.followUpTime||(s.calTime||"10:00")+" (default \u2014 set a time above to change it)")+" \u00b7 <a href=\"#\" onclick=\"calOpenLink();return false\">open in Outlook web instead</a>"; }
+    : st==="moved" ? "Follow-up changed since it went on your calendar \u2014 <a href=\"#\" onclick=\"calAddCurrent();return false\">re-add it</a> to move the event" : "Not on your calendar yet \u2014 Add to Outlook puts it at "+esc(c.followUpTime||(s.calTime||"10:00")+(c.followUpTime?"":" (default)"))+" \u00b7 <a href=\"#\" onclick=\"calOpenLink();return false\">open in Outlook web instead</a>"; }
 let pipeRowsShown=[];
 function calMenu(ev){ ev.preventDefault(); ev.stopPropagation(); const old=$("emailMenu"); if(old){ old.remove(); if(old.dataset.for==="cal") return; }
   const b=ev.currentTarget||ev.target; const rect=b.getBoundingClientRect(); const m=document.createElement("div"); m.id="emailMenu"; m.dataset.for="cal";
@@ -1758,7 +1799,7 @@ function parseSF(){ const text=$("sfPaste").value; if(!text.trim()){ toast("Past
 const SF_KEY2LABEL=(()=>{ const m={}; for(const l in SF_NMC){ if(!m[SF_NMC[l]]) m[SF_NMC[l]]=l; } m.address="address"; return m; })();
 function recordToSFText(fields){ return Object.keys(fields).map(k=>SF_KEY2LABEL[k]? SF_KEY2LABEL[k]+"\n"+fields[k] : "").filter(Boolean).join("\n"); }
 async function pasteFromClipboard(){ try{ const t=await navigator.clipboard.readText(); if(!t||!t.trim()){ toast("Clipboard is empty"); return; }
-  $("sfPaste").value=t; parseSFText(t); toast("Read from the clipboard \u2014 review and apply"); }catch(e){ toast("Browser blocked clipboard access \u2014 paste with Ctrl+V instead"); } }
+  $("sfPaste").value=t; parseSFText(t); }catch(e){ toast("Browser blocked clipboard access \u2014 paste with Ctrl+V instead"); } }
 function parseSFText(text){
   const lines=text.split(/\r?\n/).map(l=>l.trim()); const raw={}; const kept=[];
   for(let i=0;i<lines.length;i++){ const line=lines[i]; if(!line||SF_NOISE.test(line)) continue;
@@ -1836,37 +1877,34 @@ function parseSFText(text){
   const keys=Object.keys(found).filter(k=>k!=="monthsLeftFrom"); const cc=null;   /* a paste never targets the selected client */
   const digits=v=>String(v||"").replace(/\D/g,"").slice(-10);
   const dup=state.clients.find(x=>!x.quick&&((found.phone&&digits(x.phone)&&digits(x.phone)===digits(found.phone))||(found.email&&x.email&&x.email.toLowerCase()===found.email.toLowerCase())));
-  const fmt=(k,v)=> ["balance","payment","paymentTotal","escrow","value","origAmount","taxAnnual","insAnnual"].includes(k)? money(v) : k==="rate"||k==="targetRate"? pct(v) : esc(v);
-  const mlNote = found.monthsLeftFrom ? `<div class="hint">Months remaining (${found.monthsLeft}) is estimated from the record\u2019s ${esc(found.monthsLeftFrom)} against a ${found.origTerm||30}-year term \u2014 untick it to assume 30 years, or correct it on the client after importing.</div>` : "";
-  const fcHint = (found.balance==null||found.balance===0) ? `<div class="hint" style="margin-bottom:6px">No mortgage balance on this lead \u2014 if the home is paid off, tick <b>Owns the home free and clear</b> on the client after creating it.</div>` : "";
-  const hdr = fcHint + (dup ? `<div style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:13px"><b>${esc(dup.name)}</b> is already in your pipeline with this ${found.phone&&digits(dup.phone)===digits(found.phone)?"phone number":"email"}. <button class="btn small" onclick="pickClient('${dup.id}'); go('client'); toast('Opened '+${JSON.stringify(dup.name)})">Open ${esc(dup.name)}</button> <button class="btn ghost small" onclick="applySFTo('${dup.id}')">Update ${esc(dup.name.split(/[ ,&]/)[0])} with this paste</button></div>` : "");
-  $("sfPreview").innerHTML = !keys.length && !debts.length ? `<div class="empty">Nothing recognized \u2014 make sure the lead page was in front when you clicked the bookmarklet, then try again. If it keeps happening, send the page to your admin.</div>` :
-   hdr+(keys.length? `<table class="data"><thead><tr><th></th><th>Field</th><th>Value</th></tr></thead><tbody>`+
-   keys.map(k=>{ const cv=cc?cc[k]:null; const has=cv!=null&&cv!==""; const same=has&&String(cv)===String(found[k]);
-     return `<tr${same?' style="opacity:.55"':''}><td><input type="checkbox" ${same?"":"checked"} data-sfk="${k}"></td><td>${FIELD_LABELS[k]||k}</td><td>${has&&!same?`<span class="hint" style="text-decoration:line-through">${fmt(k,cv)}</span> \u2192 `:""}${fmt(k,found[k])}${same?' <span class="hint">(same)</span>':''}</td></tr>`; }).join("")+`</tbody></table>`+mlNote : "")+
-   (debts.length? `<div class="eyebrow" style="margin-top:12px">Debts to add to the analysis</div><table class="data"><thead><tr><th></th><th>Debt</th><th class="num">Balance</th><th class="num">Payment</th><th class="num">APR (edit later)</th></tr></thead><tbody>`+
-   debts.map((d,i)=>`<tr><td><input type="checkbox" checked data-sfd="${i}"></td><td>${esc(d.name)}</td><td class="num">${money(d.balance)}</td><td class="num">${d.pay!=null?money(d.pay):"\u2014"}</td><td class="num">${d.apr}% est.</td></tr>`).join("")+`</tbody></table>` : "")+
-   `<div class="hint" style="margin-top:6px">SSN, birthdate, age, and marital status are never captured.</div>
-   <div class="btnrow" style="margin-top:10px">
-     <button class="btn" onclick="applySF(true)">Create new client from this</button>
-     <span class="hint">A paste always makes a new client \u2014 it never writes over one you already have.</span></div>`;
+  if(!keys.length && !debts.length){ $("sfPreview").innerHTML=`<div class="empty">Nothing recognized \u2014 make sure the lead page was in front when you clicked the bookmarklet, then try again. If it keeps happening, send the page to your admin.</div>`; return; }
+  if(dup){ const how=found.phone&&digits(dup.phone)===digits(found.phone)?"phone number":"email";
+    $("sfPreview").innerHTML=`<div class="dupbar"><b>${esc(dup.name)}</b> is already in your pipeline with this ${how}.<div class="btnrow" style="margin-top:8px"><button class="btn small" onclick="applySFTo('${dup.id}')">Update their numbers</button><button class="btn ghost small" onclick="applySF(true)">Create a second record</button><button class="btn ghost small" onclick="sfCancel()">Cancel</button></div><div class="hint">Update writes the fields Salesforce has (${keys.length}) and keeps your notes, follow-up and disposition.</div></div>`; return; }
+  applySF(true);
 }
+function sfCancel(){ lastSF=null; const ta=$("sfPaste"); if(ta) ta.value=""; const pv=$("sfPreview"); if(pv) pv.innerHTML=""; }
 function applySFTo(id){ if(!lastSF) return; const c=state.clients.find(x=>x.id===id); if(!c) return; state.currentId=c.id; applySF(false,true); }
 function applySF(asNew,onto){
   if(!lastSF) return; let c=cur();
-  if(!onto){ asNew=true; }                                    /* never overwrite an existing client from a paste */
-  if(asNew||!c){ c=blankClient(); state.clients.unshift(c); state.currentId=c.id; }
-  const F=lastSF.fields||lastSF;
-  document.querySelectorAll("#sfPreview [data-sfk]").forEach(cb=>{ if(!cb.checked&&!asNew) return; const k=cb.dataset.sfk;   /* a brand-new client takes every recognized field */
-    if(k==="notes") c.notes = c.notes? (c.notes.includes(F.notes)? c.notes : c.notes+"\n"+F.notes) : F.notes; else c[k]=F[k];
+  if(!onto){ asNew=true; }                                    /* a paste never silently writes over an existing client */
+  const isBlank=x=>x&&/^(new client)?$/i.test((x.name||"").trim())&&!(x.balance>0)&&!(x.phone||"").trim()&&!(x.email||"").trim()&&!(x.address||"").trim()&&!(x.notes||"").trim();
+  if(asNew&&isBlank(c)){ /* a "New blank client" that was never filled takes the paste instead of leaving an empty record behind */ }
+  else if(asNew||!c){ c=blankClient(); state.clients.unshift(c); state.currentId=c.id; }
+  const F=lastSF.fields||lastSF; const keys=Object.keys(F).filter(k=>k!=="monthsLeftFrom");
+  keys.forEach(k=>{ if(k==="notes") c.notes = c.notes? (c.notes.includes(F.notes)? c.notes : c.notes+"\n"+F.notes) : F.notes; else c[k]=F[k];
     if(k==="monthsLeft"){ c.monthsLeftFrom=F.monthsLeftFrom||""; c.monthsLeftAuto=false; } });
-  document.querySelectorAll("#sfPreview [data-sfd]").forEach(cb=>{ if(!cb.checked) return; const d=lastSF.debts[+cb.dataset.sfd]; if(!d) return;
-    const ex=c.debts.find(x=>x.name===d.name); if(ex){ ex.balance=d.balance; if(d.pay!=null) ex.pay=d.pay; } else c.debts.push(Object.assign({},d)); });
+  (lastSF.debts||[]).forEach(d=>{ const ex=c.debts.find(x=>x.name===d.name); if(ex){ ex.balance=d.balance; if(d.pay!=null) ex.pay=d.pay; } else c.debts.push(Object.assign({},d)); });
   if(asNew && !F.name) c.name="Pasted client";
   normalizePayment(c,"paymentTotal");
-  const nd=lastSF.debts.length; const ta=$("sfPaste"); if(ta) ta.value=""; const pv=$("sfPreview"); if(pv) pv.innerHTML=""; lastSF=null;   /* clear the paste box so the next one starts blank */
-  save(); refreshAll(); toast((asNew?"New client: ":"Updated ")+c.name+(nd?" \u2014 debts added to the analysis":""));
+  const nd=(lastSF.debts||[]).length; const noBal=!(F.balance>0); sfCancel();
+  save(); refreshAll(); go("client"); sfRefresh();
+  toast((asNew?"Created ":"Updated ")+c.name+" \u00b7 "+keys.length+" field"+(keys.length===1?"":"s")+" from Salesforce"+(nd?", "+nd+" debt"+(nd===1?"":"s"):"")+(noBal?" \u2014 no mortgage balance on the lead; tick free and clear if the home is paid off":""));
 }
+/* the paste panel folds away once the client has data; one click reopens it */
+let sfUserOpen=null;
+function sfToggle(){ const p=$("sfPanel"); if(!p) return; sfUserOpen=p.classList.contains("closed"); sfRefresh(); }
+function sfRefresh(){ const p=$("sfPanel"); if(!p) return; const c=cur(); const blank=!c||(!(c.balance>0)&&!(c.phone||"").trim()&&!(c.email||"").trim()&&!(c.address||"").trim());
+  const open = sfUserOpen!=null ? sfUserOpen : blank; p.classList.toggle("closed",!open); const t=$("sfTgl"); if(t) t.textContent=open?"\u25BE":"\u25B8 paste a record"; }
 
 /* ---------- pricing parser ---------- */
 function parsePricing(){
@@ -4467,20 +4505,22 @@ const CLOSES_SEED=["I send you the application link, you e-sign it, and we lock 
 const PRESENT_BENEFITS=[["noOut","No out-of-pocket \u2014 nothing due at closing"],["noAppr","No appraisal"],["noInc","No income re-verification"],["quick","Closes quick \u2014 a couple of weeks, signing comes to you"],["skip","Skip a payment (or two) at closing"],["noPrepay","No prepayment penalty"],["one","One payment instead of several"],["cash","Cash to you at closing"],["escrow","Escrow refund from your current servicer"],["noOrig","No origination fee (lender-paid costs)"]];
 /* closing objection flows (from the NMC objection practice sheet): Frame → Translate (concern + feeling) → Agree → Response (feeling + benefits) → Transition → Close */
 const OBJECTION_FLOWS=[
- {k:"spouse",label:"\u201cI need to talk to my spouse\u201d",frame:"Just out of curiosity\u2026",concern:"Your concern isn\u2019t that s/he won\u2019t like saving money \u2014 obviously s/he will.",feeling:"What you are feeling is we want to keep her/him in the loop on things. Right?",agree:"I\u2019m so glad you brought that up\u2026",response:"Our process is designed so that both you and your spouse know what is happening every step of the way. The great news about this loan is that it accomplishes the goals that you both wanted to achieve, like\u2026",benefit:"Explain how we are accomplishing both of their goals",transition:"The next step in the process is\u2026",close:["Visa","MasterCard"]},
- {k:"shopping",label:"\u201cI want to shop around\u201d",frame:"Just so I\u2019m clear\u2026",concern:"Your concern isn\u2019t that you want to have this mortgage conversation numerous times.",feeling:"What you are feeling is you\u2019re not certain you are getting the best deal. Right?",agree:"I get what you are saying\u2026",response:"And this is the best deal! It\u2019s the best deal for you and your family because\u2026",benefit:"Explain why this is the best deal",transition:"Now I am going to reach for an application\u2026",close:["Debit","Credit card"]},
- {k:"wait",label:"\u201cI want to wait\u201d",frame:"Just so we\u2019re on the same page\u2026",concern:"Your concern isn\u2019t that you aren\u2019t ready to save money \u2014 clearly you are.",feeling:"What you are feeling is you don\u2019t know whether or not you are making the right decision. Correct?",agree:"Thank you for being up front with me.",response:"It is okay to be nervous right now \u2014 this is a really big decision. The reality is this is the right decision because\u2026",benefit:"Explain why it is the right decision",transition:"Now that we know you are making the right decision\u2026",close:["This week","This weekend"]},
- {k:"rate",label:"\u201cThe rate is too high\u201d",frame:"So I understand where you are coming from\u2026",concern:"Your concern isn\u2019t that you think the rate is high (because obviously it is lower than your current rate).",feeling:"What you are feeling is you believe you can get a lower rate than the one we put together for you. Correct?",agree:"It is okay to feel that way\u2026",response:"The reality is, although your rate is important, choosing the correct interest rate for your situation is even more important. The reason why this program makes sense is\u2026",benefit:"Explain why the loan makes sense",transition:"So here is what we are going to do\u2026",close:["Upload","Fax back"]},
- {k:"costs",label:"\u201cThe closing costs are too much\u201d",frame:"To make sure we are seeing eye to eye\u2026",concern:"Your concern isn\u2019t that you can\u2019t pay the closing costs (since we are rolling them into the loan, the loan will take care of that).",feeling:"What you are feeling is you don\u2019t believe you are getting enough in return for the costs. Right?",agree:"That makes sense\u2026",response:"Frankly, I have never worked with a client that enjoyed paying costs. The reason why it makes sense in your circumstance\u2026",benefit:"Explain why paying closing costs makes sense",transition:"Now I am going to get all the documents out to you.",close:["Fax","Email"]}];
-function presentObjPick(k){ presentUI.obj = presentUI.obj===k ? null : k; renderPresentObj(); }
+ {k:"spouse",label:"\u201cI need to talk to my spouse\u201d",frame:"Just out of curiosity\u2026",concern:"Your concern isn\u2019t that s/he won\u2019t like saving money \u2014 obviously s/he will.",feeling:"What you are feeling is we want to keep her/him in the loop on things. Right?",agree:"I\u2019m so glad you brought that up\u2026",response:"Our process is designed so that both you and your spouse know what is happening every step of the way. The great news about this loan is that it accomplishes the goals that you both wanted to achieve, like\u2026",benefit:"Explain how we are accomplishing both of their goals",transition:"The next steps are super simple\u2026",close:"I\u2019m going to send the e-signs to your email and we\u2019ll get you processed immediately."},
+ {k:"shopping",label:"\u201cI want to shop around\u201d",frame:"Just so I\u2019m clear\u2026",concern:"Your concern isn\u2019t that you want to have this mortgage conversation numerous times.",feeling:"What you are feeling is you\u2019re not certain you are getting the best deal. Right?",agree:"I get what you are saying\u2026",response:"And this is the best deal! It\u2019s the best deal for you and your family because\u2026",benefit:"Explain why this is the best deal",transition:"The next steps are super simple\u2026",close:"I\u2019m going to send the e-signs to your email and we\u2019ll get you processed immediately."},
+ {k:"wait",label:"\u201cI want to wait\u201d",frame:"Just so we\u2019re on the same page\u2026",concern:"Your concern isn\u2019t that you aren\u2019t ready to save money \u2014 clearly you are.",feeling:"What you are feeling is you don\u2019t know whether or not you are making the right decision. Correct?",agree:"Thank you for being up front with me.",response:"It is okay to be nervous right now \u2014 this is a really big decision. The reality is this is the right decision because\u2026",benefit:"Explain why it is the right decision",transition:"The next steps are super simple\u2026",close:"I\u2019m going to send the e-signs to your email and we\u2019ll get you processed immediately."},
+ {k:"rate",label:"\u201cThe rate is too high\u201d",frame:"So I understand where you are coming from\u2026",concern:"Your concern isn\u2019t that you think the rate is high (because obviously it is lower than your current rate).",feeling:"What you are feeling is you believe you can get a lower rate than the one we put together for you. Correct?",agree:"It is okay to feel that way\u2026",response:"The reality is, although your rate is important, choosing the correct interest rate for your situation is even more important. The reason why this program makes sense is\u2026",benefit:"Explain why the loan makes sense",transition:"The next steps are super simple\u2026",close:"I\u2019m going to send the e-signs to your email and we\u2019ll get you processed immediately."},
+ {k:"costs",label:"\u201cThe closing costs are too much\u201d",frame:"To make sure we are seeing eye to eye\u2026",concern:"Your concern isn\u2019t that you can\u2019t pay the closing costs (since we are rolling them into the loan, the loan will take care of that).",feeling:"What you are feeling is you don\u2019t believe you are getting enough in return for the costs. Right?",agree:"That makes sense\u2026",response:"Frankly, I have never worked with a client that enjoyed paying costs. The reason why it makes sense in your circumstance\u2026",benefit:"Explain why paying closing costs makes sense",transition:"The next steps are super simple\u2026",close:"I\u2019m going to send the e-signs to your email and we\u2019ll get you processed immediately."}];
+function presentObjPick(k){ const was=presentUI.obj; presentUI.obj = presentUI.obj===k ? null : k; renderPresentObj(); if(presentUI.obj&&!was){ const ch=$("presentChart"); if(ch&&ch.scrollIntoView) ch.scrollIntoView({behavior:"smooth",block:"start"}); } }
 function presentObjNote(k,v){ const c=cur(); if(!c) return; const p=presentState(c); p.objNotes=p.objNotes||{}; p.objNotes[k]=v; save(); }
 function renderPresentObj(){ const c=cur(); if(!$("presentObj")) return; if(!c){ $("presentObj").innerHTML=""; return; } const p=presentState(c); const pm=document.body.classList.contains("present-mode"); const r=presentCalc(c);
   const o=OBJECTION_FLOWS.find(x=>x.k===presentUI.obj);
-  let h=`<h2>If they push back${pm?"":` <span class="hint" style="display:inline">\u2014 tap the objection, follow the boxes top to bottom, end on the soft/hard close</span>`}</h2>
-    <div class="chiprow" style="margin-bottom:10px">${OBJECTION_FLOWS.map(x=>`<button class="chip${o&&o.k===x.k?" on":""}" ${o&&o.k===x.k?'style="background:var(--brand);color:#fff;border-color:var(--brand)"':""} onclick="presentObjPick('${x.k}')">${x.label}</button>`).join("")}</div>`;
-  if(o){ const note=(p.objNotes||{})[o.k]||""; const auto=presentObjAuto(o.k,c,r);
+  const chips=`<div class="chiprow">${OBJECTION_FLOWS.map(x=>`<button class="chip${o&&o.k===x.k?" on":""}" ${o&&o.k===x.k?'style="background:var(--brand);color:#fff;border-color:var(--brand)"':""} onclick="presentObjPick('${x.k}')">${x.label}</button>`).join("")}</div>`;
+  $("presentObj").innerHTML=`<h2>If they push back${pm?"":` <span class="hint">\u2014 tap the objection; it opens beside the T-chart</span>`}</h2>${chips}`;
+  const dr=$("objDrawer"); document.body.classList.toggle("obj-open",!!o); if(!dr) return; if(!o){ dr.innerHTML=""; return; }
+  let h=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px"><h2 style="flex:1">${o.label}</h2><button class="btn ghost small" onclick="presentObjPick('${o.k}')">Close \u2715</button></div>${chips}`;
+  { const note=(p.objNotes||{})[o.k]||""; const auto=presentObjAuto(o.k,c,r);
     const box=(lbl,txt,cls)=>`<div class="objbox${cls?" "+cls:""}"><div class="objl">${lbl}</div><div class="objt">${txt}</div></div>`;
-    h+=`<div class="objflow">
+    h+=`<div class="objflow" style="margin-top:10px">
       ${box("Frame",esc(o.frame))}
       ${box("Translate \u00b7 the concern",esc(o.concern),"tr")}
       ${box("Translate \u00b7 the feeling",esc(o.feeling),"tr")}
@@ -4488,9 +4528,10 @@ function renderPresentObj(){ const c=cur(); if(!$("presentObj")) return; if(!c){
       ${box("Respond \u00b7 the feeling",esc(o.response),"rs")}
       ${box("Respond \u00b7 the benefits",pm?(note?esc(note):auto?esc(auto):`<i>${esc(o.benefit)}</i>`):`<div class="hint" style="margin-bottom:4px">${esc(o.benefit)}${auto?" \u2014 from this presentation:":""}</div>${auto?`<div style="margin-bottom:6px">${esc(auto)}</div>`:""}<textarea rows="2" placeholder="Your words for this client\u2026" oninput="presentObjNote('${o.k}',this.value)" style="font-size:13px;min-height:0">${esc(note)}</textarea>`,"rs")}
       ${box("Transition",esc(o.transition),"tn")}
-      ${box("Close \u00b7 soft / hard",`${esc(o.close[0])} <span class="hint">or</span> ${esc(o.close[1])}?`,"cl")}
+      ${box("Close",esc(o.close),"cl")}
+      ${box("What they\u2019ll need",esc(presentDocsLine(c)))}
     </div>`; }
-  $("presentObj").innerHTML=h; }
+  dr.innerHTML=h; }
 /* the benefits slot pre-filled from the T-chart numbers, so the banker has a concrete line ready */
 function presentObjAuto(k,c,r){ if(!r) return ""; const p=presentState(c); const d=p.d; const bits=[];
   if(r.saveMo>0) bits.push(money(r.saveMo)+" a month stays with you");
@@ -4610,10 +4651,10 @@ function renderPresent(keepFocus){ const c=cur(); if(!$("presentChart")) return;
   if(!c){ $("presentSrc").innerHTML=`<div class="empty">Pick a client first \u2014 or add one and type the numbers in here.</div>`; $("presentChart").innerHTML=""; $("presentBenefits").innerHTML=""; $("presentClose").innerHTML=""; $("presentFlow").innerHTML=""; if($("presentObj")) $("presentObj").innerHTML=""; return; }
   const p=presentState(c); const pm=document.body.classList.contains("present-mode");
   $("presentFlow").innerHTML=`<div class="greet">\u201c${PRESENT_GREETING}\u201d</div>
-    ${pm?(p.intro?`<div class="greet" style="font-size:20px;margin-top:8px;color:#5C616E">${esc(p.intro)}</div>`:""):`<textarea id="pIntro" rows="2" placeholder="Anything to say before the T-chart \u2014 \u201cI pulled your numbers from the statement you sent\u2026\u201d, a reminder, how you want to open" style="margin-top:8px;font-size:14px;min-height:0;height:56px" oninput="presentIntro(this.value)">${esc(p.intro||"")}</textarea>`}
+    ${pm?(p.intro?`<div class="greet" style="font-size:20px;margin-top:8px;color:#5C616E">${esc(p.intro)}</div>`:""):`<textarea id="pIntro" rows="2" placeholder="Anything to say before the T-chart \u2014 \u201cI pulled your numbers from the statement you sent\u2026\u201d" style="margin-top:8px;font-size:14px;min-height:0;height:40px" oninput="presentIntro(this.value)">${esc(p.intro||"")}</textarea>`}
     <div class="flowstrip" style="margin-top:8px"><b style="margin-right:4px">Then:</b><span class="bad">1 \u00b7 Today \u2014 the old side</span><span class="good">2 \u00b7 New \u2014 the good side</span><span>3 \u00b7 Benefits</span><span>4 \u00b7 \u201c${PRESENT_NEXT}\u201d + close</span><span style="flex:1;background:none"></span><button class="btn small" onclick="togglePresentMode()">${pm?"Exit presenting (Esc)":"Present \u2014 big &amp; clean"}</button></div>`;
   const snaps=(c.scenarios||[]).filter(x=>x.kind==="snap");
-  $("presentSrc").innerHTML=`<div class="btnrow" style="flex-wrap:wrap;gap:8px;align-items:center"><button class="btn small" onclick="presentFill('client')">Fill from ${esc(c.name)}</button>
+  $("presentSrc").innerHTML=`<div class="btnrow" style="flex-wrap:wrap;gap:8px;align-items:center;width:100%"><button class="btn small" onclick="presentFill('client')">Fill from ${esc(c.name)}</button>
     ${snaps.length?`<select onchange="if(this.value) presentFill(this.value); this.value=''" style="width:auto"><option value="">Fill from a saved option\u2026</option>${snaps.map(x=>`<option value="snap:${x.id}">${esc(x.label)}</option>`).join("")}</select>`:""}
     <button class="btn ghost small" onclick="presentFill('blank')">Start blank</button>${(presentUI.undo||[]).length&&presentUI.undo[presentUI.undo.length-1].cid===c.id?`<button class="btn ghost small" onclick="presentUndo()" title="Put it back">\u21B6 Undo: ${esc(presentUI.undo[presentUI.undo.length-1].label)}</button>`:""}<span style="flex:1"></span>
     ${p.d?`<button class="btn ghost small" onclick="presentToClient()">Save numbers to client</button><button class="btn small" onclick="copyImage('present')">Copy as image</button><button class="btn ghost small" onclick="downloadImage('present')">Download</button><button class="btn ghost small" onclick="emailImage('present')">Email</button>`:""}</div>
@@ -4632,16 +4673,16 @@ function presentChartHTML(c,edit){ const p=presentState(c); const d=p.d; const r
   const secName=d.secType==="heloc"?"HELOC":"home equity loan";
   /* ---- left ---- */
   let L=`<h3>Today <span class="side">the old side</span></h3>`;
-  if(!(second&&d.hideFirst)) L+=dRow("Mortgage","Balance","Rate","Payment","","","hd")+
-    dRow(`${second?"First mortgage (stays)":"Current mortgage"}${edit?`<div class="hint">months left ${inp("pmL","mortgage.monthsLeft",m.monthsLeft,"num","360","1")}</div>`:(m.monthsLeft?`<div class="hint">${yrsMo(m.monthsLeft)} left</div>`:"")}`,
-      edit?inp("pmB","mortgage.balance",m.balance,"num","185,000","1000"):money(m.balance||0), edit?inp("pmR","mortgage.rate",m.rate,"num","7.25","0.125"):(m.rate>0?pct(m.rate):"\u2014"), edit?inp("pmP","mortgage.payment",m.payment,"num","P&I","1"):money(m.payment||0), "", "");
+  if(!(second&&d.hideFirst)) L+=dRow("Mortgage","Balance","Rate","Payment","Months","","hd")+
+    dRow(`${second?"First mortgage <span class='hint'>stays</span>":"Current mortgage"}`,
+      edit?inp("pmB","mortgage.balance",m.balance,"num","balance","1000"):money(m.balance||0), edit?inp("pmR","mortgage.rate",m.rate,"num","rate","0.125"):(m.rate>0?pct(m.rate):"\u2014"), edit?inp("pmP","mortgage.payment",m.payment,"num","P&I","1"):money(m.payment||0), edit?inp("pmL","mortgage.monthsLeft",m.monthsLeft,"num","360","1"):(m.monthsLeft?yrsMo(m.monthsLeft):""), "");
   if(showDebts){ L+=dRow("Debts","Balance","Rate","Payment","Extra paid","","hd"+(second&&d.hideFirst?"":" gap"))+
     d.debts.map((x,i)=>dRow(
       (edit?`<input id="pd${i}n" type="text" data-pd="${i}.name" value="${esc(x.name||"")}" placeholder="Visa, auto, personal loan" oninput="presentDebt(${i},'name',this.value)">`:esc(x.name||"Debt"))+(edit?`<label class="hint tc${x.toClient?" on":""}" title="Lender sends this one as cash to the client instead of paying the creditor directly"><input type="checkbox" ${x.toClient?"checked":""} onchange="presentDebt(${i},'toClient',this.checked)"> cash to client</label>`:x.toClient?`<div class="hint">paid from cash to you</div>`:""),
       edit?`<input id="pd${i}b" type="number" class="num" step="100" value="${x.balance==null?"":x.balance}" placeholder="balance" oninput="presentDebtEl(${i},'balance',this)">`:money(x.balance),
-      edit?`<input id="pd${i}a" type="number" class="num" step="0.01" value="${x.apr==null?"":x.apr}" placeholder="optional" oninput="presentDebtEl(${i},'apr',this)">`:(x.apr>0?pct(x.apr):"\u2014"),
+      edit?`<input id="pd${i}a" type="number" class="num" step="0.01" value="${x.apr==null?"":x.apr}" placeholder="rate" oninput="presentDebtEl(${i},'apr',this)">`:(x.apr>0?pct(x.apr):"\u2014"),
       (edit?`<input id="pd${i}p" type="number" class="num" step="1" value="${x.pay==null?"":x.pay}" placeholder="monthly" oninput="presentDebtEl(${i},'pay',this)">`:money(x.pay))+(x.payEst?`<div class="hint">est.</div>`:""),
-      edit?`<input id="pd${i}x" type="number" class="num" step="1" value="${x.extra==null||x.extra===0?"":x.extra}" placeholder="optional" oninput="presentDebtEl(${i},'extra',this)">`:(x.extra>0?money(x.extra):"\u2014"),
+      edit?`<input id="pd${i}x" type="number" class="num" step="1" value="${x.extra==null||x.extra===0?"":x.extra}" placeholder="extra" oninput="presentDebtEl(${i},'extra',this)">`:(x.extra>0?money(x.extra):"\u2014"),
       edit?`<button class="btn ghost small" style="padding:2px 6px" onclick="presentDelDebt(${i})" title="Remove">\u2715</button>`:"")).join("")+
     (T.n?dRow("<b>Total</b>",`<b>${money(dBal)}</b>`,`<b>${T.blended!=null?pct(T.blended):"\u2014"}</b>${T.est?`<div class="hint">est. blend</div>`:""}`,`<b>${money(dPay)}</b>${d.debts.some(x=>x.extra>0)?`<div class="hint">incl. extra</div>`:""}`,"","","tsum"):"")+
     (edit?`<div class="btnrow" style="margin-top:6px"><button class="btn ghost small" onclick="presentAddDebt()">+ Add a debt</button><button class="btn ghost small pastebtn" onclick="presentToggle('debtPaste')">${presentUI.debtPaste?"Close paste":"Paste debts\u2026"}</button>${T.n&&!second&&r&&r.blended!=null?`<span class="hint">${pct(r.blended)} blended with the mortgage</span>`:T.n&&T.est?`<span class="hint">blended rate uses a typical rate for debts with no rate typed</span>`:""}</div>`:""); }
@@ -4658,10 +4699,10 @@ function presentChartHTML(c,edit){ const p=presentState(c); const d=p.d; const r
   if(edit) R+=`<div class="trow" style="grid-template-columns:1fr 1fr;border:0"><span>${sel("pLien","lien",d.lien,[["refi","Refinance (new first mortgage)"],["second","Home equity (second mortgage)"]])}</span>
     <span>${second?sel("pSec","secType",d.secType,[["hel","Home equity loan (fixed)"],["heloc","HELOC"]]):sel("pProg","program",d.program,[["standard","Standard / cash-out"],["fha_streamline","FHA Streamline"],["va_irrrl","VA IRRRL"]])}</span></div>`;
   if(edit) R+=`<div class="btnrow" style="margin-bottom:4px"><button class="btn ghost small pastebtn" onclick="presentToggle('termPaste')">${presentUI.termPaste?"Close paste":"Paste new terms\u2026"}</button>${presentUI.lastTerms&&!presentUI.termPaste?`<span class="hint">read: ${presentUI.lastTerms.join(" \u00b7 ")}</span>`:""}</div>${presentUI.termPaste?`<div class="pastebox"><textarea id="pTermPaste" rows="3" placeholder="Paste the quote \u2014 \u201c6.5% 30 yr, payment $1,234, closing costs $4,500, skip 2 payments, no appraisal, nothing out of pocket\u201d">${esc($("pTermPaste")?$("pTermPaste").value:"")}</textarea><div class="btnrow" style="margin-top:6px"><button class="btn small" onclick="presentApplyTerms()">Read the terms</button><span class="hint">Rate, term, payment, costs, cash out, skipped payments and benefit phrases fill in.</span></div></div>`:""}`;
-  R+=`<div class="trow hd"><span>${second?"New "+secName:"New mortgage"}</span><span class="num">Loan</span><span class="num">Rate</span><span class="num">Payment</span><span></span></div>
-    <div class="trow"><span>${r?money(r.newP):"\u2014"} loan${edit?`<div class="hint">term ${sel("pTerm","term",d.term,[[30,"30 yr"],[25,"25 yr"],[20,"20 yr"],[15,"15 yr"],[10,"10 yr"]])}</div>`:`<div class="hint">${d.term} yr</div>`}</span>
-      <span class="num muted">${second?(showDebts&&dBal>0?"pays off "+money(dBal):""):money(m.balance||0)}${!second&&(d.costs||d.cashOut)?"<br><span class='hint'>+ costs/cash</span>":""}</span><span>${inp("pR","rate",d.rate,"num","6.5","0.125")}</span><span class="num">${edit?`<input id="pNP" type="number" class="num" step="1" value="${d.newPay==null?"":d.newPay}" placeholder="${r?Math.round(r.newPay):"payment"}" oninput="presentSetEl('newPay',this)" title="Type the quoted payment, or leave blank to compute it from the loan, rate and term">${r&&d.newPay>0?`<div class="hint">${r.newPayTyped?"typed \u00b7 "+money(pmt(r.newP,d.rate,r.n))+" computed":"below interest \u2014 using computed"}</div>`:r?`<div class="hint">computed \u00b7 type to override</div>`:""}`:`<b>${r?money(r.newPay):"\u2014"}</b>`}</span><span></span></div>`;
-  if(showDebts) R+=d.debts.map(x=>`<div class="trow"><span>${esc(x.name||"Debt")}</span><span class="num paid">${x.toClient?"paid off <span class='hint'>from your cash</span>":"paid off <span class='hint'>by lender</span>"}</span><span></span><span class="num paid">$0</span><span></span></div>`).join("");
+  R+=`<div class="trow hd r5"><span>New loan</span><span class="num">Loan</span><span class="num">Rate</span><span class="num">Payment</span><span class="num">Term</span></div>
+    <div class="trow r5"><span>${r?money(r.newP):"\u2014"} loan</span>
+      <span class="num muted">${second?(showDebts&&dBal>0?"pays off "+money(dBal):""):money(m.balance||0)}${!second&&(d.costs||d.cashOut)?"<br><span class='hint'>+ costs/cash</span>":""}</span><span>${inp("pR","rate",d.rate,"num","rate","0.125")}</span><span class="num">${edit?`<input id="pNP" type="number" class="num" step="1" value="${d.newPay==null?"":d.newPay}" placeholder="${r?Math.round(r.newPay):"payment"}" oninput="presentSetEl('newPay',this)" title="Type the quoted payment, or leave blank to compute it from the loan, rate and term">${r&&d.newPay>0?`<div class="hint">${r.newPayTyped?"typed \u00b7 "+money(pmt(r.newP,d.rate,r.n))+" computed":"below interest \u2014 using computed"}</div>`:r?`<div class="hint">auto</div>`:""}`:`<b>${r?money(r.newPay):"\u2014"}</b>`}</span><span class="num">${edit?sel("pTerm","term",d.term,[[30,"30 yr"],[25,"25 yr"],[20,"20 yr"],[15,"15 yr"],[10,"10 yr"]]):`${d.term} yr`}</span></div>`;
+  if(showDebts) R+=d.debts.map(x=>`<div class="trow r5"><span>${esc(x.name||"Debt")}</span><span class="num paid">${x.toClient?"paid off <span class='hint'>from cash</span>":"paid off"}</span><span></span><span class="num paid">$0</span><span></span></div>`).join("");
   { const cash=presentCash(d); if(cash.total>0) R+=`<div class="cashline"><span>Cash to you at closing</span><b>${money(cash.total)}</b>${cash.toClient>0?`<div class="hint">${money(cash.toClient)} covers ${cash.names.join(", ")}${cash.extra>0?" + "+money(cash.extra)+" to keep":""} \u2014 it\u2019s your money, but the numbers here assume those get paid.</div>`:""}</div>`; }
   if(edit) R+=`<div class="trow" style="grid-template-columns:repeat(4,1fr) 0;border:0;margin-top:4px">
       <span><span class="hint">Costs</span>${inp("pC","costs",d.costs,"num","0","500")}</span>
@@ -4694,10 +4735,16 @@ function presentAddBenefit(){ const el=$("pBenNew"); const t=(el?el.value:"").tr
 function presentDelBenefit(t){ state.settings.benefitsCustom=(state.settings.benefitsCustom||[]).filter(x=>x!==t); state.clients.forEach(c=>{ if(c.present&&c.present.ben) delete c.present.ben["c:"+t]; }); save(); renderPresentBenefits(); }
 function renderPresentClose(){ const c=cur(); if(!c||!$("presentClose")) return; const p=presentState(c); const lib=(state.settings.closes&&state.settings.closes.length)?state.settings.closes:CLOSES_SEED.slice();
   const cur_=p.close||p.closeCustom||"";
-  if(document.body.classList.contains("present-mode")){ $("presentClose").innerHTML=`<h2>The close</h2><div class="greet">\u201c${PRESENT_NEXT}\u201d</div>${cur_?`<div class="greet" style="margin-top:8px">\u201c${esc(cur_)}\u201d</div>`:`<div class="hint">(pick a close line before presenting)</div>`}`; return; }
-  $("presentClose").innerHTML=`<h2>The close</h2><div class="greet" style="margin-bottom:10px">\u201c${PRESENT_NEXT}\u201d <span class="hint" style="display:inline;font-size:12px">\u2014 then one of these, or your own:</span></div><div class="chiprow" style="margin-bottom:8px">${lib.map(t=>`<button class="chip${p.close===t?" on":""}" ${p.close===t?'style="background:var(--brand);color:#fff;border-color:var(--brand)"':""} onclick="presentClose('${t.replace(/'/g,"\\'")}')" title="Use this line">${esc(t)}</button>`).join("")}</div>
+  const docs=presentDocsLine(c);
+  if(document.body.classList.contains("present-mode")){ $("presentClose").innerHTML=`<h2>The close</h2><div class="greet">\u201c${PRESENT_NEXT}\u201d</div>${cur_?`<div class="greet" style="margin-top:8px">\u201c${esc(cur_)}\u201d</div>`:`<div class="hint">(pick a close line before presenting)</div>`}<div class="docsline" style="font-size:16px"><b>What I\u2019ll need from you:</b> ${docs}</div>`; return; }
+  $("presentClose").innerHTML=`<h2>The close</h2><div class="greet" style="margin-bottom:10px">\u201c${PRESENT_NEXT}\u201d <span class="hint" style="display:inline;font-size:12px">\u2014 then one of these, or your own:</span></div><div class="closegrid">${lib.map(t=>`<button class="chip${p.close===t?" on":""}" ${p.close===t?'style="background:var(--brand);color:#fff;border-color:var(--brand)"':""} onclick="presentClose('${t.replace(/'/g,"\\'")}')" title="Use this line">${esc(t)}</button>`).join("")}</div>
     <div class="btnrow"><input type="text" id="pCloseCustom" value="${esc(p.closeCustom||"")}" placeholder="\u2026or type your own close" style="flex:1" oninput="presentCloseCustom(this.value)"><button class="btn ghost small" onclick="presentSaveClose()">Save line to my closes</button>${(state.settings.closes||[]).includes(p.close)?`<button class="btn ghost small" onclick="presentDelClose('${(p.close||"").replace(/'/g,"\\'")}')">Remove from my closes</button>`:""}</div>
-    ${cur_?`<div class="keep" style="margin-top:10px;font-size:16px;background:var(--cream-soft);color:var(--ink)"><b style="font-family:var(--serif);font-size:20px;font-weight:400">\u201c${esc(cur_)}\u201d</b></div>`:""}`; }
+    ${cur_?`<div class="keep" style="margin-top:10px;font-size:16px;background:var(--cream-soft);color:var(--ink)"><b style="font-family:var(--serif);font-size:20px;font-weight:400">\u201c${esc(cur_)}\u201d</b></div>`:""}
+    <div class="docsline"><b>What I\u2019ll need from you:</b> ${docs}</div>`; }
+/* what the client has to send, by the product on the T-chart */
+function presentDocsLine(c){ const d=c&&c.present&&c.present.d; const stream=d&&(d.program==="va_irrrl"||d.program==="fha_streamline"); const second=d&&d.lien==="second";
+  if(stream) return "just your most recent mortgage statement.";
+  return "your last 2 years of W-2s, 2 most recent pay stubs, most recent mortgage statement and homeowners insurance declaration page"+(second?"":"")+" \u2014 or your award letters if the income is Social Security or VA."; }
 function presentSheetHTML(){ const c=cur(); if(!c) return `<div class="empty">Pick a client.</div>`; const p=presentState(c); if(!p.d) return `<div class="empty">Fill the presentation first.</div>`; const r=presentCalc(c); const s=state.settings;
   const bens=PRESENT_BENEFITS.filter(([k])=>p.ben[k]).map(([k,l])=>{ if(k==="skip"&&r&&r.skipCash>0) return `Skip ${r.skipN} payment${r.skipN>1?"s":""} \u2014 about ${money(r.skipCash)} stays with you`; if(k==="cash"){ const cash=presentCash(p.d); if(cash.total>0) return `${money(cash.total)} cash to you at closing`; } if(k==="one"&&r&&r.debts.length>1) return `One payment instead of ${r.debts.length+1}`; return l; }).concat((state.settings.benefitsCustom||[]).filter(t=>p.ben["c:"+t]).map(esc));
   const close=p.close||p.closeCustom||"";
@@ -4772,7 +4819,7 @@ function toolsToQuote(){ const m=toolsModel(); if(!m.ok){ toast("Fill in today's
 /* one debts panel (table, Add debt, Paste a list) shared by the Client workspace and the Savings analysis: it moves to whichever screen is open */
 function placeDebtPanel(s){ const p=$("debtPanel"); if(!p) return; if(s==="client"){ const h=$("debtHostClient"); if(h&&p.parentNode!==h) h.appendChild(p); }
   else if(s==="analysis"){ const m=$("debtHome"); if(m&&p.previousElementSibling!==m) m.insertAdjacentElement("afterend",p); } }
-function go(s){ document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));
+function go(s){ if(s!=="present"&&document.body.classList.contains("obj-open")){ presentUI.obj=null; document.body.classList.remove("obj-open"); } document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));
   $("s-"+s).classList.add("active"); placeDebtPanel(s);
   if(s==="tmpl") renderTemplates();
   if(s==="tools") toolsInit();
