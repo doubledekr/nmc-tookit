@@ -587,11 +587,10 @@ Discover 6,100 190 24.9"></textarea>
         <div class="grid3">
           <div class="field"><label>Client</label><select id="propClientPicker" onchange="pickClient(this.value)"></select></div>
           <div class="field" style="display:none"><label>Pricing option on proposal</label><select id="propOption" onchange="renderProposalPreview()"></select></div>
-          <div class="field" style="align-self:end"><div class="btnrow"><button class="btn" onclick="copyImage('proposal')">Copy proposal</button><button class="btn ghost" onclick="emailMenu(event,'proposal')">Email ▾</button><button class="btn ghost" onclick="textMenu(event,'proposal')" title="A short text to send with the email, copied to the clipboard">Text ▾</button><button class="btn ghost" onclick="exportImage('proposal')">Save image</button><button class="btn ghost" onclick="exportPDF()">PDF</button><button class="btn ghost" onclick="librarySave('proposal')">Save to library</button><button class="btn ghost" id="propSaveOpt" onclick="addSnapScenario(); renderProposalPreview()" title="Keep this proposal's set-up as a saved option, so it can sit side by side with others">Save as an option</button><button class="btn ghost" onclick="librarySave('proposal'); markSentLatest('text')" title="Logs this proposal as sent by text (Email marks itself automatically)">Mark sent by text</button></div></div>
+          <div class="field" style="align-self:end"><div class="btnrow"><button class="btn" onclick="copyImage('proposal')">Copy proposal</button><button class="btn ghost" onclick="sendMenu(event,'proposal')" title="Email drafts, image emails, texts and post-close next-steps emails">Send ▾</button><button class="btn ghost" onclick="exportImage('proposal')">Save image</button><button class="btn ghost" onclick="exportPDF()">PDF</button><button class="btn ghost" onclick="librarySave('proposal')">Save to library</button><button class="btn ghost" id="propSaveOpt" onclick="addSnapScenario(); renderProposalPreview()" title="Keep this proposal's set-up as a saved option, so it can sit side by side with others">Save as an option</button><button class="btn ghost" onclick="librarySave('proposal'); markSentLatest('text')" title="Logs this proposal as sent by text (Email marks itself automatically)">Mark sent by text</button></div></div>
         </div>
         <div class="field"><div class="chiprow" style="gap:16px">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="propBadge" style="width:auto;min-height:0" onchange="setPropFlag('badge',this.checked)"> NMC mortgage badge</label>
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="propAwards" style="width:auto;min-height:0" onchange="setPropFlag('awards',this.checked)"> 2024 Rocket award badges</label>
+          
           <span class="hint" id="propBrandHint"></span></div></div>
         <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="propAmort" style="width:auto" checked onchange="setPropAmort(this.checked)"> Include the year-by-year amortization table on the proposal</label></div>
         <div class="field"><label>Personal note to client (optional)</label><textarea id="propNote" style="min-height:60px;font-family:inherit" oninput="renderProposalPreview()" placeholder="e.g. Maria — here's the consolidation option we walked through on Tuesday."></textarea></div>
@@ -915,7 +914,7 @@ Discover 6,100 190 24.9"></textarea>
         </div>
         <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--line)">
           <div class="eyebrow" style="font-size:11px">Brand images on proposals</div>
-          <p class="hint" style="margin:4px 0 6px">The NMC mortgage badge and the 2024 Rocket award badges come from neighborhoodmc.com and are cached here, so proposals embed them offline. <span id="brandStatus"></span> <button class="btn ghost small" onclick="fetchBrandAssets(true).then(()=>toast('Brand images refreshed'))">Refresh brand images</button></p>
+          
         </div>
         <p class="hint" style="margin-top:10px">Linking the hub turns on live rates, team stats, the template library, and a server backup of this save file. No VPN or offline? Everything core keeps working from your local copy and catches up on its own.</p>
       </div>
@@ -985,7 +984,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.10.2";
+const TOOLKIT_VERSION = "1.10.3";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2982,7 +2981,7 @@ function emailParts(c,r,kind,variant,opts){ const s=state.settings; variant=vari
     {t:"h",x:"Why Neighborhood Mortgage"},{t:"p",x:NMC_WHY_BODY},
     {t:"p",x:`Call or text me at \u00ab${phone}\u00bb, or reply here, with any questions \u2014 or if you\u2019re ready, just say the word and I\u2019ll get the application link over to you.`},
     {t:"p",x:"Blessings,"},{t:"sig",x:sig}]; }
-const strip=x=>String(x).replace(/[\u00ab\u00bb]/g,"");
+const strip=x=>String(x).replace(/[\u00ab\u00bb]/g,"").replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,"$1 ($2)");
 function emailRenderText(parts){ let out=""; parts.forEach((p,i)=>{ if(p.t==="img") return; const next=parts[i+1]; let t; if(p.t==="h") t=strip(p.x)+":"; else if(p.t==="ul") t=p.x.map(l=>"\u2022 "+strip(l)).join("\n"); else if(p.t==="ol") t=p.x.map((l,i)=>(i+1)+". "+strip(l)).join("\n"); else if(p.t==="sig") t=p.x.join("\n"); else t=strip(p.x);
   out += t + (next ? ((p.t==="h")||(next.t==="sig") ? "\n" : (next.t==="img"&&parts[i+2]) ? "\n\n" : "\n\n") : ""); }); return out; }
 /* Email markup rule: say everything twice — as an HTML attribute or tag (<font face size color>, <b>, bgcolor, cellpadding,
@@ -2998,7 +2997,8 @@ const emHL=(x,col,bold)=>`<span style="background-color:${col||EM_HL};color:inhe
 const emRow=(inner,pad)=>`<tr><td${pad?` style="padding-top:${pad}px"`:""}>${inner}</td></tr>`;
 const emGap=(h)=>`<tr><td height="${h}" style="height:${h}px;font-size:${h}px;line-height:${h}px">&nbsp;</td></tr>`;
 const emTable=(rows,extra)=>`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"${extra||""}>${rows}</table>`;
-function emailRenderHTML(parts, imgSrc){ const hl=x=>esc(String(x)).replace(/«([^»]*)»/g,(m,g)=>emHL(g));
+const emLinks=x=>x.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,(m,t,u)=>`<a href="${u}" style="color:#A53222;text-decoration:underline">${t}</a>`);
+function emailRenderHTML(parts, imgSrc){ const hl=x=>emLinks(esc(String(x))).replace(/\u00ab([^\u00bb]*)\u00bb/g,(m,g)=>emHL(g));
   const body=x=>emF(x,{px:15,lh:1.5});
   const rows=parts.map((p,i)=>{
     if(p.t==="img") return imgSrc?emRow(`<img src="${imgSrc}" alt="Proposal" width="620" style="max-width:100%;width:620px;border:1px solid #E2DCCF">`)+emGap(10):"";
@@ -3088,6 +3088,7 @@ async function emailProposal(kind, snapId, variant){ const c=cur(); const snap=s
 /* Open the proposal as a mail draft: an .eml file whose body IS the formatted HTML, with X-Unsent so Outlook opens it as a
    draft to send rather than a received message. No paste, so no paste filter. Desktop: written to temp and opened; browser: downloaded. */
 /* quoted-printable: every mail client decodes it, and a viewer that doesn't still shows readable text (base64 shows as a wall of characters) */
+function emlB64(str){ const b=btoa(unescape(encodeURIComponent(str))); return b.replace(/(.{76})/g,"$1\r\n"); }
 function emlQP(str){ const bytes=new TextEncoder().encode(str.replace(/\r?\n/g,"\r\n")); let out="", line="";
   const push=(tok)=>{ if(line.length+tok.length>74){ out+=line+"=\r\n"; line=""; } line+=tok; };
   for(let i=0;i<bytes.length;i++){ const b=bytes[i];
@@ -3097,18 +3098,19 @@ function emlQP(str){ const bytes=new TextEncoder().encode(str.replace(/\r?\n/g,"
 function emlHeader(v){ return /^[\x20-\x7e]*$/.test(v) ? v : "=?utf-8?B?"+btoa(unescape(encodeURIComponent(v)))+"?="; }
 function buildEML(to, subject, html, text){ const b="----=_nmc_"+Date.now().toString(36); const s=state.settings; const from=(s.loEmail||"").trim();
   return [ from?`From: ${emlHeader(s.loName||"")} <${from}>`:"", to?`To: ${to}`:"", `Subject: ${emlHeader(subject)}`, "X-Unsent: 1", "MIME-Version: 1.0", `Content-Type: multipart/alternative; boundary="${b}"`, "",
-    `--${b}`, "Content-Type: text/plain; charset=utf-8", "Content-Transfer-Encoding: quoted-printable", "", emlQP(text), `--${b}`, "Content-Type: text/html; charset=utf-8", "Content-Transfer-Encoding: quoted-printable", "",
-    emlQP(`<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;padding:12px;background:#ffffff">${html}</body></html>`), `--${b}--`, "" ].filter(l=>l!==null).join("\r\n"); }
+    `--${b}`, "Content-Type: text/plain; charset=utf-8", "Content-Transfer-Encoding: quoted-printable", "", emlQP(text), `--${b}`, "Content-Type: text/html; charset=utf-8", "Content-Transfer-Encoding: base64", "",
+    emlB64(`<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;padding:12px;background:#ffffff">${html}</body></html>`), `--${b}--`, "" ].filter(l=>l!==null).join("\r\n"); }
 async function emailDraftEML(kind, snapId, variant){ const c=cur(); const snap=snapId?libSnap(snapId):null; variant=variant||"blank";
   const html = snap ? snap.html : (kind==="compare" ? compareHTML() : proposalHTML()); if(html.includes('class="empty"')){ toast(kind==="compare"?"Add at least two complete scenarios first":"Finish the analysis first"); return; }
   const r=c&&!snap&&computeAnalysis(c); const title=snap?snap.title:sheetTitle(kind,c,r); if(!snap&&c) libraryAdd(kind, html, title);
   const marks=(!snap&&c&&c.prop&&c.prop.marks)||[]; const {html:emailHtml, text}=emailProposalMessage(c, r&&!r.tooSmall?r:null, kind, variant, html, marks);
-  const to=(c&&c.email)||""; const subject=emailSubjectFor(c, r&&!r.tooSmall?r:null, kind, variant, title); const eml=buildEML(to, subject, emailHtml, text);
-  const name=(subject.replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"")||"proposal")+".eml";
+  const to=(c&&c.email)||""; const subject=emailSubjectFor(c, r&&!r.tooSmall?r:null, kind, variant, title);
   if(c){ const e=snap||c.library[0]; if(e&&!e.sent) libSent(e.id,"email"); }
-  if(window.nmcDesktop&&window.nmcDesktop.openDraft){ const ok=await window.nmcDesktop.openDraft(name, eml); toast(ok?"Draft opened in your mail app"+(to?" to "+to:"")+" — it’s the formatted email itself, nothing to paste"+hlCountNote(marks):"Couldn’t open the draft — the .eml was saved to your temp folder"); return; }
+  await openEmlDraft(to, subject, emailHtml, text, hlCountNote(marks)); }
+async function openEmlDraft(to, subject, html, text, note){ const eml=buildEML(to, subject, html, text); const name=(subject.replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"")||"email")+".eml";
+  if(window.nmcDesktop&&window.nmcDesktop.openDraft){ const ok=await window.nmcDesktop.openDraft(name, eml); toast(ok?"Draft opened in your mail app"+(to?" to "+to:"")+" \u2014 it\u2019s the formatted email itself, nothing to paste"+(note||""):"Couldn\u2019t open the draft \u2014 the .eml was saved to your temp folder"); return; }
   const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([eml],{type:"message/rfc822"})); a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
-  toast("Draft downloaded ("+name+") — open it and Outlook shows it as a draft to send"+hlCountNote(marks)); }
+  toast("Draft downloaded ("+name+") \u2014 open it and Outlook shows it as a draft to send"+(note||"")); }
 async function copyProposalEmail(kind, snapId, variant){ const c=cur(); const snap=snapId?libSnap(snapId):null; const html = snap ? snap.html : (kind==="compare" ? compareHTML() : proposalHTML()); if(html.includes('class="empty"')){ toast("Finish the analysis first"); return; }
   const r=c&&!snap&&computeAnalysis(c); const marks=(!snap&&c&&c.prop&&c.prop.marks)||[]; const {html:emailHtml, text}=emailProposalMessage(c, r&&!r.tooSmall?r:null, kind, variant||"blank", html, marks);
   let copied=false; try{ if(navigator.clipboard && window.ClipboardItem){ await navigator.clipboard.write([new ClipboardItem({"text/html":new Blob([emailHtml],{type:"text/html"}),"text/plain":new Blob([text],{type:"text/plain"})})]); copied=true; } }catch(e){}
@@ -3139,6 +3141,65 @@ function textMenu(ev, kind){ ev.preventDefault(); ev.stopPropagation(); const ol
   m.innerHTML=`<div class="hint" style="padding:6px 10px 2px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px">Text to go with the email · copied to clipboard</div>`+opt("with","Email’s on its way")+opt("cold","Cold text")+opt("nudge","Nudge — did it come through?")
     +`<div class="hint" style="padding:8px 10px 2px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px">No email \u00b7 the text carries the details, NMLS and your direct line</div>`+opt("img","With the proposal image attached")+opt("full","Details in the text itself");
   m.style.cssText=`position:fixed;left:${Math.min(rect.left, window.innerWidth-360)}px;top:${rect.bottom+4}px;z-index:9000;max-width:360px`; document.body.appendChild(m);
+  setTimeout(()=>document.addEventListener("click", function h(e){ if(!m.contains(e.target)){ m.remove(); document.removeEventListener("click",h); } }),0); }
+/* ---- post-close (next steps) emails: product variant × lender, opened as a mail draft. Wording per the team-reviewed draft. ---- */
+const PC_LENDERS=[
+  {k:"rocket_existing", name:"Rocket Mortgage \u2014 already has a Rocket account", short:"Rocket (existing)",
+   step1:["Step 1: Log in to your Rocket Mortgage account","You already have a Rocket account from your current mortgage. Log in at [rocketmortgage.com](https://www.rocketmortgage.com) with the email address on your loan \u2014 your new tasks are waiting under \u201cTasks\u201d (or \u201cTo-do list\u201d). Forgot the password? Use \u201cForgot password\u201d on the sign-in page; it resets to that same email."], esign:"rocket"},
+  {k:"rocket_new", name:"Rocket Mortgage \u2014 new account", short:"Rocket (new)",
+   step1:["Step 1: Create your Rocket Mortgage account","You will get an email with Neighborhood Mortgage Company as the sender \u2014 open it and click the link to create your Rocket account now. Your email address is your username; you just create a new password. Can\u2019t find it? Check spam/junk, or go to [rocketmortgage.com](https://www.rocketmortgage.com) and sign up with the same email you gave me."], esign:"rocket"},
+  {k:"figure", name:"Figure", short:"Figure",
+   step1:["Step 1: Create your Figure account","You will get an email from Figure (it may show Neighborhood Mortgage Company as the sender) with a link to set up your account. Your email address is your username; you just create a new password. Can\u2019t find it? Check spam/junk, or go to [figure.com](https://www.figure.com) and sign up with the same email you gave me."], esign:"generic"},
+  {k:"village", name:"Village", short:"Village", esign:"generic"},
+  {k:"freedom", name:"Freedom", short:"Freedom", esign:"generic"},
+  {k:"nfty", name:"NFTY", short:"NFTY", esign:"generic"},
+  {k:"homelight", name:"Homelight", short:"Homelight", esign:"generic"},
+  {k:"springeq", name:"Spring EQ", short:"Spring EQ", esign:"generic"},
+  {k:"pennymac", name:"PennyMac", short:"PennyMac", esign:"generic"}];
+function pcLenderStep1(L){ if(L.step1) return L.step1; return [`Step 1: Set up your ${L.name} account`,`You will get an email from ${L.name} (it may show Neighborhood Mortgage Company as the sender) with a link to their secure portal. Use the same email address you gave me as your username and create a password. Can\u2019t find the email? Check spam/junk, then let me know and I\u2019ll have it resent.`]; }
+const PC_ESIGN={ rocket:{bul:["E-Sign Consent \u2014 click \u201cI Accept\u201d (this just approves signing electronically)","Personal Information \u2014 click Confirm","Go to \u201cTasks\u201d (or \u201cTo-do list\u201d)","Anything in green has no signature needed on that page","Anything with an orange/red bar at the top needs a signature \u2014 click \u201cClick to e-sign\u201d"], lead:"The sections that will need your e-signature:"},
+  generic:{bul:["Accept the e-sign consent when it asks (this just approves signing electronically)","Confirm your personal information","Open your task list and sign each document that\u2019s flagged for a signature"], lead:"The documents you\u2019ll typically see:"} };
+const PC_ESIGN_DOCS=["Intent to Proceed","Uniform Residential Loan Application","E-sign Application Package","Certification and Authorization"];
+/* prod: "streamline" | "equity" (cash-out refinance, refinance, HEL, HELOC) */
+function postCloseParts(c, prod, lenderKey, extra){ const s=state.settings; const L=PC_LENDERS.find(x=>x.k===lenderKey)||PC_LENDERS[1]; const first=c&&c.name?c.name.split(/[ ,&]/)[0]:"there";
+  const r=c&&c.analysis&&c.analysis.anRate>0?computeAnalysis(c):null; const pname=r&&!r.tooSmall?emailProductName(c,r,"proposal"):"";
+  const what = prod==="streamline" ? (/fha/i.test(pname)||/fha/i.test(c&&c.loanType||"")?"FHA Streamline":"VA Streamline") : (/heloc/i.test(pname)?"HELOC":/equity/i.test(pname)?"home equity loan":/cash/i.test(pname)?"cash-out refinance":"refinance");
+  const congrats = prod==="streamline" ? "Congrats on being one step closer to a new lower rate and payment!" : /HELOC/.test(what) ? "Congrats on being one step closer to your home equity line!" : /equity/.test(what) ? "Congrats on being one step closer to paying off those debts with one simple payment!" : /cash/.test(what) ? "Congrats on being one step closer to your cash-out!" : "Congrats on being one step closer to your new mortgage!";
+  const timeline = /equity|HELOC/.test(what) ? `Please complete these steps today \u2014 ${/HELOC/.test(what)?"HELOCs":"home equity loans"} generally close in 3\u20137 days once everything is in${/equity/.test(what)?", so the sooner these are done, the sooner the payoffs go out":""}.` : `Please complete these steps today so we can get the loan closed in 30 days or less${/cash/.test(what)?", get your cash to you,":""} and make sure you skip 2 mortgage payments after closing.`;
+  const servicer=(c&&c.servicer||"").trim(); const stmt="Most recent mortgage statement"+(servicer?" from "+servicer:"");
+  const docs = prod==="streamline" ? [stmt,"Homeowners insurance declaration page"] : ["Last 2 years of W-2s","Your 2 most recent pay stubs",stmt,"Homeowners insurance declaration page"];
+  (extra||"").split(/\n|;|,(?=\s*[A-Z0-9])/).map(x=>x.trim()).filter(Boolean).forEach(x=>docs.push(x));
+  const [s1h,s1b]=pcLenderStep1(L); const es=PC_ESIGN[L.esign]||PC_ESIGN.generic; const phone=s.loPhone||"";
+  const sig=[s.loName||"", s.co||"Neighborhood Mortgage Company", [s.loNmls?"NMLS #"+s.loNmls:"", phone, s.loEmail||""].filter(Boolean).join(" \u00b7 ")];
+  return { subject:`${first} \u2014 next steps for your ${what} (please do today)`, parts:[
+    {t:"p",x:`Hi ${first},`},{t:"p",x:`${congrats} Please use this email as a guide through the next steps.`},{t:"p",x:timeline},
+    {t:"h",x:s1h},{t:"p",x:s1b},
+    {t:"h",x:"Step 2: E-sign your application package"},{t:"ul",x:es.bul},{t:"p",x:es.lead},{t:"ol",x:PC_ESIGN_DOCS},
+    {t:"h",x:"Step 3: Documents we need from you"},{t:"ol",x:docs},
+    {t:"p",x:"That\u2019s it!"},{t:"p",x:`If you have any questions or I can help in any way, just let me know${phone?` \u2014 my direct line is \u00ab${phone}\u00bb (call or text)`:""}. Please reply to this email once you\u2019ve completed the steps, and I\u2019ll take it from there.`},
+    {t:"p",x:"Thanks,"},{t:"sig",x:sig}] }; }
+async function postCloseDraft(prod, lenderKey){ const c=cur(); if(!c){ toast("Pick a client first"); return; }
+  const extra=prompt("Anything extra to ask for in Step 3? (optional \u2014 e.g. 2025 1099 for pension, SSA benefit letter)","")||"";
+  const {subject,parts}=postCloseParts(c, prod, lenderKey, extra); const html=emailRenderHTML(parts,null); const text=emailRenderText(parts);
+  await openEmlDraft((c.email||""), subject, html, text, ""); }
+function postCloseTextFor(c, prod){ const s=state.settings; const first=c&&c.name?c.name.split(/[ ,&]/)[0]:"there"; const lo=(s.loName||"").split(" ")[0]||"your loan officer";
+  const docs = prod==="streamline" ? "your most recent mortgage statement and homeowners insurance declaration page" : "your last 2 years of W-2s, 2 most recent pay stubs, mortgage statement and homeowners insurance declaration page";
+  const why = prod==="streamline" ? "so we close in 30 days or less and you skip 2 payments" : "so the loan closes quickly";
+  return `Hi ${first}, it\u2019s ${lo} with Neighborhood Mortgage \u2014 congrats! I just emailed your next steps: set up your account, e-sign the application package, and send me ${docs}. Please knock those out today ${why}. Questions? Call or text me at ${s.loPhone||"my direct line"}.`; }
+async function postCloseText(prod){ const c=cur(); if(!c){ toast("Pick a client first"); return; } const t=postCloseTextFor(c,prod); try{ await navigator.clipboard.writeText(t); toast("Post-close text copied \u2014 paste it into your message"); }catch(e){ prompt("Copy this text:", t); } }
+function sendMenu(ev, kind, snapId){ ev.preventDefault(); ev.stopPropagation(); const old=$("emailMenu"); if(old){ old.remove(); if(old.dataset.for==="send|"+kind+"|"+(snapId||"")) return; }
+  const b=ev.currentTarget||ev.target; const rect=b.getBoundingClientRect(); const m=document.createElement("div"); m.id="emailMenu"; m.dataset.for="send|"+kind+"|"+(snapId||"");
+  const sid=snapId?"'"+snapId+"'":"null"; const group=(t)=>`<div class="hint" style="padding:6px 10px 2px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px">${t}</div>`;
+  const btn=(fn,title,sub)=>`<button type="button" onclick="document.getElementById('emailMenu').remove(); ${fn}"><b>${title}</b>${sub?`<span class="hint">${sub}</span>`:""}</button>`;
+  const richNote = state.settings.emailRich ? " \u00b7 formatted, paste once" : ""; const c=cur(); const r=c&&computeAnalysis(c); const prev=(v)=>c&&r&&!r.tooSmall?esc(textFor(c,r,kind,v)):"";
+  const main=()=>group("Selling / outreach email \u00b7 proposal as a mail draft, nothing to paste")+btn(`emailDraftEML('${kind}',${sid},'blank')`,"Blank + proposal","One-line note, then the proposal")+btn(`emailDraftEML('${kind}',${sid},'cold')`,"Cold reach-out + proposal","\u201cThis is what I was reaching out about\u201d, benefits, why NMC")+btn(`emailDraftEML('${kind}',${sid},'full')`,"Full email + proposal","Thanks, what I need from you, next steps, why NMC")
+    +group("Selling / outreach email \u00b7 proposal as an image")+btn(`emailImage('${kind}',${sid},'blank')`,"Blank email","Just the image and a one-line note")+btn(`emailImage('${kind}',${sid},'cold')`,"Cold reach-out","Call/text, key benefits, why NMC"+richNote)+btn(`emailImage('${kind}',${sid},'full')`,"Full email","Options recapped, what I need, next steps, why NMC"+richNote)
+    +group("Selling / outreach text \u00b7 copied to the clipboard")+btn(`copyText('${kind}','with')`,"Email\u2019s on its way",prev("with"))+btn(`copyText('${kind}','cold')`,"Cold text",prev("cold"))+btn(`copyText('${kind}','nudge')`,"Nudge \u2014 did it come through?",prev("nudge"))+btn(`copyText('${kind}','img')`,"No email \u00b7 with the proposal image",prev("img"))+btn(`copyText('${kind}','full')`,"No email \u00b7 details in the text",prev("full"))
+    +group("Post-close email \u00b7 next steps, as a mail draft")+`<button type="button" onclick="sendMenuLenders('streamline')"><b>Streamline \u25B8</b><span class="hint">VA / FHA streamline: statement + insurance page</span></button><button type="button" onclick="sendMenuLenders('equity')"><b>Cash-out / HEL / HELOC \u25B8</b><span class="hint">W-2s, pay stubs, statement, insurance page</span></button>`
+    +group("Post-close text \u00b7 copied to the clipboard")+btn(`postCloseText('streamline')`,"Streamline",esc(postCloseTextFor(c,'streamline')))+btn(`postCloseText('equity')`,"Cash-out / HEL / HELOC",esc(postCloseTextFor(c,'equity')));
+  m.innerHTML=main(); m.style.cssText=`position:fixed;left:${Math.min(rect.left, window.innerWidth-380)}px;top:${rect.bottom+4}px;z-index:9000;width:360px;max-width:360px`; document.body.appendChild(m);
+  window.sendMenuLenders=(prod)=>{ m.innerHTML=`<div class="hint" style="padding:6px 10px 2px;display:flex;gap:8px;align-items:center"><a href="#" onclick="event.preventDefault();document.getElementById('emailMenu').innerHTML=window._sendMain();" style="font-weight:500">\u2190 Back</a><span style="font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px">${prod==="streamline"?"Streamline":"Cash-out / HEL / HELOC"} \u00b7 which lender?</span></div>`+PC_LENDERS.map(L=>btn(`postCloseDraft('${prod}','${L.k}')`,L.name,L.step1?"Account steps written for this lender":"Generic portal wording until we have this lender\u2019s specifics")).join(""); };
+  window._sendMain=main;
   setTimeout(()=>document.addEventListener("click", function h(e){ if(!m.contains(e.target)){ m.remove(); document.removeEventListener("click",h); } }),0); }
 function emailMenu(ev, kind, snapId){ ev.preventDefault(); ev.stopPropagation(); const old=$("emailMenu"); if(old){ old.remove(); if(old.dataset.for===kind+"|"+(snapId||"")) return; }
   const b=ev.currentTarget||ev.target; const rect=b.getBoundingClientRect(); const m=document.createElement("div"); m.id="emailMenu"; m.dataset.for=kind+"|"+(snapId||"");
@@ -3370,6 +3431,14 @@ function renderRdBanner(){ const b=$("rdBanner"); if(!b) return; const d=rdData(
   b.style.display="flex"; b.innerHTML=`<b>🔔 New VA rates</b><span class="hint">${rdWhen(d.published)}${d.by?" · "+esc(d.by):""}</span><span class="tiers">${RD_TIERS.map(k=>`<span><span class="hint" style="font-family:var(--sans);font-size:11px">${RD_TIER_LABEL[k]}</span> ${pct(t[k])} ${rdArrow(t[k],p[k])}</span>`).join("")}</span>
     ${n||wk?`<span class="tag-good" style="font-size:13px">✨ ${n} new today${assumed?` (${assumed} assumed)`:""} · ${wk} this week</span>`:`<span class="hint">no saved clients newly eligible</span>`}${d.note?`<span class="hint" style="flex-basis:100%;margin-top:-4px"><i>${esc(d.note)}</i></span>`:""}
     <span style="flex:1"></span>${(n||wk)?`<button class="btn small" onclick="go('pipeline');setPipeView('eligible')">View</button>`:""}<button class="btn ghost small" onclick="rdDismiss()">Dismiss</button>`; }
+function rdInboxOpen(i){ const h=(window._rdInboxList||[])[i]; if(!h) return; const t=h.tiers||{}, p=h.prev||{}; const dir=rdDirection(t,p); const old=$("emailMenu"); if(old) old.remove();
+  const when=new Date(h.published).toLocaleString("en-US",{weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}); const box=document.createElement("div"); box.id="rdMsgModal"; box.style.cssText="position:fixed;inset:0;background:rgba(35,36,43,.45);z-index:9500;display:flex;align-items:center;justify-content:center";
+  box.innerHTML=`<div style="background:#fff;border-radius:14px;padding:20px 22px;width:560px;max-width:92vw;max-height:88vh;overflow:auto;box-shadow:0 10px 30px rgba(0,0,0,.2)"><div style="display:flex;gap:10px;align-items:baseline"><h2 style="margin:0">Rate update · ${esc(when)}</h2><span style="flex:1"></span><button class="btn ghost small" onclick="document.getElementById('rdMsgModal').remove()">Close</button></div>
+    <div class="hint" style="margin:4px 0 10px">${esc(h.by||"")}${dir==="down"?" · ▼ rates down":dir==="up"?" · ▲ rates up":dir==="mixed"?" · mixed":""}${h.fresh?` · ✨ ${h.fresh} client${h.fresh===1?"":"s"} became eligible for you${h.assumed?" ("+h.assumed+" assumed mid-tier)":""}`:" · no new eligible clients for you"}</div>
+    <table class="data" style="width:100%"><thead><tr><th>Credit tier</th><th class="num">Rate</th><th class="num">Change</th><th class="num">Before</th></tr></thead><tbody>${RD_TIERS.map(k=>`<tr><td>${RD_TIER_LABEL[k]}</td><td class="num"><b>${pct(t[k])}</b></td><td class="num">${rdArrow(t[k],p[k])||"<span class='hint'>—</span>"}</td><td class="num hint">${p[k]!=null?pct(p[k]):"—"}</td></tr>`).join("")}</tbody></table>
+    ${h.note?`<div style="margin-top:12px;padding:10px 12px;background:var(--cream);border-radius:10px;white-space:pre-wrap;line-height:1.5"><b>Note from the rate desk:</b><br>${esc(h.note)}</div>`:""}
+    ${rdTiers()&&rdWeekIds().length?`<div class="btnrow" style="margin-top:12px"><button class="btn small" onclick="document.getElementById('rdMsgModal').remove();go('pipeline');setPipeView('eligible')">✨ New this week (${rdWeekIds().length})</button></div>`:""}</div>`;
+  box.addEventListener("click",e=>{ if(e.target===box) box.remove(); }); document.body.appendChild(box); }
 function rdDismiss(){ if(state.rateDesk){ state.rateDesk.dismissed=true; save(); } renderRdBanner(); }
 function rdStatusLine(){ const el=$("rdStatus"); if(!el) return; const d=rdData(); el.innerHTML = (state.rdNewer?`<span class="tag-warn">The rate desk is publishing a newer format (v${esc(state.rdNewer)}) than this toolkit reads — update the toolkit.</span><br>`:"") + (d ? `Live: published ${esc(new Date(d.published).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}))}${d.by?" by "+esc(d.by):""} · 640+ ${pct((rdTiers(d)||{})["640+"])} · received ${esc(d.how||"")} ${esc(rdWhen(d.receivedAt))} · relay ${rdSSE&&rdSSE.readyState===1?"<span class='dot on'></span>connected":"<span class='dot off'></span>reconnecting"}` : "No rates received yet — the rate desk hasn’t published, or this computer can’t reach GitHub."); }
 async function rdFetch(fresh){ const base=(state.settings.rdUrl||"https://raw.githubusercontent.com/doubledekr/nmc-rate-desk/main/rates/").replace(/\/+$/,"/");
@@ -3402,11 +3471,11 @@ function rdUnreadCount(){ const H=state.rdHistory||[]; const seen=state.rdInboxS
 function rdBellHTML(){ if(!rdTiers()&&!(state.rdHistory||[]).length) return ""; const n=rdUnreadCount(); return `<button class="btn ghost small" onclick="rdInbox(event)" title="Rate updates" style="position:relative;flex:0 0 auto">\uD83D\uDD14${n?`<span style="position:absolute;top:-6px;right:-6px;background:var(--brand);color:#fff;border-radius:10px;font-size:10px;padding:1px 5px;line-height:1.3">${n}</span>`:""}</button>`; }
 function rdInbox(ev){ ev.preventDefault(); ev.stopPropagation(); const old=$("emailMenu"); if(old){ old.remove(); if(old.dataset.for==="rdInbox") return; }
   const b=ev.currentTarget||ev.target; const rect=b.getBoundingClientRect(); const m=document.createElement("div"); m.id="emailMenu"; m.dataset.for="rdInbox"; const H=(state.rdHistory||[]).filter(h=>!h.first).slice(0,40); const seen=state.rdInboxSeen||"";
-  const row=h=>{ const t=h.tiers||{}, p=h.prev||{}; const when=new Date(h.published).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}); const unread=String(h.version)>seen; const dir=rdDirection(t,p);
-    return `<div style="padding:8px 10px;border-bottom:1px solid var(--line);${unread?"background:#FFFBEA":""}"><div style="display:flex;gap:8px;align-items:baseline"><b style="font-size:12.5px">${esc(when)}</b><span class="hint">${esc(h.by||"")}</span><span class="hint">${dir==="down"?"\u25BC rates down":dir==="up"?"\u25B2 rates up":dir==="mixed"?"mixed":""}</span><span style="flex:1"></span>${h.fresh?`<span class="tag-good" style="font-size:11px">\u2728 ${h.fresh} new${h.assumed?" ("+h.assumed+" assumed)":""}</span>`:""}</div>
+  const row=(h,i)=>{ const t=h.tiers||{}, p=h.prev||{}; const when=new Date(h.published).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}); const unread=String(h.version)>seen; const dir=rdDirection(t,p);
+    return `<div style="padding:8px 10px;border-bottom:1px solid var(--line);cursor:pointer;${unread?"background:#FFFBEA":""}" onclick="rdInboxOpen(${i})" title="Open this update"><div style="display:flex;gap:8px;align-items:baseline;flex-wrap:wrap"><b style="font-size:12.5px">${esc(when)}</b><span class="hint">${esc(h.by||"")}</span><span class="hint">${dir==="down"?"\u25BC rates down":dir==="up"?"\u25B2 rates up":dir==="mixed"?"mixed":""}</span><span style="flex:1"></span>${h.fresh?`<span class="tag-good" style="font-size:11px">\u2728 ${h.fresh} new${h.assumed?" ("+h.assumed+" assumed)":""}</span>`:""}</div>
       <div style="font-family:var(--serif);font-size:14px;margin:2px 0">${RD_TIERS.map(k=>`<span style="margin-right:10px"><span class="hint" style="font-family:var(--sans);font-size:10.5px">${RD_TIER_LABEL[k]}</span> ${pct(t[k])} <span style="font-size:11px">${rdArrow(t[k],p[k])}</span></span>`).join("")}</div>${h.note?`<div class="hint" style="white-space:normal"><i>${esc(h.note)}</i></div>`:""}</div>`; };
-  m.innerHTML=`<div class="hint" style="padding:6px 10px 2px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px;display:flex;align-items:center"><span>Rate updates</span><span style="flex:1"></span>${rdTiers()&&rdWeekIds().length?`<a href="#" onclick="document.getElementById('emailMenu').remove();go('pipeline');setPipeView('eligible');return false" style="font-weight:500;text-transform:none;letter-spacing:0">\u2728 ${rdWeekIds().length} new this week</a>`:""}</div><div style="max-height:60vh;overflow:auto;width:420px">${H.length?H.map(row).join(""):`<div class="hint" style="padding:10px">No rate updates received yet.</div>`}</div>`;
-  m.style.cssText=`position:fixed;left:${Math.min(rect.left, window.innerWidth-460)}px;top:${rect.bottom+4}px;z-index:9000;width:440px;max-width:440px;min-width:440px`; document.body.appendChild(m);
+  m.innerHTML=`<div class="hint" style="padding:6px 10px 2px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px;display:flex;align-items:center"><span>Rate updates</span><span style="flex:1"></span>${rdTiers()&&rdWeekIds().length?`<a href="#" onclick="document.getElementById('emailMenu').remove();go('pipeline');setPipeView('eligible');return false" style="font-weight:500;text-transform:none;letter-spacing:0">\u2728 ${rdWeekIds().length} new this week</a>`:""}</div><div style="max-height:60vh;overflow:auto;width:470px">${H.length?H.map(row).join(""):`<div class="hint" style="padding:10px">No rate updates received yet.</div>`}</div>`;
+  m.style.cssText=`position:fixed;left:${Math.min(rect.left, window.innerWidth-460)}px;top:${rect.bottom+4}px;z-index:9000;width:490px;max-width:490px;min-width:490px`; document.body.appendChild(m); window._rdInboxList=H;
   if(H.length){ state.rdInboxSeen=String(H[0].version); save(); renderClientBar(); }
   setTimeout(()=>document.addEventListener("click", function h(e){ if(!m.contains(e.target)){ m.remove(); document.removeEventListener("click",h); } }),0); }
 function rdEligibleIds(){ const t=rdTiers(); if(!t) return []; return state.clients.filter(c=>rdEligibleNow(c,t)).map(c=>c.id); }
