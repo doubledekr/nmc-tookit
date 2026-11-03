@@ -964,7 +964,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.9.31";
+const TOOLKIT_VERSION = "1.9.32";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1219,7 +1219,7 @@ async function loCardPNG(live){ const key=loCardKey(); if(!live&&loCardCache.key
   const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml">${xhtml}</div></foreignObject></svg>`;
   const img=new Image(); await new Promise((ok,bad)=>{ img.onload=ok; img.onerror=()=>bad(new Error("render")); img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg); });
   const cv=document.createElement("canvas"); cv.width=1200; cv.height=600; const ctx=cv.getContext("2d"); if(!ctx) throw new Error("canvas"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,1200,600); ctx.drawImage(img,0,0);
-  const blob=await new Promise(res=>cv.toBlob(res,"image/png")); if(!blob) throw new Error("canvas"); const url=cv.toDataURL("image/png"); if(live) return {key,url,blob}; loCardCache={key,url,blob,busy:false}; return loCardCache; }
+  const blob=await new Promise(res=>cv.toBlob(res,"image/png")); if(!blob) throw new Error("canvas"); const url=cv.toDataURL("image/png"); if(live) return {key,url,blob}; Object.assign(loCardCache,{key,url,blob}); return loCardCache; }
 /* minimal GIF89a encoder: global 256-color palette, LZW, per-frame sub-rectangles, "do not dispose", looping. */
 function gifEncode(W,H,palette,frames){ const out=[]; const push=(...a)=>{ for(const x of a) out.push(x&255); }; const u16=(n)=>push(n&255,(n>>8)&255);
   push(0x47,0x49,0x46,0x38,0x39,0x61); u16(W); u16(H); push(0xF7,0,0);            /* GCT flag, 8 bits, 256 entries */
@@ -1259,11 +1259,18 @@ async function loCardGIF(){ if(!("ImageDecoder" in window)) return null; const b
   dec.close(); const bytes=gifEncode(W,H,pal,frames); const blob=new Blob([bytes],{type:"image/gif"}); const url=await new Promise(res=>{ const rd=new FileReader(); rd.onload=()=>res(rd.result); rd.readAsDataURL(blob); });
   return {key,url,blob}; }
 let loCardGifBusy=false;
-async function loCardAnimate(){ if(loCardGifBusy||!("ImageDecoder" in window)) return; const key=loCardKey(); if(loCardCache.gifKey===key&&loCardCache.gifUrl) return; loCardGifBusy=true;
-  try{ const g=await loCardGIF(); if(g&&g.key===loCardKey()){ loCardCache.gifKey=g.key; loCardCache.gifUrl=g.url; loCardCache.gifBlob=g.blob; loCardPaint(g.url); } }catch(e){} loCardGifBusy=false; }
-async function loCardRender(force){ if(loCardCache.busy) return; if(!force&&loCardCache.key===loCardKey()&&loCardCache.url){ loCardPaint(loCardCache.gifKey===loCardCache.key&&loCardCache.gifUrl?loCardCache.gifUrl:loCardCache.url); loCardAnimate(); return; } loCardCache.busy=true; try{ await loCardPNG(); }catch(e){ loCardCache.busy=false; return; } loCardPaint(loCardCache.url); loCardAnimate(); }
+async function loCardAnimate(){ if(!("ImageDecoder" in window)) return; if(loCardGifBusy){ loCardCache.gifAgain=true; return; } const key=loCardKey(); if(loCardCache.gifKey===key&&loCardCache.gifUrl) return; loCardGifBusy=true; loCardCache.gifAgain=false;
+  try{ const g=await loCardGIF(); if(g&&g.key===loCardKey()){ loCardCache.gifKey=g.key; loCardCache.gifUrl=g.url; loCardCache.gifBlob=g.blob; loCardPaint(g.url); } }catch(e){} loCardGifBusy=false;
+  if(loCardCache.gifAgain||loCardCache.gifKey!==loCardKey()) setTimeout(loCardAnimate,0); }
+async function loCardRender(force){ if(loCardCache.busy){ loCardCache.again=true; return; }
+  if(!force&&loCardCache.key===loCardKey()&&loCardCache.url){ loCardPaint(loCardCache.gifKey===loCardCache.key&&loCardCache.gifUrl?loCardCache.gifUrl:loCardCache.url); loCardAnimate(); return; }
+  loCardCache.busy=true; loCardCache.again=false; try{ await loCardPNG(); }catch(e){ loCardCache.busy=false; return; } loCardCache.busy=false;
+  if(loCardCache.again||loCardCache.key!==loCardKey()){ loCardRender(true); return; }   /* settings moved while rendering: go again */
+  loCardPaint(loCardCache.url); loCardAnimate(); }
 function loCardPaint(url){ const w=$("loCardWidget"); if(w){ w.src=url; w.style.display=""; } const p=$("loCardPreview"); if(p) p.innerHTML=`<img src="${url}" style="width:100%;display:block" draggable="true" ondragstart="loCardDrag(event)" title="Drag into a text, or click to copy" onclick="loCardCopy()">`; }
-let loCardLiveT=null; function loCardLive(){ clearTimeout(loCardLiveT); loCardLiveT=setTimeout(async()=>{ try{ const r=await loCardPNG(true); const p=$("loCardPreview"); if(p) p.innerHTML=`<img src="${r.url}" style="width:100%;display:block"><div class="hint" style="padding:4px 8px">Preview \u2014 click Save to update the card in the top bar.</div>`; }catch(e){} },250); }
+let loCardLiveT=null; function loCardLive(){ clearTimeout(loCardLiveT); loCardLiveT=setTimeout(()=>{ const s=state.settings; if(!$("setLoTitle")) return;
+  s.loName=$("setLoName").value.trim(); s.loNmls=$("setLoNmls").value.trim(); s.loPhone=$("setLoPhone").value.trim(); s.loEmail=$("setLoEmail").value.trim(); s.loTitle=$("setLoTitle").value.trim(); s.loOffice=$("setLoOffice").value.trim(); s.coSite=$("setCoSite").value.trim(); s.partnerLine=$("setPartnerLine").value.trim();
+  save(); applyBrandCss&&applyBrandCss(); loCardRender(true); renderClientBar(); },600); }
 function loCardFileName(ext){ return ((state.settings.loName||"loan-officer")+"-card").replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"").toLowerCase()+(ext||".png"); }
 function loCardBest(){ const gif=loCardCache.gifUrl&&loCardCache.gifKey===loCardCache.key; return gif?{url:loCardCache.gifUrl,name:loCardFileName(".gif"),mime:"image/gif"}:{url:loCardCache.url,name:loCardFileName(".png"),mime:"image/png"}; }
 function loCardDrag(ev){ if(!loCardCache.url){ ev.preventDefault(); return; } const b=loCardBest();
