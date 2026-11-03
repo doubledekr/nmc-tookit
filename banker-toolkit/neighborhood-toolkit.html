@@ -54,7 +54,7 @@ tr.elig-today td{animation:rdBlink 1.2s ease-in-out 3;background:#FFFBEA}
   padding:11px 13px;font-size:12.5px;color:var(--muted);
 }
 .rate-pill b{display:block;font-size:17px;color:var(--ink);font-family:var(--serif);font-weight:400}
-.side-foot{margin-top:auto;padding:14px 20px;font-size:11.5px;color:var(--muted)}
+.side-foot{margin-top:auto;padding:10px 20px 0;font-size:10px;color:var(--muted);line-height:1.4;opacity:.85}
 main{flex:1;padding:28px 32px;max-width:1150px}
 
 /* ---------- Shared ---------- */
@@ -350,10 +350,53 @@ body.obj-open #objDrawer{display:block}body.obj-open main{margin-right:380px}
 #objDrawer .objflow{grid-template-columns:1fr;gap:8px}#objDrawer h2{font-family:var(--serif);font-size:18px;font-weight:400;margin:0}
 #objDrawer .objbox .objt{font-size:14.5px}#objDrawer .objbox.cl .objt{font-size:17px}
 body.obj-open .tchart .trow{font-size:13px}body.obj-open .tchart .trow input,body.obj-open .tchart .trow select{font-size:13px;padding:4px 6px}
-#pipeTable table.data td{padding:9px 8px}#pipeTable .tag-good,#pipeTable .tag-warn,#pipeTable .tag-flat{white-space:nowrap}#pipeTable td:nth-child(7){white-space:nowrap}
+#pipeTable table.data td{padding:9px 8px}#pipeTable td:nth-child(2) .tag-good,#pipeTable td:nth-child(2) .tag-warn,#pipeTable td:nth-child(2) .tag-flat{white-space:nowrap}#pipeTable td:nth-child(7){white-space:nowrap}#pipeTable td:first-child{min-width:150px}
 .dupbar{background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 12px;font-size:13.5px}
 #sfPanel .sfhead{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}#sfPanel .sfhead h2{margin:0;flex:1}#sfPanel .sfhead .tgl{font-size:12px;color:var(--muted)}
 #sfPanel.closed #sfBody{display:none}#sfPanel.closed{padding:12px 18px}
+
+/* scrollbars on brand */
+*{scrollbar-width:thin;scrollbar-color:#C9C2B4 transparent}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#C9C2B4;border-radius:10px;border:3px solid var(--paper)}::-webkit-scrollbar-thumb:hover{background:var(--brand)}
+#objDrawer::-webkit-scrollbar-thumb,#playDrawer::-webkit-scrollbar-thumb,#emailMenu::-webkit-scrollbar-thumb{border-color:#fff}
+/* pipeline: column titles stay put */
+#pipeTable table.data thead th{position:sticky;top:78px;background:var(--panel);z-index:5;box-shadow:0 1px 0 var(--line)}
+#s-pipeline .panel{padding-top:12px}#pipeTop{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}#pipeTop .pipe-add{margin-left:auto;display:inline-flex;gap:6px}
+/* tools: every tool folds behind its title bar */
+#s-tools .panel.tool{padding:0;overflow:hidden}#s-tools .panel.tool>.thead{display:flex;align-items:center;gap:10px;padding:12px 18px;cursor:pointer;user-select:none}
+#s-tools .panel.tool>.thead h2{margin:0;flex:1}#s-tools .panel.tool>.thead .tgl{font-size:12px;color:var(--muted);transition:transform .15s}#s-tools .panel.tool.open>.thead .tgl{transform:rotate(90deg)}
+#s-tools .panel.tool>.tbody{display:none;padding:4px 18px 16px}#s-tools .panel.tool.open>.tbody{display:block}#s-tools .panel.tool>.thead:hover{background:var(--cream-soft)}
+#s-tools .panel.tool>.thead .btnrow{margin-left:auto}
+/* the playbook: a folder tab on the right edge of every page, opens a drawer */
+#playTab{position:fixed;right:0;top:38%;z-index:70;background:var(--brand);color:#fff;border-radius:12px 0 0 12px;padding:12px 10px 12px 14px;cursor:pointer;writing-mode:vertical-rl;transform:rotate(180deg) translateX(-6px);font-weight:700;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;box-shadow:0 0 0 0 rgba(165,50,34,.45);animation:playglow 2.6s ease-in-out infinite;transition:transform .18s,box-shadow .18s;user-select:none;line-height:1}
+#playTab:hover{transform:rotate(180deg) translateX(0);box-shadow:0 6px 22px rgba(165,50,34,.35);animation:none}
+@keyframes playglow{0%,100%{box-shadow:0 0 0 0 rgba(165,50,34,.45)}50%{box-shadow:0 0 0 8px rgba(165,50,34,0)}}
+body.play-open #playTab{display:none}
+#playDrawer{position:fixed;top:0;right:0;height:100vh;width:430px;max-width:94vw;background:#fff;border-left:1px solid var(--line);box-shadow:-12px 0 30px rgba(0,0,0,.12);z-index:80;display:none;flex-direction:column}
+body.play-open #playDrawer{display:flex}#playDrawer .phead{padding:14px 16px 10px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center}
+#playDrawer .phead h2{font-family:var(--serif);font-size:19px;font-weight:400;margin:0;flex:1}#playDrawer .pbody{overflow:auto;padding:8px 12px 24px;flex:1}
+#playDrawer .pcat{border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:#fff;overflow:hidden}#playDrawer .pcat>.ph{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;font-weight:600;font-size:13.5px;user-select:none}
+#playDrawer .pcat>.ph:hover{background:var(--cream-soft)}#playDrawer .pcat>.ph .n{color:var(--muted);font-weight:400;font-size:12px}#playDrawer .pcat>.ph .tgl{margin-left:auto;color:var(--muted);font-size:12px;transition:transform .15s}
+#playDrawer .pcat.open>.ph .tgl{transform:rotate(90deg)}#playDrawer .pcat>.pitems{display:none;border-top:1px solid var(--line)}#playDrawer .pcat.open>.pitems{display:block}
+#playDrawer .pitem{padding:9px 12px;border-bottom:1px dashed #EFEAE0}#playDrawer .pitem:last-child{border-bottom:0}#playDrawer .pitem .pt{display:flex;gap:8px;align-items:baseline;cursor:pointer}
+#playDrawer .pitem .pt b{font-size:13.5px;flex:1}#playDrawer .pitem .pu{font-size:12px;color:var(--muted);margin-top:2px}#playDrawer .pitem .pb{display:none;font-size:13px;white-space:pre-wrap;margin-top:8px;line-height:1.5;background:var(--cream-soft);border-radius:8px;padding:8px 10px}
+#playDrawer .pitem.open .pb{display:block}#playDrawer .pitem .objflow{margin-top:8px;grid-template-columns:1fr;gap:6px}#playDrawer .pitem .objbox .objt{font-size:13px}
+#playDrawer input[type=search]{margin:10px 0 8px}
+body.present-mode #playTab{display:none}
+nav button.grp .caret{font-size:11px;color:var(--muted);margin-left:4px;display:inline-block;transition:transform .15s}.navsub{display:none}.navsub.open{display:block}.navsub button{padding-left:50px;font-size:13.5px;min-height:36px}.navsub button::before{left:34px;top:10px}
+#navDesk.open~*{}nav button.grp.active .caret{transform:rotate(180deg)}
+/* sidebar: tighter nav, smaller rate card, room for the card and alerts */
+nav button{padding:8px 16px 8px 32px;font-size:13.5px;min-height:34px}nav button::before{left:16px;top:10px}.navsub button{min-height:30px;font-size:12.5px;padding-left:44px}.navsub button::before{left:30px;top:8px}
+.wordmark{padding:0 18px 12px;margin-bottom:6px}aside{padding:16px 0}
+.rate-pill{margin:10px 16px 0;padding:8px 11px;font-size:11px;line-height:1.35}.rate-pill b{font-size:15px}.rate-pill:hover{border-color:var(--brand)}
+#sideInbox{margin:6px 16px 6px}#sideInbox button{min-height:28px;font-size:11.5px;padding:0 9px}
+#sideCard{margin:2px 16px 6px}#sideCard img{width:100%;display:block;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:grab}#sideCard img:active{cursor:grabbing}
+/* sidebar inbox under the rate feed */
+#sideInbox{margin:0 20px 8px}#sideInbox button{width:100%;justify-content:flex-start;gap:8px}
+/* settings: hub hidden for now */
+#hubBlock,#hubNote{display:none}
+
 </style>
 </head>
 <body>
@@ -371,12 +414,17 @@ body.obj-open .tchart .trow{font-size:13px}body.obj-open .tchart .trow input,bod
       <button data-s="proposal">Client proposal</button>
       <button data-s="present">Presentation</button>
       <button data-s="tools">Tools</button>
-      <button data-s="tmpl">Scripts &amp; templates</button>
-      <button data-s="desk">My desk</button>
-      <button data-s="settings">Settings &amp; data</button>
+      <button data-s="desk" data-group="desk" class="grp">My desk <span class="caret">&#x25BE;</span></button>
+      <div class="navsub" id="navDesk">
+        <button data-s="desk">Dashboard</button>
+        <button data-s="tmpl">Scripts &amp; templates</button>
+        <button data-s="settings">Settings &amp; data</button>
+      </div>
     </nav>
-    <div class="rate-pill" id="ratePill">Rate feed<br><b>not connected</b></div>
-    <div class="side-foot" style="padding-bottom:0"><span id="verTag"></span></div><div class="side-foot" id="sideFoot" style="margin-top:0;padding-top:4px">NMLS #2484730 · Dearborn, MI</div>
+    <div class="rate-pill" id="ratePill" onclick="go('desk'); setTimeout(()=>{ const e=document.getElementById('rdDesk'); if(e&&e.scrollIntoView) e.scrollIntoView({behavior:'smooth',block:'start'}); },30)" title="Open the rate chart on My desk" style="cursor:pointer">Rate feed<br><b>not connected</b></div>
+    <div id="sideInbox"></div>
+    <div id="sideCard" title="Your contact card — drag it into a text or email, click to copy"></div>
+    <div class="side-foot"><span id="verTag"></span><span id="sideFoot">NMLS #2484730 · Dearborn, MI</span></div>
   </aside>
 
   <main>
@@ -389,19 +437,18 @@ body.obj-open .tchart .trow{font-size:13px}body.obj-open .tchart .trow input,bod
       <div class="eyebrow">Your book of business</div><h1>Pipeline</h1>
       <div class="sub">Everyone you're working. Data lives in your local file — nothing leaves this computer.</div>
       <div class="panel">
-        <div class="btnrow" style="margin-bottom:12px">
-          <button class="btn" onclick="newClient()">Add client</button>
-          <button class="btn ghost" onclick="go('client'); sfUserOpen=true; sfRefresh(); setTimeout(()=>{ const t=$('sfPaste'); if(t) t.focus(); },50)">Paste from Salesforce</button>
-          <span id="pipeChips" class="btnrow" style="gap:6px;margin-left:6px"></span>
-          <button class="btn ghost" onclick="calMenu(event)" title="Put the follow-ups in this view on your Outlook calendar">📅 Outlook ▾</button>
-          <span style="flex:1"></span>
-          <input type="search" id="pipeSearch" placeholder="Search name, phone, email, address, loan type…" oninput="renderPipeline()" style="width:260px;min-height:36px">
+        <div id="pipeTop">
+          <span id="pipeChips" class="btnrow" style="gap:6px"></span>
+        </div>
+        <div class="btnrow" style="margin-bottom:10px">
+          <input type="search" id="pipeSearch" placeholder="Search name, phone, email, address, loan type…" oninput="renderPipeline()" style="flex:1;min-width:220px;min-height:36px">
           <select id="pipeFilter" onchange="renderPipeline()" style="width:auto">
             <option value="">All statuses</option>
           </select>
           <select id="pipeProduct" onchange="renderPipeline()" style="width:auto" title="Filter by the product in the client’s analysis">
             <option value="">All products</option><option value="va_irrrl">VA Streamline</option><option value="fha_streamline">FHA Streamline</option><option value="refi">Refinance</option><option value="cashout">Cash-out</option><option value="hel">Home equity loan</option><option value="heloc">HELOC</option><option value="fc">Cash-out (free &amp; clear)</option><option value="none">No analysis yet</option>
           </select>
+          <span class="pipe-add"><button class="btn ghost small" onclick="calMenu(event)" title="Put the follow-ups in this view on your Outlook calendar">📅 Outlook ▾</button><button class="btn ghost small" onclick="go('client'); sfUserOpen=true; sfRefresh(); setTimeout(()=>{ const t=$('sfPaste'); if(t) t.focus(); },50)" title="Paste a Salesforce record">Paste</button><button class="btn small" onclick="newClient()">+ Client</button></span>
         </div>
         <div id="pipeTable"></div>
       </div>
@@ -622,16 +669,13 @@ Discover 6,100 190 24.9"></textarea>
     <!-- ================= PROPOSAL ================= -->
     <section class="screen" id="s-proposal">
       <div class="eyebrow">Ready to send</div><h1>Client proposal</h1>
-      <div class="sub">A branded Neighborhood Mortgage savings proposal. Export uses your browser's Print → Save as PDF.</div>
+      <div class="sub">A branded Neighborhood Mortgage savings proposal — copy it, send it, or save the image.</div>
       <div class="panel">
         <div class="grid3">
-          <div class="field"><label>Client</label><select id="propClientPicker" onchange="pickClient(this.value)"></select></div>
+          <div class="field" style="grid-column:1/-1;max-width:420px"><label>Client</label><select id="propClientPicker" onchange="pickClient(this.value)"></select></div>
           <div class="field" style="display:none"><label>Pricing option on proposal</label><select id="propOption" onchange="renderProposalPreview()"></select></div>
-          <div class="field" style="align-self:end"><div class="btnrow"><button class="btn" onclick="copyImage('proposal')">Copy proposal</button><button class="btn ghost" onclick="sendMenu(event,'proposal')" title="Email drafts, image emails, texts and post-close next-steps emails">Send ▾</button><button class="btn ghost" onclick="exportImage('proposal')">Save image</button><button class="btn ghost" onclick="exportPDF()">PDF</button><button class="btn ghost" onclick="librarySave('proposal')">Save to library</button><button class="btn ghost" id="propSaveOpt" onclick="addSnapScenario(); renderProposalPreview()" title="Keep this proposal's set-up as a saved option, so it can sit side by side with others">Save as an option</button><button class="btn ghost" onclick="librarySave('proposal'); markSentLatest('text')" title="Logs this proposal as sent by text (Email marks itself automatically)">Mark sent by text</button></div></div>
+          <div class="field" style="grid-column:1/-1"><div class="btnrow"><button class="btn" onclick="copyImage('proposal')">Copy proposal</button><button class="btn ghost" onclick="sendMenu(event,'proposal',null,'email')" title="Proposal as a mail draft or as an image email">Outreach emails ▾</button><button class="btn ghost" onclick="sendMenu(event,'proposal',null,'postEmail')" title="Next-steps emails after the sale, by product and lender">Post-close emails ▾</button><button class="btn ghost" onclick="sendMenu(event,'proposal',null,'text')" title="Texts to go with the proposal, copied to the clipboard">Outreach texts ▾</button><button class="btn ghost" onclick="sendMenu(event,'proposal',null,'postText')" title="Next-steps texts after the sale">Post-close texts ▾</button><button class="btn ghost" onclick="exportImage('proposal')">Save image</button><button class="btn ghost" onclick="librarySave('proposal')">Save to library</button><button class="btn ghost" onclick="librarySave('proposal'); markSentLatest('text')" title="Logs this proposal as sent by text (Email marks itself automatically)">Mark sent by text</button></div></div>
         </div>
-        <div class="field"><div class="chiprow" style="gap:16px">
-          
-          <span class="hint" id="propBrandHint"></span></div></div>
         <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="propAmort" style="width:auto" checked onchange="setPropAmort(this.checked)"> Include the year-by-year amortization table on the proposal</label></div>
         <div class="field"><label>Personal note to client (optional)</label><textarea id="propNote" style="min-height:60px;font-family:inherit" oninput="renderProposalPreview()" placeholder="e.g. Maria — here's the consolidation option we walked through on Tuesday."></textarea></div>
         <div class="field"><label>Saved options from Savings analysis <span class="hint" style="display:inline">(check one for a single proposal, two or more for a side-by-side · ★ marks your recommendation)</span></label><div id="propSnapList"></div></div>
@@ -656,9 +700,11 @@ Discover 6,100 190 24.9"></textarea>
       <div class="panel" id="presentObj"></div>
     </section>
     <div id="objDrawer"></div>
+    <div id="playTab" onclick="playOpen()" title="Call intros, objections &amp; plays, texts and emails — on any page">Playbook</div>
+    <div id="playDrawer"><div class="phead"><h2>Playbook</h2><button class="btn ghost small" onclick="playClose()">Close &#x2715;</button></div><div class="pbody" id="playBody"></div></div>
     <section class="screen" id="s-tools">
       <div class="eyebrow">Quick math, mid-call</div><h1>Tools</h1>
-      <div class="sub">No client needed — everything recalculates as you type. Numbers stay filled in until you clear them.</div>
+      <div class="sub">No client needed — open the tool you need; everything recalculates as you type and stays filled in until you clear it.</div>
 
       <div class="panel">
         <h2>Current vs new — the effective-rate conversation</h2>
@@ -843,35 +889,27 @@ Discover 6,100 190 24.9"></textarea>
     <!-- ================= MY DESK ================= -->
     <section class="screen" id="s-desk">
       <div class="eyebrow">Your corner of the office</div><h1>My desk</h1>
-      <div class="sub">Your month at a glance, and where rates are. Your banker details live under Settings &amp; data.</div>
+      <div class="sub">Where rates are and who they opened up, then your month at a glance.</div>
+      <div class="panel"><h2>Rates — today and lately <span class="hint">· who became eligible as they moved</span></h2><div id="rdDesk"></div><div id="deskRates"></div></div>
       <div class="panel"><h2>Your month</h2><div id="deskStats"></div></div>
-      <div class="panel"><h2>Hot leads &amp; future buyers</h2><div id="deskHot"></div></div>
-      <div class="panel"><h2>Rates — today and lately</h2><div id="rdDesk"></div><div id="deskRates"></div></div>
+      <div id="deskHot" style="display:none"></div>
     </section>
 
     <!-- ================= SETTINGS ================= -->
     <section class="screen" id="s-tmpl">
       <div class="eyebrow">Say it well</div><h1>Scripts &amp; templates</h1>
       <div class="panel">
-        <h2>NMC message library</h2>
+        <h2>NMC message library <span class="hint">— also in the Playbook tab on every page</span></h2>
         <div class="hint" id="tmplWho" style="margin-bottom:8px"></div>
         <div class="btnrow" style="margin-bottom:8px"><input type="search" placeholder="Search messages… (escrow, voicemail, HELOC)" style="max-width:360px" oninput="setLibQ(this.value)"></div>
         <div class="chiprow" id="tmplNmcChips" style="margin-bottom:10px"></div>
         <div id="tmplNmc"></div>
         <div class="hint" style="margin-top:8px">Copy fills in the client and your details automatically; anything still in <mark style="background:#F6E8D8;color:#9A4E0E;border-radius:3px;padding:0 3px;font-weight:600">[brackets]</mark> needs a quick swap before you send.</div>
       </div>
-      <div class="panel">
-        <h2>Company library</h2>
-        <div class="hint" style="margin-bottom:8px">Pushed from the management node — arrives automatically over the rate feed or shared folder. Copy fills in the selected client and your info.</div>
-        <div id="tmplCompany"></div>
-      </div>
-      <div class="panel">
-        <h2>Shared by the team</h2>
-        <div id="tmplShared"></div>
-      </div>
+<div id="tmplCompany" style="display:none"></div><div id="tmplShared" style="display:none"></div>
       <div class="panel">
         <h2>My templates</h2>
-        <div class="hint" style="margin-bottom:8px">Check “Share with the team” to publish one on the next sync. Keep client details out of anything shared.</div>
+        <div class="hint" style="margin-bottom:8px">Your own intros, texts and emails — they show up in the Playbook on every page.</div>
         <div class="btnrow" style="margin-bottom:10px">
           <button class="btn" onclick="addTemplate('intro')">+ Intro script</button>
           <button class="btn ghost" onclick="addTemplate('text')">+ Text message</button>
@@ -884,7 +922,29 @@ Discover 6,100 190 24.9"></textarea>
 
     <section class="screen" id="s-settings">
       <div class="eyebrow">Make it yours</div><h1>Settings &amp; data</h1>
-      <div class="sub">Your save file, the home office link, your info, and parser tuning.</div>
+      <div class="sub">Your info and card, rate desk alerts, Salesforce tuning, and your save file.</div>
+      <div class="row">
+        <div class="panel">
+          <h2>You (appears on proposals)</h2>
+          <div class="grid2">
+            <div class="field"><label>Name</label><input type="text" id="setLoName" oninput="loCardLive()"></div>
+            <div class="field"><label>Your NMLS #</label><input type="text" id="setLoNmls" oninput="loCardLive()"></div>
+            <div class="field"><label>Phone</label><input type="text" id="setLoPhone" oninput="loCardLive()"></div>
+            <div class="field"><label>Email</label><input type="text" id="setLoEmail" oninput="loCardLive()"></div>
+            <div class="field"><label>Title <span class="hint" style="display:inline">(on your card)</span></label><input type="text" id="setLoTitle" oninput="loCardLive()" placeholder="Mortgage Loan Officer"></div>
+            <div class="field"><label>Office line <span class="hint" style="display:inline">(on your card)</span></label><input type="text" id="setLoOffice" oninput="loCardLive()" placeholder="(844) 210-3644"></div>
+            <div class="field"><label>Website</label><input type="text" id="setCoSite" oninput="loCardLive()" placeholder="neighborhoodmc.com"></div>
+            
+            <div class="field"><label>Partner logo <span class="hint" style="display:inline">(built in — upload only to replace it)</span></label><div class="chiprow"><input type="file" accept="image/*" onchange="loadPartnerLogo(this)" style="flex:1"><button class="btn ghost small" onclick="togglePartnerLogo()" id="clearPartnerLogoBtn">Hide</button></div><div id="partnerLogoPreview" style="margin-top:6px"></div></div>
+            <div class="field" style="grid-column:1/-1"><label>Your card <span class="hint" style="display:inline">— it lives in the sidebar. Drag it into a text, or click it to copy.</span></label>
+              <div id="loCardPreview" style="border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;max-width:600px"></div>
+              <div class="btnrow" style="margin-top:6px"><button class="btn ghost small" onclick="loCardCopy()">Copy (still image)</button><button class="btn ghost small" onclick="loCardSaveGIF()">Save animated GIF</button><button class="btn ghost small" onclick="loCardSave()">Save PNG</button><span class="hint">Dragging the card sends the animated GIF; clipboard copies are always still images.</span></div></div>
+          </div>
+          <div class="chiprow" style="margin:8px 0 4px;align-items:center"><span><b>Calendar events</b> — follow-ups with no time go on the calendar at</span><input type="time" id="setCalTime" style="width:110px;flex:0 0 110px"><span>for</span><select id="setCalLen" style="width:auto"><option value="15">15 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">1 hour</option></select><span class="hint">A time typed on the follow-up always wins.</span></div>
+          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;margin:8px 0 4px;line-height:1.45"><input type="checkbox" id="setEmailRich" style="width:auto;min-height:0;margin-top:3px"><span><b>Formatted image emails</b> — for the “Proposal as image” Cold reach-out and Full email: bold headings, highlighted numbers, brand fonts, and the image, all in one paste. (The “Proposal as email” options are always formatted.) The email opens addressed with the subject filled in and you paste the body (Ctrl+V / ⌘V). <span class="hint">Off = the current way: the text goes straight into the email and the image is on the clipboard to paste.</span></span></label>
+          <div class="btnrow"><button class="btn" onclick="saveSettingsFromUI(true)">Save</button></div>
+        </div>
+      </div>
       <div class="panel">
         <h2>Your save file &amp; the home office</h2>
         <div class="grid2">
@@ -893,7 +953,7 @@ Discover 6,100 190 24.9"></textarea>
               <div class="eyebrow" style="font-size:11px">Desktop app</div>
               <div class="hint" id="deskPath" style="margin:4px 0 8px"></div>
               <div class="btnrow"><button class="btn ghost small" onclick="DESK.openDataFolder()">Open data folder</button>
-                <button class="btn ghost small" onclick="DESK.checkUpdates().then(r=>toast(!r||r.state==='off'?'Updates are off in this build':r.state==='available'?'Update available: v'+r.version+' \u2014 see the bar at the top':r.state==='current'?'Up to date \u2014 v'+r.version:'Couldn\u2019t check right now'+(r.error?': '+r.error:'')))">Check for updates</button>
+                <button class="btn ghost small" onclick="DESK.checkUpdates().then(r=>toast(!r||r.state==='off'?'Updates are off in this build':r.state==='available'?'Update available: v'+r.version+' — see the bar at the top':r.state==='current'?'Up to date — v'+r.version:'Couldn’t check right now'+(r.error?': '+r.error:'')))">Check for updates</button>
                 <button class="btn ghost small" onclick="importOldDesktop()">Import a previous toolkit file (.json)</button></div>
               <div id="deskFound" style="margin-top:8px"></div>
               <div id="extBox" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">
@@ -920,6 +980,7 @@ Discover 6,100 190 24.9"></textarea>
             <div class="hint" id="asStatus" style="margin-top:8px">No save folder yet — data still saves inside this browser automatically.</div>
           </div>
           <div>
+<div id="hubBlock">
             <div class="eyebrow" style="font-size:11px">Home office hub</div>
             <div class="field" style="margin-top:4px"><label>Hub address (from IT)</label><input type="url" id="setHub" placeholder="https://hub.neighborhoodmc.com" onchange="saveSettingsFromUI(true)"></div>
             <div class="field"><label>Access key (from IT — needed when the hub is reachable from the internet)</label><input type="password" id="setHubKey" placeholder="leave blank on the office network if IT says so" onchange="saveSettingsFromUI(true)"></div>
@@ -929,6 +990,7 @@ Discover 6,100 190 24.9"></textarea>
               <button class="btn ghost small" onclick="checkHub()">Sync &amp; check now</button>
             </div>
             <div class="hint" id="feedStatus" style="margin-top:6px"></div>
+</div>
             <div class="field" style="margin-top:8px;max-width:220px"><label>Monthly folder goal</label><input type="number" id="setGoal" placeholder="15" onchange="saveSettingsFromUI()"></div>
             <div class="field" style="margin-top:8px;max-width:220px"><label>Seasoning heads-up (days before)</label><input type="number" id="setSeasonLead" placeholder="7" onchange="saveSettingsFromUI()"></div>
             <input type="hidden" id="setFeed"><input type="checkbox" id="setPoll" style="display:none"><input type="hidden" id="setReport"><input type="hidden" id="setTeam">
@@ -957,29 +1019,7 @@ Discover 6,100 190 24.9"></textarea>
           <div class="eyebrow" style="font-size:11px">Brand images on proposals</div>
           
         </div>
-        <p class="hint" style="margin-top:10px">Linking the hub turns on live rates, team stats, the template library, and a server backup of this save file. No VPN or offline? Everything core keeps working from your local copy and catches up on its own.</p>
-      </div>
-      <div class="row">
-        <div class="panel">
-          <h2>You (appears on proposals)</h2>
-          <div class="grid2">
-            <div class="field"><label>Name</label><input type="text" id="setLoName" oninput="loCardLive()"></div>
-            <div class="field"><label>Your NMLS #</label><input type="text" id="setLoNmls" oninput="loCardLive()"></div>
-            <div class="field"><label>Phone</label><input type="text" id="setLoPhone" oninput="loCardLive()"></div>
-            <div class="field"><label>Email</label><input type="text" id="setLoEmail" oninput="loCardLive()"></div>
-            <div class="field"><label>Title <span class="hint" style="display:inline">(on your card)</span></label><input type="text" id="setLoTitle" oninput="loCardLive()" placeholder="Mortgage Loan Officer"></div>
-            <div class="field"><label>Office line <span class="hint" style="display:inline">(on your card)</span></label><input type="text" id="setLoOffice" oninput="loCardLive()" placeholder="(844) 210-3644"></div>
-            <div class="field"><label>Website</label><input type="text" id="setCoSite" oninput="loCardLive()" placeholder="neighborhoodmc.com"></div>
-            
-            <div class="field"><label>Partner logo <span class="hint" style="display:inline">(built in — upload only to replace it)</span></label><div class="chiprow"><input type="file" accept="image/*" onchange="loadPartnerLogo(this)" style="flex:1"><button class="btn ghost small" onclick="togglePartnerLogo()" id="clearPartnerLogoBtn">Hide</button></div><div id="partnerLogoPreview" style="margin-top:6px"></div></div>
-            <div class="field" style="grid-column:1/-1"><label>Your card <span class="hint" style="display:inline">— the widget in the top bar. Drag it into a text, or click it to copy.</span></label>
-              <div id="loCardPreview" style="border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;max-width:600px"></div>
-              <div class="btnrow" style="margin-top:6px"><button class="btn ghost small" onclick="loCardCopy()">Copy (still image)</button><button class="btn ghost small" onclick="loCardSaveGIF()">Save animated GIF</button><button class="btn ghost small" onclick="loCardSave()">Save PNG</button><span class="hint">Dragging the card sends the animated GIF; clipboard copies are always still images.</span></div></div>
-          </div>
-          <div class="chiprow" style="margin:8px 0 4px;align-items:center"><span><b>Calendar events</b> — follow-ups with no time go on the calendar at</span><input type="time" id="setCalTime" style="width:110px;flex:0 0 110px"><span>for</span><select id="setCalLen" style="width:auto"><option value="15">15 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">1 hour</option></select><span class="hint">A time typed on the follow-up always wins.</span></div>
-          <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;margin:8px 0 4px;line-height:1.45"><input type="checkbox" id="setEmailRich" style="width:auto;min-height:0;margin-top:3px"><span><b>Formatted image emails</b> — for the “Proposal as image” Cold reach-out and Full email: bold headings, highlighted numbers, brand fonts, and the image, all in one paste. (The “Proposal as email” options are always formatted.) The email opens addressed with the subject filled in and you paste the body (Ctrl+V / ⌘V). <span class="hint">Off = the current way: the text goes straight into the email and the image is on the clipboard to paste.</span></span></label>
-          <div class="btnrow"><button class="btn" onclick="saveSettingsFromUI(true)">Save</button></div>
-        </div>
+        <p class="hint" id="hubNote" style="margin-top:10px">Linking the hub turns on live rates, team stats, the template library, and a server backup of this save file. No VPN or offline? Everything core keeps working from your local copy and catches up on its own.</p>
       </div>
     </section>
   </main>
@@ -1025,7 +1065,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.11.0";
+const TOOLKIT_VERSION = "1.12.0";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1259,7 +1299,7 @@ function loCardHTML(live){ const s=loCardSettings(live); const F="font-family:Ar
   return `<div style="width:1200px;height:600px;background:#fff;position:relative;overflow:hidden">
     <div style="position:absolute;left:0;top:0;width:570px;height:600px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px">
       <img src="${s.logo||NMC_LOGO}" style="width:490px;height:auto;display:block" alt="">
-      ${s.partnerHidden?"":`<img src="${s.partnerLogo||NMC_PARTNER_LOGO}" style="max-width:420px;max-height:110px;display:block" alt="">`}
+      ${s.partnerHidden?`<div style="width:420px;height:110px"></div>`:`<img src="${s.partnerLogo||NMC_PARTNER_LOGO}" style="max-width:420px;max-height:110px;display:block" alt="">`}
     </div>
     <div style="position:absolute;left:570px;top:80px;width:1px;height:440px;background:#B8B8B8"></div>
     <div style="position:absolute;left:604px;top:120px;width:540px">
@@ -1302,7 +1342,8 @@ async function loCardGIF(){ if(!("ImageDecoder" in window)) return null; const b
   const baseImg=new Image(); await new Promise((ok,bad)=>{ baseImg.onload=ok; baseImg.onerror=bad; baseImg.src=base.url; });
   const buf=await (await fetch(NMC_CARD_ANIM)).arrayBuffer(); const dec=new ImageDecoder({data:buf,type:"image/gif"}); await dec.tracks.ready; const n=dec.tracks.selectedTrack.frameCount;
   const W=1200,H=600,LW=572; const cv=document.createElement("canvas"); cv.width=W; cv.height=H; const ctx=cv.getContext("2d",{willReadFrequently:true}); if(!ctx) return null;
-  const draw=async(i)=>{ const {image}=await dec.decode({frameIndex:i}); ctx.drawImage(baseImg,0,0); ctx.drawImage(image,0,0); const delay=(image.duration||40000)/1000; image.close(); return delay; };
+  const hideP=!!state.settings.partnerHidden;   /* the bundled animation has "Powered by Rocket Mortgage" baked into its frames (rows ~315-440 of the left column): paint the base card back over that band when the partner logo is hidden */
+  const draw=async(i)=>{ const {image}=await dec.decode({frameIndex:i}); ctx.drawImage(baseImg,0,0); ctx.drawImage(image,0,0); if(hideP){ ctx.fillStyle="#fff"; ctx.fillRect(0,312,LW-2,150); } const delay=(image.duration||40000)/1000; image.close(); return delay; };
   /* palette: 5-bit buckets over the first full composite and the final animation frame, top 256 by count, bucket means */
   const hist=new Map(); const feed=(d)=>{ for(let i=0;i<d.length;i+=4){ const k=((d[i]>>3)<<10)|((d[i+1]>>3)<<5)|(d[i+2]>>3); let h=hist.get(k); if(!h){ h=[0,0,0,0]; hist.set(k,h); } h[0]+=d[i]; h[1]+=d[i+1]; h[2]+=d[i+2]; h[3]++; } };
   await draw(n-1); feed(ctx.getImageData(0,0,W,H).data); await draw(0); feed(ctx.getImageData(0,0,LW,H).data);
@@ -1328,7 +1369,7 @@ async function loCardRender(force){ if(loCardCache.busy){ loCardCache.again=true
   loCardCache.busy=true; loCardCache.again=false; try{ await loCardPNG(); }catch(e){ loCardCache.busy=false; return; } loCardCache.busy=false;
   if(loCardCache.again||loCardCache.key!==loCardKey()){ loCardRender(true); return; }   /* settings moved while rendering: go again */
   loCardPaint(loCardCache.url); loCardAnimate(); }
-function loCardPaint(url){ const w=$("loCardWidget"); if(w){ w.src=url; w.style.display=""; } const p=$("loCardPreview"); if(p) p.innerHTML=`<img src="${url}" style="width:100%;display:block" draggable="true" ondragstart="loCardDrag(event)" title="Drag into a text, or click to copy" onclick="loCardCopy()">`; }
+function loCardPaint(url){ const sc=$("sideCard"); if(sc&&!$("loCardWidget")) sc.innerHTML=`<img id="loCardWidget" alt="" draggable="true" ondragstart="loCardDrag(event)" onclick="loCardCopy()"><div class="hint" style="margin:4px 0 0;font-size:10.5px">Your card · drag into a text</div>`; const w=$("loCardWidget"); if(w){ w.src=url; w.style.display=""; } const p=$("loCardPreview"); if(p) p.innerHTML=`<img src="${url}" style="width:100%;display:block" draggable="true" ondragstart="loCardDrag(event)" title="Drag into a text, or click to copy" onclick="loCardCopy()">`; }
 let loCardLiveT=null; function loCardLive(){ clearTimeout(loCardLiveT); loCardLiveT=setTimeout(()=>{ const s=state.settings; if(!$("setLoTitle")) return;
   s.loName=$("setLoName").value.trim(); s.loNmls=$("setLoNmls").value.trim(); s.loPhone=$("setLoPhone").value.trim(); s.loEmail=$("setLoEmail").value.trim(); s.loTitle=$("setLoTitle").value.trim(); s.loOffice=$("setLoOffice").value.trim(); s.coSite=$("setCoSite").value.trim();
   save(); applyBrandCss&&applyBrandCss(); loCardRender(true); renderClientBar(); },600); }
@@ -1343,8 +1384,8 @@ async function loCardCopy(){ try{ const c=await loCardPNG(); if(!(navigator.clip
 async function loCardSave(){ try{ const c=await loCardPNG(); const a=document.createElement("a"); a.href=c.url; a.download=loCardFileName(); document.body.appendChild(a); a.click(); a.remove(); toast("Card saved as "+loCardFileName()); }catch(e){ toast("Couldn’t render the card here"); } }
 function renderClientBar(){ const bar=$("clientBar"); if(!bar) return; const c=cur();
   const sel=`<select id="gClientPicker" onchange="this.value?pickClient(this.value):clearClient()"></select>`;
-  const card=`<img id="loCardWidget" src="${loCardCache.url||""}" alt="" draggable="true" ondragstart="loCardDrag(event)" onclick="loCardCopy()" title="Your card \u2014 drag it into a text, or click to copy it" style="height:46px;width:92px;border:1px solid var(--line);border-radius:6px;cursor:grab;background:#fff;flex:0 0 auto;box-shadow:0 1px 2px rgba(0,0,0,.08)${loCardCache.url?"":";display:none"}">`; if(!loCardCache.url&&!loCardCache.busy) loCardRender().then(()=>{ const w=$("loCardWidget"); if(w&&loCardCache.url){ w.src=loCardCache.url; w.style.display=""; } });
-  const bell=rdBellHTML();
+  const card="";; if(!loCardCache.url&&!loCardCache.busy) loCardRender().then(()=>{ const w=$("loCardWidget"); if(w&&loCardCache.url){ w.src=loCardCache.url; w.style.display=""; } });
+  const bell=""; renderSideInbox();
   if(!c){ bar.innerHTML=`<div class="inner">${card}${bell}<span class="none">No client selected.</span>${sel}<button class="btn small" onclick="go('client'); newClient()">+ New client</button><button class="btn ghost small" onclick="go('pipeline')">Pipeline</button></div>`; }
   else { const facts=[];
     facts.push(`<span class="tag-flat">${c.quick?"\u26A1 Quick quote":esc(c.status)}</span>`);
@@ -2851,7 +2892,7 @@ function renderPropSnaps(){ const c=cur(); const el=$("propSnapList"); if(!el) r
   { const cb=$("propAmort"); if(cb) cb.checked=!(c&&c.prop&&c.prop.amort===false); const b=$("propBadge"); if(b) b.checked=!!(c&&c.prop&&c.prop.badge); const aw=$("propAwards"); if(aw) aw.checked=!!(c&&c.prop&&c.prop.awards);
     const bh=$("propBrandHint"); if(bh) bh.textContent = brandImg(BRAND_ASSETS.badge) ? "" : "(images download the first time the app is online)"; }
   const L=c?(c.scenarios||[]).filter(x=>x.kind==="snap"):[];
-  if(!c||!L.length){ el.innerHTML=`<div class="hint">Nothing saved yet \u2014 click <b>Save as an option</b> above (or <b>Save this option for the proposal</b> on Savings analysis). Save two or more and check them here for a side-by-side. Until then the proposal follows whatever is on the analysis screen.</div>`; const w=$("propCmpWhyWrap"); if(w) w.style.display="none"; const so=$("propSaveOpt"); if(so) so.style.display=""; return; }
+  if(!c||!L.length){ el.innerHTML=`<div class="hint">Nothing saved yet \u2014 click <b>Save this option for the proposal</b> on Savings analysis. Save two or more and check them here for a side-by-side. Until then the proposal follows whatever is on the analysis screen.</div>`; const w=$("propCmpWhyWrap"); if(w) w.style.display="none"; const so=$("propSaveOpt"); if(so) so.style.display=""; return; }
   const rec=c.cmp&&c.cmp.rec; const sel=propSelected(c);
   el.innerHTML = L.map(sc=>{ const r=computeSnap(c,sc); const h=r&&snapHousehold(c,r);
     return `<div class="btnrow" style="margin:4px 0;gap:10px">
@@ -3228,16 +3269,17 @@ function postCloseTextFor(c, prod){ const s=state.settings; const first=c&&c.nam
   const why = prod==="streamline" ? "so we close in 30 days or less and you skip 2 payments" : "so the loan closes quickly";
   return `Hi ${first}, it\u2019s ${lo} with Neighborhood Mortgage \u2014 congrats! I just emailed your next steps: set up your account, e-sign the application package, and send me ${docs}. Please knock those out today ${why}. Questions? Call or text me at ${s.loPhone||"my direct line"}.`; }
 async function postCloseText(prod){ const c=cur(); if(!c){ toast("Pick a client first"); return; } const t=postCloseTextFor(c,prod); try{ await navigator.clipboard.writeText(t); toast("Post-close text copied \u2014 paste it into your message"); }catch(e){ prompt("Copy this text:", t); } }
-function sendMenu(ev, kind, snapId){ ev.preventDefault(); ev.stopPropagation(); const old=$("emailMenu"); if(old){ old.remove(); if(old.dataset.for==="send|"+kind+"|"+(snapId||"")) return; }
-  const b=ev.currentTarget||ev.target; const rect=b.getBoundingClientRect(); const m=document.createElement("div"); m.id="emailMenu"; m.dataset.for="send|"+kind+"|"+(snapId||"");
+function sendMenu(ev, kind, snapId, section){ ev.preventDefault(); ev.stopPropagation(); const old=$("emailMenu"); if(old){ old.remove(); if(old.dataset.for==="send|"+kind+"|"+(snapId||"")+"|"+(section||"")) return; }
+  const b=ev.currentTarget||ev.target; const rect=b.getBoundingClientRect(); const m=document.createElement("div"); m.id="emailMenu"; m.dataset.for="send|"+kind+"|"+(snapId||"")+"|"+(section||"");
   const sid=snapId?"'"+snapId+"'":"null"; const group=(t)=>`<div class="hint" style="padding:6px 10px 2px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px">${t}</div>`;
   const btn=(fn,title,sub)=>`<button type="button" onclick="document.getElementById('emailMenu').remove(); ${fn}"><b>${title}</b>${sub?`<span class="hint">${sub}</span>`:""}</button>`;
   const richNote = state.settings.emailRich ? " \u00b7 formatted, paste once" : ""; const c=cur(); const r=c&&computeAnalysis(c); const prev=(v)=>c&&r&&!r.tooSmall?esc(textFor(c,r,kind,v)):"";
-  const main=()=>group("Selling / outreach email \u00b7 proposal as a mail draft, nothing to paste")+btn(`emailDraftEML('${kind}',${sid},'blank')`,"Blank + proposal","One-line note, then the proposal")+btn(`emailDraftEML('${kind}',${sid},'cold')`,"Cold reach-out + proposal","\u201cThis is what I was reaching out about\u201d, benefits, why NMC")+btn(`emailDraftEML('${kind}',${sid},'full')`,"Full email + proposal","Thanks, what I need from you, next steps, why NMC")
-    +group("Selling / outreach email \u00b7 proposal as an image")+btn(`emailImage('${kind}',${sid},'blank')`,"Blank email","Just the image and a one-line note")+btn(`emailImage('${kind}',${sid},'cold')`,"Cold reach-out","Call/text, key benefits, why NMC"+richNote)+btn(`emailImage('${kind}',${sid},'full')`,"Full email","Options recapped, what I need, next steps, why NMC"+richNote)
-    +group("Selling / outreach text \u00b7 copied to the clipboard")+btn(`copyText('${kind}','with')`,"Email\u2019s on its way",prev("with"))+btn(`copyText('${kind}','cold')`,"Cold text",prev("cold"))+btn(`copyText('${kind}','nudge')`,"Nudge \u2014 did it come through?",prev("nudge"))+btn(`copyText('${kind}','img')`,"No email \u00b7 with the proposal image",prev("img"))+btn(`copyText('${kind}','full')`,"No email \u00b7 details in the text",prev("full"))
-    +group("Post-close email \u00b7 next steps, as a mail draft")+`<button type="button" onclick="sendMenuLenders('streamline')"><b>Streamline \u25B8</b><span class="hint">VA / FHA streamline: statement + insurance page</span></button><button type="button" onclick="sendMenuLenders('equity')"><b>Cash-out / HEL / HELOC \u25B8</b><span class="hint">W-2s, pay stubs, statement, insurance page</span></button>`
-    +group("Post-close text \u00b7 copied to the clipboard")+btn(`postCloseText('streamline')`,"Streamline",esc(postCloseTextFor(c,'streamline')))+btn(`postCloseText('equity')`,"Cash-out / HEL / HELOC",esc(postCloseTextFor(c,'equity')));
+  const want=x=>!section||section===x;
+  const main=()=>(want("email")?group("Outreach email \u00b7 proposal as a mail draft, nothing to paste")+btn(`emailDraftEML('${kind}',${sid},'blank')`,"Blank + proposal","One-line note, then the proposal")+btn(`emailDraftEML('${kind}',${sid},'cold')`,"Cold reach-out + proposal","\u201cThis is what I was reaching out about\u201d, benefits, why NMC")+btn(`emailDraftEML('${kind}',${sid},'full')`,"Full email + proposal","Thanks, what I need from you, next steps, why NMC")
+    +group("Outreach email \u00b7 proposal as an image")+btn(`emailImage('${kind}',${sid},'blank')`,"Blank email","Just the image and a one-line note")+btn(`emailImage('${kind}',${sid},'cold')`,"Cold reach-out","Call/text, key benefits, why NMC"+richNote)+btn(`emailImage('${kind}',${sid},'full')`,"Full email","Options recapped, what I need, next steps, why NMC"+richNote):"")
+    +(want("text")?group("Outreach text \u00b7 copied to the clipboard")+btn(`copyText('${kind}','with')`,"Email\u2019s on its way",prev("with"))+btn(`copyText('${kind}','cold')`,"Cold text",prev("cold"))+btn(`copyText('${kind}','nudge')`,"Nudge \u2014 did it come through?",prev("nudge"))+btn(`copyText('${kind}','img')`,"No email \u00b7 with the proposal image",prev("img"))+btn(`copyText('${kind}','full')`,"No email \u00b7 details in the text",prev("full")):"")
+    +(want("postEmail")?group("Post-close email \u00b7 next steps, as a mail draft")+`<button type="button" onclick="sendMenuLenders('streamline')"><b>Streamline \u25B8</b><span class="hint">VA / FHA streamline: statement + insurance page</span></button><button type="button" onclick="sendMenuLenders('equity')"><b>Cash-out / HEL / HELOC \u25B8</b><span class="hint">W-2s, pay stubs, statement, insurance page</span></button>`:"")
+    +(want("postText")?group("Post-close text \u00b7 copied to the clipboard")+btn(`postCloseText('streamline')`,"Streamline",esc(postCloseTextFor(c,'streamline')))+btn(`postCloseText('equity')`,"Cash-out / HEL / HELOC",esc(postCloseTextFor(c,'equity'))):"");
   m.innerHTML=main(); m.style.cssText=`position:fixed;left:${Math.min(rect.left, window.innerWidth-380)}px;top:${rect.bottom+4}px;z-index:9000;width:360px;max-width:360px`; document.body.appendChild(m);
   window.sendMenuLenders=(prod)=>{ m.innerHTML=`<div class="hint" style="padding:6px 10px 2px;display:flex;gap:8px;align-items:center"><a href="#" onclick="event.preventDefault();document.getElementById('emailMenu').innerHTML=window._sendMain();" style="font-weight:500">\u2190 Back</a><span style="font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px">${prod==="streamline"?"Streamline":"Cash-out / HEL / HELOC"} \u00b7 which lender?</span></div>`+PC_LENDERS.map(L=>btn(`postCloseDraft('${prod}','${L.k}')`,L.name,L.step1?"Account steps written for this lender":"Generic portal wording until we have this lender\u2019s specifics")).join(""); };
   window._sendMain=main;
@@ -3462,7 +3504,7 @@ function rdApply(j, how){ if(!j||!j.version||!j.products||!j.products.va_irrrl||
     c.eligibleRate=e.rate; c.eligibleTier=e.tier; c.eligibleAssumed=e.assumed; if(was) return;
     c.eligibleSince=j.published||j.version; c.eligibleVersion=j.version; c.eligibleDay=today; c.eligibleSeen=false; fresh.push(c); });
   state.rateDesk=Object.assign({}, j, {prevTiers:rdNormTiers(prevTiers)||null, receivedAt:new Date().toISOString(), how, freshIds:fresh.map(c=>c.id), dismissed:false});
-  state.rdHistory=(state.rdHistory||[]).filter(h=>h.version!==j.version); state.rdHistory.unshift({version:j.version,published:j.published,by:j.by,note:j.note,tiers:rdNormTiers(newT),prev:rdNormTiers(prevTiers)||null,fresh:fresh.length,assumed:fresh.filter(c=>c.eligibleAssumed).length,first:!prev}); const cutoff=Date.now()-90*86400000; state.rdHistory=state.rdHistory.filter(h=>Date.parse(h.published)>cutoff).slice(0,2000);
+  state.rdHistory=(state.rdHistory||[]).filter(h=>h.version!==j.version); state.rdHistory.unshift({version:j.version,published:j.published,by:j.by,note:j.note,tiers:rdNormTiers(newT),prev:rdNormTiers(prevTiers)||null,fresh:fresh.length,freshIds:fresh.map(c=>c.id),assumed:fresh.filter(c=>c.eligibleAssumed).length,first:!prev}); const cutoff=Date.now()-90*86400000; state.rdHistory=state.rdHistory.filter(h=>Date.parse(h.published)>cutoff).slice(0,2000);
   save(); renderRdBanner(); updateRatePill(); renderPipeline(); renderClientBar(); renderRdDesk(); rdStatusLine();
   if(prev && state.settings.rdNotify!==false) rdNotify(j, fresh);   /* no notification for the very first load */
   if(prev && state.settings.rdSound!==false) rdChime(rdDirection(rdNormTiers(newT), rdNormTiers(prevTiers)));
@@ -3515,6 +3557,9 @@ function rdChime(dir){ try{ rdAudio=rdAudio||new (window.AudioContext||window.we
     notes.forEach(([f,at,dur])=>{ const o=ac.createOscillator(), g=ac.createGain(); o.type=dir==="up"?"triangle":"sine"; o.frequency.value=f; const t0=ac.currentTime+at; g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(0.25,t0+0.02); g.gain.exponentialRampToValueAtTime(0.0001,t0+dur); o.connect(g); g.connect(ac.destination); o.start(t0); o.stop(t0+dur+0.05); }); }catch(e){} }
 /* the mailbox: every rate update this toolkit received, with its note and what it meant here; unread = newer than the last time it was opened */
 function rdUnreadCount(){ const H=state.rdHistory||[]; const seen=state.rdInboxSeen||""; return H.filter(h=>!h.first&&String(h.version)>seen).length; }
+document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&document.body.classList.contains("play-open")) playClose(); });
+function renderSideInbox(){ if(document.body.classList.contains("play-open")) renderPlaybook(); const el=$("sideInbox"); if(!el) return; if(!rdTiers()&&!(state.rdHistory||[]).length){ el.innerHTML=""; return; } const n=rdUnreadCount();
+  el.innerHTML=`<button class="btn ghost small" onclick="rdInbox(event)" title="Rate updates and messages from the rate desk">\uD83D\uDD14 Rate updates${n?` <span style="background:var(--brand);color:#fff;border-radius:10px;font-size:10.5px;padding:1px 7px;line-height:1.4;margin-left:auto">${n} new</span>`:""}</button>`; }
 function rdBellHTML(){ if(!rdTiers()&&!(state.rdHistory||[]).length) return ""; const n=rdUnreadCount(); return `<button class="btn ghost small" onclick="rdInbox(event)" title="Rate updates" style="position:relative;flex:0 0 auto">\uD83D\uDD14${n?`<span style="position:absolute;top:-6px;right:-6px;background:var(--brand);color:#fff;border-radius:10px;font-size:10px;padding:1px 5px;line-height:1.3">${n}</span>`:""}</button>`; }
 function rdInbox(ev){ ev.preventDefault(); ev.stopPropagation(); const old=$("emailMenu"); if(old){ old.remove(); if(old.dataset.for==="rdInbox") return; }
   const b=ev.currentTarget||ev.target; const rect=b.getBoundingClientRect(); const m=document.createElement("div"); m.id="emailMenu"; m.dataset.for="rdInbox"; const H=(state.rdHistory||[]).filter(h=>!h.first).slice(0,40); const seen=state.rdInboxSeen||"";
@@ -3531,15 +3576,20 @@ function renderRdDesk(){ const el=$("rdDesk"); if(!el) return; const d=rdData();
   const t=rdTiers(d)||{}; const p=d.prevTiers||{}; const view=state.rdView||"today"; const tiersOn=(state.rdTiersOn||["640+"]).map(rdNormTierKey).filter((k,i,a)=>a.indexOf(k)===i);
   const todayISO=todayStr(); const pts=(view==="today"?H.filter(h=>new Date(h.published).toLocaleDateString("en-CA")===todayISO):(()=>{ const byDay={}; H.slice().sort((a,b)=>Date.parse(a.published)-Date.parse(b.published)).forEach(h=>{ byDay[new Date(h.published).toLocaleDateString("en-CA")]=h; }); return Object.values(byDay); })()).slice().sort((a,b)=>Date.parse(a.published)-Date.parse(b.published));
   const colors={"640+":"#A53222","620-639":"#3A6EA5","580-619":"#2E6B4F","<580":"#555"};
-  let chart=""; if(pts.length>=2){ const W=560,HH=170,L=46,R=10,T=12,B=26; pts.forEach(h=>{ h.tiers=rdNormTiers(h.tiers); }); const vals=[]; pts.forEach(h=>tiersOn.forEach(k=>{ if(h.tiers&&h.tiers[k]!=null) vals.push(h.tiers[k]); })); let lo=Math.min(...vals),hi=Math.max(...vals); if(!(hi-lo>=0.25)){ const m=(hi+lo)/2; lo=m-0.125; hi=m+0.125; }
+  let chart=""; if(pts.length>=2){ const W=560,HH=180,L=46,R=14,T=24,B=26; pts.forEach(h=>{ h.tiers=rdNormTiers(h.tiers); }); const vals=[]; pts.forEach(h=>tiersOn.forEach(k=>{ if(h.tiers&&h.tiers[k]!=null) vals.push(h.tiers[k]); })); let lo=Math.min(...vals),hi=Math.max(...vals); if(!(hi-lo>=0.25)){ const m=(hi+lo)/2; lo=m-0.125; hi=m+0.125; }
     const t0=Date.parse(pts[0].published),t1=Date.parse(pts[pts.length-1].published); const X=x=>L+(x-t0)/Math.max(1,t1-t0)*(W-L-R), Y=v=>T+(hi-v)/(hi-lo)*(HH-T-B);
-    const ticks=[lo,(lo+hi)/2,hi]; chart=`<svg viewBox="0 0 ${W} ${HH}" style="width:100%;height:170px;display:block">`+ticks.map(v=>`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="#EFEAE0"/><text x="${L-6}" y="${Y(v)+4}" font-size="10" text-anchor="end" fill="#5C616E">${v.toFixed(3).replace(/0$/,"")}%</text>`).join("")
+    const ticks=[lo,(lo+hi)/2,hi]; chart=`<svg viewBox="0 0 ${W} ${HH}" style="width:100%;height:180px;display:block">`+ticks.map(v=>`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="#EFEAE0"/><text x="${L-6}" y="${Y(v)+4}" font-size="10" text-anchor="end" fill="#5C616E">${v.toFixed(3).replace(/0$/,"")}%</text>`).join("")
       +tiersOn.map(k=>{ const ps=pts.filter(h=>h.tiers&&h.tiers[k]!=null); if(ps.length<2) return ""; const dd=ps.map((h,i)=>(i?"L":"M")+X(Date.parse(h.published)).toFixed(1)+" "+Y(h.tiers[k]).toFixed(1)).join(" "); return `<path d="${dd}" fill="none" stroke="${colors[k]}" stroke-width="2"/>`+ps.map(h=>`<circle cx="${X(Date.parse(h.published))}" cy="${Y(h.tiers[k])}" r="3" fill="${colors[k]}"><title>${RD_TIER_LABEL[k]} ${pct(h.tiers[k])} — ${new Date(h.published).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}${h.note?" — "+esc(h.note):""}</title></circle>`).join(""); }).join("")
+      +pts.map(h=>{ const who=rdFreshFor(h); if(!who.length) return ""; const k=tiersOn.find(k=>h.tiers&&h.tiers[k]!=null); if(!k) return ""; const x=X(Date.parse(h.published)), y=Y(h.tiers[k])-14; return `<g style="cursor:pointer" onclick="go('pipeline');setPipeView('eligible')"><circle cx="${x}" cy="${y}" r="8" fill="#FFF3C4" stroke="#8A6D00" stroke-width="1"/><text x="${x}" y="${y+3.5}" font-size="9.5" font-weight="700" text-anchor="middle" fill="#8A6D00">${who.length}</text><title>${who.length} became eligible with this publish: ${esc(who.map(c=>c.name).join(", "))}</title></g>`; }).join("")
       +`<text x="${L}" y="${HH-8}" font-size="10" fill="#5C616E">${new Date(t0).toLocaleString("en-US",view==="today"?{hour:"numeric",minute:"2-digit"}:{month:"short",day:"numeric"})}</text><text x="${W-R}" y="${HH-8}" font-size="10" text-anchor="end" fill="#5C616E">${new Date(t1).toLocaleString("en-US",view==="today"?{hour:"numeric",minute:"2-digit"}:{month:"short",day:"numeric"})}</text></svg>`; }
   else chart=`<div class="hint" style="padding:8px 0">${view==="today"?"One publish so far today — the line starts with the next one.":"The 30-day view fills in as the rate desk publishes on more days."}</div>`;
   el.innerHTML=`<div class="grid4" style="margin-bottom:10px">${RD_TIERS.map(k=>`<div class="stat"><div class="v">${pct(t[k])} <span style="font-size:13px">${rdArrow(t[k],p[k])}</span></div><div class="l">VA · ${RD_TIER_LABEL[k]} · ${esc(rdWhen(d.published))}</div></div>`).join("")}</div>
     <div class="hint" style="margin-bottom:6px">${d.note?`<i>${esc(d.note)}</i>`:""}${d.by?`${d.note?" · ":""}${esc(d.by)}`:""}</div>
-    <div class="btnrow" style="gap:6px;margin-bottom:6px"><button class="btn small ${view==="today"?"":"ghost"}" onclick="state.rdView='today';save();renderRdDesk()">Today</button><button class="btn small ${view==="30d"?"":"ghost"}" onclick="state.rdView='30d';save();renderRdDesk()">30 days</button><span style="width:10px"></span>${RD_TIERS.map(k=>`<button class="btn small ${tiersOn.includes(k)?"":"ghost"}" style="${tiersOn.includes(k)?"background:"+colors[k]+";border-color:"+colors[k]:""}" onclick="rdToggleTier('${k}')">${RD_TIER_LABEL[k]}</button>`).join("")}</div>${chart}`; }
+    <div class="btnrow" style="gap:6px;margin-bottom:6px"><button class="btn small ${view==="today"?"":"ghost"}" onclick="state.rdView='today';save();renderRdDesk()">Today</button><button class="btn small ${view==="30d"?"":"ghost"}" onclick="state.rdView='30d';save();renderRdDesk()">30 days</button><span style="width:10px"></span>${RD_TIERS.map(k=>`<button class="btn small ${tiersOn.includes(k)?"":"ghost"}" style="${tiersOn.includes(k)?"background:"+colors[k]+";border-color:"+colors[k]:""}" onclick="rdToggleTier('${k}')">${RD_TIER_LABEL[k]}</button>`).join("")}</div>${chart}${rdFreshLogHTML(pts)}`; }
+/* who became eligible on a given publish: stored on the history row, with a fallback to each client's eligibleVersion */
+function rdFreshFor(h){ const ids=h.freshIds||state.clients.filter(c=>c.eligibleVersion===h.version).map(c=>c.id); return ids.map(id=>state.clients.find(c=>c.id===id)).filter(Boolean); }
+function rdFreshLogHTML(pts){ const rows=pts.slice().reverse().map(h=>({h,who:rdFreshFor(h)})).filter(x=>x.who.length).slice(0,8); if(!rows.length) return `<div class="hint" style="margin-top:6px">No one became eligible on these publishes.</div>`;
+  return `<div style="margin-top:8px;display:grid;gap:4px">${rows.map(({h,who})=>`<div style="display:flex;gap:8px;align-items:baseline;font-size:12.5px;flex-wrap:wrap"><span class="tag-flat" style="white-space:nowrap">${new Date(h.published).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}</span><a href="#" onclick="go('pipeline');setPipeView('eligible');return false" title="Show them in the pipeline" style="background:#FFF3C4;color:#8A6D00;border-radius:10px;padding:1px 8px;font-size:11.5px;font-weight:700;text-decoration:none">${who.length} eligible →</a><span>${who.map(c=>`<a href="#" onclick="pickClient('${c.id}');go('client');return false">${esc(c.name)}</a>`).join(", ")}</span></div>`).join("")}</div>`; }
 function rdToggleTier(k){ let on=(state.rdTiersOn||["640+"]).map(rdNormTierKey).filter((x,i,a)=>a.indexOf(x)===i); if(on.includes(k)){ if(on.length>1) on=on.filter(x=>x!==k); } else on.push(k); state.rdTiersOn=on; save(); renderRdDesk(); }
 function eligibleIds(){ return state.clients.filter(c=>{ if(c.quick||isDone(c)) return false;
   if(isInelig(c)&&!onRateWatch(c)) return false;   /* seasoning or fully ineligible: the market alone doesn't make them hot */
@@ -4272,6 +4322,32 @@ function tmplPreview(s){ /* filled text with the bits that still need a hand hig
  return esc(tmplFill(s)).replace(/\[([^\]\n]{1,40})\]/g,'<mark style="background:#F6E8D8;color:#9A4E0E;border-radius:3px;padding:0 3px;font-weight:600">[$1]</mark>'); }
 let libCat="All", libQ="";
 function setLibCat(c){ libCat=c; renderTemplates(); }
+/* ---- the Playbook: every script, text and email in a side drawer on any page ---- */
+var playQ="", playOpenCats=null;
+function playOpen(){ document.body.classList.add("play-open"); renderPlaybook(); setTimeout(()=>{ const q=$("playQ"); if(q) q.focus(); },30); }
+function playClose(){ document.body.classList.remove("play-open"); }
+function playToggleCat(k){ playOpenCats=playOpenCats||new Set(); if(playOpenCats.has(k)) playOpenCats.delete(k); else playOpenCats.add(k); renderPlaybook(); }
+function playToggleItem(el){ el.classList.toggle("open"); }
+function playGroups(){ const T=state.templates||{}; const mine=(T.mine||[]).map(t=>Object.assign({},t,{cat:"My templates",pool:"m"}));
+  const lib=NMC_LIBRARY.map(t=>Object.assign({},t,{pool:"n"}));
+  const g=[]; const add=(key,label,items,extra)=>{ if(items.length||extra) g.push({key,label,items,extra}); };
+  add("intros","Call intros",lib.filter(t=>t.cat==="Call Intros"));
+  add("obj","Objections & plays",lib.filter(t=>t.cat==="Objections & Plays"),true);
+  const texts=lib.filter(t=>t.kind==="text"); const cats=[...new Set(texts.map(t=>t.cat))]; cats.forEach(c=>add("txt:"+c,"Texts \u00b7 "+c,texts.filter(t=>t.cat===c)));
+  add("vm","Voicemails",lib.filter(t=>t.kind==="vm")); add("email","Emails",lib.filter(t=>t.kind==="email")); add("other","Explainers & how-tos",lib.filter(t=>t.kind==="intro"&&t.cat!=="Call Intros"&&t.cat!=="Objections & Plays"));
+  add("mine","My templates",mine); return g; }
+function renderPlaybook(){ const el=$("playBody"); if(!el) return; const c=cur(); const q=playQ.toLowerCase();
+  const match=t=>!q||(t.title+" "+(t.use||"")+" "+(t.cat||"")+" "+tmplFill(t.body||"")).toLowerCase().includes(q);
+  const groups=playGroups(); const open=playOpenCats||new Set(q?groups.map(g=>g.key):["obj"]);
+  const item=t=>`<div class="pitem"><div class="pt" onclick="playToggleItem(this.parentNode)"><b>${esc(t.title)}</b><span class="tag-flat">${TKIND[t.kind]||t.kind}</span></div>${t.use?`<div class="pu">${esc(t.use)}</div>`:""}<div class="pb">${tmplPreview(t.body||"")}${t.kind==="intro"?"":`<div class="btnrow" style="margin-top:8px"><button class="btn small" onclick="copyTmplById('${t.pool}','${t.id}')">Copy${c?" for "+esc(c.name.split(/[ ,&]/)[0]):""}</button></div>`}</div></div>`;
+  const flows=q?OBJECTION_FLOWS.filter(o=>(o.label+" "+o.concern+" "+o.response).toLowerCase().includes(q)):OBJECTION_FLOWS;
+  const flowItem=o=>`<div class="pitem"><div class="pt" onclick="playToggleItem(this.parentNode)"><b>${o.label}</b><span class="tag-flat">closing flow</span></div><div class="pb" style="background:none;padding:0"><div class="objflow">
+    <div class="objbox"><div class="objl">Frame</div><div class="objt">${esc(o.frame)}</div></div><div class="objbox tr"><div class="objl">Translate \u00b7 concern</div><div class="objt">${esc(o.concern)}</div></div><div class="objbox tr"><div class="objl">Translate \u00b7 feeling</div><div class="objt">${esc(o.feeling)}</div></div>
+    <div class="objbox ag"><div class="objl">Agree</div><div class="objt">${esc(o.agree)}</div></div><div class="objbox rs"><div class="objl">Respond</div><div class="objt">${esc(o.response)} <i>${esc(o.benefit)}</i></div></div><div class="objbox tn"><div class="objl">Transition</div><div class="objt">${esc(o.transition)}</div></div><div class="objbox cl"><div class="objl">Close</div><div class="objt">${esc(o.close)}</div></div></div></div></div>`;
+  el.innerHTML=`<input type="search" id="playQ" placeholder="Search the playbook\u2026" value="${esc(playQ)}" oninput="playQ=this.value; renderPlaybook(); this.focus()"><div class="hint" style="margin:0 0 8px">${c?`Filling in for <b>${esc(c.name)}</b>`:"No client selected \u2014 client bits show as [Name]"}</div>`+
+    groups.map(g=>{ const items=g.items.filter(match); const fl=g.key==="obj"?flows:[]; if(!items.length&&!fl.length) return ""; const isOpen=open.has(g.key);
+      return `<div class="pcat${isOpen?" open":""}"><div class="ph" onclick="playToggleCat('${g.key.replace(/'/g,"\\'")}')">${esc(g.label)} <span class="n">${items.length+fl.length}</span><span class="tgl">\u25B8</span></div><div class="pitems">${fl.map(flowItem).join("")}${items.map(item).join("")}</div></div>`; }).join("")||`<div class="empty">Nothing matches.</div>`;
+  if(q&&!playOpenCats) playOpenCats=null; }
 function setLibQ(v){ libQ=(v||"").trim().toLowerCase(); renderTemplates(); }
 function renderLibrary_nmc(){ const el=$("tmplNmc"); if(!el) return; const c=cur();
  const cats=["All"]; NMC_LIBRARY.forEach(t=>{ if(!cats.includes(t.cat)) cats.push(t.cat); });
@@ -4283,7 +4359,7 @@ function renderLibrary_nmc(){ const el=$("tmplNmc"); if(!el) return; const c=cur
   return hdr+`<div class="stat" style="margin-bottom:8px">
   <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline;flex-wrap:wrap">
    <div><span class="tag-flat">${TKIND[t.kind]||t.kind}</span> <b>${esc(t.title)}</b>${t.use?`<div class="hint" style="margin-top:2px">${esc(t.use)}</div>`:""}</div>
-   <div class="btnrow"><button class="btn small" onclick="copyTmplById('n','${t.id}')">Copy</button><button class="btn ghost small" onclick="saveToMine('n','${t.id}')">Save to mine</button></div></div>
+   <div class="btnrow">${t.kind==="intro"?"":`<button class="btn small" onclick="copyTmplById('n','${t.id}')">Copy</button>`}</div></div>
   <div style="font-size:13px;white-space:pre-wrap;margin-top:6px">${tmplPreview(t.body)}</div></div>`; }).join(""); }
 function tmplPoolGet(pool,id){ const T=state.templates||{};
  const list = pool==="n" ? NMC_LIBRARY : pool==="c" ? ((T.company&&T.company.templates)||[]) : pool==="s" ? (T.shared||[]) : (T.mine||[]);
@@ -4328,7 +4404,6 @@ function renderTemplates(){ const T=state.templates||{mine:[]};
    <div class="field" style="display:${t.kind==="email"?"block":"none"}"><label>Subject</label><input type="text" value="${esc(t.subject||"")}" oninput="updTemplate('${t.id}','subject',this.value)"></div>
    <div class="field"><label>Body</label><textarea style="min-height:90px;font-family:inherit" oninput="updTemplate('${t.id}','body',this.value)">${esc(t.body||"")}</textarea></div>
    <div class="btnrow">
-     <label style="margin:0;display:flex;align-items:center;gap:6px"><input type="checkbox" style="width:auto" ${t.shared?"checked":""} onchange="updTemplate('${t.id}','shared',this.checked)"> Share with the team</label>
      <span style="flex:1"></span>
      <button class="btn small" onclick="copyTmplById('m','${t.id}')">Copy</button>
      <button class="btn ghost small" onclick="delTemplate('${t.id}')">Delete</button>
@@ -4341,7 +4416,14 @@ function equivRate(P, n, targetInterest, hi){ /* the plain-amortization rate ove
   for(let i=0;i<40;i++){ const mid=(lo+h)/2; if(amort(P,mid,n).interest>targetInterest) h=mid; else lo=mid; } return (lo+h)/2; }
 const T=id=>{ const el=document.querySelector(`[data-t="${id}"]`); if(!el) return null; const v=el.value; return v===""||v==null?null:num(v); };
 function toolsSet(id,v){ const el=document.querySelector(`[data-t="${id}"]`); if(el){ el.value=v; toolsCalc(); } }
-function toolsInit(){ const tv=state.tools||{};
+function toolsCollapsible(){ const sec=$("s-tools"); if(!sec||sec.dataset.folded) return; sec.dataset.folded="1"; const open=new Set(JSON.parse(localStorage.getItem("nmcToolsOpen")||"[]"));
+  sec.querySelectorAll(".panel").forEach((p,i)=>{ if(p.closest(".tbody")) return; const first=p.firstElementChild; if(!first) return; const h2=first.tagName==="H2"?first:first.querySelector("h2"); if(!h2) return;
+    const id=p.id||("tool"+i); p.classList.add("tool"); if(open.has(id)) p.classList.add("open");
+    const head=document.createElement("div"); head.className="thead"; const tgl=document.createElement("span"); tgl.className="tgl"; tgl.textContent="\u25B8";
+    if(first.tagName==="H2"){ head.appendChild(tgl); head.appendChild(first); } else { head.appendChild(tgl); while(first.firstChild) head.appendChild(first.firstChild); first.remove(); }
+    const body=document.createElement("div"); body.className="tbody"; while(p.firstChild) body.appendChild(p.firstChild); p.appendChild(head); p.appendChild(body);
+    head.addEventListener("click",e=>{ if(e.target.closest("button,a,input,select,label")) return; p.classList.toggle("open"); const now=[...sec.querySelectorAll(".panel.tool.open")].map(x=>x.id||("tool"+[...sec.querySelectorAll(".panel.tool")].indexOf(x))); try{ localStorage.setItem("nmcToolsOpen",JSON.stringify(now)); }catch(err){} }); }); }
+function toolsInit(){ toolsCollapsible(); const tv=state.tools||{};
   document.querySelectorAll("[data-t]").forEach(el=>{ if(tv[el.dataset.t]!=null && el.value==="") el.value=tv[el.dataset.t]; });
   const c=cur();
   if(c && !c.quick && (tv._cid!==c.id || !T("cBal"))) toolsFromClient(true);
@@ -4823,7 +4905,7 @@ function go(s){ if(s!=="present"&&document.body.classList.contains("obj-open")){
   $("s-"+s).classList.add("active"); placeDebtPanel(s);
   if(s==="tmpl") renderTemplates();
   if(s==="tools") toolsInit();
-  document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.s===s));
+  const inDesk=["desk","tmpl","settings"].includes(s); document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active", b.dataset.group ? inDesk : b.dataset.s===s)); const ns=$("navDesk"); if(ns) ns.classList.toggle("open",inDesk);
   if(s==="analysis"){ fillAnalysisInputs(); renderDebts(); runAnalysis(); }
   if(s==="client"){ renderDebts(); }
   if(s==="proposal") renderProposalPreview();
@@ -4840,7 +4922,7 @@ load(); migrate();
 if(state.settings.brand==="#0E3A5D"||state.settings.brand==="#7E2318") state.settings.brand="#A53222";
 if(state.settings.accent==="#D98E2B") state.settings.accent="#DDE4F4";
 if(DEMO){ document.body.classList.add("demo"); const bn=$("demoBanner"); if(bn) bn.style.display="block"; }
-{ const v=$("verTag"); if(v) v.innerHTML="<b>NMC Toolkit v"+esc(appVersion())+"</b>"+(DESK?" \u00b7 desktop":" \u00b7 browser")+"<br>"; }
+{ const v=$("verTag"); if(v) v.textContent="v"+appVersion()+(DESK?" desktop":" browser")+" \u00b7 "; }
 if(/-beta\./.test(appVersion())){ const bn=$("updBanner"); if(bn){ bn.style.display="block"; bn.innerHTML=`<b>Beta build</b> \u2014 this is the test version with the Chrome extension. It keeps its own data file and never updates itself; newer betas are posted on the <a href="#" onclick="DESK&&DESK.openReleases();return false">releases page</a>.`; } }
 if(DESK){ DESK.setHub(apiBase()||""); DESK.onUpdateStatus(s=>{ const b=$("updBanner"); if(!b) return;
     b.style.display="block"; b.innerHTML = s.state==="ready"
