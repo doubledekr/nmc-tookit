@@ -964,7 +964,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.9.30";
+const TOOLKIT_VERSION = "1.9.31";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2673,7 +2673,7 @@ function proposalSingleHTML(){
    <tr><td>Monthly payments</td><td class="num">${money(r.dPay)}${r.dExtra?" + "+money(r.dExtra)+" extra":""}</td><td class="num">${money(r.newPay)}${r.heloc?" interest-only during the "+r.drawYrs+"-yr draw, then ~"+money(r.afterDrawPay):""}</td></tr>
    <tr><td>Paid off in${r.dMinCards?" <span class='hint'>(cards at minimum payments)</span>":""}</td><td class="num">${r.dMonths===Infinity?"never at these payments":isFinite(r.dMonths)&&r.dMonths>0?yrsMo(r.dMonths):"\u2014"}</td><td class="num">${yrsMo(r.n)}${r.extra>0?" (or "+yrsMo(r.pw.months)+" paying what you pay now)":""}</td></tr>
    <tr><td><b>Total monthly</b></td><td class="num"><b>${money(r.outlayNow)}</b></td><td class="num"><b>${money(r.newPay)}</b></td></tr>
-   ${r.pitiNow>0&&!r.hideFirst?`<tr><td>Mortgage payment with taxes &amp; insurance (PITI) + this loan</td><td class="num">${money(r.pitiNow)}</td><td class="num">${money(r.pitiNew)}</td></tr>`:""}` : `
+   ${r.pitiNow>0&&!r.hideFirst?`<tr><td><b>All-in each month</b> \u2014 mortgage with taxes &amp; insurance (PITI) + ${r.roll&&r.dPay>0?"today\u2019s debt payments \u2192 PITI + this loan":"this loan"}</td><td class="num"><b>${money(r.pitiNow+(r.roll?r.dPay:0))}</b>${r.roll&&r.dPay>0?`<div class="hint">${money(r.pitiNow)} mortgage + ${money(r.dPay)} debts${r.dMinCards?" (cards at minimums)":""}</div>`:""}</td><td class="num"><b>${money(r.pitiNew)}</b><div class="hint">${money(r.pitiNow)} mortgage + ${money(r.newPay)} this loan</div></td></tr>`:""}` : `
    <tr><td>Loan amount</td><td class="num">${money(c.balance)}</td><td class="num">${money(r.newP)}</td></tr>
    <tr><td>Interest rate</td><td class="num">${pct(c.rate)}${r.roll&&r.debts.length?` (blended with debts: ${pct(r.blended)})`:""}</td><td class="num">${pct(r.a.anRate)}${o?` \u2014 ${esc(o.lender)}${o.lock?", "+esc(o.lock)+" lock":""}`:""}</td></tr>
    <tr><td>APR${r.aprEst?" (estimated)":""}</td><td class="num"></td><td class="num">${pct(r.apr)}</td></tr>
