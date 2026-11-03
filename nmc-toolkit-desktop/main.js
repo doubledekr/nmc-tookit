@@ -48,6 +48,10 @@ ipcMain.handle("data:path", () => dataDir());
 ipcMain.on("data:pathSync", e => { e.returnValue = dataDir(); });
 ipcMain.on("app:versionSync", e => { e.returnValue = app.getVersion(); });
 ipcMain.handle("data:openFolder", () => shell.openPath(dataDir()));
+/* drag a rendered image (the loan-officer card) out of the app as a real file, so it drops into texting apps and email as an attachment */
+ipcMain.on("drag:file", (e, name, dataUrl) => { try { const { nativeImage } = require("electron"); const dir = path.join(app.getPath("temp"), "nmc-toolkit-drag"); fs.mkdirSync(dir, { recursive: true });
+  const file = path.join(dir, String(name || "image.png").replace(/[^a-z0-9._-]+/gi, "-")); const img = nativeImage.createFromDataURL(String(dataUrl || "")); fs.writeFileSync(file, img.toPNG());
+  e.sender.startDrag({ file, icon: img.resize({ width: 160 }) }); } catch (err) {} });
 /* proposal email as an .eml draft: written to temp, opened with the default mail app (Outlook shows X-Unsent files as drafts) */
 ipcMain.handle("mail:openDraft", async (e, name, eml) => { try { const dir = path.join(app.getPath("temp"), "nmc-toolkit-drafts"); fs.mkdirSync(dir, { recursive: true });
   const file = path.join(dir, String(name || "proposal.eml").replace(/[^a-z0-9._-]+/gi, "-")); fs.writeFileSync(file, eml, "utf8"); const err = await shell.openPath(file); return !err; } catch (err) { return false; } });

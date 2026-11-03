@@ -22,4 +22,5 @@ contextBridge.exposeInMainWorld("nmcDesktop", {
   extensionPath: () => ipcRenderer.sendSync("sf:extensionPathSync"),
   openExtensionFolder: () => ipcRenderer.invoke("sf:openExtensionFolder"),
   openDraft: (name, eml) => ipcRenderer.invoke("mail:openDraft", name, eml),   /* .eml draft → default mail app */
+  dragFile: (name, dataUrl) => ipcRenderer.send("drag:file", name, dataUrl),   /* native drag of a rendered image out of the app (sync: must happen inside dragstart) */
 });

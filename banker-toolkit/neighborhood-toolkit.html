@@ -906,6 +906,13 @@ Discover 6,100 190 24.9"></textarea>
             <div class="field"><label>Your NMLS #</label><input type="text" id="setLoNmls"></div>
             <div class="field"><label>Phone</label><input type="text" id="setLoPhone"></div>
             <div class="field"><label>Email</label><input type="text" id="setLoEmail"></div>
+            <div class="field"><label>Title <span class="hint" style="display:inline">(on your card)</span></label><input type="text" id="setLoTitle" placeholder="Mortgage Loan Officer"></div>
+            <div class="field"><label>Office line <span class="hint" style="display:inline">(on your card)</span></label><input type="text" id="setLoOffice" placeholder="(844) 210-3644"></div>
+            <div class="field"><label>Website</label><input type="text" id="setCoSite" placeholder="neighborhoodmc.com"></div>
+            <div class="field"><label>Partner line <span class="hint" style="display:inline">(under the logo, blank to hide)</span></label><input type="text" id="setPartnerLine" placeholder="Powered by Rocket Mortgage"></div>
+            <div class="field" style="grid-column:1/-1"><label>Your card <span class="hint" style="display:inline">— the widget in the top bar. Drag it into a text, or click it to copy.</span></label>
+              <div id="loCardPreview" style="border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff;max-width:600px"></div>
+              <div class="btnrow" style="margin-top:6px"><button class="btn ghost small" onclick="loCardCopy()">Copy card</button><button class="btn ghost small" onclick="loCardSave()">Save PNG</button></div></div>
           </div>
           <div class="chiprow" style="margin:8px 0 4px;align-items:center"><span><b>Calendar events</b> — follow-ups with no time go on the calendar at</span><input type="time" id="setCalTime" style="width:110px;flex:0 0 110px"><span>for</span><select id="setCalLen" style="width:auto"><option value="15">15 min</option><option value="30">30 min</option><option value="45">45 min</option><option value="60">1 hour</option></select><span class="hint">A time typed on the follow-up always wins.</span></div>
           <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;margin:8px 0 4px;line-height:1.45"><input type="checkbox" id="setEmailRich" style="width:auto;min-height:0;margin-top:3px"><span><b>Formatted image emails</b> — for the “Proposal as image” Cold reach-out and Full email: bold headings, highlighted numbers, brand fonts, and the image, all in one paste. (The “Proposal as email” options are always formatted.) The email opens addressed with the subject filled in and you paste the body (Ctrl+V / ⌘V). <span class="hint">Off = the current way: the text goes straight into the email and the image is on the clipboard to paste.</span></span></label>
@@ -956,7 +963,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.9.25";
+const TOOLKIT_VERSION = "1.9.26";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1041,7 +1048,7 @@ let state = {
     co:"Neighborhood Mortgage Company", tag:"Modern Mortgages, Human Approach.",
     brand:"#A53222", accent:"#DDE4F4",
     footer:"Neighborhood Mortgage Company LLC \u00b7 835 Mason St, Suite B300-M, Dearborn, MI 48124 \u00b7 NMLS #2484730 \u00b7 neighborhoodmc.com",
-    loName:"", loNmls:"", loPhone:"", loEmail:"",
+    loName:"", loNmls:"", loPhone:"", loEmail:"", loTitle:"Mortgage Loan Officer", loOffice:"(844) 210-3644", coSite:"neighborhoodmc.com", partnerLine:"Powered by Rocket Mortgage",
     logo:"", feedUrl:"", poll:false, reportUrl:"", folderGoal:15, teamUrl:"", setupDone:false,
     sfMap: JSON.parse(JSON.stringify(DEFAULT_SFMAP))
   },
@@ -1176,9 +1183,50 @@ function clientTz(c){ if(!c) return "America/New_York"; if(c.tz) return c.tz;
 const TZ_SHORT={"America/New_York":"ET","America/Chicago":"CT","America/Denver":"MT","America/Phoenix":"AZ","America/Los_Angeles":"PT","America/Anchorage":"AK","Pacific/Honolulu":"HI"};
 function clientTime(c){ const tz=clientTz(c); try{ return new Date().toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit",timeZone:tz})+" "+(TZ_SHORT[tz]||tz); }catch(e){ return ""; } }
 setInterval(()=>{ if(cur()) renderClientBar(); }, 60*1000);
+/* ---- the loan-officer card: rendered from Settings, shown as a widget in the top bar. Drag it into a text (desktop: a real
+   file drag; browser: Chrome's drag-out), or click it to copy the PNG. ---- */
+let loCardCache={key:"",url:"",blob:null,busy:false};
+function loCardKey(){ const s=state.settings; return [s.logo||"",s.co,s.tag,s.loName,s.loTitle,s.loNmls,s.loPhone,s.loOffice,s.loEmail,s.coSite,s.partnerLine].join("|"); }
+function loCardHTML(){ const s=state.settings; const F="font-family:Arial,Helvetica,sans-serif"; const G="font-family:Georgia,'Times New Roman',serif";
+  const row=(l,v,extra)=>v?`<tr><td style="${F};font-size:15px;letter-spacing:2px;color:#5C616E;text-transform:uppercase;padding:14px 0;border-top:1px solid #E2DCCF;width:110px;vertical-align:middle">${l}</td><td style="padding:14px 0;border-top:1px solid #E2DCCF;vertical-align:middle">${v}${extra||""}</td></tr>`:"";
+  return `<div style="width:1200px;height:600px;background:#fff;position:relative;overflow:hidden">
+    <div style="position:absolute;left:0;top:0;width:570px;height:600px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px">
+      <img src="${s.logo||NMC_LOGO}" style="width:490px;height:auto;display:block" alt="">
+      ${s.partnerLine?`<div style="${F};font-size:30px;color:#26262E;text-align:center">${esc(s.partnerLine)}</div>`:""}
+    </div>
+    <div style="position:absolute;left:570px;top:80px;width:1px;height:440px;background:#B8B8B8"></div>
+    <div style="position:absolute;left:604px;top:120px;width:540px">
+      <div style="${F};font-size:14px;letter-spacing:3px;color:#A53222;font-weight:700;text-transform:uppercase">Your loan officer</div>
+      <div style="${G};font-size:56px;color:#26262E;line-height:1.15;margin-top:4px">${esc(s.loName||"Your Name")}</div>
+      <div style="${F};font-size:19px;color:#5C616E;margin-top:6px"><b style="color:#26262E">${esc(s.loTitle||"Mortgage Loan Officer")}</b>${s.loNmls?` · NMLS #${esc(s.loNmls)}`:""}</div>
+      <div style="${F};font-size:18px;color:#5C616E;margin-top:2px">${esc(s.co||"Neighborhood Mortgage Company")}</div>
+      <table cellpadding="0" cellspacing="0" style="border-collapse:collapse;width:540px;margin-top:16px;border-bottom:1px solid #E2DCCF">
+        ${row("Direct", s.loPhone?`<span style="${G};font-size:30px;color:#A53222">${esc(s.loPhone)}</span>`:"", s.loPhone?`<span style="display:inline-block;margin-left:14px;vertical-align:middle;${F};font-size:13px;letter-spacing:1.5px;font-weight:700;color:#A53222;background:#F8F2E8;border:1px solid #E2DCCF;border-radius:30px;padding:6px 12px;position:relative;top:-5px">CALL OR TEXT</span>`:"")}
+        ${row("Office", s.loOffice?`<span style="${F};font-size:22px;font-weight:700;color:#26262E">${esc(s.loOffice)}</span>`:"")}
+        ${row("Email", s.loEmail?`<span style="${F};font-size:22px;font-weight:700;color:#26262E">${esc(s.loEmail)}</span>`:"")}
+        ${row("Website", s.coSite?`<span style="${F};font-size:22px;font-weight:700;color:#26262E">${esc(s.coSite)}</span>`:"")}
+      </table>
+      <div style="${F};font-size:14px;color:#7A7F8A;margin-top:14px">Company NMLS #2484730 · nmlsconsumeraccess.org · Equal Housing Opportunity</div>
+    </div></div>`; }
+async function loCardPNG(){ const key=loCardKey(); if(loCardCache.key===key&&loCardCache.blob) return loCardCache;
+  const html=loCardHTML(); const wrap=document.createElement("div"); wrap.innerHTML=html; const xhtml=new XMLSerializer().serializeToString(wrap.firstElementChild);
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml">${xhtml}</div></foreignObject></svg>`;
+  const img=new Image(); await new Promise((ok,bad)=>{ img.onload=ok; img.onerror=()=>bad(new Error("render")); img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg); });
+  const cv=document.createElement("canvas"); cv.width=1200; cv.height=600; const ctx=cv.getContext("2d"); if(!ctx) throw new Error("canvas"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,1200,600); ctx.drawImage(img,0,0);
+  const blob=await new Promise(res=>cv.toBlob(res,"image/png")); if(!blob) throw new Error("canvas"); const url=cv.toDataURL("image/png"); loCardCache={key,url,blob,busy:false}; return loCardCache; }
+async function loCardRender(){ if(loCardCache.busy) return; loCardCache.busy=true; try{ await loCardPNG(); }catch(e){ loCardCache.busy=false; return; }
+  const w=$("loCardWidget"); if(w) w.src=loCardCache.url; const p=$("loCardPreview"); if(p) p.innerHTML=`<img src="${loCardCache.url}" style="width:100%;display:block" draggable="true" ondragstart="loCardDrag(event)" title="Drag into a text, or click to copy" onclick="loCardCopy()">`; }
+function loCardFileName(){ return ((state.settings.loName||"loan-officer")+"-card").replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"").toLowerCase()+".png"; }
+function loCardDrag(ev){ if(!loCardCache.url){ ev.preventDefault(); return; } const name=loCardFileName();
+  if(window.nmcDesktop&&window.nmcDesktop.dragFile){ ev.preventDefault(); window.nmcDesktop.dragFile(name, loCardCache.url); return; }   /* native file drag: lands as an attachment wherever a file can be dropped */
+  try{ ev.dataTransfer.effectAllowed="copy"; ev.dataTransfer.setData("DownloadURL","image/png:"+name+":"+loCardCache.url); ev.dataTransfer.setData("text/uri-list",loCardCache.url); }catch(e){} }
+async function loCardCopy(){ try{ const c=await loCardPNG(); if(!(navigator.clipboard&&window.ClipboardItem)) throw new Error("nocb"); await navigator.clipboard.write([new ClipboardItem({"image/png":c.blob})]); toast("Your card is copied — paste it into a text or email (Ctrl+V / ⌘V)"); }
+  catch(e){ toast(e.message==="nocb"?"This browser can’t copy images — use Save PNG":"Couldn’t render the card here"); } }
+async function loCardSave(){ try{ const c=await loCardPNG(); const a=document.createElement("a"); a.href=c.url; a.download=loCardFileName(); document.body.appendChild(a); a.click(); a.remove(); toast("Card saved as "+loCardFileName()); }catch(e){ toast("Couldn’t render the card here"); } }
 function renderClientBar(){ const bar=$("clientBar"); if(!bar) return; const c=cur();
   const sel=`<select id="gClientPicker" onchange="this.value?pickClient(this.value):clearClient()"></select>`;
-  if(!c){ bar.innerHTML=`<div class="inner"><span class="none">No client selected.</span>${sel}<button class="btn small" onclick="go('client'); newClient()">+ New client</button><button class="btn ghost small" onclick="go('pipeline')">Pipeline</button></div>`; }
+  const card=`<img id="loCardWidget" src="${loCardCache.url||""}" alt="" draggable="true" ondragstart="loCardDrag(event)" onclick="loCardCopy()" title="Your card \u2014 drag it into a text, or click to copy it" style="height:46px;width:92px;border:1px solid var(--line);border-radius:6px;cursor:grab;background:#fff;flex:0 0 auto;box-shadow:0 1px 2px rgba(0,0,0,.08)${loCardCache.url?"":";display:none"}">`; if(!loCardCache.url&&!loCardCache.busy) loCardRender().then(()=>{ const w=$("loCardWidget"); if(w&&loCardCache.url){ w.src=loCardCache.url; w.style.display=""; } });
+  if(!c){ bar.innerHTML=`<div class="inner">${card}<span class="none">No client selected.</span>${sel}<button class="btn small" onclick="go('client'); newClient()">+ New client</button><button class="btn ghost small" onclick="go('pipeline')">Pipeline</button></div>`; }
   else { const facts=[];
     facts.push(`<span class="tag-flat">${c.quick?"\u26A1 Quick quote":esc(c.status)}</span>`);
     if(c.loanType) facts.push(`<span class="tag-flat">${esc(c.loanType)}</span>`);
@@ -1191,7 +1239,7 @@ function renderClientBar(){ const bar=$("clientBar"); if(!bar) return; const c=c
     if(onSeasonWatch(c)) facts.push(`<span class="tag-flat">\uD83D\uDCC5 seasons ${esc(c.seasonDate)}</span>`);
     if(c.hot) facts.push(`<span class="tag-warn">\uD83D\uDD25 hot</span>`); { const fi=futureInfo(c); if(fi) facts.push(`<span class="${fi.tag}">${fi.txt.replace(/ \u2014 .*$/,"")}</span>`); }
     { const t=clientTime(c); const tz=clientTz(c); if(t) facts.push(`<span class="tag-flat" title="${esc(tz)}">\uD83D\uDD52 ${t}${tz!=="America/New_York"?" (their time)":""}</span>`); }
-    bar.innerHTML=`<div class="inner"><span class="hint" style="margin:0">Working with</span><span class="who">${esc(c.name)}</span><div class="facts">${facts.join("")}</div><span style="flex:1"></span>${sel}<button class="btn ghost small" onclick="go('client')">Open</button><button class="btn ghost small" onclick="clearClient()" title="Deselect">\u2715 Clear</button></div>`; }
+    bar.innerHTML=`<div class="inner">${card}<span class="hint" style="margin:0">Working with</span><span class="who">${esc(c.name)}</span><div class="facts">${facts.join("")}</div><span style="flex:1"></span>${sel}<button class="btn ghost small" onclick="go('client')">Open</button><button class="btn ghost small" onclick="clearClient()" title="Deselect">\u2715 Clear</button></div>`; }
   const g=$("gClientPicker"); if(g){ g.innerHTML = state.clients.length ? `<option value="" ${!state.currentId?"selected":""}>\u2014 choose a client \u2014</option>`+state.clients.map(x=>`<option value="${x.id}" ${x.id===state.currentId?"selected":""}>${x.quick?"\u26A1 ":""}${esc(x.name)}</option>`).join("") : `<option value="">\u2014 no clients yet \u2014</option>`; }
 }
 /* P&I vs escrow: bankers usually know the total payment; we split it automatically from balance/rate/term */
@@ -3219,7 +3267,7 @@ function shade(hex,f){ const m=hex.replace("#",""); if(m.length!==6) return hex;
   return "#"+c.map(x=>x.toString(16).padStart(2,"0")).join(""); }
 function fillSettingsUI(){ const s=state.settings;
   $("setLoName").value=s.loName; $("setLoNmls").value=s.loNmls;
-  $("setLoPhone").value=s.loPhone; $("setLoEmail").value=s.loEmail; $("setFeed").value=s.feedUrl; $("setPoll").checked=!!s.poll; if($("setEmailRich")) $("setEmailRich").checked=!!s.emailRich; if($("setCalTime")) $("setCalTime").value=s.calTime||"10:00"; if($("setCalLen")) $("setCalLen").value=String(s.calLen||30);
+  $("setLoPhone").value=s.loPhone; $("setLoEmail").value=s.loEmail; if($("setLoTitle")){ $("setLoTitle").value=s.loTitle||""; $("setLoOffice").value=s.loOffice||""; $("setCoSite").value=s.coSite||""; $("setPartnerLine").value=s.partnerLine==null?"Powered by Rocket Mortgage":s.partnerLine; } loCardRender(); $("setFeed").value=s.feedUrl; $("setPoll").checked=!!s.poll; if($("setEmailRich")) $("setEmailRich").checked=!!s.emailRich; if($("setCalTime")) $("setCalTime").value=s.calTime||"10:00"; if($("setCalLen")) $("setCalLen").value=String(s.calLen||30);
   $("setReport").value=s.reportUrl||""; $("setGoal").value=s.folderGoal||15; if($("setSeasonLead")) $("setSeasonLead").value=s.seasonLead||7; $("setTeam").value=s.teamUrl||"";
   if($("setHub")) $("setHub").value=s.hub||""; if($("setHubKey")) $("setHubKey").value=s.hubKey||""; updateHubStatus(); updateMirrorStatus();
   const ed=$("sfMapEditor"); if(ed) ed.innerHTML=Object.keys(DEFAULT_SFMAP).map(f=>
@@ -3227,7 +3275,7 @@ function fillSettingsUI(){ const s=state.settings;
 }
 function saveSettingsFromUI(announce){ const s=state.settings;
   s.loName=$("setLoName").value; s.loNmls=$("setLoNmls").value; s.loPhone=$("setLoPhone").value; s.loEmail=$("setLoEmail").value;
-  s.feedUrl=$("setFeed").value.trim(); s.poll=$("setPoll").checked; if($("setEmailRich")) s.emailRich=$("setEmailRich").checked; if($("setCalTime")) s.calTime=$("setCalTime").value||"10:00"; if($("setCalLen")) s.calLen=+$("setCalLen").value||30;
+  if($("setLoTitle")){ s.loTitle=$("setLoTitle").value.trim(); s.loOffice=$("setLoOffice").value.trim(); s.coSite=$("setCoSite").value.trim(); s.partnerLine=$("setPartnerLine").value.trim(); } s.feedUrl=$("setFeed").value.trim(); s.poll=$("setPoll").checked; if($("setEmailRich")) s.emailRich=$("setEmailRich").checked; if($("setCalTime")) s.calTime=$("setCalTime").value||"10:00"; if($("setCalLen")) s.calLen=+$("setCalLen").value||30;
   s.reportUrl=$("setReport").value.trim(); s.folderGoal=num($("setGoal").value)||15; if($("setSeasonLead")) s.seasonLead=num($("setSeasonLead").value)||7; s.teamUrl=$("setTeam").value.trim();
   const hub=$("setHub")? $("setHub").value.trim().replace(/\/+$/,"") : (s.hub||"");
   const key=$("setHubKey")? $("setHubKey").value.trim() : (s.hubKey||""); const keyChanged=key!==(s.hubKey||""); s.hubKey=key;
