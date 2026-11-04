@@ -1081,7 +1081,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.12.8";
+const TOOLKIT_VERSION = "1.12.9";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -3198,9 +3198,11 @@ function emlQP(str){ const bytes=new TextEncoder().encode(str.replace(/\r?\n/g,"
   return out+line; }
 function emlHeader(v){ return /^[\x20-\x7e]*$/.test(v) ? v : "=?utf-8?B?"+btoa(unescape(encodeURIComponent(v)))+"?="; }
 function buildEML(to, subject, html, text){ const b="----=_nmc_"+Date.now().toString(36); const s=state.settings; const from=(s.loEmail||"").trim();
-  return [ from?`From: ${emlHeader(s.loName||"")} <${from}>`:"", to?`To: ${to}`:"", `Subject: ${emlHeader(subject)}`, "X-Unsent: 1", "MIME-Version: 1.0", `Content-Type: multipart/alternative; boundary="${b}"`, "",
-    `--${b}`, "Content-Type: text/plain; charset=utf-8", "Content-Transfer-Encoding: quoted-printable", "", emlQP(text), `--${b}`, "Content-Type: text/html; charset=utf-8", "Content-Transfer-Encoding: base64", "",
-    emlB64(`<!DOCTYPE html><html><head><meta charset="utf-8"></head><body style="margin:0;padding:12px;background:#ffffff">${html}</body></html>`), `--${b}--`, "" ].filter(l=>l!==null).join("\r\n"); }
+  /* headers first, with NO blank entries (a blank line ends the header block and the mail app would show the HTML as raw text) */
+  const headers=[ from?`From: ${emlHeader(s.loName||"")} <${from}>`:null, to?`To: ${to}`:null, `Subject: ${emlHeader(subject)}`, "X-Unsent: 1", "MIME-Version: 1.0", `Content-Type: multipart/alternative; boundary="${b}"` ].filter(Boolean);
+  const body=[ `--${b}`, "Content-Type: text/plain; charset=utf-8", "Content-Transfer-Encoding: quoted-printable", "", emlQP(text), `--${b}`, "Content-Type: text/html; charset=utf-8", "Content-Transfer-Encoding: base64", "",
+    emlB64(`<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>${esc(subject)}</title></head><body style="margin:0;padding:0;background:#ffffff">${html}</body></html>`), `--${b}--`, "" ];
+  return headers.join("\r\n")+"\r\n\r\n"+body.join("\r\n"); }
 async function emailDraftEML(kind, snapId, variant){ const c=cur(); const snap=snapId?libSnap(snapId):null; variant=variant||"blank";
   const html = snap ? snap.html : (kind==="compare" ? compareHTML() : proposalHTML()); if(html.includes('class="empty"')){ toast(kind==="compare"?"Add at least two complete scenarios first":"Finish the analysis first"); return; }
   const r=c&&!snap&&computeAnalysis(c); const title=snap?snap.title:sheetTitle(kind,c,r); if(!snap&&c) libraryAdd(kind, html, title);
