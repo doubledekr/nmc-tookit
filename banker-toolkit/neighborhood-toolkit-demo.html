@@ -463,7 +463,7 @@ nav button{padding:8px 16px 8px 32px;font-size:13.5px;min-height:34px}nav button
           <select id="pipeProduct" onchange="renderPipeline()" style="width:auto" title="Filter by the product in the client’s analysis">
             <option value="">All products</option><option value="va_irrrl">VA Streamline</option><option value="fha_streamline">FHA Streamline</option><option value="refi">Refinance</option><option value="cashout">Cash-out</option><option value="hel">Home equity loan</option><option value="heloc">HELOC</option><option value="fc">Cash-out (free &amp; clear)</option><option value="none">No analysis yet</option>
           </select>
-          <span class="pipe-add"><button class="btn ghost small" onclick="calMenu(event)" title="Put the follow-ups in this view on your Outlook calendar">📅 Outlook ▾</button><button class="btn ghost small" onclick="go('client'); sfUserOpen=true; sfRefresh(); setTimeout(()=>{ const t=$('sfPaste'); if(t) t.focus(); },50)" title="Paste a Salesforce record">Paste</button><button class="btn small" onclick="newClient()">+ Client</button></span>
+          <span class="pipe-add"><button class="btn ghost small" onclick="go('client'); sfUserOpen=true; sfRefresh(); setTimeout(()=>{ const t=$('sfPaste'); if(t) t.focus(); },50)" title="Paste a Salesforce record">Paste</button><button class="btn small" onclick="newClient()">+ Client</button></span>
         </div>
         <div id="pipeTable"></div>
       </div>
@@ -931,7 +931,7 @@ Discover 6,100 190 24.9"></textarea>
           <button class="btn ghost" onclick="addTemplate('email','follow')">+ Follow-up email</button>
         </div>
         <div id="tmplMine"></div>
-        <div class="hint" style="margin-top:8px">Tokens that auto-fill on copy: {client_first} {client} {address} {banker} {banker_first} {banker_phone} {banker_email} {banker_nmls} {rate}</div>
+        <div class="hint" style="margin-top:8px">Inserts fill in on copy: {client_first} {client} {address} {rate} {banker} {banker_first} {banker_phone} {banker_email} {banker_nmls} \u2014 and $[X] (card debt), $[Y] (balance), [X]% (rate), $[X]/mo (savings) fill when the client has the numbers.</div>
       </div>
       <div class="panel">
         <h2>Playbook order <span class="hint">— move anything up or down inside its panel; the defaults stay, reset any time</span></h2>
@@ -1019,6 +1019,7 @@ Discover 6,100 190 24.9"></textarea>
               <div class="grid2">
                 <div class="field"><label>Score unknown → test against tier</label><select id="setRdTier" onchange="saveSettingsFromUI()"><option value="640+">640+</option><option value="620-639">620–639 (default)</option><option value="580-619">580–619</option><option value="<580">Below 580</option></select></div>
                 <div class="field"><label>Minimum rate drop to count as eligible (%)</label><input type="number" id="setRdDrop" step="0.125" placeholder="0.5" onchange="saveSettingsFromUI()"></div>
+                <div class="field" title="Clients already above this rate qualify on any drop — they stay marked eligible but don\u2019t ring the bell as new each time. Blank or 0 turns this off."><label>Don\u2019t flag as new above (%)</label><input type="number" id="setRdExempt" step="0.125" placeholder="6.99" onchange="saveSettingsFromUI()"></div>
                 <div class="field"><label>“New this week” window (days)</label><input type="number" id="setRdWindow" min="1" max="30" placeholder="7" onchange="saveSettingsFromUI()"></div>
               </div>
               <label style="display:flex;gap:8px;align-items:center;cursor:pointer;margin:4px 0"><input type="checkbox" id="setRdKeepNA" style="width:auto;min-height:0" onchange="saveSettingsFromUI()"><span>“No answer” keeps a client in New this week (until they answer or the window ends)</span></label>
@@ -1084,7 +1085,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.13.2";
+const TOOLKIT_VERSION = "1.13.4";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -3554,7 +3555,9 @@ function rdApply(j, how){ if(!j||!j.version||!j.products||!j.products.va_irrrl||
   const today=todayStr(); const prevTiers=rdTiers(prev); const newT=rdTiers(j);
   /* "new" = eligible now and NOT eligible under the previous publish. A further drop for someone already eligible updates their
      tier/rate but doesn't make them new again; on the very first load there is no previous publish, so nobody is new (baseline). */
+  const exempt=state.settings.rdExemptAbove==null?6.99:+state.settings.rdExemptAbove;   /* bankers already know their 7%+ clients qualify; only lower-rate clients count as "new" */
   const fresh=[]; state.clients.forEach(c=>{ const e=rdEligibleNow(c,newT); if(!e){ return; } const was=prevTiers?!!rdEligibleNow(c,rdNormTiers(prevTiers)):true;
+    if(exempt>0&&c.rate>exempt){ c.eligibleRate=e.rate; c.eligibleTier=e.tier; c.eligibleAssumed=e.assumed; return; }
     c.eligibleRate=e.rate; c.eligibleTier=e.tier; c.eligibleAssumed=e.assumed; if(was) return;
     c.eligibleSince=j.published||j.version; c.eligibleVersion=j.version; c.eligibleDay=today; c.eligibleSeen=false; fresh.push(c); });
   state.rateDesk=Object.assign({}, j, {prevTiers:rdNormTiers(prevTiers)||null, receivedAt:new Date().toISOString(), how, freshIds:fresh.map(c=>c.id), dismissed:false});
@@ -3670,7 +3673,7 @@ function shade(hex,f){ const m=hex.replace("#",""); if(m.length!==6) return hex;
   return "#"+c.map(x=>x.toString(16).padStart(2,"0")).join(""); }
 function fillSettingsUI(){ const s=state.settings;
   $("setLoName").value=s.loName; $("setLoNmls").value=s.loNmls;
-  $("setLoPhone").value=s.loPhone; $("setLoEmail").value=s.loEmail; if($("setLoTitle")){ $("setLoTitle").value=s.loTitle||LO_CARD_DEFAULTS.loTitle; $("setLoOffice").value=s.loOffice||LO_CARD_DEFAULTS.loOffice; $("setCoSite").value=s.coSite||LO_CARD_DEFAULTS.coSite; const pp=$("partnerLogoPreview"); if(pp) pp.innerHTML=s.partnerHidden?`<span class="hint">Hidden \u2014 the card has no partner logo. <a href="#" onclick="togglePartnerLogo();return false">Show it</a></span>`:`<img src="${s.partnerLogo||NMC_PARTNER_LOGO}" style="max-height:60px;max-width:300px;display:block">${s.partnerLogo?`<span class="hint">Your upload \u00b7 <a href="#" onclick="resetPartnerLogo();return false">back to the built-in logo</a></span>`:`<span class="hint">Built in \u2014 ships with the toolkit.</span>`}`; const hb=$("clearPartnerLogoBtn"); if(hb) hb.textContent=s.partnerHidden?"Show":"Hide"; } loCardRender(); $("setFeed").value=s.feedUrl; $("setPoll").checked=!!s.poll; if($("setEmailRich")) $("setEmailRich").checked=!!s.emailRich; if($("setRdTier")){ $("setRdTier").value=rdNormTierKey(s.rdTier||"620-639"); $("setRdDrop").value=s.rdDrop==null?0.5:s.rdDrop; $("setRdBanner").checked=s.rdBanner!==false; $("setRdNotify").checked=s.rdNotify!==false; $("setRdWindow").value=s.rdWindow||7; $("setRdKeepNA").checked=s.rdKeepNoAnswer!==false; $("setRdSound").checked=s.rdSound!==false; } rdStatusLine(); if($("setCalTime")) $("setCalTime").value=s.calTime||"10:00"; if($("setCalLen")) $("setCalLen").value=String(s.calLen||30);
+  $("setLoPhone").value=s.loPhone; $("setLoEmail").value=s.loEmail; if($("setLoTitle")){ $("setLoTitle").value=s.loTitle||LO_CARD_DEFAULTS.loTitle; $("setLoOffice").value=s.loOffice||LO_CARD_DEFAULTS.loOffice; $("setCoSite").value=s.coSite||LO_CARD_DEFAULTS.coSite; const pp=$("partnerLogoPreview"); if(pp) pp.innerHTML=s.partnerHidden?`<span class="hint">Hidden \u2014 the card has no partner logo. <a href="#" onclick="togglePartnerLogo();return false">Show it</a></span>`:`<img src="${s.partnerLogo||NMC_PARTNER_LOGO}" style="max-height:60px;max-width:300px;display:block">${s.partnerLogo?`<span class="hint">Your upload \u00b7 <a href="#" onclick="resetPartnerLogo();return false">back to the built-in logo</a></span>`:`<span class="hint">Built in \u2014 ships with the toolkit.</span>`}`; const hb=$("clearPartnerLogoBtn"); if(hb) hb.textContent=s.partnerHidden?"Show":"Hide"; } loCardRender(); $("setFeed").value=s.feedUrl; $("setPoll").checked=!!s.poll; if($("setEmailRich")) $("setEmailRich").checked=!!s.emailRich; if($("setRdTier")){ $("setRdTier").value=rdNormTierKey(s.rdTier||"620-639"); $("setRdDrop").value=s.rdDrop==null?0.5:s.rdDrop; if($("setRdExempt")) $("setRdExempt").value=s.rdExemptAbove==null?6.99:(s.rdExemptAbove||""); $("setRdBanner").checked=s.rdBanner!==false; $("setRdNotify").checked=s.rdNotify!==false; $("setRdWindow").value=s.rdWindow||7; $("setRdKeepNA").checked=s.rdKeepNoAnswer!==false; $("setRdSound").checked=s.rdSound!==false; } rdStatusLine(); if($("setCalTime")) $("setCalTime").value=s.calTime||"10:00"; if($("setCalLen")) $("setCalLen").value=String(s.calLen||30);
   $("setReport").value=s.reportUrl||""; $("setGoal").value=s.folderGoal||15; if($("setSeasonLead")) $("setSeasonLead").value=s.seasonLead||7; $("setTeam").value=s.teamUrl||"";
   if($("setHub")) $("setHub").value=s.hub||""; if($("setHubKey")) $("setHubKey").value=s.hubKey||""; updateHubStatus(); updateMirrorStatus();
   const ed=$("sfMapEditor"); if(ed) ed.innerHTML=Object.keys(DEFAULT_SFMAP).map(f=>
@@ -3678,7 +3681,7 @@ function fillSettingsUI(){ const s=state.settings;
 }
 function saveSettingsFromUI(announce){ const s=state.settings;
   s.loName=$("setLoName").value; s.loNmls=$("setLoNmls").value; s.loPhone=$("setLoPhone").value; s.loEmail=$("setLoEmail").value;
-  if($("setLoTitle")){ s.loTitle=$("setLoTitle").value.trim(); s.loOffice=$("setLoOffice").value.trim(); s.coSite=$("setCoSite").value.trim(); } s.feedUrl=$("setFeed").value.trim(); s.poll=$("setPoll").checked; if($("setEmailRich")) s.emailRich=$("setEmailRich").checked; if($("setRdTier")){ s.rdTier=$("setRdTier").value; s.rdDrop=+$("setRdDrop").value||0.5; s.rdBanner=$("setRdBanner").checked; s.rdNotify=$("setRdNotify").checked; s.rdWindow=Math.max(1,Math.min(30,+$("setRdWindow").value||7)); s.rdKeepNoAnswer=$("setRdKeepNA").checked; s.rdSound=$("setRdSound").checked; } if($("setCalTime")) s.calTime=$("setCalTime").value||"10:00"; if($("setCalLen")) s.calLen=+$("setCalLen").value||30;
+  if($("setLoTitle")){ s.loTitle=$("setLoTitle").value.trim(); s.loOffice=$("setLoOffice").value.trim(); s.coSite=$("setCoSite").value.trim(); } s.feedUrl=$("setFeed").value.trim(); s.poll=$("setPoll").checked; if($("setEmailRich")) s.emailRich=$("setEmailRich").checked; if($("setRdTier")){ s.rdTier=$("setRdTier").value; s.rdDrop=+$("setRdDrop").value||0.5; if($("setRdExempt")) s.rdExemptAbove=$("setRdExempt").value===""?0:(+$("setRdExempt").value||0); s.rdBanner=$("setRdBanner").checked; s.rdNotify=$("setRdNotify").checked; s.rdWindow=Math.max(1,Math.min(30,+$("setRdWindow").value||7)); s.rdKeepNoAnswer=$("setRdKeepNA").checked; s.rdSound=$("setRdSound").checked; } if($("setCalTime")) s.calTime=$("setCalTime").value||"10:00"; if($("setCalLen")) s.calLen=+$("setCalLen").value||30;
   s.reportUrl=$("setReport").value.trim(); s.folderGoal=num($("setGoal").value)||15; if($("setSeasonLead")) s.seasonLead=num($("setSeasonLead").value)||7; s.teamUrl=$("setTeam").value.trim();
   const hub=$("setHub")? $("setHub").value.trim().replace(/\/+$/,"") : (s.hub||"");
   const key=$("setHubKey")? $("setHubKey").value.trim() : (s.hubKey||""); const keyChanged=key!==(s.hubKey||""); s.hubKey=key;
@@ -4457,13 +4460,17 @@ function renderPlaybook(){ const el=$("playBody"); if(!el||!playPanel) return; c
 /* follow-up categories, in the order the team thinks about them */
 const PLAY_FOLLOW_CATS=["VA Streamline","Cash-out","HELOC / HEL","Generic outreach","Program explainers","Post-call","Trust & verification","Emails","My templates"];
 function playFollowGroup(t){ if(t.mine) return "My templates"; if(t.kind==="email") return "Emails"; const c=t.cat||""; if(/^VA Streamline/.test(c)) return "VA Streamline"; if(/Cash-Out/i.test(c)) return "Cash-out"; if(/HELOC|Equity/i.test(c)) return "HELOC / HEL"; if(/Generic/i.test(c)) return "Generic outreach"; if(/Explainer|How-To/i.test(c)) return "Program explainers"; if(/Post-Call/i.test(c)) return "Post-call"; if(/Trust/i.test(c)) return "Trust & verification"; return "Generic outreach"; }
+/* inserts that fill from the client / banker when copied */
+const TOKEN_LIST=[["{client_first}","First name"],["{client}","Full name"],["{address}","Property address"],["{rate}","Rate (product-aware)"],["$[X]","Card debt $"],["$[Y]","Mortgage balance $"],["[X]%","Rate %"],["$[X]/mo","Monthly savings"],["{banker_first}","Your first name"],["{banker}","Your name"],["{banker_phone}","Your phone"],["{banker_email}","Your email"],["{banker_nmls}","Your NMLS"]];
+function tokenChips(taId){ return `<div class="chiprow" style="margin:4px 0 6px;gap:4px">${TOKEN_LIST.map(([k,l])=>`<button type="button" class="chip" style="min-height:24px;font-size:11px;padding:0 8px" title="${esc(l)}" onclick="tokenInsert('${taId}','${k.replace(/'/g,"\\'")}')">${esc(k)}</button>`).join("")}</div>`; }
+function tokenInsert(taId,tok){ const ta=$(taId); if(!ta) return; const a=ta.selectionStart??ta.value.length, b=ta.selectionEnd??a; ta.value=ta.value.slice(0,a)+tok+ta.value.slice(b); const p=a+tok.length; ta.focus(); try{ ta.setSelectionRange(p,p); }catch(e){} ta.dispatchEvent(new Event("input",{bubbles:true})); }
 /* add your own intro / play / text / email right inside the panel — these change day to day */
 var playEditing=null;
 function playAddFormHTML(k){ const kinds=k==="follow"?[["text","Text"],["email","Email"],["vm","Voicemail"]]:[["intro",k==="intros"?"Intro script":"Objection play"]]; const e=playEditing&&playEditing.panel===k?playEditing:null; const t=e?tmplPoolGet("m",e.id):null;
   if(!e) return `<div class="btnrow" style="margin:0 0 8px"><button class="btn ghost small" onclick="playEditing={panel:'${k}',id:null}; renderPlaybook()">+ Add ${k==="intros"?"an intro":k==="open"?"a play":"a text or email"}</button><span class="hint" style="margin:0">Yours show with a \u201cmine\u201d tag; tokens like {client_first} and {banker_first} fill in on copy.</span></div>`;
   return `<div class="pcat open" style="margin-bottom:10px;border-color:var(--brand)"><div class="ph" style="cursor:default">${t?"Edit":"New"} ${k==="intros"?"intro":k==="open"?"play":"follow-up"}</div><div class="pitems" style="padding:10px 12px">
     <div class="grid2"><div class="field"><label>Title</label><input type="text" id="playNewTitle" value="${esc(t?t.title:"")}" placeholder="${k==="intros"?"Intro \u2014 VA, Tuesday version":"Short name"}"></div><div class="field"><label>Type</label><select id="playNewKind">${kinds.map(x=>`<option value="${x[0]}" ${t&&t.kind===x[0]?"selected":""}>${x[1]}</option>`).join("")}</select></div></div>
-    <div class="field" style="margin-top:8px"><label>Words</label><textarea id="playNewBody" style="min-height:110px;font-family:inherit" placeholder="Hi {client_first}, this is {banker_first} with Neighborhood Mortgage\u2026">${esc(t?t.body:"")}</textarea></div>
+    <div class="field" style="margin-top:8px"><label>Words <span class="hint">\u00b7 click an insert to drop it at the cursor; it fills in for the selected client on copy</span></label>${tokenChips("playNewBody")}<textarea id="playNewBody" style="min-height:110px;font-family:inherit" placeholder="Hi {client_first}, this is {banker_first} with Neighborhood Mortgage\u2026">${esc(t?t.body:"")}</textarea></div>
     <div class="btnrow" style="margin-top:8px"><button class="btn small" onclick="playSaveNew('${k}')">Save</button><button class="btn ghost small" onclick="playEditing=null; renderPlaybook()">Cancel</button></div></div></div>`; }
 function playSaveNew(k){ const title=($("playNewTitle")||{}).value||"", body=($("playNewBody")||{}).value||"", kind=($("playNewKind")||{}).value||"intro"; if(!body.trim()){ toast("Type the words first"); return; }
   let t=playEditing&&playEditing.id?tmplPoolGet("m",playEditing.id):null; if(!t){ addTemplate(kind,k); t=state.templates.mine[state.templates.mine.length-1]; }
@@ -4541,7 +4548,7 @@ function renderTemplates(){ const T=state.templates||{mine:[]}; setTimeout(rende
      <div class="field"><label>Playbook panel</label><select onchange="updTemplate('${t.id}','panel',this.value); renderPlayOrder()">${PLAY_PANELS.filter(p=>p.k!=="post"&&p.k!=="close").map(p=>`<option value="${p.k}" ${((t.panel==="texts"||t.panel==="emails")?"follow":(t.panel||playDefaultPanel(t)))===p.k?"selected":""}>${p.label}</option>`).join("")}</select></div></div>
    </div>
    <div class="field" style="display:${t.kind==="email"?"block":"none"}"><label>Subject</label><input type="text" value="${esc(t.subject||"")}" oninput="updTemplate('${t.id}','subject',this.value)"></div>
-   <div class="field"><label>Body</label><textarea style="min-height:90px;font-family:inherit" oninput="updTemplate('${t.id}','body',this.value)">${esc(t.body||"")}</textarea></div>
+   <div class="field"><label>Body</label>${tokenChips("tb_"+t.id)}<textarea id="tb_${t.id}" style="min-height:90px;font-family:inherit" oninput="updTemplate('${t.id}','body',this.value)">${esc(t.body||"")}</textarea></div>
    <div class="btnrow">
      <span style="flex:1"></span>
      <button class="btn small" onclick="copyTmplById('m','${t.id}')">Copy</button>
