@@ -365,7 +365,8 @@ body.obj-open .tchart .trow{font-size:13px}body.obj-open .tchart .trow input,bod
 /* pipeline: column titles stay put */
 #pipeTable table.data thead th{position:sticky;top:var(--barh,78px);background:var(--panel);z-index:5;box-shadow:0 1px 0 var(--line)}
 /* pipeline columns: proportions set up front so the table lays out the same whatever the window started at or how long a row's text runs */
-#pipeTable table.data th:nth-child(1){width:23%}#pipeTable table.data th:nth-child(2){width:13%}#pipeTable table.data th:nth-child(3){width:9%}#pipeTable table.data th:nth-child(7){width:9%}#pipeTable table.data th:nth-child(8){width:17%}#pipeTable table.data th:nth-child(9){width:14%}
+#pipeTable table.data th:nth-child(1){width:23%}#pipeTable table.data th:nth-child(2){width:13%}#pipeTable table.data th:nth-child(3){width:9%}#pipeTable table.data th:nth-child(7){width:10%}
+#pipeTable .fuq{display:inline-flex;gap:3px;margin-top:4px}#pipeTable .fuq .btn{min-height:24px;width:26px;padding:0;font-size:12px;border-radius:6px}#pipeTable table.data th:nth-child(8){width:17%}#pipeTable table.data th:nth-child(9){width:14%}
 #s-pipeline .panel{padding-top:12px}#pipeTop{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}#pipeTop .pipe-add{margin-left:auto;display:inline-flex;gap:6px}
 /* tools: every tool folds behind its title bar */
 #s-tools .panel.tool{padding:0;overflow:hidden}#s-tools .panel.tool>.thead{display:flex;align-items:center;gap:10px;padding:12px 18px;cursor:pointer;user-select:none}
@@ -416,6 +417,255 @@ nav button{padding:8px 16px 8px 32px;font-size:13.5px;min-height:34px}nav button
 /* settings: hub hidden for now */
 #hubBlock,#hubNote{display:none}
 
+</style>
+<style id="nmcTheme">
+/* ============================================================================
+   NMC theme — the shared look for Neighborhood Mortgage tools
+   (Toolkit, Rate Desk). Red + glass, quiet tags, drawn icons, and the motion
+   hooks that nmc-motion.js drives. Layered on top of each app's own styles.
+
+   Design approach follows the "unslop" passes (spacing → color → icons → copy →
+   type → layout → details → visuals → motion); method CC BY 4.0, Damir Sokolovsky.
+   ============================================================================ */
+
+:root{--nmc-red:#A53222;--nmc-red-hi:#B83A28;--nmc-red-lo:#962C1E;--nmc-side:#6B1F15;--nmc-good:#2E6B4F;--nmc-amber:#D9A441;--nmc-ease:cubic-bezier(.2,.8,.2,1);--nmc-snap:cubic-bezier(.2,.9,.3,1.5)}
+
+/* ---------- base refinements: one radius, hairlines, quiet tags ---------- */
+body{letter-spacing:.005em;background:radial-gradient(1100px 520px at 70% -10%,#FFF6F2 0%,var(--paper,#FBF8F2) 55%)}
+.eyebrow{font-size:10.5px;letter-spacing:.14em;color:var(--muted);display:flex;align-items:center;gap:10px}.eyebrow::before{content:"";width:18px;height:1px;background:var(--brand);display:inline-block}
+.screen>h1{letter-spacing:-.01em}
+.panel{box-shadow:0 1px 0 #fff inset,0 2px 4px rgba(52,55,64,.04),0 20px 44px -24px rgba(107,31,21,.25);border-color:#EEE9DE;background:linear-gradient(180deg,#fff 0%,#FFFEFB 100%)}
+.tag-good,.tag-warn,.tag-flat{font-size:11.5px;font-weight:600;line-height:1.6;padding:2px 9px;border-radius:999px;letter-spacing:.01em;transition:transform .12s;box-shadow:0 1px 1px rgba(52,55,64,.04)}
+.tag-flat{background:#fff;border:1px solid var(--line);color:var(--muted);font-weight:500}
+.tag-good{background:#fff;border:1px solid #BBD6C6;color:var(--good)}
+.tag-warn{background:#fff;border:1px solid #E6C2B9;color:var(--warn)}
+/* buttons: glossy red for the one action that matters, quiet ghosts for the rest */
+.btn{border-radius:9px;font-weight:600;transition:transform .14s ease,box-shadow .14s ease,background .14s}
+.btn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(165,50,34,.18)}
+.btn:active{transform:translateY(0) scale(.98)}
+.btn:not(.ghost):not(.danger){background:linear-gradient(180deg,var(--nmc-red-hi) 0%,var(--brand) 55%,var(--nmc-red-lo) 100%);box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 1px 2px rgba(124,37,25,.35),0 8px 16px -8px rgba(165,50,34,.65);position:relative;overflow:hidden}
+.btn:not(.ghost):not(.danger)::after{content:"";position:absolute;top:0;left:-60%;width:40%;height:100%;background:linear-gradient(100deg,transparent,rgba(255,255,255,.35),transparent);transform:skewX(-20deg);transition:left .45s ease;pointer-events:none}
+.btn:not(.ghost):not(.danger):hover::after{left:120%}
+.btn:not(.ghost):not(.danger):hover{box-shadow:0 1px 0 rgba(255,255,255,.3) inset,0 2px 4px rgba(124,37,25,.35),0 10px 20px -6px rgba(165,50,34,.6)}
+.btn.ghost{border:1px solid var(--line);color:var(--ink);background:linear-gradient(180deg,#fff,#FBF8F2);box-shadow:0 1px 1px rgba(52,55,64,.05)}
+.btn.ghost:hover{border-color:#C9C2B4;background:#fff;box-shadow:0 2px 8px rgba(52,55,64,.08)}
+input:focus,select:focus,textarea:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(165,50,34,.12),inset 0 1px 2px rgba(52,55,64,.04);outline:none}
+.panel input,.panel select{box-shadow:inset 0 1px 2px rgba(52,55,64,.06);transition:border-color .14s,box-shadow .14s}
+/* drawn icons: sized to the text they sit in */
+.ic{display:inline-block;width:.9em;height:.9em;vertical-align:-.1em;margin-right:.3em;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
+.ic.fill{fill:currentColor;stroke:none}
+.ic.tri{width:.6em;height:.6em;margin-right:.15em;vertical-align:0}
+
+/* ---------- sidebar: deep red, glass pills ---------- */
+aside{background:var(--nmc-side);color:#fff;box-shadow:inset -1px 0 0 rgba(255,255,255,.08),10px 0 40px -24px rgba(0,0,0,.55);border-right:none}
+.wordmark{border-bottom-color:rgba(255,255,255,.12);padding:12px 16px 14px}
+#sideLogo{background:rgba(255,255,255,.96);border-radius:10px;padding:7px 10px;box-shadow:0 1px 0 rgba(255,255,255,.6) inset,0 10px 24px -12px rgba(0,0,0,.7);max-width:100%;max-height:52px;box-sizing:content-box}
+.wordmark .co{color:#fff}.wordmark .tag{color:rgba(255,255,255,.7)}
+nav button{color:rgba(255,255,255,.82);border-radius:10px;margin:2px 10px;width:calc(100% - 20px);padding-left:22px;border:1px solid transparent;transition:background .18s ease,border-color .18s ease,box-shadow .18s ease,transform .18s ease,color .18s}
+nav button:hover{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.14);color:#fff;transform:translateX(2px)}
+nav button.active{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.28);color:#fff;box-shadow:0 1px 0 rgba(255,255,255,.22) inset,0 8px 18px -10px rgba(0,0,0,.6);backdrop-filter:blur(10px);font-weight:600;transform:none}
+nav button::before{display:none}
+nav button.active::after{content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);width:3px;height:18px;border-radius:3px;background:#fff;box-shadow:0 0 10px rgba(255,255,255,.7)}
+nav button.soon{opacity:.55}
+#navDesk,#navDesk button{color:rgba(255,255,255,.82)}
+nav [data-group] button,nav .sub button{padding-left:34px}
+aside .side-foot,#sideCard .hint{color:rgba(255,255,255,.55)}
+/* the rate card: frosted, rows on a grid, changes readable on red */
+.rate-pill{margin:12px 16px 0;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.78);box-shadow:0 1px 0 rgba(255,255,255,.18) inset,0 10px 24px -14px rgba(0,0,0,.6);backdrop-filter:blur(10px);transition:background .18s,transform .18s;position:relative;overflow:hidden}
+.rate-pill:hover{background:rgba(255,255,255,.16);transform:translateY(-1px);border-color:rgba(255,255,255,.3)}
+.rate-pill b{color:#fff;font-family:var(--serif);display:inline;font-size:inherit;font-weight:400}
+.rate-pill .rp-when{font-size:11px;color:rgba(255,255,255,.7)}
+.rate-pill .rp-row{display:flex;align-items:baseline;justify-content:space-between;gap:8px;line-height:1.4;font-size:11.5px;color:#fff}
+.rate-pill .rp-row.main{font-family:var(--serif);font-size:15px;line-height:1.25;margin:2px 0 1px}
+.rate-pill .rp-row .rp-d{font-family:var(--sans);font-size:11px;font-weight:600;letter-spacing:.02em}
+.rate-pill .up,.rate-pill .up *{color:#FFC2B3}.rate-pill .down,.rate-pill .down *{color:#A9E6C1}.rate-pill .flat{color:rgba(255,255,255,.55)}
+.rate-pill .rp-boxes{display:flex;gap:5px;margin-top:7px}
+.rate-pill .rp-box{text-decoration:none;flex:1;display:flex;justify-content:space-between;align-items:center;gap:4px;border-radius:8px;padding:3px 8px;font-size:10.5px;font-weight:700;line-height:1.3;background:rgba(255,255,255,.14);color:#fff;transition:background .15s}
+.rate-pill .rp-box:hover{background:rgba(255,255,255,.24)}
+.rate-pill .rp-box b{font-size:13px;color:#fff}
+.rate-pill .rp-box.new.has{background:rgba(255,255,255,.28)}
+.rate-pill .rp-note{position:absolute;top:-7px;right:-7px;text-decoration:none;border:1.5px solid #fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;line-height:1.4;background:#fff;color:var(--brand)}
+.rate-pill .rp-note.unseen{background:var(--brand);color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.25);animation:nmc-breathe-w 3s ease-in-out infinite}
+.rate-pill .dot{vertical-align:middle}
+/* an occasional light sweep across the card */
+.rate-pill::after{content:"";position:absolute;top:-40%;left:-70%;width:45%;height:180%;background:linear-gradient(100deg,transparent 0%,rgba(255,255,255,.22) 50%,transparent 100%);transform:skewX(-18deg);animation:nmc-shimmer 7s ease-in-out infinite;pointer-events:none}
+@keyframes nmc-shimmer{0%,78%{left:-70%}100%{left:170%}}
+#sideInbox{margin:8px 16px 10px}
+#sideInbox .btn{width:100%;justify-content:flex-start;min-height:32px;border-radius:10px;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.22);color:#fff;backdrop-filter:blur(8px);box-shadow:none}
+#sideInbox .btn:hover{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.35);transform:none}
+#sideInbox .btn .nb{background:#fff;color:var(--brand);border-radius:10px;font-size:10.5px;padding:1px 7px;line-height:1.4;margin-left:auto;font-weight:700;animation:nmc-breathe-w 3s ease-in-out infinite}
+#sideUpd .btn{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.25);color:#fff}
+#sideCard{margin-top:4px}
+#loCardWidget,#sideCard img{box-shadow:0 12px 28px -10px rgba(0,0,0,.7);border-radius:8px;transition:transform .2s ease,box-shadow .2s ease}
+#loCardWidget:hover,#sideCard img:hover{transform:translateY(-2px) rotate(-.4deg);box-shadow:0 18px 34px -12px rgba(0,0,0,.75)}
+aside .tag-flat,aside .tag-good{background:rgba(255,255,255,.14);border-color:transparent;color:#fff}
+aside .hint{color:rgba(255,255,255,.6)}
+aside .dot.on{background:#A9E6C1}aside .dot.off{background:#FFC2B3}
+
+/* ---------- the glass top bar: tabs + current client ---------- */
+.clientbar{padding:6px 0 10px;border-bottom:none;background:linear-gradient(180deg,var(--paper) 62%,rgba(251,248,242,0))}
+.clientbar .inner{border-radius:12px;padding:10px 14px;gap:8px 12px;background:rgba(255,255,255,.78);backdrop-filter:blur(16px) saturate(1.3);border:1px solid rgba(255,255,255,.95);box-shadow:0 1px 0 #fff inset,0 16px 40px -20px rgba(107,31,21,.35)}
+.clientbar .who{font-size:18px}
+#playTabs{gap:0;background:rgba(255,255,255,.75);backdrop-filter:blur(14px);border:1px solid rgba(255,255,255,.95);border-radius:999px;padding:3px;display:inline-flex;margin:0 auto 8px;position:relative;left:50%;transform:translateX(-50%);box-shadow:0 1px 0 #fff inset,0 10px 26px -14px rgba(107,31,21,.4);flex-wrap:nowrap}
+#playTabs .ptab{background:transparent;color:var(--muted);text-transform:none;letter-spacing:0;font-size:12.5px;font-weight:600;padding:0 14px;min-height:28px;border-radius:999px;animation:none;opacity:1;box-shadow:none;transform:none;position:relative;transition:color .18s,background .18s,transform .18s}
+#playTabs .ptab::before{content:none}
+#playTabs .ptab.intros,#playTabs .ptab.open,#playTabs .ptab.close,#playTabs .ptab.follow,#playTabs .ptab.post{background:transparent}
+#playTabs .ptab.hot{color:var(--ink);animation:none;box-shadow:none;transform:none;opacity:1}
+#playTabs .ptab.hot::after{content:"";position:absolute;right:6px;top:9px;width:5px;height:5px;border-radius:50%;background:var(--brand);animation:nmc-dotpulse 2.4s ease-in-out infinite}
+@keyframes nmc-dotpulse{0%,100%{box-shadow:0 0 0 2px rgba(165,50,34,.12)}50%{box-shadow:0 0 0 5px rgba(165,50,34,.06)}}
+#playTabs .ptab:hover{background:var(--cream-soft);color:var(--ink);transform:none;box-shadow:none}
+#playTabs .ptab.on,#playTabs .ptab.on:hover{background:linear-gradient(180deg,var(--nmc-red-hi),var(--brand) 60%,var(--nmc-red-lo));color:#fff;outline:none;box-shadow:0 1px 0 rgba(255,255,255,.3) inset,0 6px 14px -5px rgba(165,50,34,.65);animation:nmc-snap .34s var(--nmc-snap)}
+#playTabs .ptab.on::after{content:none}
+body.present-mode #playTabs{display:none}
+/* the drop-down panel */
+#playDrawer{left:264px;right:32px;margin:0;max-width:1086px;background:rgba(255,255,255,.9);backdrop-filter:blur(18px) saturate(1.2);border:1px solid rgba(255,255,255,.9);border-top:none;box-shadow:0 30px 60px -24px rgba(107,31,21,.45);transform-origin:top;animation:nmc-drawerin .26s var(--nmc-ease)}
+#playDrawer.closing{animation:nmc-drawerout .19s ease-in forwards}
+@keyframes nmc-drawerin{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+@keyframes nmc-drawerout{to{opacity:0;transform:translateY(-8px)}}
+#playDrawer .phead{background:rgba(255,255,255,.6);border-bottom:1px solid rgba(52,55,64,.08)}
+#playDrawer .pitem{background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 1px 2px rgba(52,55,64,.04);transition:transform .16s ease,box-shadow .16s ease,border-color .16s}
+#playDrawer .pitem:hover{transform:translateY(-1px);box-shadow:0 8px 18px -10px rgba(107,31,21,.35);border-color:#E6C2B9}
+#playDrawer .pitem.open{border-color:#E6C2B9;box-shadow:0 10px 24px -12px rgba(107,31,21,.35)}
+#playDrawer .pitem .pt::before{transition:transform .18s var(--nmc-ease)}
+#playDrawer .pitem.open .pb{animation:nmc-unfold .26s var(--nmc-ease);transform-origin:top}
+#playDrawer .tag-flat{font-size:10.5px}
+#playDrawer .btn.ghost.small{min-height:30px}
+#playDrawer.snapped{transition:height .22s cubic-bezier(.2,.9,.3,1.3)}
+#playGrip{transition:background .15s}#playGrip:hover{background:var(--brand);opacity:.7}
+@media (max-width:900px){#playDrawer{left:8px;right:8px;max-width:none}}
+
+/* ---------- pipeline ---------- */
+#rdBanner{background:linear-gradient(90deg,#FFF9F7 0%,#fff 30%);border:1px solid var(--line);border-left:3px solid var(--brand);border-radius:10px;padding:10px 14px;box-shadow:0 1px 2px rgba(52,55,64,.04),0 10px 24px -14px rgba(165,50,34,.25);font-family:var(--sans)}
+#rdBanner b{font-weight:600}#rdBanner .tiers{font-weight:500}#rdBanner .tiers b{font-family:var(--serif);font-weight:500;font-size:15px}
+#rdBanner .btn.ghost{min-height:30px;font-size:12.5px;padding:0 12px}
+#pipeTop .btn{min-height:32px;font-size:12.5px;padding:0 12px;font-weight:600;transition:transform .18s var(--nmc-snap),background .15s,border-color .15s,box-shadow .15s,color .15s}
+#pipeTop .btn:not(.ghost){background:linear-gradient(180deg,#F3EAD9,var(--cream));color:var(--brand);box-shadow:0 1px 0 #fff inset,0 1px 2px rgba(52,55,64,.08);animation:nmc-snap .32s var(--nmc-snap)}
+#pipeTop .btn:not(.ghost)::after{content:none}
+#pipeTop .btn:not(.ghost):hover{transform:none}
+#pipeTop .btn.ghost{color:var(--muted);border-color:transparent;background:transparent;box-shadow:none}
+#pipeTop .btn.ghost:hover{background:#fff;border-color:var(--line);color:var(--ink);box-shadow:none;transform:none}
+#pipeTop .btn .cnt{display:inline-block;background:var(--cream-soft);border-radius:999px;padding:0 6px;font-size:11px;color:var(--muted);margin-left:4px;line-height:1.6;font-variant-numeric:tabular-nums}
+#pipeTop .btn:not(.ghost) .cnt{background:#fff;color:var(--brand)}
+#pipeTop .btn:active{transform:scale(.94);transition-duration:.06s}
+#s-pipeline input[type=search],#s-pipeline input[type=text],#s-pipeline select{border:1px solid var(--line);border-radius:9px;background:#fff}
+#pipeTable .hotbar{background:#fff!important;border:1px solid var(--line);border-left:3px solid var(--brand);border-radius:10px!important}
+#pipeTable .hotbar.live{animation:nmc-barglow 4s ease-in-out infinite 1s}
+@keyframes nmc-barglow{0%,100%{box-shadow:0 0 0 0 rgba(165,50,34,0)}50%{box-shadow:0 0 0 4px rgba(165,50,34,.08)}}
+#pipeTable table.data th{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line);box-shadow:none}
+#pipeTable table.data td{border-bottom:1px solid #F0EBE1;transition:background .12s}
+#pipeTable table.data tbody tr:hover td{background:linear-gradient(90deg,#FFF9F7,var(--cream-soft))}
+#pipeTable td:first-child b{font-weight:600}
+#pipeTable td:last-child .btn{background:#fff;color:var(--brand);border:1px solid #E6C2B9;min-height:30px;padding:0 12px;font-size:12.5px;box-shadow:none;transition:all .16s ease}
+#pipeTable td:last-child .btn::after{content:none}
+#pipeTable tbody tr:hover td:last-child .btn{background:linear-gradient(180deg,var(--nmc-red-hi),var(--brand) 60%,var(--nmc-red-lo));color:#fff;border-color:transparent;box-shadow:0 6px 12px -5px rgba(165,50,34,.6);transform:translateY(-1px)}
+#pipeTable td:nth-child(9) .tag-good{background:linear-gradient(180deg,#EAF4EE,#E0EEE5);border:none;border-left:3px solid var(--good);border-radius:6px;padding:4px 8px;font-weight:500;color:#1F4D38;line-height:1.35;box-shadow:0 1px 0 #fff inset}
+#pipeTable td:nth-child(8) .tag-good{background:linear-gradient(180deg,#EAF4EE,#E0EEE5);border:none;color:#1F4D38}
+tr.elig-week td{background:transparent}
+tr.elig-today td{animation:nmc-eligsweep 1.6s ease-out 1;background:transparent}
+@keyframes nmc-eligsweep{0%{background:#E3F1E7}100%{background:transparent}}
+#pipeTable .fuq{display:inline-flex;gap:3px;margin-top:4px}#pipeTable .fuq .btn{min-height:24px;width:26px;padding:0;font-size:12px;border-radius:6px}#pipeTable .fuq .btn .ic{margin:0;width:1em;height:1em}
+/* the living pipeline: a small cue on rows that need a human; still rows mean nothing's needed */
+#pipeTable tbody tr td:first-child{position:relative;padding-left:14px}
+#pipeTable tbody tr td:first-child::before{content:"";position:absolute;left:2px;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;background:transparent}
+#pipeTable tr.fresh td:first-child::before{background:var(--good);animation:nmc-breathe-g 2.8s ease-in-out infinite}
+#pipeTable tr.hotrow td:first-child::before{background:#E0633F;animation:nmc-flicker 2.6s ease-in-out infinite}
+#pipeTable tr.due td:first-child::before{background:var(--nmc-amber);animation:nmc-breathe-a 3.2s ease-in-out infinite}
+#pipeTable tr.overdue td:first-child::before{background:var(--brand);animation:nmc-breathe-r 1.8s ease-in-out infinite}
+@keyframes nmc-breathe-a{0%,100%{box-shadow:0 0 0 0 rgba(217,164,65,.55);opacity:.85}50%{box-shadow:0 0 0 7px rgba(217,164,65,0);opacity:1}}
+@keyframes nmc-breathe-r{0%,100%{box-shadow:0 0 0 0 rgba(165,50,34,.55);opacity:.85}50%{box-shadow:0 0 0 7px rgba(165,50,34,0);opacity:1}}
+@keyframes nmc-breathe-g{0%,100%{box-shadow:0 0 0 0 rgba(46,107,79,.5);opacity:.85}50%{box-shadow:0 0 0 7px rgba(46,107,79,0);opacity:1}}
+@keyframes nmc-breathe-w{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.45)}50%{box-shadow:0 0 0 5px rgba(255,255,255,0)}}
+@keyframes nmc-flicker{0%,100%{transform:scale(1);opacity:.8}30%{transform:scale(1.25);opacity:1}55%{transform:scale(.95);opacity:.75}75%{transform:scale(1.15);opacity:1}}
+#pipeTable tr.due td:nth-child(7) .fud{color:#8A6D00;font-weight:600}
+#pipeTable tr.overdue td:nth-child(7) .fud{color:var(--brand);font-weight:700;animation:nmc-hum 1.8s ease-in-out infinite}
+@keyframes nmc-hum{0%,100%{opacity:1}50%{opacity:.55}}
+#pipeTable tbody tr:hover td:first-child::before{animation:none;opacity:1;box-shadow:0 0 0 3px rgba(52,55,64,.06)}
+#pipeTable tbody tr:hover td:nth-child(7) .fud{animation:none}
+#pipeTable tr.hotrow .ic.flame{transform-origin:50% 90%;animation:nmc-flame 1.6s ease-in-out infinite}
+@keyframes nmc-flame{0%,100%{transform:scale(1) rotate(0)}25%{transform:scale(1.12) rotate(-3deg)}50%{transform:scale(.96) rotate(2deg)}75%{transform:scale(1.08) rotate(-1deg)}}
+#pipeTable td:nth-child(8) .tag-good .ic,#pipeTop .btn .ic.sparkle{animation:nmc-twinkle 5s ease-in-out infinite}
+@keyframes nmc-twinkle{0%,88%,100%{transform:scale(1) rotate(0);opacity:1}92%{transform:scale(1.35) rotate(20deg);opacity:.9}96%{transform:scale(.9) rotate(-10deg)}}
+/* entrance: only when a screen or view is just opened (body.nmc-enter), never on a background re-render */
+body.nmc-enter .screen.active{animation:nmc-screenin .32s var(--nmc-ease)}
+@keyframes nmc-screenin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+body.nmc-enter #pipeTable table.data tbody tr{animation:nmc-rowin .42s var(--nmc-ease) both}
+body.nmc-enter #pipeTable table.data tbody tr:nth-child(1){animation-delay:.03s}body.nmc-enter #pipeTable table.data tbody tr:nth-child(2){animation-delay:.08s}body.nmc-enter #pipeTable table.data tbody tr:nth-child(3){animation-delay:.13s}body.nmc-enter #pipeTable table.data tbody tr:nth-child(4){animation-delay:.18s}body.nmc-enter #pipeTable table.data tbody tr:nth-child(5){animation-delay:.23s}body.nmc-enter #pipeTable table.data tbody tr:nth-child(6){animation-delay:.28s}body.nmc-enter #pipeTable table.data tbody tr:nth-child(7){animation-delay:.33s}body.nmc-enter #pipeTable table.data tbody tr:nth-child(8){animation-delay:.38s}body.nmc-enter #pipeTable table.data tbody tr:nth-child(n+9){animation-delay:.42s}
+@keyframes nmc-rowin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+body.nmc-enter #pipeTable .tag-good,body.nmc-enter #pipeTable .tag-flat,body.nmc-enter #pipeTable .tag-warn{animation:nmc-tagpop .5s cubic-bezier(.2,.9,.3,1.4) both .35s}
+body.nmc-enter #pipeTable td:nth-child(9) .tag-good{animation:nmc-tagpop .5s cubic-bezier(.2,.9,.3,1.3) both .5s}
+@keyframes nmc-tagpop{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:none}}
+body.nmc-enter #pipeTop .btn{animation:nmc-rowin .4s ease both}body.nmc-enter #pipeTop .btn:nth-child(2){animation-delay:.04s}body.nmc-enter #pipeTop .btn:nth-child(3){animation-delay:.08s}body.nmc-enter #pipeTop .btn:nth-child(4){animation-delay:.12s}body.nmc-enter #pipeTop .btn:nth-child(5){animation-delay:.16s}body.nmc-enter #pipeTop .btn:nth-child(6){animation-delay:.2s}body.nmc-enter #pipeTop .btn:nth-child(7){animation-delay:.24s}body.nmc-enter #pipeTop .btn:nth-child(n+8){animation-delay:.28s}
+body.nmc-enter #pipeTable .hotbar{animation:nmc-rowin .4s ease both .2s}
+body.nmc-enter tr.elig-week td{animation:nmc-eligbreathe 2.2s ease-in-out 1 .6s}
+@keyframes nmc-eligbreathe{0%,100%{background:transparent}40%{background:#E3F1E7}}
+body.nmc-enter .stat{animation:nmc-rowin .45s var(--nmc-ease) both}body.nmc-enter .stat:nth-child(2){animation-delay:.06s}body.nmc-enter .stat:nth-child(3){animation-delay:.12s}body.nmc-enter .stat:nth-child(4){animation-delay:.18s}
+/* charts draw themselves on entry (nmc-motion sets --len per path) */
+body.nmc-enter svg.chart path[stroke][style*="--len"],body.nmc-enter svg.chart polyline[style*="--len"]{stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:nmc-draw 1.4s cubic-bezier(.3,.7,.3,1) forwards}
+body.nmc-enter svg.chart path[stroke]:nth-of-type(2){animation-delay:.15s}body.nmc-enter svg.chart path[stroke]:nth-of-type(3){animation-delay:.3s}
+@keyframes nmc-draw{to{stroke-dashoffset:0}}
+body.nmc-enter svg.chart circle{animation:nmc-tagpop .4s cubic-bezier(.2,.9,.3,1.4) both 1.2s}
+
+/* ---------- My desk ---------- */
+.stat{background:#fff;border:1px solid var(--line);border-left:3px solid var(--brand);border-radius:10px;box-shadow:0 1px 2px rgba(52,55,64,.04),0 10px 24px -16px rgba(52,55,64,.25)}
+.stat .v,.stat b{font-family:var(--serif)}
+
+/* ---------- presentation ---------- */
+.tchart{border-radius:12px}.tchart>div:first-child{border-right:1px solid var(--line);background:linear-gradient(180deg,#FDFBF7,#FAF6EE)}
+.tchart>div:last-child{background:linear-gradient(180deg,#fff,#FFFDF9)}
+.tchart h3{font-size:22px;letter-spacing:-.01em;display:flex;align-items:baseline;gap:10px;padding-bottom:8px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.tchart h3 .tag-warn,.tchart h3 .tag-good{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;padding:1px 8px}
+.tchart .trow{border-bottom:1px solid #F3EEE4;align-items:start;gap:8px;padding:5px 0}
+.tchart .trow>span{min-width:0}
+.tchart .trow.hd{font-size:10.5px;letter-spacing:.08em;color:#8A8470;font-weight:600;border-bottom:1px solid var(--line);align-items:end;padding-bottom:6px}
+.tchart .trow.hd span{line-height:14px}
+.tchart input,.tchart select{min-height:36px;height:36px;padding:0 10px;font-size:14px;border:1px solid var(--line);border-radius:9px;background:#fff;width:100%;box-sizing:border-box;transition:border-color .12s,box-shadow .12s}
+.tchart input.num,.tchart input[type=number]{text-align:right;font-variant-numeric:tabular-nums}
+.tchart .trow>span>.hint:first-child{display:block;font-size:10.5px;text-transform:uppercase;letter-spacing:.07em;color:#8A8470;font-weight:600;margin:0 0 5px;line-height:14px;white-space:nowrap}
+.tchart .trow.r5>span:first-child,.tchart .trow.d6>span:first-child,.tchart .trow.r5>span.muted{padding-top:8px;line-height:1.3}
+.tchart .trow .hint{line-height:1.3}
+.tchart .trow input+.hint,.tchart .trow .num>.hint{margin-top:4px;font-size:10.5px;text-align:right}
+.tchart .btnrow .btn.ghost.small{min-height:32px}
+.tchart .tot{border-top:1px solid var(--ink);font-size:14px;margin-top:10px;padding-top:12px}.tchart .tot b{font-size:26px;background:linear-gradient(180deg,var(--ink),#555A66);-webkit-background-clip:text;background-clip:text;color:transparent}
+.tchart .keep{background:linear-gradient(180deg,#F2F9F4,#E6F2EA);border:1px solid #CFE3D6;border-left:4px solid var(--good);border-radius:10px;font-size:14px;box-shadow:0 1px 0 #fff inset,0 12px 26px -14px rgba(46,107,79,.55);animation:nmc-keepin .5s var(--nmc-ease)}
+@keyframes nmc-keepin{from{opacity:0;transform:translateY(6px) scale(.98)}to{opacity:1;transform:none}}
+.tchart .keep b{font-size:28px;background:linear-gradient(180deg,#2E6B4F,#1F4D38);-webkit-background-clip:text;background-clip:text;color:transparent}
+.tchart .pw{background:linear-gradient(180deg,#fff,#FBF8F2);border:1px solid var(--line);border-left:4px solid var(--cream);border-radius:10px;font-size:12.5px;line-height:1.6;box-shadow:0 1px 2px rgba(52,55,64,.05)}
+.tchart .pw b{color:var(--ink)}
+#s-present .panel textarea,#s-present .panel input[type=text]{border:1px solid var(--line);border-radius:9px;min-height:40px;padding:8px 12px;font-size:14px}
+.ticking{color:var(--brand)!important;-webkit-text-fill-color:var(--brand)!important;background:none!important;transition:color .3s}
+/* benefit toggles: a box that clicks green and a checkmark that draws */
+.benef label{position:relative;padding-left:30px;user-select:none;transition:transform .18s var(--nmc-snap),background .15s,border-color .15s,color .15s}
+.benef label input{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
+.benef label::before{content:"";position:absolute;left:9px;top:50%;width:14px;height:14px;margin-top:-7px;border-radius:5px;border:1.5px solid #C9C2B4;background:#fff;transition:background .15s,border-color .15s,transform .2s var(--nmc-snap)}
+.benef label.on::before{background:var(--good);border-color:var(--good);transform:scale(1.08)}
+.benef label::after{content:"";position:absolute;left:13px;top:50%;width:4px;height:8px;margin-top:-6px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg) scale(0);transform-origin:center;transition:transform .22s cubic-bezier(.2,.9,.3,1.6) .05s}
+.benef label.on::after{transform:rotate(45deg) scale(1)}
+.benef label:active{transform:scale(.94);transition-duration:.06s}
+.benef label.on{animation:nmc-snap .32s var(--nmc-snap)}
+
+/* ---------- snap: a click lands with a small overshoot ---------- */
+@keyframes nmc-snap{0%{transform:scale(.92)}55%{transform:scale(1.06)}100%{transform:scale(1)}}
+.chip{transition:transform .18s var(--nmc-snap),background .15s,border-color .15s,box-shadow .15s,color .15s}
+.chip:active{transform:scale(.94);transition-duration:.06s}
+.chip.on{animation:nmc-snap .32s var(--nmc-snap);background:linear-gradient(180deg,var(--nmc-red-hi),var(--brand) 60%,var(--nmc-red-lo));color:#fff;border-color:transparent;box-shadow:0 1px 0 rgba(255,255,255,.25) inset,0 6px 14px -6px rgba(165,50,34,.6)}
+.btn.copied{background:linear-gradient(180deg,#3B7F60,#2E6B4F)!important;color:#fff!important;border-color:transparent!important;animation:nmc-snap .34s var(--nmc-snap)}
+
+/* ---------- graceful opens ---------- */
+@keyframes nmc-unfold{from{opacity:0;transform:translateY(-4px) scaleY(.96);clip-path:inset(0 0 40% 0)}to{opacity:1;transform:none;clip-path:inset(0)}}
+@keyframes nmc-menuin{from{opacity:0;transform:translateY(-6px) scale(.97)}to{opacity:1;transform:none}}
+@keyframes nmc-fadein{from{opacity:0}to{opacity:1}}
+@keyframes nmc-slidein{from{transform:translateX(24px);opacity:0}to{transform:none;opacity:1}}
+#emailMenu,#sentMenu,.menu-pop,.modal .panel,#rdMsgModal .panel,#askBox>div{animation:nmc-menuin .2s cubic-bezier(.2,.9,.3,1.2);transform-origin:top left}
+#askBox,.modal{animation:nmc-fadein .18s ease}
+#objDrawer{animation:nmc-slidein .28s var(--nmc-ease)}
+#sfPanel:not(.closed) #sfBody,#s-tools details[open]>*:not(summary){animation:nmc-unfold .24s var(--nmc-ease)}
+summary{transition:color .15s}summary:hover{color:var(--brand)}
+.toast{animation:nmc-menuin .22s cubic-bezier(.2,.9,.3,1.2)}
+
+/* ---------- restraint ---------- */
+body.nmc-bg *,body.nmc-bg *::before,body.nmc-bg *::after{animation-play-state:paused!important}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.ticking{color:inherit!important}}
+@media print{aside{background:none;color:var(--ink)}}
 </style>
 </head>
 <body>
@@ -1086,10 +1336,117 @@ Discover 6,100 190 24.9"></textarea>
 
 <div id="toast"></div>
 <div id="printSheet"></div>
+<script id="nmcMotion">
+/* ============================================================================
+   NMC motion — the small library behind the theme's movement.
+   Shared by the Toolkit and the Rate Desk. No dependencies.
+
+     NMC.icons(root)      swap emoji in text for drawn line icons (sized to text)
+     NMC.icon(name)       the <svg> markup for one icon, for use in templates
+     NMC.tick(root)       numbers marked data-tick count up on first appearance
+                          and tick old→new when their value changes
+     NMC.enter(ms)        "a screen or view was just opened": entrance animations
+                          (row cascade, chart draw, tile slide) run for ms, then stop
+     NMC.charts(root)     measure chart paths so they can draw themselves
+     NMC.copied(btn)      morph a Copy button to "✓ Copied" and back
+     NMC.snapHeight(el, stops, tol)   settle a dragged height onto the nearest stop
+     NMC.closeThen(el, fn, ms)        add .closing, then run fn (exit animations)
+
+   Everything respects prefers-reduced-motion and pauses when the window is hidden.
+   ============================================================================ */
+(function(){
+  const reduce = () => window.__nmcNoMotion || typeof requestAnimationFrame !== "function" || (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+
+  /* ---------- icons ---------- */
+  const PATHS = {
+    flame:    '<path d="M8 1.5c.5 2.5 3.5 3.5 3.5 7a3.5 3.5 0 0 1-7 0c0-1.5.8-2.5 1.2-3 .2 1 .8 1.8 1.5 2 .2-2.4.3-4.5.8-6z"/>',
+    sparkle:  '<path d="M8 1.5l1.5 4.5L14 7.5 9.5 9 8 13.5 6.5 9 2 7.5l4.5-1.5z" fill="currentColor" stroke="none"/>',
+    bell:     '<path d="M4.5 10.5V7a3.5 3.5 0 0 1 7 0v3.5l1 1.5H3.5zM6.5 13.5a1.5 1.5 0 0 0 3 0"/>',
+    hourglass:'<path d="M4 2h8M4 14h8M5 2c0 4 3 4 3 6s-3 2-3 6M11 2c0 4-3 4-3 6s3 2 3 6"/>',
+    calendar: '<rect x="2.5" y="3.5" width="11" height="10" rx="1.5"/><path d="M2.5 7h11M5.5 2v3M10.5 2v3"/>',
+    home:     '<path d="M2.5 8L8 3l5.5 5M4 7v6.5h8V7"/>',
+    clock:    '<circle cx="8" cy="8" r="5.5"/><path d="M8 5v3l2 1.5"/>',
+    chat:     '<path d="M3 3h10v7H7l-3 3v-3H3z"/>',
+    bolt:     '<path d="M9 1.5L3.5 9H8l-1 5.5L12.5 7H8z"/>',
+    check:    '<path d="M3 8.5l3 3 7-7"/>',
+    x:        '<path d="M4 4l8 8M12 4l-8 8"/>',
+    redo:     '<path d="M12.5 7A5 5 0 1 0 11 11.5M12.5 3v4h-4"/>',
+    up:       '<path d="M3 11l5-6 5 6z" fill="currentColor" stroke="none"/>',
+    down:     '<path d="M3 5l5 6 5-6z" fill="currentColor" stroke="none"/>',
+    arrowUp:  '<path d="M8 13V3M4 7l4-4 4 4"/>',
+    arrowDown:'<path d="M8 3v10M4 9l4 4 4-4"/>',
+    star:     '<path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z" fill="currentColor" stroke="none"/>',
+    starO:    '<path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/>'
+  };
+  const EMOJI = {
+    "\u{1F525}":"flame", "✨":"sparkle", "\u{1F514}":"bell", "⏳":"hourglass", "\u{1F4C5}":"calendar",
+    "\u{1F3E1}":"home", "\u{1F550}":"clock", "\u{1F552}":"clock", "\u{1F4AC}":"chat", "⚡":"bolt",
+    "⬆":"arrowUp", "⬇":"arrowDown", "★":"star", "☆":"starO"
+  };
+  const CLS = {sparkle:"fill", up:"fill tri", down:"fill tri", star:"fill"};
+  function icon(name, extra){ const p = PATHS[name]; if(!p) return ""; return `<svg class="ic ${name}${CLS[name]?" "+CLS[name]:""}${extra?" "+extra:""}" viewBox="0 0 16 16" aria-hidden="true">${p}</svg>`; }
+  const RE = new RegExp("(" + Object.keys(EMOJI).join("|") + ")\\uFE0F?\\s?", "gu");
+  const SKIP = {SCRIPT:1, STYLE:1, TEXTAREA:1, INPUT:1, OPTION:1, SVG:1, TITLE:1};
+  function icons(root){
+    const walk = n => {
+      if(n.nodeType === 3){ const v = n.nodeValue; if(!v || !RE.test(v)) return; RE.lastIndex = 0;
+        const span = document.createElement("span"); span.innerHTML = v.replace(/[&<>]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;"}[c])).replace(RE, (m, k) => icon(EMOJI[k]));
+        n.replaceWith(...span.childNodes); return; }
+      if(n.nodeType !== 1 || SKIP[n.nodeName] || n.hasAttribute("data-noicon")) return;
+      for(const c of [...n.childNodes]) walk(c);
+    };
+    walk(root || document.body);
+  }
+
+  /* ---------- number ticks ---------- */
+  const last = new Map();
+  const fmt = (m, v) => { const dec = (m.split(".")[1] || "").length; return dec ? v.toFixed(dec) : Math.round(v).toLocaleString("en-US"); };
+  function run(tn, host, from, to, txt, m, dur){
+    if(reduce() || document.hidden){ tn.nodeValue = txt; return; }
+    const t0 = performance.now(); host.classList.add("ticking");
+    const step = t => { const p = Math.min(1, (t - t0) / dur); const e = 1 - Math.pow(1 - p, 3);
+      tn.nodeValue = p < 1 ? txt.replace(m, fmt(m, from + (to - from) * e)) : txt;
+      if(p < 1 && tn.isConnected) requestAnimationFrame(step); else host.classList.remove("ticking"); };
+    requestAnimationFrame(step);
+  }
+  function tick(root){
+    const R = root || document;
+    // stat tiles key themselves by their label, so render functions need no markup
+    R.querySelectorAll(".stat > .v:not([data-tick])").forEach(v => { const lab = (v.parentNode.textContent || "").replace(v.textContent, "").trim().slice(0, 40); v.dataset.tick = "stat:" + lab; });
+    R.querySelectorAll("[data-tick]").forEach(el => {
+      if(el.dataset.tk) return; el.dataset.tk = "1";
+      const tn = [...el.childNodes].find(n => n.nodeType === 3 && /\d/.test(n.nodeValue)); if(!tn) return;
+      const txt = tn.nodeValue; const m = txt.match(/-?[\d,]*\.?\d+(?=%)/) || txt.match(/-?[\d,]*\.?\d+/); if(!m) return;
+      const to = +m[0].replace(/,/g, ""); if(isNaN(to)) return;
+      const key = el.dataset.tick; const prev = last.get(key); last.set(key, to);
+      if(prev == null){ if(el.dataset.tickFirst !== "no") run(tn, el, 0, to, txt, m[0], 900); }
+      else if(prev !== to) run(tn, el, prev, to, txt, m[0], 420);
+    });
+  }
+
+  /* ---------- entrance window + charts ---------- */
+  let enterT = null;
+  function enter(ms){ if(reduce()) return; document.body.classList.remove("nmc-enter"); void document.body.offsetWidth; document.body.classList.add("nmc-enter"); clearTimeout(enterT); enterT = setTimeout(() => document.body.classList.remove("nmc-enter"), ms || 1800); charts(); }
+  function charts(root){ (root || document).querySelectorAll("svg.chart path[stroke], svg.chart polyline").forEach(p => { if(p.dataset.len || typeof p.getTotalLength !== "function") return; try{ const L = p.getTotalLength(); if(L > 0){ p.dataset.len = "1"; p.style.setProperty("--len", L); } }catch(e){} }); }
+
+  /* ---------- small satisfactions ---------- */
+  function copied(btn, label){ if(!btn || btn.dataset.copied) return; btn.dataset.copied = "1"; const html = btn.innerHTML; btn.classList.add("copied"); btn.innerHTML = icon("check") + (label || "Copied"); setTimeout(() => { btn.classList.remove("copied"); btn.innerHTML = html; delete btn.dataset.copied; }, 1100); }
+  function snapHeight(el, stops, tol){ const h = parseInt(el.style.height) || el.getBoundingClientRect().height; const near = stops.reduce((a, b) => Math.abs(b - h) < Math.abs(a - h) ? b : a); if(Math.abs(near - h) < (tol || 70)){ el.classList.add("snapped"); el.style.height = near + "px"; setTimeout(() => el.classList.remove("snapped"), 300); return near; } return h; }
+  function closeThen(el, fn, ms){ if(!el || reduce()){ fn(); return; } el.classList.add("closing"); setTimeout(() => { el.classList.remove("closing"); fn(); }, ms || 190); }
+
+  /* ---------- keep the page quiet when nobody's looking; keep icons current ---------- */
+  document.addEventListener("visibilitychange", () => document.body.classList.toggle("nmc-bg", document.hidden));
+  let moT = null; const mo = new MutationObserver(() => { clearTimeout(moT); moT = setTimeout(() => { icons(); tick(); }, 30); });
+  function start(){ icons(); tick(); mo.observe(document.body, {childList:true, subtree:true}); }
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
+
+  window.NMC = {icons, icon, tick, enter, charts, copied, snapHeight, closeThen, PATHS};
+})();
+</script>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.13.18";
+const TOOLKIT_VERSION = "1.14.0";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1150,7 +1507,8 @@ function fuNextChips(c){ const id=c.id; const chip=(l,fn)=>`<button class="chip"
 function fuButtons(c,compact){ const id=c.id; const b=(l,o,cls)=>`<button class="btn ${cls||"ghost "}small" onclick="fuClose('${id}','${o}')">${l}</button>`;
   if(fuPending&&fuPending.id===id) return `<div class="chiprow" style="align-items:center">${fuNextChips(c)}</div>`;
   if(!c.followUp) return compact?"":`<div class="chiprow" style="align-items:center"><span class="hint">No follow-up set.</span> ${fuNextChips(c)}</div>`;
-  return `<div class="chiprow" style="align-items:center">${compact?"":`<span class="hint">Follow-up ${esc(c.followUp)}${c.followUpTime?" "+esc(c.followUpTime):""} \u2014 close it:</span>`}${b("\u2713 Done","done","")}${b("No answer","noanswer")}${b("Reschedule","resched")}</div>`; }
+  if(compact) return `<div class="fuq"><button class="btn small" title="Done" onclick="fuClose('${id}','done')">${NMC.icon("check")}</button><button class="btn ghost small" title="No answer / left VM" onclick="fuClose('${id}','noanswer')">${NMC.icon("x")}</button><button class="btn ghost small" title="Reschedule" onclick="fuClose('${id}','resched')">${NMC.icon("redo")}</button></div>`;
+  return `<div class="chiprow" style="align-items:center"><span class="hint">Follow-up ${esc(c.followUp)}${c.followUpTime?" "+esc(c.followUpTime):""} \u2014 close it:</span>${b("\u2713 Done","done","")}${b("No answer","noanswer")}${b("Reschedule","resched")}</div>`; }
 function fuLogHTML(c){ const L=(c.log||[]).slice(0,5); if(!L.length) return "";
   return `<div class="eyebrow" style="margin-top:6px">Activity</div>`+L.map(e=>`<div>${esc(e.when)} \u2014 ${esc(FU_OUT[e.outcome]||e.outcome)}${e.note?" \u2014 "+esc(e.note):""}${e.due?` (was due ${esc(e.due)}${e.dueTime?" "+esc(e.dueTime):""})`:""}${e.next?` \u2192 next ${esc(e.next)}`:""}</div>`).join("")+((c.log||[]).length>5?`<div>\u2026 ${(c.log.length-5)} more</div>`:""); }
 function closedThisMonth(){ const mkey=new Date().toISOString().slice(0,7); return state.clients.filter(c=>!c.quick&&c.status===S_DONE&&(c.closedAt||"").slice(0,7)===mkey); }
@@ -1192,7 +1550,8 @@ const pct = v => (v==null||isNaN(v)) ? "\u2014" : Number(v).toFixed(3).replace(/
 const num = v => { const n = parseFloat(String(v).replace(/[$,%\s]/g,"")); return isNaN(n)?null:n; };
 const yrsMo = m => { if(m==null||!isFinite(m)) return "\u2014"; const y=Math.floor(m/12), r=Math.round(m%12);
   return ((y?y+" yr ":"") + (r? r+" mo":"")).trim() || "0 mo"; };
-function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),3200); }
+let _copyBtn=null; document.addEventListener("click",e=>{ const b=e.target&&e.target.closest&&e.target.closest(".btn"); _copyBtn=(b&&/^copy/i.test(b.textContent.trim()))?b:null; },true);
+function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),3200); if(/copied/i.test(msg)&&_copyBtn&&window.NMC){ NMC.copied(_copyBtn); _copyBtn=null; } }
 function save(){ writeStore(JSON.stringify(state)); mirrorSeq++; scheduleAutosave(); }
 const DESK = window.nmcDesktop || null;
 function appVersion(){ try{ return (DESK&&DESK.version())||TOOLKIT_VERSION; }catch(e){ return TOOLKIT_VERSION; } }   /* present only inside the desktop app (preload bridge) */
@@ -1686,7 +2045,7 @@ function opportunity(c){ const fr=feedRateFor(c);
   return null;
 }
 let pipeView="all";
-function setPipeView(v){ pipeView=v; renderPipeline(); }
+function setPipeView(v){ pipeView=v; if(window.NMC) NMC.enter(1200); renderPipeline(); }
 /* sortable columns: click a header to sort, again to flip, a third time to clear */
 let pipeSort={key:null,dir:1};
 function setPipeSort(k){ if(pipeSort.key!==k){ pipeSort={key:k,dir:1}; } else if(pipeSort.dir===1){ pipeSort.dir=-1; } else { pipeSort={key:null,dir:1}; } renderPipeline(); }
@@ -1762,13 +2121,13 @@ const VA_LENDER_ID="7485220000";
 function vaLenderNote(){ const c=cur(); const a=c&&c.analysis; const va=!!(c&&(c.loanType==="VA"||(a&&a.anProgram==="va_irrrl"))); return va?" \u00b7 VA Lender ID #"+VA_LENDER_ID:""; }
 function clientProduct(c){ const a=c&&c.analysis; if(!a||!(a.anRate>0)) return "none";
   if(a.anLien==="fc") return "fc"; if(a.anLien==="second") return a.anSecondType==="heloc"?"heloc":"hel"; if(a.anProgram==="va_irrrl") return "va_irrrl"; if(a.anProgram==="fha_streamline") return "fha_streamline"; return (+a.anCashOut||0)>0?"cashout":"refi"; }
-function renderPipeline(){
+function renderPipeline(){ const today=todayStr();
   const filt=$("pipeFilter"); if(filt.options.length<=1)
     STATUSES.forEach(s=>{const o=document.createElement("option");o.textContent=s;filt.appendChild(o);});
   const al=pipeAlerts();
   const hs=new Set(al.hot.map(c=>c.id)), ds=new Set(al.due.map(c=>c.id)), ws=new Set(al.watch.map(c=>c.id)), ss=new Set(al.season.map(c=>c.id)), rs=new Set(al.ratewatch.map(c=>c.id)), fs_=new Set(al.future.map(c=>c.id));
   const chips=$("pipeChips"); if(chips){
-    const chip=(v,l,n)=>`<button class="btn small ${pipeView===v?"":"ghost "}" onclick="setPipeView('${v}')">${l}${n!=null?" ("+n+")":""}</button>`;
+    const chip=(v,l,n)=>`<button class="btn small ${pipeView===v?"":"ghost "}" onclick="setPipeView('${v}')">${l}${n!=null?` <span class="cnt" data-tick="pipe.${v}" data-tick-first="no">${n}</span>`:""}</button>`;
     const sentN=state.clients.filter(c=>!c.quick&&c.proposalSent&&!isDone(c)).length;
     chips.innerHTML=chip("all","All")+chip("hot","\uD83D\uDD25 Hot now",al.hot.length)+chip("due","Follow-ups due",al.due.length)+chip("flag","\uD83D\uDD25 Hot leads",al.flagged.length)+chip("ratewatch","\u23F3 Rate watch",al.ratewatch.length)+chip("season","\uD83D\uDCC5 Seasoning",al.season.length)+chip("future","\uD83C\uDFE1 Future buyers",al.future.length)+(al.watch.length?chip("watch","Watching",al.watch.length):"")+chip("sent","Proposal sent",sentN)+(rdTiers()?chip("elignow","\u2728 Eligible now",rdEligibleIds().length)+chip("eligible","\u2728 New this week",rdWeekIds().length):""); }
   const f=filt.value; const pf=$("pipeProduct")?$("pipeProduct").value:"";
@@ -1780,10 +2139,10 @@ function renderPipeline(){
     .sort((a,b)=>{ if(pipeSort.key){ const va=sortVal(a,pipeSort.key), vb=sortVal(b,pipeSort.key); const cmp = typeof va==="number"&&typeof vb==="number" ? va-vb : String(va).localeCompare(String(vb)); return pipeSort.dir*cmp; }
       return pipeView==="ratewatch" ? (rateDrop(a)??9)-(rateDrop(b)??9) : pipeView==="season" ? seasonDays(a)-seasonDays(b) : (pipeView==="eligible"||pipeView==="elignow") ? String(b.eligibleSince||"").localeCompare(String(a.eligibleSince||"")) : 0; });
   pipeRowsShown=rows;
-  const bar=(al.hot.length||al.due.length)?`<div style="background:var(--cream);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.8">\uD83D\uDD14 ${al.hot.length?`<b>${al.hot.length} hot right now:</b> ${al.hot.map(c=>`<a href="#" onclick="pickClient('${c.id}');go('analysis');return false" style="color:var(--brand);font-weight:600">${esc(c.name)}</a>`).join(", ")}. `:""}${al.due.length?`<b>${al.due.length} follow-up${al.due.length===1?"":"s"} due:</b> ${al.due.map(c=>`<a href="#" onclick="pickClient('${c.id}');go('client');return false" style="color:var(--ink)">${esc(c.name)}</a>`).join(", ")}.`:""}</div>`:"";
-  const seasonBar = al.season.length && pipeView!=="season" ? `<div style="background:var(--cream);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.8">\uD83D\uDCC5 <b>Seasoning:</b> ${al.season.map(c=>{ const n=seasonDays(c); return `<a href="#" onclick="pickClient('${c.id}');go('client');return false" style="color:var(--brand);font-weight:600">${esc(c.name)}</a> <span class="hint">(${n<=0?"eligible now":"in "+n+" day"+(n===1?"":"s")})</span>`; }).join(", ")} \u2014 <a href="#" onclick="setPipeView('season');return false">view</a></div>` : "";
-  const futBar = al.futureDue.length && pipeView!=="future" ? `<div style="background:var(--cream);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.8">\uD83C\uDFE1 <b>Future buyers:</b> ${al.futureDue.map(c=>{ const n=futureDays(c); return `<a href="#" onclick="pickClient('${c.id}');go('client');return false" style="color:var(--brand);font-weight:600">${esc(c.name)}</a> <span class="hint">(${n<=0?"window open":"in "+n+" day"+(n===1?"":"s")}${c.futureProduct?" \u00b7 "+esc(c.futureProduct):""})</span>`; }).join(", ")} \u2014 <a href="#" onclick="setPipeView('future');return false">view</a></div>` : "";
-  const rwBar = pipeView==="ratewatch" ? `<div class="btnrow" style="background:var(--cream);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px"><span>\u23F3 <b>${al.ratewatch.length}</b> waiting on a rate drop, smallest drop first \u2014 paste this list to capital markets when the market moves.</span><span style="flex:1"></span><button class="btn small" onclick="copyRateWatch()">Copy list</button></div>` : "";
+  const bar=(al.hot.length||al.due.length)?`<div class="hotbar live" style="background:var(--cream);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.8">\uD83D\uDD14 ${al.hot.length?`<b>${al.hot.length} hot right now:</b> ${al.hot.map(c=>`<a href="#" onclick="pickClient('${c.id}');go('analysis');return false" style="color:var(--brand);font-weight:600">${esc(c.name)}</a>`).join(", ")}. `:""}${al.due.length?`<b>${al.due.length} follow-up${al.due.length===1?"":"s"} due:</b> ${al.due.map(c=>`<a href="#" onclick="pickClient('${c.id}');go('client');return false" style="color:var(--ink)">${esc(c.name)}</a>`).join(", ")}.`:""}</div>`:"";
+  const seasonBar = al.season.length && pipeView!=="season" ? `<div class="hotbar" style="background:var(--cream);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.8">\uD83D\uDCC5 <b>Seasoning:</b> ${al.season.map(c=>{ const n=seasonDays(c); return `<a href="#" onclick="pickClient('${c.id}');go('client');return false" style="color:var(--brand);font-weight:600">${esc(c.name)}</a> <span class="hint">(${n<=0?"eligible now":"in "+n+" day"+(n===1?"":"s")})</span>`; }).join(", ")} \u2014 <a href="#" onclick="setPipeView('season');return false">view</a></div>` : "";
+  const futBar = al.futureDue.length && pipeView!=="future" ? `<div class="hotbar" style="background:var(--cream);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.8">\uD83C\uDFE1 <b>Future buyers:</b> ${al.futureDue.map(c=>{ const n=futureDays(c); return `<a href="#" onclick="pickClient('${c.id}');go('client');return false" style="color:var(--brand);font-weight:600">${esc(c.name)}</a> <span class="hint">(${n<=0?"window open":"in "+n+" day"+(n===1?"":"s")}${c.futureProduct?" \u00b7 "+esc(c.futureProduct):""})</span>`; }).join(", ")} \u2014 <a href="#" onclick="setPipeView('future');return false">view</a></div>` : "";
+  const rwBar = pipeView==="ratewatch" ? `<div class="btnrow hotbar" style="background:var(--cream);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px"><span>\u23F3 <b>${al.ratewatch.length}</b> waiting on a rate drop, smallest drop first \u2014 paste this list to capital markets when the market moves.</span><span style="flex:1"></span><button class="btn small" onclick="copyRateWatch()">Copy list</button></div>` : "";
   const inbox=(state.inbox||[]);
   const ib = inbox.length? `<div style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px">
     <b>New from Salesforce (${inbox.length})</b>
@@ -1792,11 +2151,11 @@ function renderPipeline(){
   $("pipeTable").innerHTML = ib + bar + seasonBar + futBar + rwBar + (!rows.length ? `<div class="empty">${pipeView!=="all"?"Nothing in this view right now \u2014 that can change with the next rate push.":"No pipeline clients yet. Add one, paste a Salesforce record, or load the samples in Settings."}</div>` :
   `<table class="data"><thead><tr>${th("name","Client")}${th("status","Status")}${th("loanType","Type")}${th("balance","Balance","num")}${th("rate","Rate","num")}${th("payment","P&amp;I","num")}${th("followUp","Follow-up")}${rdTiers()?th("eligible","\u2728 Eligible"):""}<th>Opportunity</th><th></th></tr></thead><tbody>`+
   rows.map(c=>{ const op=opportunity(c);
-    return `<tr class="${(()=>{ const wi=rdWindowInfo(c); return wi ? (wi.today&&!c.eligibleSeen?"elig-today elig-week":"elig-week") : ""; })()}"><td><b>${c.hot?'<span title="Hot lead">\uD83D\uDD25 </span>':""}${esc(c.name)}</b><br><span class="hint">${c.servicer?esc(c.servicer):""}${c.phone?(c.servicer?" \u00b7 ":"")+esc(c.phone):""}</span></td>
+    return `<tr class="${(()=>{ const wi=rdWindowInfo(c); const k=[]; if(wi){ k.push("elig-week","fresh"); if(wi.today&&!c.eligibleSeen) k.push("elig-today"); } if(c.followUp&&!isDone(c)){ if(c.followUp<today) k.push("overdue"); else if(c.followUp===today) k.push("due"); } if(hs.has(c.id)||c.hot) k.push("hotrow"); return k.join(" "); })()}"><td><b>${c.hot?'<span title="Hot lead">\uD83D\uDD25 </span>':""}${esc(c.name)}</b><br><span class="hint">${c.servicer?esc(c.servicer):""}${c.phone?(c.servicer?" \u00b7 ":"")+esc(c.phone):""}</span></td>
     <td><span class="${c.status===S_DONE?"tag-good":c.status==="Lost"||(isInelig(c)&&ineligWhy(c)==="fully ineligible")?"tag-warn":"tag-flat"}">${isFuture(c)?"\uD83C\uDFE1 ":""}${esc(c.status)}${isInelig(c)&&ineligWhy(c)==="fully ineligible"?" \u00b7 no follow-up":""}</span>${onRateWatch(c)?`<br><span class="${targetHit(c)?"tag-good":"tag-flat"}" style="margin-top:3px" title="Rate watch">\u23F3 needs ${pct(c.targetRate)}${rateDrop(c)!=null?" (\u2212"+pct(rateDrop(c))+")":""}</span>`:""}${(()=>{ const si=seasonInfo(c); return si?`<br><span class="${si.tag}" style="margin-top:3px">${si.txt.replace(/ \u2014 .*$/,"")}</span>`:""; })()}${(()=>{ const fi=futureInfo(c); return fi?`<br><span class="${fi.tag}" style="margin-top:3px">${fi.txt.replace(/ \u2014 .*$/,"")}</span>`:""; })()}${c.hot&&c.hotNeed?`<br><span class="hint">need: ${esc(c.hotNeed)}</span>`:""}${c.proposalSent?`<br><span class="tag-good" style="margin-top:3px">proposal sent ${esc(c.proposalSent)}${c.proposalsSent>1?" ("+c.proposalsSent+")":""}</span>`:""}</td>
     <td>${esc(c.loanType||"")}${isFuture(c)&&c.futureProduct?`<br><span class="hint">\u2192 ${esc(c.futureProduct)}</span>`:""}</td>
     <td class="num">${c.freeClear?'<span class="tag-good">free &amp; clear</span>':money(c.balance)}</td><td class="num">${c.freeClear?"\u2014":pct(c.rate)}</td><td class="num">${c.freeClear?"\u2014":money(c.payment)}</td>
-    <td>${esc(c.followUp||"\u2014")}${c.followUpTime?" "+esc(c.followUpTime):""}${calStatus(c)==="on"?' <span title="On your Outlook calendar">\uD83D\uDCC5</span>':calStatus(c)==="moved"?' <span title="Follow-up moved since it went on your calendar \u2014 re-add it" style="opacity:.6">\uD83D\uDCC5\u2047</span>':""}${(ds.has(c.id)||(fuPending&&fuPending.id===c.id))?`<div style="margin-top:4px">${fuButtons(c,true)}</div>`:""}</td>
+    <td><span class="fud">${esc(c.followUp||"\u2014")}${c.followUpTime?" "+esc(c.followUpTime):""}</span>${calStatus(c)==="on"?' <span title="On your Outlook calendar">\uD83D\uDCC5</span>':calStatus(c)==="moved"?' <span title="Follow-up moved since it went on your calendar \u2014 re-add it" style="opacity:.6">\uD83D\uDCC5\u2047</span>':""}${(ds.has(c.id)||(fuPending&&fuPending.id===c.id))?`<div style="margin-top:4px">${fuButtons(c,true)}</div>`:""}</td>
     ${rdTiers()?`<td>${(()=>{ const e=rdEligibleNow(c); if(!e) return ""; const wi=rdWindowInfo(c); return `<span class="tag-good" title="Eligible under today’s rate desk rates">✨ ${RD_TIER_LABEL[e.tier]} ${pct(e.rate)}${e.assumed?" (score?)":""}</span><br><span class="hint">was ${pct(c.rate)} · drop ${pct(e.drop)}${wi?(wi.today?" · <b>new today</b>":" · new "+wi.days+"d ago")+(wi.tries?" · "+wi.tries+(wi.tries===1?" try":" tries"):""):""}${e.seasonUnknown?" · seasoning?":""}</span>`; })()}</td>`:""}
     <td>${op?`<span class="${op.tag}">${op.txt}</span>`:""}</td>
     <td><button class="btn small" onclick="pickClient('${c.id}');go('client')">Open</button></td></tr>`;}).join("")+`</tbody></table>`);
@@ -3639,7 +3998,7 @@ function rdChime(dir){ try{ rdAudio=rdAudio||new (window.AudioContext||window.we
 function rdUnreadCount(){ const H=state.rdHistory||[]; const seen=state.rdInboxSeen||""; return H.filter(h=>!h.first&&String(h.version)>seen).length; }
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&document.body.classList.contains("play-open")) playClose(); });
 function renderSideInbox(){ if(document.body.classList.contains("play-open")) renderPlaybook(); try{ updateRatePill(); }catch(e){} const el=$("sideInbox"); if(!el) return; if(!rdTiers()&&!(state.rdHistory||[]).length){ el.innerHTML=""; return; } const n=rdUnreadCount();
-  el.innerHTML=`<button class="btn ghost small" onclick="rdInbox(event)" title="Rate updates and messages from the rate desk">\uD83D\uDD14 Rate updates${n?` <span style="background:var(--brand);color:#fff;border-radius:10px;font-size:10.5px;padding:1px 7px;line-height:1.4;margin-left:auto">${n} new</span>`:""}</button>`; }
+  el.innerHTML=`<button class="btn ghost small" onclick="rdInbox(event)" title="Rate updates and messages from the rate desk">\uD83D\uDD14 Rate updates${n?` <span class="nb">${n} new</span>`:""}</button>`; }
 function rdBellHTML(){ if(!rdTiers()&&!(state.rdHistory||[]).length) return ""; const n=rdUnreadCount(); return `<button class="btn ghost small" onclick="rdInbox(event)" title="Rate updates" style="position:relative;flex:0 0 auto">\uD83D\uDD14${n?`<span style="position:absolute;top:-6px;right:-6px;background:var(--brand);color:#fff;border-radius:10px;font-size:10px;padding:1px 5px;line-height:1.3">${n}</span>`:""}</button>`; }
 function rdInbox(ev){ ev.preventDefault(); ev.stopPropagation(); const old=$("emailMenu"); if(old){ old.remove(); if(old.dataset.for==="rdInbox") return; }
   const b=ev.currentTarget||ev.target; const rect=b.getBoundingClientRect(); const m=document.createElement("div"); m.id="emailMenu"; m.dataset.for="rdInbox"; const H=(state.rdHistory||[]).filter(h=>!h.first).slice(0,40); const seen=state.rdInboxSeen||"";
@@ -3755,7 +4114,7 @@ async function fetchRates(){ const url=state.settings.feedUrl||$("setFeed").valu
 function hubLine(){ return apiBase()? "<br><span style=\"font-size:11px\"><span class=\"dot "+(hubOnline?"on":"off")+"\"></span>hub "+(hubOnline===true?"online":hubOnline===false?"offline":"\u2026")+"</span>" : ""; }
 function rdNoteOpen(ev){ if(ev){ ev.preventDefault(); ev.stopPropagation(); } const H=state.rdHistory||[]; const h=H.find(x=>x.note)||H[0]; if(!h) return; state.rdNoteSeen=h.version; save(); window._rdInboxList=[h]; rdInboxOpen(0); updateRatePill(); }
 function updateRatePill(){ const p=$("ratePill"); { const d=rdData(); if(d&&rdTiers(d)){ const t=rdTiers(d), pv=d.prevTiers||{}; const n=rdWeekIds().length; const hn=(state.rdHistory||[]).find(x=>x.note&&String(x.note).trim())||(d.note?d:null); const note=hn?String(hn.note).trim():""; const unseen=note&&state.rdNoteSeen!==hn.version; p.style.position="relative";
-    p.innerHTML=(note?`<a href="#" onclick="rdNoteOpen(event)" title="${esc(note)}" style="position:absolute;top:-7px;right:-7px;text-decoration:none;background:${unseen?"var(--brand)":"#fff"};color:${unseen?"#fff":"var(--brand)"};border:1.5px solid var(--brand);border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;line-height:1.4${unseen?";box-shadow:0 0 0 3px rgba(165,50,34,.18)":""}">\uD83D\uDCAC${unseen?" note":""}</a>`:"")+"VA rates · "+esc(rdWhen(d.published))+"<br><b>640+ "+pct(t["640+"])+" <span style=\"font-size:12px\">"+rdArrow(t["640+"],pv["640+"])+"</span></b><span style=\"font-size:11.5px\">620–639 "+pct(t["620-639"])+" "+rdArrow(t["620-639"],pv["620-639"])+"</span>"+"<div style=\"display:flex;gap:5px;margin-top:6px\"><a href=\"#\" onclick=\"event.stopPropagation();go('pipeline');setPipeView('elignow');return false\" style=\"text-decoration:none;flex:1;display:flex;justify-content:space-between;align-items:center;gap:4px;background:#E3F1E7;color:#2E6B4F;border-radius:8px;padding:3px 8px;font-size:10.5px;font-weight:700;line-height:1.3\" title=\"Everyone eligible under today\u2019s rates\"><span>Eligible</span><b style=\"font-size:13px\">"+rdEligibleIds().length+"</b></a><a href=\"#\" onclick=\"event.stopPropagation();go('pipeline');setPipeView('eligible');return false\" style=\"text-decoration:none;flex:1;display:flex;justify-content:space-between;align-items:center;gap:4px;background:"+(n?"#FFF3C4":"var(--cream-soft)")+";color:"+(n?"#8A6D00":"var(--muted)")+";border-radius:8px;padding:3px 8px;font-size:10.5px;font-weight:700;line-height:1.3\" title=\"Became eligible this week\"><span>New</span><b style=\"font-size:13px\">"+n+"</b></a></div>"+hubLine(); return; } }
+    p.innerHTML=(note?`<a href="#" class="rp-note${unseen?" unseen":""}" onclick="rdNoteOpen(event)" title="${esc(note)}">${NMC.icon("chat")}${unseen?"note":""}</a>`:"")+`<div class="rp-when">VA rates \u00b7 ${esc(rdWhen(d.published))}</div><div class="rp-row main"><span>640+ <b data-tick="rp.640" data-tick-first="no">${pct(t["640+"])}</b></span><span class="rp-d">${rdArrow(t["640+"],pv["640+"])}</span></div><div class="rp-row"><span>620\u2013639 ${pct(t["620-639"])}</span><span class="rp-d">${rdArrow(t["620-639"],pv["620-639"])}</span></div><div class="rp-boxes"><a href="#" class="rp-box good" onclick="event.stopPropagation();go('pipeline');setPipeView('elignow');return false" title="Everyone eligible under today\u2019s rates"><span>Eligible</span><b data-tick="rp.elig" data-tick-first="no">${rdEligibleIds().length}</b></a><a href="#" class="rp-box new${n?" has":""}" onclick="event.stopPropagation();go('pipeline');setPipeView('eligible');return false" title="Became eligible this week"><span>New</span><b data-tick="rp.new" data-tick-first="no">${n}</b></a></div>`+hubLine(); return; } }
   if(!state.rates||!state.rates.rates){ p.innerHTML="Rate feed<br><b>"+(apiBase()?"waiting for hub":"not connected")+"</b>"+hubLine(); return; }
   const e=Object.entries(state.rates.rates)[0];
   const hotN=eligibleIds().length;
@@ -4447,7 +4806,7 @@ function playPlace(){ const dr=$("playDrawer"); const bar=document.querySelector
 /* the sticky bar's height feeds the pipeline's sticky column headers */
 (function(){ const set=()=>{ const bar=document.querySelector(".clientbar"); if(bar) document.documentElement.style.setProperty("--barh",(bar.getBoundingClientRect().height-10)+"px"); }; if("ResizeObserver" in window){ const ro=new ResizeObserver(set); window.addEventListener("load",()=>{ const bar=document.querySelector(".clientbar"); if(bar) ro.observe(bar); set(); }); } else window.addEventListener("load",set); })();
 function playGripInit(){ const g=$("playGrip"), dr=$("playDrawer"); if(!g||g.dataset.init) return; g.dataset.init="1"; let y0=0,h0=0;
-  const move=e=>{ const h=Math.max(120,h0+(e.clientY-y0)); dr.style.height=h+"px"; }; const up=()=>{ document.removeEventListener("pointermove",move); document.removeEventListener("pointerup",up); try{ localStorage.setItem("nmcPlayH",String(parseInt(dr.style.height)||0)); }catch(err){} };
+  const move=e=>{ const h=Math.max(120,h0+(e.clientY-y0)); dr.style.height=h+"px"; }; const up=()=>{ document.removeEventListener("pointermove",move); document.removeEventListener("pointerup",up); if(window.NMC){ const H=window.innerHeight; NMC.snapHeight(dr,[H*.33,H*.5,H*.66,H*.85]); } try{ localStorage.setItem("nmcPlayH",String(parseInt(dr.style.height)||0)); }catch(err){} };
   g.addEventListener("pointerdown",e=>{ e.preventDefault(); y0=e.clientY; h0=dr.getBoundingClientRect().height; document.addEventListener("pointermove",move); document.addEventListener("pointerup",up); });
   window.addEventListener("resize",()=>{ if(document.body.classList.contains("play-open")) playPlace(); }); }
 /* open / close keeps what you had: closing (Close, Esc, or a click anywhere outside) hides the panel; reopening the same tab brings it back exactly as it was — expanded items, category, scroll — unless the client changed in between */
@@ -4457,7 +4816,7 @@ function playOpen(k){ if(!k){ k=playPanelsFor(currentScreen())[0].k; } playGripI
   const same=playLast===k&&playRenderedFor===(cur()?cur().id:"")&&$("playBody")&&$("playBody").children.length;
   playPanel=k; document.body.classList.add("play-open"); if(!same){ if(k==="post") playPostNumbers=null; renderPlaybook(); playRenderedFor=cur()?cur().id:""; } else { const pb=$("playBody"); if(pb) pb.scrollTop=playScroll; }
   playLast=k; renderPlayTabs(); if(!same) setTimeout(()=>{ const q=$("playQ"); if(q) q.focus(); },30); }
-function playClose(){ const pb=$("playBody"); if(pb) playScroll=pb.scrollTop; document.body.classList.remove("play-open"); playPanel=null; renderPlayTabs(); }
+function playClose(){ const pb=$("playBody"); if(pb) playScroll=pb.scrollTop; const done=()=>{ document.body.classList.remove("play-open"); playPanel=null; renderPlayTabs(); }; if(window.NMC&&document.body.classList.contains("play-open")) NMC.closeThen($("playDrawer"),done); else done(); }
 document.addEventListener("pointerdown",e=>{ if(!document.body.classList.contains("play-open")) return; if(e.target.closest("#playDrawer,#playTabs,#askBox,#emailMenu,#rdMsgModal")) return; playClose(); });
 function playToggleItem(el){ el.classList.toggle("open"); }
 function playToggleCat(el){ el.classList.toggle("open"); }
@@ -4996,7 +5355,7 @@ function presentChartHTML(c,edit){ const p=presentState(c); const d=p.d; const r
     if(pr&&pr.needsMap) L+=`<div class="hint" style="color:var(--warn);margin-top:6px">I can see a table but not which column is which. Paste it once on the Client workspace \u2192 Debts, teach me the columns there (it\u2019s remembered), then \u201cFill from client\u201d here.</div>`;
     else if(pr&&pr.rows) L+=`<div class="hint" style="margin-top:6px">${pr.rows.length} with a balance (${pr.how})${pr.skipped?", "+pr.skipped+" closed / zero left out":""}</div><table class="data" style="margin-top:4px"><tbody>${pr.rows.map((x,i)=>`<tr><td><input type="checkbox" ${x.use?"checked":""} onchange="presentParsedUse(${i},this.checked)" style="width:auto;min-height:0"></td><td>${esc(x.name)}${x.mortgage?' <span class="tag-flat">mortgage \u2192 current mortgage</span>':""}</td><td class="num">${money(x.balance)}</td><td class="num">${x.pay?money(x.pay):x.payEst&&pr.estPay?money(x.payEst)+" <span class='hint'>est.</span>":"\u2014"}</td><td class="num">${x.apr>0&&!x.aprEst?pct(x.apr):"<span class='hint'>rate: typical</span>"}</td></tr>`).join("")}</tbody></table><div class="btnrow" style="margin-top:6px"><button class="btn small" onclick="presentAddParsed()">Add the ticked debts</button>${pr.rows.some(x=>!(x.pay>0)&&x.payEst)?`<label class="hint" style="display:inline-flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" ${pr.estPay?"checked":""} onchange="presentUI.parsed.estPay=this.checked; renderPresent()" style="width:auto;min-height:0"> no payment listed \u2014 estimate it (cards \u2248 2% of balance) and flag it; untick to type them yourself</label>`:""}</div>`;
     L+=`</div>`; }
-  L+=`<div class="tot"><span>Going out each month</span><b>${money(todayOut)}</b></div>`;
+  L+=`<div class="tot"><span>Going out each month</span><b data-tick="pres.today">${money(todayOut)}</b></div>`;
   if(r&&r.pitiNow>0&&!second) L+=`<div class="hint">with taxes &amp; insurance: ${money(r.allInNow)}</div>`;
   if(r&&showDebts&&r.dMinCards&&isFinite(r.dMinMonths)) L+=`<div class="pw" style="background:#FBECE9"><b>On minimum payments</b> ${r.dMinCards===1?"that card":"those "+r.dMinCards+" cards"} take <b>${yrsMo(r.dMinMonths)}</b> to pay off and cost <b>${money(r.dMinInt)}</b> in interest \u2014 the payment shrinks as the balance does, so it never really ends.</div>`;
   /* ---- right ---- */
@@ -5016,10 +5375,10 @@ function presentChartHTML(c,edit){ const p=presentState(c); const d=p.d; const r
       <span><span class="hint">Custom payment</span>${inp("pPW","pwCustom",d.pwCustom,"num",r?String(Math.round(r.outlayNow)):"per month","25")}</span><span></span></div>
       ${!second&&!stream?`<div class="hint">Roll debts in: ${sel("pRoll","roll",d.roll,[["yes","yes \u2014 pay them off"],["no","no \u2014 leave them"]])}</div>`:""}
       ${second?`<div class="hint"><label style="display:inline-flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" ${d.hideFirst?"checked":""} onchange="presentSet('hideFirst',this.checked)" style="width:auto;min-height:0"> leave the first mortgage out</label> &nbsp; <label style="display:inline-flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" ${p.showCombined?"checked":""} onchange="presentState(cur()).showCombined=this.checked; save(); renderPresent(true)" style="width:auto;min-height:0"> show combined payment</label></div>`:""}`;
-  if(r){ const newOut=r.newPay; R+=`<div class="tot"><span>Going out each month</span><b>${money(newOut)}</b></div>`;
+  if(r){ const newOut=r.newPay; R+=`<div class="tot"><span>Going out each month</span><b data-tick="pres.new">${money(newOut)}</b></div>`;
     if(second&&(p.showCombined||!d.hideFirst)&&m.payment>0) R+=`<div class="hint">first mortgage ${money(m.payment)} + new ${secName} ${money(r.newPay)} = <b>${money(m.payment+r.newPay)}</b> combined${r.pitiNow>0?" \u00b7 with taxes &amp; insurance "+money(r.pitiNew):""}</div>`;
     else if(r.pitiNow>0&&!second) R+=`<div class="hint">with taxes &amp; insurance: ${money(r.allInNew)}</div>`;
-    if(r.saveMo>0) R+=`<div class="keep">You keep <b>${money(r.saveMo)}</b> every month</div>`;
+    if(r.saveMo>0) R+=`<div class="keep">You keep <b data-tick="pres.keep">${money(r.saveMo)}</b> every month</div>`;
     else if(r.saveMo<0) R+=`<div class="pw">${money(-r.saveMo)}/mo more than today${r.cashOut>0?" \u2014 with "+money(r.cashOut)+" cash out":""}</div>`;
     if(r.extra>0) R+=`<div class="pw"><b>Pay what you pay now:</b> keep sending ${money(r.outlayNow)} \u2014 the extra ${money(r.extra)} hits principal \u2192 paid off in <b>${yrsMo(r.pw.months)}</b>${isFinite(r.pw.months)&&r.n-r.pw.months>0?" ("+yrsMo(r.n-r.pw.months)+" sooner than the "+yrsMo(r.n)+" minimum)":""}${r.intSavedPW>0?`, <b>${money(r.intSavedPW)}</b> less interest than ${r.todayPath}`:""}. <b>Effective rate ${pct(r.pwEff)}</b> \u2014 ${pct(d.rate)} on paper, ${pct(r.pwEff)} in your pocket.</div>`;
     else R+=`<div class="pw"><b>Pay what you pay now:</b> today\u2019s ${money(r.outlayNow)} ${r.outlayNow>0?"is not more than":"\u2014 nothing on the old side yet, so there\u2019s no extra over"} the new ${money(r.newPay)}, so nothing extra lands on principal. <b>Effective rate ${pct(d.rate)}</b> \u2014 same as the note. Type a custom payment to see what paying more does.</div>`;
@@ -5125,7 +5484,7 @@ function toolsToQuote(){ const m=toolsModel(); if(!m.ok){ toast("Fill in today's
 /* one debts panel (table, Add debt, Paste a list) shared by the Client workspace and the Savings analysis: it moves to whichever screen is open */
 function placeDebtPanel(s){ const p=$("debtPanel"); if(!p) return; if(s==="client"){ const h=$("debtHostClient"); if(h&&p.parentNode!==h) h.appendChild(p); }
   else if(s==="analysis"){ const m=$("debtHome"); if(m&&p.previousElementSibling!==m) m.insertAdjacentElement("afterend",p); } }
-function go(s){ if(s!=="present"&&document.body.classList.contains("obj-open")){ presentUI.obj=null; document.body.classList.remove("obj-open"); } setTimeout(renderPlayTabs,0); document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));
+function go(s){ if(s!=="present"&&document.body.classList.contains("obj-open")){ presentUI.obj=null; document.body.classList.remove("obj-open"); } setTimeout(renderPlayTabs,0); if(window.NMC) NMC.enter(); document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));
   $("s-"+s).classList.add("active"); placeDebtPanel(s);
   if(s==="tmpl") renderTemplates();
   if(s==="tools") toolsInit();
