@@ -687,9 +687,9 @@ Discover 6,100 190 24.9"></textarea>
         <div class="grid3">
           <div class="field" style="grid-column:1/-1;max-width:420px"><label>Client</label><select id="propClientPicker" onchange="pickClient(this.value)"></select></div>
           <div class="field" style="display:none"><label>Pricing option on proposal</label><select id="propOption" onchange="renderProposalPreview()"></select></div>
-          <div class="field" style="grid-column:1/-1"><div class="btnrow"><button class="btn" onclick="copyImage('proposal')">Copy proposal</button><button class="btn ghost" onclick="sendMenu(event,'proposal',null,'email')" title="Proposal as a mail draft (or as an image)">Outreach emails ▾</button><button class="btn ghost" onclick="sendMenu(event,'proposal',null,'text')" title="Texts to go with the proposal, copied to the clipboard">Outreach texts ▾</button><button class="btn ghost" onclick="exportImage('proposal')">Save image</button><button class="btn ghost" onclick="librarySave('proposal')">Save to library</button><button class="btn ghost" onclick="librarySave('proposal'); markSentLatest('text')" title="Logs this proposal as sent by text (Email marks itself automatically)">Mark sent by text</button></div></div>
+          <div class="field" style="grid-column:1/-1;margin-bottom:6px"><div class="btnrow"><button class="btn" onclick="copyImage('proposal')">Copy proposal</button><button class="btn ghost" onclick="sendMenu(event,'proposal',null,'email')" title="Proposal as a mail draft (or as an image)">Outreach emails ▾</button><button class="btn ghost" onclick="sendMenu(event,'proposal',null,'text')" title="Texts to go with the proposal, copied to the clipboard">Outreach texts ▾</button><button class="btn ghost" onclick="exportImage('proposal')">Save image</button><button class="btn ghost" onclick="librarySave('proposal')">Save to library</button><button class="btn ghost" onclick="sentMenu(event)" title="Log this proposal as sent — by email, text, or both (email drafts mark themselves)">Mark as sent ▾</button></div></div>
         </div>
-        <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="propAmort" style="width:auto" checked onchange="setPropAmort(this.checked)"> Include the year-by-year amortization table on the proposal</label></div>
+        <div class="field" style="margin:12px 0 10px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--ink);text-transform:none"><input type="checkbox" id="propAmort" style="width:auto;min-height:0" checked onchange="setPropAmort(this.checked)"> Include the year-by-year amortization table on the proposal</label></div>
         <div class="field"><label>Personal note to client (optional)</label><textarea id="propNote" style="min-height:60px;font-family:inherit" oninput="renderProposalPreview()" placeholder="e.g. Maria — here's the consolidation option we walked through on Tuesday."></textarea></div>
         <div class="field"><label>Saved options from Savings analysis <span class="hint" style="display:inline">(check one for a single proposal, two or more for a side-by-side · ★ marks your recommendation)</span></label><div id="propSnapList"></div></div>
         <div class="field" id="propCmpWhyWrap" style="display:none"><label>Banker notes on the recommendation (prints on the side-by-side)</label><textarea id="propCmpWhy" style="min-height:50px;font-family:inherit" oninput="setCmpWhy(this.value); const el=$('propPreview'); if(el) el.innerHTML=proposalHTML();" placeholder="e.g. The cash-out frees up the most each month and clears the cards for good; the IRRRL is the lighter-touch option if you'd rather leave the balance alone."></textarea></div>
@@ -1082,7 +1082,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.12.11";
+const TOOLKIT_VERSION = "1.13.0";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -3002,6 +3002,11 @@ function libSent(id,how){ const c=cur(); const e=c&&c.library.find(x=>x.id===id)
   if(!how){ delete e.sent; } else { e.sent={how,when:fuStamp()}; c.log=c.log||[]; c.log.unshift({when:e.sent.when, outcome:"sent", note:e.title+" by "+how}); if(c.log.length>60) c.log.length=60; }
   const last=c.library.filter(x=>x.sent).sort((a,b)=>b.sent.when.localeCompare(a.sent.when))[0]; c.proposalSent=last?last.sent.when.slice(0,10):""; c.proposalsSent=c.library.filter(x=>x.sent).length;
   save(); renderLibrary(); renderPipeline(); renderClientBar(); const fl=$("fuLog"); if(fl) fl.innerHTML=fuLogHTML(c); if(how) toast("Marked sent by "+how); }
+function sentMenu(ev){ ev.preventDefault(); ev.stopPropagation(); const old=$("emailMenu"); if(old){ old.remove(); if(old.dataset.for==="sent") return; } const b=ev.currentTarget||ev.target; const rect=b.getBoundingClientRect();
+  const m=document.createElement("div"); m.id="emailMenu"; m.dataset.for="sent"; const opt=(how,label,sub)=>`<button type="button" onclick="document.getElementById('emailMenu').remove(); librarySave('proposal'); markSentLatest('${how}')"><b>${label}</b><span class="hint">${sub}</span></button>`;
+  m.innerHTML=`<div class="hint" style="padding:6px 10px 2px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px">Mark this proposal as sent</div>`+opt("email","By email","Logs it and sets the follow-up clock")+opt("text","By text","With the image or the details text")+opt("email + text","By email and text","Both ways")+`<button type="button" onclick="document.getElementById('emailMenu').remove(); markSentLatest(null)"><b>Un-mark</b><span class="hint">Clear the sent flag on the latest proposal</span></button>`;
+  m.style.cssText=`position:fixed;left:${Math.min(rect.left, window.innerWidth-330)}px;top:${rect.bottom+4}px;z-index:9000;width:300px;max-width:300px`; document.body.appendChild(m);
+  setTimeout(()=>document.addEventListener("click", function h(e){ if(!m.contains(e.target)){ m.remove(); document.removeEventListener("click",h); } }),0); }
 function markSentLatest(how){ const c=cur(); if(!c||!c.library.length) return; libSent(c.library[0].id,how); }
 /* copy the rendered proposal straight to the clipboard: paste into a text, an email, Teams — no file involved */
 async function copyImage(kind, snapId){
