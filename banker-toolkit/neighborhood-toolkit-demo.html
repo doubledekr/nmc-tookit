@@ -1082,7 +1082,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.12.10";
+const TOOLKIT_VERSION = "1.12.11";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -4401,7 +4401,7 @@ function renderPlaybook(){ const el=$("playBody"); if(!el||!playPanel) return; c
   const head=document.querySelector("#playDrawer .phead h2"); if(head) head.textContent=P.label;
   const match=t=>!q||(t.title+" "+(t.use||"")+" "+(t.cat||"")+" "+tmplFill(t.body||"")+" "+(t.flow?t.flow.concern+" "+t.flow.response:"")).toLowerCase().includes(q);
   const mine=t=>t.mine?` <span class="pmine">mine</span>`:"";
-  const item=t=>`<div class="pitem"><div class="pt" onclick="playToggleItem(this.parentNode)"><b>${esc(t.title)}${mine(t)}</b><span class="tag-flat">${TKIND[t.kind]||t.kind}</span></div>${t.use?`<div class="pu">${esc(t.use)}</div>`:""}<div class="pb">${tmplPreview(t.body||"")}${t.kind==="intro"?"":`<div class="btnrow" style="margin-top:8px"><button class="btn small" onclick="copyTmplById('${t.pool}','${t.id}')">Copy${c?" for "+esc(c.name.split(/[ ,&]/)[0]):""}</button></div>`}</div></div>`;
+  const item=t=>`<div class="pitem" data-id="${t.id}"><div class="pt" onclick="playToggleItem(this.parentNode)"><b>${esc(t.title||"(untitled)")}${mine(t)}</b><span class="tag-flat">${TKIND[t.kind]||t.kind}</span></div>${t.use?`<div class="pu">${esc(t.use)}</div>`:""}<div class="pb">${tmplPreview(t.body||"")}<div class="btnrow" style="margin-top:8px">${t.kind==="intro"?"":`<button class="btn small" onclick="copyTmplById('${t.pool}','${t.id}')">Copy${c?" for "+esc(c.name.split(/[ ,&]/)[0]):""}</button>`}${t.mine?`<button class="btn ghost small" onclick="playEdit('${t.id}')">Edit</button><button class="btn ghost small" onclick="if(confirm('Delete this one?')){ delTemplate('${t.id}'); renderPlaybook(); }">Delete</button>`:""}</div></div></div>`;
   const flowItem=t=>{ const o=t.flow; return `<div class="pitem"><div class="pt" onclick="playToggleItem(this.parentNode)"><b>${o.label}</b><span class="tag-flat">closing flow</span></div><div class="pb" style="background:none;padding:0"><div class="objflow">
     <div class="objbox"><div class="objl">Frame</div><div class="objt">${esc(o.frame)}</div></div><div class="objbox tr"><div class="objl">Translate \u00b7 concern</div><div class="objt">${esc(o.concern)}</div></div><div class="objbox tr"><div class="objl">Translate \u00b7 feeling</div><div class="objt">${esc(o.feeling)}</div></div>
     <div class="objbox ag"><div class="objl">Agree</div><div class="objt">${esc(o.agree)}</div></div><div class="objbox rs"><div class="objl">Respond</div><div class="objt">${esc(o.response)} <i>${esc(o.benefit)}</i></div></div><div class="objbox tn"><div class="objl">Transition</div><div class="objt">${esc(o.transition)}</div></div><div class="objbox cl"><div class="objl">Close</div><div class="objt">${esc(o.close)}</div></div>${c?`<div class="objbox"><div class="objl">What they\u2019ll need</div><div class="objt">${esc(presentDocsLine(c))}</div></div>`:""}</div></div></div>`; };
@@ -4409,9 +4409,22 @@ function renderPlaybook(){ const el=$("playBody"); if(!el||!playPanel) return; c
   if(playPanel==="post"){ body=playPostHTML(c); }
   else { const items=playItems(playPanel).filter(match);
     if(playPanel==="follow"){ const grp=t=>t.kind==="email"?"Emails":t.kind==="vm"?"Voicemails":(t.cat||"My templates"); items.sort((a,b)=>(a.kind==="email")-(b.kind==="email")); const cats=[...new Set(items.map(grp))]; body=cats.map((cat,i)=>{ const its=items.filter(t=>grp(t)===cat); return `<div class="pcat${(q||i===0)?" open":""}"><div class="ph" onclick="playToggleCat(this.parentNode)">${esc(cat)} <span class="n">${its.length}</span><span class="tgl">\u25B8</span></div><div class="pitems">${its.map(item).join("")}</div></div>`; }).join(""); }
-    else body=`<div class="pcat open"><div class="pitems">${items.map(t=>t.kind==="flow"?flowItem(t):item(t)).join("")}</div></div>`;
+    else body=(playPanel==="close"?"":playAddFormHTML(playPanel))+`<div class="pcat open"><div class="pitems">${items.map(t=>t.kind==="flow"?flowItem(t):item(t)).join("")}</div></div>`;
+    if(playPanel==="follow") body=playAddFormHTML(playPanel)+body;
     if(!items.length) body=`<div class="empty">Nothing matches.</div>`; }
   el.innerHTML=(playPanel==="post"?"":`<input type="search" id="playQ" placeholder="Search ${esc(P.label.toLowerCase())}\u2026" value="${esc(playQ)}" oninput="playQ=this.value; renderPlaybook(); this.focus()"><div class="hint" style="margin:0 0 8px">${c?`Filling in for <b>${esc(c.name)}</b>`:"No client selected \u2014 client bits show as [Name]"}</div>`)+body; }
+/* add your own intro / play / text / email right inside the panel — these change day to day */
+var playEditing=null;
+function playAddFormHTML(k){ const kinds=k==="follow"?[["text","Text"],["email","Email"],["vm","Voicemail"]]:[["intro",k==="intros"?"Intro script":"Objection play"]]; const e=playEditing&&playEditing.panel===k?playEditing:null; const t=e?tmplPoolGet("m",e.id):null;
+  if(!e) return `<div class="btnrow" style="margin:0 0 8px"><button class="btn ghost small" onclick="playEditing={panel:'${k}',id:null}; renderPlaybook()">+ Add ${k==="intros"?"an intro":k==="open"?"a play":"a text or email"}</button><span class="hint" style="margin:0">Yours show with a \u201cmine\u201d tag; tokens like {client_first} and {banker_first} fill in on copy.</span></div>`;
+  return `<div class="pcat open" style="margin-bottom:10px;border-color:var(--brand)"><div class="ph" style="cursor:default">${t?"Edit":"New"} ${k==="intros"?"intro":k==="open"?"play":"follow-up"}</div><div class="pitems" style="padding:10px 12px">
+    <div class="grid2"><div class="field"><label>Title</label><input type="text" id="playNewTitle" value="${esc(t?t.title:"")}" placeholder="${k==="intros"?"Intro \u2014 VA, Tuesday version":"Short name"}"></div><div class="field"><label>Type</label><select id="playNewKind">${kinds.map(x=>`<option value="${x[0]}" ${t&&t.kind===x[0]?"selected":""}>${x[1]}</option>`).join("")}</select></div></div>
+    <div class="field" style="margin-top:8px"><label>Words</label><textarea id="playNewBody" style="min-height:110px;font-family:inherit" placeholder="Hi {client_first}, this is {banker_first} with Neighborhood Mortgage\u2026">${esc(t?t.body:"")}</textarea></div>
+    <div class="btnrow" style="margin-top:8px"><button class="btn small" onclick="playSaveNew('${k}')">Save</button><button class="btn ghost small" onclick="playEditing=null; renderPlaybook()">Cancel</button></div></div></div>`; }
+function playSaveNew(k){ const title=($("playNewTitle")||{}).value||"", body=($("playNewBody")||{}).value||"", kind=($("playNewKind")||{}).value||"intro"; if(!body.trim()){ toast("Type the words first"); return; }
+  let t=playEditing&&playEditing.id?tmplPoolGet("m",playEditing.id):null; if(!t){ addTemplate(kind,k); t=state.templates.mine[state.templates.mine.length-1]; }
+  t.title=title.trim()||body.trim().slice(0,40); t.body=body; t.kind=kind; t.panel=k; save(); playEditing=null; renderPlaybook(); renderPlayOrder(); toast("Saved to your "+(k==="intros"?"intros":k==="open"?"plays":"follow-ups")); }
+function playEdit(id){ const t=tmplPoolGet("m",id); if(!t) return; playEditing={panel:(t.panel==="texts"||t.panel==="emails")?"follow":(t.panel||playDefaultPanel(t)),id}; renderPlaybook(); const el=$("playNewBody"); if(el) el.focus(); }
 /* post-close panel: the client's product decides the document list; the banker picks the lender */
 var playPostNumbers=null;
 function playPostHTML(c){ if(!c) return `<div class="empty">Pick a client first \u2014 the post-close email follows their product.</div>`;
