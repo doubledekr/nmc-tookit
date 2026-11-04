@@ -1476,7 +1476,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.14.4";
+const TOOLKIT_VERSION = "1.14.5";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2254,7 +2254,7 @@ const SF_KEY2LABEL=(()=>{ const m={}; for(const l in SF_NMC){ if(!m[SF_NMC[l]]) 
 function recordToSFText(fields){ return Object.keys(fields).map(k=>SF_KEY2LABEL[k]? SF_KEY2LABEL[k]+"\n"+fields[k] : "").filter(Boolean).join("\n"); }
 async function pasteFromClipboard(){ try{ const t=await navigator.clipboard.readText(); if(!t||!t.trim()){ toast("Clipboard is empty"); return; }
   $("sfPaste").value=t; parseSFText(t); }catch(e){ toast("Browser blocked clipboard access \u2014 paste with Ctrl+V instead"); } }
-function parseSFText(text){
+function parseSFText(text, auto){ auto=auto!==false;   /* auto=false: just parse into lastSF (the extension inbox); true: the paste box's one-step import */
   const lines=text.split(/\r?\n/).map(l=>l.trim()); const raw={}; const kept=[];
   for(let i=0;i<lines.length;i++){ const line=lines[i]; if(!line||SF_NOISE.test(line)) continue;
     const m=line.match(/^([^$\d][^:]{1,45}?):\s*(.+)$/);
@@ -2327,7 +2327,7 @@ function parseSFText(text){
   if(n(raw.secondBal)>0) debts.push({name:"2nd mortgage"+(raw.secondServicer?" \u2014 "+raw.secondServicer:""), type:"heloc", acct:"", extra:0, balance:n(raw.secondBal), apr:n(raw.secondRate)>0?n(raw.secondRate):9.0, aprEst:!(n(raw.secondRate)>0), pay:n(raw.secondPay)});
   if(n(raw.instBal2)>0 && !(n(raw.instBal)>0)) debts.push({name:"Installment loan(s)", type:"installment", acct:"", extra:0, balance:n(raw.instBal2), apr:11, aprEst:true, pay:n(raw.instPay)});
   Object.keys(found).forEach(k=>{ if(found[k]==null||found[k]==="") delete found[k]; });
-  lastSF={fields:found, debts};
+  lastSF={fields:found, debts}; if(!auto) return;
   const keys=Object.keys(found).filter(k=>k!=="monthsLeftFrom"); const cc=null;   /* a paste never targets the selected client */
   const digits=v=>String(v||"").replace(/\D/g,"").slice(-10);
   const dup=state.clients.find(x=>!x.quick&&((found.phone&&digits(x.phone)&&digits(x.phone)===digits(found.phone))||(found.email&&x.email&&x.email.toLowerCase()===found.email.toLowerCase())));
@@ -4430,7 +4430,7 @@ function bmCopyCode(){ const src=$("sfBmLink"); const code=src?decodeURIComponen
   (navigator.clipboard&&navigator.clipboard.writeText ? navigator.clipboard.writeText(code) : Promise.reject()).then(()=>toast("Bookmark code copied \u2014 paste it as the bookmark\u2019s URL"),()=>askText("Copy this", "Clipboard access was blocked \u2014 select and copy it here.", code, {multi:true,ok:"Done"})); }
 /* Chrome extension → desktop listener → here: parse like a paste, drop it in the Pipeline inbox, and open the preview */
 function sfIncoming(p){ if(!p||!p.text) return; p.text=scrubSF(p.text); if(p.extVersion) state.extSeen=p.extVersion;
-  try{ parseSFText(p.text); }catch(e){ toast("Couldn\u2019t read that Salesforce page"); return; }
+  try{ parseSFText(p.text, false); }catch(e){ toast("Couldn\u2019t read that Salesforce page"); return; }
   const F=(lastSF&&lastSF.fields)||{}; const debts=(lastSF&&lastSF.debts)||[];
   const id="ext"+Date.now().toString(36);
   state.inbox=(state.inbox||[]).filter(x=>!(x.source==="chrome-extension"&&((x.fields&&F.name&&x.fields.name===F.name)||(p.url&&x.url===p.url&&Date.now()-Date.parse(x.when||0)<10*60*1000)||(!(x.fields&&x.fields.name)&&Date.now()-Date.parse(x.when||0)<10*60*1000))));   /* a resend replaces the earlier one — same name, same record, or a thin read from the last few minutes */
