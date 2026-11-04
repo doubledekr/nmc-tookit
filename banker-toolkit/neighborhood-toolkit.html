@@ -559,7 +559,11 @@ body.present-mode #playTabs{display:none}
 main{min-width:0}
 
 #pipeTable .fuq{flex-wrap:wrap}
-@media (max-width:1200px){#s-pipeline .panel{overflow-x:auto}#pipeTable table.data{min-width:980px}#pipeTable table.data thead th{position:static}#pipeTable .ps .tag-flat,#pipeTable .ps .tag-warn,#pipeTable .pf .fud{white-space:nowrap}#pipeTable .fuq{flex-wrap:nowrap}}
+/* narrow windows: columns fold instead of the table scrolling. Opportunity tucks under the rate gap, then Status tucks under the name. */
+#pipeTable .po2,#pipeTable .ps2{display:none}
+@media (max-width:1340px){#pipeTable th.po,#pipeTable td.po{display:none}#pipeTable .pe .po2{display:block;margin-top:5px}#pipeTable .pe .po2 .pot{max-width:100%}#pipeTable table.data th.pc{width:26%}#pipeTable table.data th.pe{width:22%}}
+@media (max-width:1180px){#pipeTable th.ps,#pipeTable td.ps{display:none}#pipeTable .pc .ps2{display:block;margin-top:4px}#pipeTable .pc .ps2+.pc-serv{margin-top:3px}#pipeTable .pc .ps2 .tag-flat,#pipeTable .pc .ps2 .tag-good,#pipeTable .pc .ps2 .tag-warn{font-size:11px;padding:1px 8px}#pipeTable table.data th.pc{width:30%}#pipeTable table.data th.pl{width:18%}#pipeTable table.data th.pf{width:15%}#pipeTable table.data th.pe{width:26%}}
+@media (max-width:980px){#s-pipeline .panel{overflow-x:auto}#pipeTable table.data{min-width:760px}#pipeTable table.data thead th{position:static}#pipeTable .pf .fud{white-space:nowrap}#pipeTable .fuq{flex-wrap:nowrap}}
 #pipeTable td:last-child .btn{background:#fff;color:var(--brand);border:1px solid #E6C2B9;min-height:30px;padding:0 12px;font-size:12.5px;box-shadow:none;transition:all .16s ease}
 #pipeTable td:last-child .btn::after{content:none}
 #pipeTable tbody tr:hover td:last-child .btn{background:linear-gradient(180deg,var(--nmc-red-hi),var(--brand) 60%,var(--nmc-red-lo));color:#fff;border-color:transparent;box-shadow:0 6px 12px -5px rgba(165,50,34,.6);transform:translateY(-1px)}
@@ -570,8 +574,9 @@ tr.elig-today td{animation:nmc-eligsweep 1.6s ease-out 1;background:transparent}
 @keyframes nmc-eligsweep{0%{background:#E3F1E7}100%{background:transparent}}
 #pipeTable .fuq{display:inline-flex;gap:3px;margin-top:4px}#pipeTable .fuq .btn{min-height:24px;width:26px;padding:0;font-size:12px;border-radius:6px}#pipeTable .fuq .btn .ic{margin:0;width:1em;height:1em}
 /* the living pipeline: a small cue on rows that need a human; still rows mean nothing's needed */
-#pipeTable tbody tr td:first-child{position:relative;padding-left:14px}
-#pipeTable tbody tr td:first-child::before{content:"";position:absolute;left:2px;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;background:transparent}
+#pipeTable tbody tr td:first-child{position:relative;padding-left:16px}
+#pipeTable tbody tr td:first-child::before{content:"";position:absolute;left:3px;top:15px;width:6px;height:6px;border-radius:50%;background:transparent}
+#pipeTable table.data.dense tbody tr td:first-child::before{top:10px}
 #pipeTable tr.fresh td:first-child::before{background:var(--good);animation:nmc-breathe-g 2.8s ease-in-out infinite}
 #pipeTable tr.hotrow td:first-child::before{background:#E0633F;animation:nmc-flicker 2.6s ease-in-out infinite}
 #pipeTable tr.due td:first-child::before{background:var(--nmc-amber);animation:nmc-breathe-a 3.2s ease-in-out infinite}
@@ -702,16 +707,16 @@ body.nmc-enter .atile{animation:nmc-rowin .4s var(--nmc-ease) both .15s}
 body.nmc-enter #pipeTable tr.grp{animation:none}
 #pipeTable .pe .gap .new{color:var(--good)}
 /* compact: more rows on screen, less chrome everywhere on the pipeline */
-#pipeTable table.data.dense td{padding:4px 8px}
+#pipeTable table.data.dense td{padding:4px 8px}#pipeTable table.data.dense td:first-child{padding-left:16px}
 #pipeTable table.data.dense .pc-name{font-size:13px}#pipeTable table.data.dense .pc-meta{margin-top:2px}#pipeTable table.data.dense .pc-chip{font-size:11px;padding:0 7px}
-#pipeTable table.data.dense .pc-serv,#pipeTable table.data.dense .ps .psm,#pipeTable table.data.dense .pl .pl2,#pipeTable table.data.dense .pf .pfr,#pipeTable table.data.dense .gap .gaph{max-height:0;opacity:0;overflow:hidden;margin-top:0;transform:translateY(-2px);transition:max-height .055s ease-in,opacity .04s ease-in,margin .055s ease-in,transform .055s ease-in;will-change:max-height,opacity}
-#pipeTable table.data.dense tbody tr:hover .pc-serv,#pipeTable table.data.dense tbody tr:hover .ps .psm,#pipeTable table.data.dense tbody tr:hover .pl .pl2,#pipeTable table.data.dense tbody tr:hover .pf .pfr{max-height:20px;opacity:1;transform:none;transition:max-height .07s cubic-bezier(.2,.9,.3,1.1),opacity .05s ease-out,margin .07s cubic-bezier(.2,.9,.3,1.1),transform .07s cubic-bezier(.2,.9,.3,1.1)}
-#pipeTable table.data.dense tbody tr:hover .gap .gaph{max-height:34px;opacity:1;transform:none;transition:max-height .07s cubic-bezier(.2,.9,.3,1.1) .01s,opacity .05s ease-out .015s,transform .07s cubic-bezier(.2,.9,.3,1.1) .01s}
+#pipeTable table.data.dense .pc-serv,#pipeTable table.data.dense .ps .psm,#pipeTable table.data.dense .pl .pl2,#pipeTable table.data.dense .pf .pfr,#pipeTable table.data.dense .gap .gaph{max-height:0;opacity:0;overflow:hidden;margin-top:0;transform:translateY(-2px);transition:max-height .04s ease-in,opacity .03s ease-in,margin .04s ease-in,transform .04s ease-in;will-change:max-height,opacity}
+#pipeTable table.data.dense tbody tr:hover .pc-serv,#pipeTable table.data.dense tbody tr:hover .ps .psm,#pipeTable table.data.dense tbody tr:hover .pl .pl2,#pipeTable table.data.dense tbody tr:hover .pf .pfr{max-height:20px;opacity:1;transform:none;transition:max-height .05s cubic-bezier(.2,1,.3,1.18),opacity .035s ease-out,margin .05s cubic-bezier(.2,1,.3,1.18),transform .05s cubic-bezier(.2,1,.3,1.18)}
+#pipeTable table.data.dense tbody tr:hover .gap .gaph{max-height:34px;opacity:1;transform:none;transition:max-height .05s cubic-bezier(.2,1,.3,1.18) .005s,opacity .035s ease-out .008s,transform .05s cubic-bezier(.2,1,.3,1.18) .005s}
 #pipeTable table.data.dense tbody tr:hover .pc-serv{margin-top:3px}#pipeTable table.data.dense tbody tr:hover .ps .psm{margin-top:4px}#pipeTable table.data.dense tbody tr:hover .pl .pl2{margin-top:2px}#pipeTable table.data.dense tbody tr:hover .pf .pfr{margin-top:1px}
-#pipeTable table.data.dense .pc-meta .pc-chip:nth-child(2){max-width:0;padding-left:0;padding-right:0;border-color:transparent;opacity:0;transition:max-width .055s ease-in,opacity .04s ease-in,padding .055s ease-in}
-#pipeTable table.data.dense tbody tr:hover .pc-meta .pc-chip:nth-child(2){max-width:170px;padding-left:7px;padding-right:7px;border-color:var(--line);opacity:1;transition:max-width .08s cubic-bezier(.2,.9,.3,1.02),opacity .05s ease-out .015s,padding .08s cubic-bezier(.2,.9,.3,1.02)}
+#pipeTable table.data.dense .pc-meta .pc-chip:nth-child(2){max-width:0;padding-left:0;padding-right:0;border-color:transparent;opacity:0;transition:max-width .04s ease-in,opacity .03s ease-in,padding .04s ease-in}
+#pipeTable table.data.dense tbody tr:hover .pc-meta .pc-chip:nth-child(2){max-width:170px;padding-left:7px;padding-right:7px;border-color:var(--line);opacity:1;transition:max-width .06s cubic-bezier(.2,1,.3,1.04),opacity .035s ease-out .008s,padding .06s cubic-bezier(.2,1,.3,1.04)}
 #pipeTable table.data.dense tbody tr:hover .pot{white-space:normal;max-width:none}
-#pipeTable table.data.dense tbody tr{transition:background .05s}
+#pipeTable table.data.dense tbody tr{transition:background .04s}
 #pipeTable table.data.dense .pl .pl1{font-size:13px}#pipeTable table.data.dense .pf .pfd{font-size:12.5px}
 #pipeTable table.data.dense .gap .gapl{font-size:12px}#pipeTable table.data.dense .gap .gapbar{height:4px;margin:3px 0 0}
 #pipeTable table.data.dense .pot{font-size:11px;padding:2px 7px;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis;display:inline-block}
@@ -724,8 +729,8 @@ body.pipe-dense .atile{padding:4px 10px 4px 8px;gap:8px}body.pipe-dense .atile .
 body.pipe-dense #s-pipeline input[type=search],body.pipe-dense #s-pipeline input[type=text],body.pipe-dense #s-pipeline select{min-height:32px;font-size:13px}
 body.pipe-dense #pipeTable table.data th{padding:6px 8px;font-size:10.5px}
 /* compact unfold: the content inside the row arrives in sequence — numbers, then date, then the bar fills, then actions */
-#pipeTable table.data.dense tbody tr:hover .pf .pfr{transition-delay:.008s}#pipeTable table.data.dense tbody tr:hover .ps .psm{transition-delay:.016s}#pipeTable table.data.dense tbody tr:hover .pc-serv{transition-delay:.022s}
-#pipeTable table.data.dense tbody tr:hover .gap .gapbar i{animation:nmc-fillin .15s cubic-bezier(.2,.8,.2,1) both;transform-origin:left}
+#pipeTable table.data.dense tbody tr:hover .pf .pfr{transition-delay:.004s}#pipeTable table.data.dense tbody tr:hover .ps .psm{transition-delay:.008s}#pipeTable table.data.dense tbody tr:hover .pc-serv{transition-delay:.012s}
+#pipeTable table.data.dense tbody tr:hover .gap .gapbar i{animation:nmc-fillin .12s cubic-bezier(.2,.8,.2,1) both;transform-origin:left}
 @keyframes nmc-fillin{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 #pipeTable tbody tr .pa .qa button{opacity:0;transform:translateY(4px);transition:opacity .1s ease,transform .14s cubic-bezier(.2,.9,.3,1.2)}
 #pipeTable tbody tr:hover .pa .qa button{opacity:1;transform:none}
@@ -792,6 +797,23 @@ summary{transition:color .15s}summary:hover{color:var(--brand)}
 body.nmc-bg *,body.nmc-bg *::before,body.nmc-bg *::after{animation-play-state:paused!important}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.ticking{color:inherit!important}}
 @media print{aside{background:none;color:var(--ink)}}
+/* compact: the row under the mouse comes to the front — a soft shadow below it, rounded ends, no edge bars. Nothing shifts, padding unchanged. */
+#pipeTable table.data.dense tbody tr:not(.grp){position:relative;transition:box-shadow .09s ease-out}
+#pipeTable table.data.dense tbody tr:not(.grp):hover{box-shadow:0 10px 22px -12px rgba(107,31,21,.4),0 2px 6px -3px rgba(107,31,21,.16);z-index:2}
+#pipeTable table.data.dense tbody tr:not(.grp):hover td{background:#FFFDF9;border-color:transparent}
+#pipeTable table.data.dense tbody tr:not(.grp):hover td:first-child{border-radius:8px 0 0 8px}
+#pipeTable table.data.dense tbody tr:not(.grp):hover td:last-child{border-radius:0 8px 8px 0}
+/* first lines of every column sit on one line: measured against the client name's center (align.js) */
+#pipeTable .ps > span:first-child{display:inline-block;vertical-align:top;margin-top:-3px}
+#pipeTable .pl .pl1{margin-top:-1px}#pipeTable .pf .pfd{margin-top:-1px}
+#pipeTable .po .pot{vertical-align:top;margin-top:-2px}#pipeTable table.data.dense .po .pot{margin-top:-1px}
+#pipeTable .pa .go{position:relative;top:-5px}#pipeTable table.data.dense .pa .go{top:-6px}
+#pipeTable .pc .ps2 > span{display:inline-block}
+/* header text lines up with the names (the dot gutter), and the rate gap gives back a few pixels */
+#pipeTable table.data thead th.pc{padding-left:16px}
+#pipeTable table.data th.pe{width:14%}#pipeTable table.data th.po{width:16%}#pipeTable .gap .gapbar{max-width:150px}
+@media (max-width:1340px){#pipeTable table.data th.pe{width:20%}}
+@media (max-width:1180px){#pipeTable table.data th.pe{width:24%}}
 </style>
 </head>
 <body>
@@ -1576,7 +1598,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.15.5";
+const TOOLKIT_VERSION = "1.15.6";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1851,6 +1873,7 @@ function lzw(idx,minCode){ const clear=1<<minCode, eoi=clear+1; let codeSize=min
   emit(prefix); write(eoi); if(bits>0) bytes.push(acc&255); return bytes; }
 /* the animated card: decode the logo animation, draw each frame over the static card's left panel, quantize to one palette
    and re-encode as a GIF with per-frame sub-rectangles. Needs ImageDecoder (Chrome/Edge/desktop); elsewhere the card stays a PNG. */
+const LO_CARD_MAX=480*1024;   /* MMS/iMessage attachment ceiling (~500K) with headroom; applies to both the PNG and the animated GIF */
 async function loCardGIF(){ if(!("ImageDecoder" in window)) return null; const base=await loCardPNG(); const key=base.key;
   const baseImg=new Image(); await new Promise((ok,bad)=>{ baseImg.onload=ok; baseImg.onerror=bad; baseImg.src=base.url; });
   const buf=await (await fetch(NMC_CARD_ANIM)).arrayBuffer(); const dec=new ImageDecoder({data:buf,type:"image/gif"}); await dec.tracks.ready; const n=dec.tracks.selectedTrack.frameCount;
@@ -1863,15 +1886,19 @@ async function loCardGIF(){ if(!("ImageDecoder" in window)) return null; const b
   const top=[...hist.values()].sort((a,b)=>b[3]-a[3]).slice(0,256); const pal=new Uint8Array(768); top.forEach((h,i)=>{ pal[i*3]=Math.round(h[0]/h[3]); pal[i*3+1]=Math.round(h[1]/h[3]); pal[i*3+2]=Math.round(h[2]/h[3]); }); const np=top.length;
   const cache=new Uint8Array(1<<24); const nearest=(r,g,b)=>{ const k=(r<<16)|(g<<8)|b; const c=cache[k]; if(c) return c-1; let best=0,bd=1e9; for(let i=0;i<np;i++){ const dr=r-pal[i*3],dg=g-pal[i*3+1],db=b-pal[i*3+2]; const d=dr*dr+dg*dg+db*db; if(d<bd){ bd=d; best=i; } } cache[k]=best+1; return best; };
   const quant=(d,w,h)=>{ const out=new Uint8Array(w*h); for(let i=0,j=0;i<out.length;i++,j+=4) out[i]=nearest(d[j],d[j+1],d[j+2]); return out; };
-  const frames=[]; let prev=null;
-  for(let i=0;i<n;i++){ const delay=await draw(i);
+  /* texts cap attachments around 500K: encode, and if the file is over budget drop every 2nd (then 3rd) frame, stretching delays so the timing holds */
+  const build=async(step)=>{ const frames=[]; let prev=null, carry=0;
+  for(let i=0;i<n;i++){ const delay=await draw(i)+carry; if(step>1&&i>0&&i<n-1&&i%step){ carry=delay; continue; } carry=0;
     if(i===0){ const idx=quant(ctx.getImageData(0,0,W,H).data,W,H); frames.push({x:0,y:0,w:W,h:H,idx,delay}); prev=new Uint8Array(LW*H); for(let y=0;y<H;y++) prev.set(idx.subarray(y*W,y*W+LW),y*LW); continue; }
     const left=quant(ctx.getImageData(0,0,LW,H).data,LW,H); let x0=LW,y0=H,x1=-1,y1=-1;
     for(let y=0;y<H;y++){ const o=y*LW; for(let x=0;x<LW;x++){ if(left[o+x]!==prev[o+x]){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; } } }
     if(x1<0){ frames.push({x:0,y:0,w:1,h:1,idx:new Uint8Array([prev[0]]),delay}); continue; }
     const w=x1-x0+1,h=y1-y0+1; const idx=new Uint8Array(w*h); for(let y=0;y<h;y++) idx.set(left.subarray((y0+y)*LW+x0,(y0+y)*LW+x0+w),y*w); frames.push({x:x0,y:y0,w,h,idx,delay}); prev=left;
     if(i%20===0) await new Promise(r=>setTimeout(r,0)); }
-  dec.close(); const bytes=gifEncode(W,H,pal,frames); const blob=new Blob([bytes],{type:"image/gif"}); const url=await new Promise(res=>{ const rd=new FileReader(); rd.onload=()=>res(rd.result); rd.readAsDataURL(blob); });
+  return gifEncode(W,H,pal,frames); };
+  let bytes=null; for(const step of [1,2,3]){ bytes=await build(step); if(bytes.length<=LO_CARD_MAX) break; }
+  dec.close(); if(bytes.length>LO_CARD_MAX) return null;   /* still too big: the card stays a PNG, which always fits */
+  const blob=new Blob([bytes],{type:"image/gif"}); const url=await new Promise(res=>{ const rd=new FileReader(); rd.onload=()=>res(rd.result); rd.readAsDataURL(blob); });
   return {key,url,blob}; }
 let loCardGifBusy=false;
 async function loCardAnimate(){ if(!("ImageDecoder" in window)) return; if(loCardGifBusy){ loCardCache.gifAgain=true; return; } const key=loCardKey(); if(loCardCache.gifKey===key&&loCardCache.gifUrl) return; loCardGifBusy=true; loCardCache.gifAgain=false;
@@ -2319,14 +2346,15 @@ function renderPipeline(){ const today=todayStr(); document.body.classList.toggl
       (()=>{ const fi=futureInfo(c); return fi?`<span title="${esc(fi.txt)}">${NMC.icon("home")}${esc(fi.txt.replace(/ \u2014 .*$/,"").replace(/^\uD83C\uDFE1\s?/,""))}</span>`:""; })(),
       c.hot&&c.hotNeed?`<span>need: ${esc(c.hotNeed)}</span>`:"",
       c.proposalSent?`<span title="Proposal sent ${esc(c.proposalSent)}">${NMC.icon("send")}proposal sent ${pipeDate(c.proposalSent)}${c.proposalsSent>1?" \u00b7 \u00d7"+c.proposalsSent:""}</span>`:"" ].filter(Boolean);
-    const fu=pipeFollow(c); const cal=calStatus(c);
+    const fu=pipeFollow(c); const cal=calStatus(c); const oppHTML=op&&!(fu.k&&/follow-up due/i.test(op.txt))?pipeOppHTML(op):"";
+    const statusTag=`<span class="${c.status===S_DONE?"tag-good":c.status==="Lost"||(isInelig(c)&&ineligWhy(c)==="fully ineligible")?"tag-warn":"tag-flat"}">${isFuture(c)?"\uD83C\uDFE1 ":""}${esc(c.status)}${isInelig(c)&&ineligWhy(c)==="fully ineligible"?" \u00b7 no follow-up":""}</span>`;
     return `<tr class="${(()=>{ const wi=rdWindowInfo(c); const k=[]; if(wi){ k.push("elig-week","fresh"); if(wi.today&&!c.eligibleSeen) k.push("elig-today"); } if(c.followUp&&!isDone(c)){ if(c.followUp<today) k.push("overdue"); else if(c.followUp===today) k.push("due"); } if(hs.has(c.id)||c.hot) k.push("hotrow"); return k.join(" "); })()}" data-id="${c.id}" onclick="pipeRowClick(event,'${c.id}')">
-    <td class="pc"><span class="pc-name">${c.hot?'<span title="Hot lead">\uD83D\uDD25 </span>':""}${esc(c.name)}</span><div class="pc-meta">${c.phone?`<span class="pc-chip" data-copy="${esc(c.phone)}" title="Click to copy" onclick="copyChip(event)">${NMC.icon("phone")}${esc(c.phone)}</span>`:""}${c.email?`<span class="pc-chip" data-copy="${esc(c.email)}" title="Click to copy" onclick="copyChip(event)">${NMC.icon("mail")}${esc(c.email)}</span>`:""}</div>${c.servicer?`<span class="pc-serv">${esc(c.servicer)}</span>`:""}</td>
-    <td class="ps"><span class="${c.status===S_DONE?"tag-good":c.status==="Lost"||(isInelig(c)&&ineligWhy(c)==="fully ineligible")?"tag-warn":"tag-flat"}">${isFuture(c)?"\uD83C\uDFE1 ":""}${esc(c.status)}${isInelig(c)&&ineligWhy(c)==="fully ineligible"?" \u00b7 no follow-up":""}</span>${statusMeta.map(m=>`<div class="psm">${m}</div>`).join("")}</td>
+    <td class="pc"><span class="pc-name">${c.hot?'<span title="Hot lead">\uD83D\uDD25 </span>':""}${esc(c.name)}</span><div class="pc-meta">${c.phone?`<span class="pc-chip" data-copy="${esc(c.phone)}" title="Click to copy" onclick="copyChip(event)">${NMC.icon("phone")}${esc(c.phone)}</span>`:""}${c.email?`<span class="pc-chip" data-copy="${esc(c.email)}" title="Click to copy" onclick="copyChip(event)">${NMC.icon("mail")}${esc(c.email)}</span>`:""}</div><div class="ps2">${statusTag}</div>${c.servicer?`<span class="pc-serv">${esc(c.servicer)}</span>`:""}</td>
+    <td class="ps">${statusTag}${statusMeta.map(m=>`<div class="psm">${m}</div>`).join("")}</td>
     <td class="pl">${c.freeClear?`<div class="pl1"><span class="typ">${esc(c.loanType||"")}</span><span class="tag-good">free &amp; clear</span></div>`:`<div class="pl1"><span class="typ">${esc(pipeType(c.loanType))}</span><b>${c.balance>0?money(c.balance):"\u2014"}</b></div><div class="pl2">${c.rate>0?`<em>${pct(c.rate)}</em>`:"rate \u2014"} \u00b7 ${c.payment>0?`<em>${money(c.payment)}</em>/mo`:"P&amp;I \u2014"}</div>`}${isFuture(c)&&c.futureProduct?`<div class="pl2">\u2192 ${esc(c.futureProduct)}</div>`:""}</td>
     <td class="pf ${fu.k}">${fu.date?`<div class="pfd"><span class="fud">${fu.date}${fu.time?" \u00b7 "+fu.time:""}</span>${cal==="on"?` <span class="pfc" title="On your Outlook calendar">${NMC.icon("calendar")}</span>`:cal==="moved"?` <span class="pfc moved" title="Follow-up moved since it went on your calendar \u2014 re-add it">${NMC.icon("calendar")}</span>`:""}</div><div class="pfr">${fu.rel}</div>${(ds.has(c.id)||(fuPending&&fuPending.id===c.id))?`<div class="pfq${fuPending&&fuPending.id===c.id?" stay":""}">${fuButtons(c,true)}</div>`:""}`:`<span class="hint">\u2014</span>`}</td>
-    ${rdTiers()?`<td class="pe">${rateGapHTML(c)}</td>`:""}
-    <td class="po">${op&&!(fu.k&&/follow-up due/i.test(op.txt))?pipeOppHTML(op):""}</td>
+    ${rdTiers()?`<td class="pe">${rateGapHTML(c)}${oppHTML?`<div class="po2">${oppHTML}</div>`:""}</td>`:""}
+    <td class="po">${oppHTML}</td>
     <td class="pa"><span class="qa">${c.phone?`<button type="button" title="Copy phone" data-copy="${esc(c.phone)}" onclick="copyChip(event)">${NMC.icon("phone")}</button>`:""}<button type="button" title="Follow-up texts & emails" onclick="event.stopPropagation();pickClient('${c.id}');go('client');playOpen('follow')">${NMC.icon("chat")}</button><button type="button" title="Presentation" onclick="event.stopPropagation();pickClient('${c.id}');go('present')">${NMC.icon("present")}</button></span><span class="go" title="Open">\u203A</span></td></tr>`;}).join("")+`</tbody></table>`);
 }
 
