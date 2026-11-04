@@ -402,6 +402,7 @@ nav button.grp .caret{font-size:11px;color:var(--muted);margin-left:4px;display:
 nav button{padding:8px 16px 8px 32px;font-size:13.5px;min-height:34px}nav button::before{left:16px;top:10px}.navsub button{min-height:30px;font-size:12.5px;padding-left:44px}.navsub button::before{left:30px;top:8px}
 .wordmark{padding:0 18px 12px;margin-bottom:6px}aside{padding:16px 0}
 .rate-pill{margin:10px 16px 0;padding:8px 11px;font-size:11px;line-height:1.35}.rate-pill b{font-size:15px}.rate-pill:hover{border-color:var(--brand)}
+#sideUpd .btn{animation:updpulse 2s ease-in-out infinite}@keyframes updpulse{0%,100%{box-shadow:0 0 0 0 rgba(165,50,34,.5)}50%{box-shadow:0 0 0 7px rgba(165,50,34,0)}}
 #sideInbox{margin:6px 16px 6px}#sideInbox button{min-height:28px;font-size:11.5px;padding:0 9px}
 #sideCard{margin:2px 16px 6px}#sideCard img{width:100%;display:block;border:1px solid var(--line);border-radius:8px;background:#fff;cursor:grab}#sideCard img:active{cursor:grabbing}
 /* sidebar inbox under the rate feed */
@@ -1081,7 +1082,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.12.9";
+const TOOLKIT_VERSION = "1.12.10";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -3207,11 +3208,13 @@ async function emailDraftEML(kind, snapId, variant){ const c=cur(); const snap=s
   const html = snap ? snap.html : (kind==="compare" ? compareHTML() : proposalHTML()); if(html.includes('class="empty"')){ toast(kind==="compare"?"Add at least two complete scenarios first":"Finish the analysis first"); return; }
   const r=c&&!snap&&computeAnalysis(c); const title=snap?snap.title:sheetTitle(kind,c,r); if(!snap&&c) libraryAdd(kind, html, title);
   const marks=(!snap&&c&&c.prop&&c.prop.marks)||[]; const {html:emailHtml, text}=emailProposalMessage(c, r&&!r.tooSmall?r:null, kind, variant, html, marks);
-  const to=(c&&c.email)||""; const subject=emailSubjectFor(c, r&&!r.tooSmall?r:null, kind, variant, title);
+  const to=emailAskFor(c); const subject=emailSubjectFor(c, r&&!r.tooSmall?r:null, kind, variant, title);
   if(c){ const e=snap||c.library[0]; if(e&&!e.sent) libSent(e.id,"email"); }
   await openEmlDraft(to, subject, emailHtml, text, hlCountNote(marks)); }
+/* no address on file: ask once, save it to the client, and use it — or leave it blank and fill the To line in the mail app */
+function emailAskFor(c){ if(!c||(c.email||"").trim()) return c?c.email.trim():""; const v=prompt("No email address on file for "+c.name+".\n\nType it to save it to the client and use it here \u2014 or leave blank and fill in the To line in your mail app.",""); const e=(v||"").trim(); if(e&&/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){ c.email=e; save(); refreshAll(); return e; } if(e) toast("That didn\u2019t look like an email address \u2014 the draft opens with To blank"); return ""; }
 async function openEmlDraft(to, subject, html, text, note){ const eml=buildEML(to, subject, html, text); const name=(subject.replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"")||"email")+".eml";
-  if(window.nmcDesktop&&window.nmcDesktop.openDraft){ const ok=await window.nmcDesktop.openDraft(name, eml); toast(ok?"Draft opened in your mail app"+(to?" to "+to:"")+" \u2014 it\u2019s the formatted email itself, nothing to paste"+(note||""):"Couldn\u2019t open the draft \u2014 the .eml was saved to your temp folder"); return; }
+  if(window.nmcDesktop&&window.nmcDesktop.openDraft){ const ok=await window.nmcDesktop.openDraft(name, eml); toast(ok?"Draft opened in your mail app"+(to?" to "+to:" \u2014 To is blank, add the address there")+" \u00b7 it\u2019s the formatted email itself, nothing to paste"+(note||""):"Couldn\u2019t open the draft \u2014 the .eml was saved to your temp folder"); return; }
   const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([eml],{type:"message/rfc822"})); a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
   toast("Draft downloaded ("+name+") \u2014 open it and Outlook shows it as a draft to send"+(note||"")); }
 async function copyProposalEmail(kind, snapId, variant){ const c=cur(); const snap=snapId?libSnap(snapId):null; const html = snap ? snap.html : (kind==="compare" ? compareHTML() : proposalHTML()); if(html.includes('class="empty"')){ toast("Finish the analysis first"); return; }
@@ -3284,7 +3287,7 @@ function postCloseParts(c, prod, lenderKey, extra){ const s=state.settings; cons
 async function postCloseDraft(prod, lenderKey, opts){ const c=cur(); if(!c){ toast("Pick a client first"); return; } opts=opts||{};
   const extra=prompt("Anything extra to ask for in Step 3? (optional \u2014 e.g. 2025 1099 for pension, SSA benefit letter)","")||"";
   const {subject,parts}=opts.numbers?realQuoteParts(c, prod, lenderKey, extra):postCloseParts(c, prod, lenderKey, extra); const html=emailRenderHTML(parts,null); const text=emailRenderText(parts);
-  await openEmlDraft((c.email||""), subject, html, text, ""); }
+  await openEmlDraft(emailAskFor(c), subject, html, text, ""); }
 /* The real-quote email: the numbers that were presented (compact, branded), the benefits that were switched on, then the
    post-close next steps. Not a selling piece \u2014 the client already said yes; this is "here is your loan, here is what to do". */
 function realQuoteParts(c, prod, lenderKey, extra){ const s=state.settings; const p=c.present||{}; const d=p.d; const r=d?presentCalc(c):null; const first=c.name?c.name.split(/[ ,&]/)[0]:"there";
