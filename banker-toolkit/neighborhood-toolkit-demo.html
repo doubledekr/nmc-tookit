@@ -3601,7 +3601,7 @@ function rdMigrateTiers(){ state.clients.forEach(c=>{ if(c.eligibleTier&&!RD_TIE
    since the flip takes them out; No answer keeps them in (a setting) with an attempt count, so an unanswered call doesn't drop them off the radar */
 function rdWindowInfo(c){ const e=rdEligibleNow(c); if(!e||!c.eligibleSince) return null; const since=Date.parse(c.eligibleSince); if(!(since>0)) return null;
   const days=(Date.now()-since)/86400000; const win=+state.settings.rdWindow||7; if(days>win) return null;
-  const sinceStamp=c.eligibleSince.slice(0,10); let tries=0; for(const l of (c.log||[])){ if(!l.when||l.when.slice(0,10)<sinceStamp) continue; if(l.outcome==="noanswer"){ tries++; if(state.settings.rdKeepNoAnswer===false) return null; continue; } return null; }
+  const sinceStamp=new Date(c.eligibleSince).toLocaleDateString("en-CA"); let tries=0;   /* local day, like every other stamp */ for(const l of (c.log||[])){ if(!l.when||l.when.slice(0,10)<sinceStamp) continue; if(l.outcome==="noanswer"){ tries++; if(state.settings.rdKeepNoAnswer===false) return null; continue; } return null; }
   if(c.proposalSent&&c.proposalSent>=sinceStamp) return null;
   return Object.assign(e,{days:Math.floor(days), tries, today:c.eligibleDay===todayStr()}); }
 function rdWeekIds(){ if(!rdTiers()) return []; return state.clients.filter(c=>rdWindowInfo(c)).map(c=>c.id); }
