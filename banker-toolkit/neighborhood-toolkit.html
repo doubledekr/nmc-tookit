@@ -690,7 +690,7 @@ body.nmc-enter .atile{animation:nmc-rowin .4s var(--nmc-ease) both .15s}
 #pipeTable .pa .qa button{all:unset;cursor:pointer;width:28px;height:28px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);border:1px solid transparent;transition:all .14s}
 #pipeTable .pa .qa button:hover{background:#fff;border-color:var(--line);color:var(--brand);transform:translateY(-1px);box-shadow:0 4px 10px -6px rgba(165,50,34,.4)}
 #pipeTable .pa .qa button .ic{margin:0;width:15px;height:15px}
-#pipeTable .pa .go{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;color:var(--brand);font-size:18px;line-height:1;margin-left:4px;transition:transform .15s,background .15s}#pipeTable tbody tr:hover .pa .go{transform:translateX(2px);background:#fff}
+#pipeTable .pa .go{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;color:var(--brand);font-size:18px;line-height:1;margin-left:4px;transition:transform .15s,background .15s}#pipeTable tbody tr:hover .pa .go{background:#fff}
 #pipeTable tr.grp td{background:transparent!important;border-bottom:none!important;padding:16px 10px 4px!important;cursor:default}
 #pipeTable tr.grp td .g{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;display:flex;align-items:center;gap:8px}
 #pipeTable tr.grp td .g::after{content:"";flex:1;height:1px;background:var(--line)}
@@ -704,14 +704,14 @@ body.nmc-enter #pipeTable tr.grp{animation:none}
 /* compact: more rows on screen, less chrome everywhere on the pipeline */
 #pipeTable table.data.dense td{padding:4px 8px}
 #pipeTable table.data.dense .pc-name{font-size:13px}#pipeTable table.data.dense .pc-meta{margin-top:2px}#pipeTable table.data.dense .pc-chip{font-size:11px;padding:0 7px}
-#pipeTable table.data.dense .pc-serv,#pipeTable table.data.dense .ps .psm,#pipeTable table.data.dense .pl .pl2,#pipeTable table.data.dense .pf .pfr,#pipeTable table.data.dense .gap .gaph{max-height:0;opacity:0;overflow:hidden;margin-top:0;transform:translateY(-3px);transition:max-height .14s ease-in,opacity .1s ease-in,margin .14s ease-in,transform .14s ease-in;will-change:max-height,opacity}
-#pipeTable table.data.dense tbody tr:hover .pc-serv,#pipeTable table.data.dense tbody tr:hover .ps .psm,#pipeTable table.data.dense tbody tr:hover .pl .pl2,#pipeTable table.data.dense tbody tr:hover .pf .pfr{max-height:20px;opacity:1;transform:none;transition:max-height .13s cubic-bezier(.2,.9,.3,1.15),opacity .1s ease-out .02s,margin .13s cubic-bezier(.2,.9,.3,1.15),transform .13s cubic-bezier(.2,.9,.3,1.15)}
-#pipeTable table.data.dense tbody tr:hover .gap .gaph{max-height:34px;opacity:1;transform:none;transition:max-height .13s cubic-bezier(.2,.9,.3,1.15) .03s,opacity .1s ease-out .06s,transform .13s cubic-bezier(.2,.9,.3,1.15) .03s}
+#pipeTable table.data.dense .pc-serv,#pipeTable table.data.dense .ps .psm,#pipeTable table.data.dense .pl .pl2,#pipeTable table.data.dense .pf .pfr,#pipeTable table.data.dense .gap .gaph{max-height:0;opacity:0;overflow:hidden;margin-top:0;transform:translateY(-3px);transition:max-height .09s ease-in,opacity .06s ease-in,margin .09s ease-in,transform .09s ease-in;will-change:max-height,opacity}
+#pipeTable table.data.dense tbody tr:hover .pc-serv,#pipeTable table.data.dense tbody tr:hover .ps .psm,#pipeTable table.data.dense tbody tr:hover .pl .pl2,#pipeTable table.data.dense tbody tr:hover .pf .pfr{max-height:20px;opacity:1;transform:none;transition:max-height .11s cubic-bezier(.2,.9,.3,1.1),opacity .08s ease-out .01s,margin .11s cubic-bezier(.2,.9,.3,1.1),transform .11s cubic-bezier(.2,.9,.3,1.1)}
+#pipeTable table.data.dense tbody tr:hover .gap .gaph{max-height:34px;opacity:1;transform:none;transition:max-height .11s cubic-bezier(.2,.9,.3,1.1) .02s,opacity .08s ease-out .03s,transform .11s cubic-bezier(.2,.9,.3,1.1) .02s}
 #pipeTable table.data.dense tbody tr:hover .pc-serv{margin-top:3px}#pipeTable table.data.dense tbody tr:hover .ps .psm{margin-top:4px}#pipeTable table.data.dense tbody tr:hover .pl .pl2{margin-top:2px}#pipeTable table.data.dense tbody tr:hover .pf .pfr{margin-top:1px}
-#pipeTable table.data.dense .pc-meta .pc-chip:nth-child(2){max-width:0;padding-left:0;padding-right:0;border-color:transparent;opacity:0;transition:max-width .14s ease-in,opacity .1s ease-in,padding .14s ease-in}
-#pipeTable table.data.dense tbody tr:hover .pc-meta .pc-chip:nth-child(2){max-width:170px;padding-left:7px;padding-right:7px;border-color:var(--line);opacity:1;transition:max-width .16s cubic-bezier(.2,.9,.3,1.05) .02s,opacity .1s ease-out .05s,padding .16s cubic-bezier(.2,.9,.3,1.05) .02s}
+#pipeTable table.data.dense .pc-meta .pc-chip:nth-child(2){max-width:0;padding-left:0;padding-right:0;border-color:transparent;opacity:0;transition:max-width .09s ease-in,opacity .06s ease-in,padding .09s ease-in}
+#pipeTable table.data.dense tbody tr:hover .pc-meta .pc-chip:nth-child(2){max-width:170px;padding-left:7px;padding-right:7px;border-color:var(--line);opacity:1;transition:max-width .12s cubic-bezier(.2,.9,.3,1.02) .01s,opacity .08s ease-out .03s,padding .12s cubic-bezier(.2,.9,.3,1.02) .01s}
 #pipeTable table.data.dense tbody tr:hover .pot{white-space:normal;max-width:none}
-#pipeTable table.data.dense tbody tr{transition:background .1s}#pipeTable table.data.dense td{transition:padding .13s cubic-bezier(.2,.9,.3,1.15)}#pipeTable table.data.dense tbody tr:hover td{padding-top:7px;padding-bottom:7px}
+#pipeTable table.data.dense tbody tr{transition:background .08s}
 #pipeTable table.data.dense .pl .pl1{font-size:13px}#pipeTable table.data.dense .pf .pfd{font-size:12.5px}
 #pipeTable table.data.dense .gap .gapl{font-size:12px}#pipeTable table.data.dense .gap .gapbar{height:4px;margin:3px 0 0}
 #pipeTable table.data.dense .pot{font-size:11px;padding:2px 7px;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis;display:inline-block}
@@ -724,19 +724,12 @@ body.pipe-dense .atile{padding:4px 10px 4px 8px;gap:8px}body.pipe-dense .atile .
 body.pipe-dense #s-pipeline input[type=search],body.pipe-dense #s-pipeline input[type=text],body.pipe-dense #s-pipeline select{min-height:32px;font-size:13px}
 body.pipe-dense #pipeTable table.data th{padding:6px 8px;font-size:10.5px}
 /* compact unfold: the content inside the row arrives in sequence — numbers, then date, then the bar fills, then actions */
-#pipeTable table.data.dense tbody tr:hover .pf .pfr{transition-delay:.02s}#pipeTable table.data.dense tbody tr:hover .ps .psm{transition-delay:.04s}#pipeTable table.data.dense tbody tr:hover .pc-serv{transition-delay:.06s}
-#pipeTable table.data.dense tbody tr:hover .gap .gapbar i{animation:nmc-fillin .38s cubic-bezier(.2,.8,.2,1) .05s both;transform-origin:left}
+#pipeTable table.data.dense tbody tr:hover .pf .pfr{transition-delay:.015s}#pipeTable table.data.dense tbody tr:hover .ps .psm{transition-delay:.03s}#pipeTable table.data.dense tbody tr:hover .pc-serv{transition-delay:.04s}
+#pipeTable table.data.dense tbody tr:hover .gap .gapbar i{animation:nmc-fillin .22s cubic-bezier(.2,.8,.2,1) both;transform-origin:left}
 @keyframes nmc-fillin{from{transform:scaleX(0)}to{transform:scaleX(1)}}
-#pipeTable table.data.dense tbody tr:hover .gap .gapl b{animation:nmc-tagpop .3s cubic-bezier(.2,.9,.3,1.4) .08s both;display:inline-block}
-#pipeTable table.data.dense tbody tr:hover .pl .pl1 b{animation:nmc-snap .28s var(--nmc-snap);display:inline-block}
-#pipeTable table.data.dense tbody tr:hover .pot{animation:nmc-tagpop .3s cubic-bezier(.2,.9,.3,1.3) .06s both}
-#pipeTable table.data.dense tbody tr:hover .pc-name{animation:nmc-namein .2s var(--nmc-ease) both}
-@keyframes nmc-namein{from{transform:translateX(-3px)}to{transform:none}}
-#pipeTable tbody tr .pa .qa button{opacity:0;transform:translateY(6px);transition:opacity .14s ease,transform .18s cubic-bezier(.2,.9,.3,1.3)}
+#pipeTable tbody tr .pa .qa button{opacity:0;transform:translateY(4px);transition:opacity .1s ease,transform .14s cubic-bezier(.2,.9,.3,1.2)}
 #pipeTable tbody tr:hover .pa .qa button{opacity:1;transform:none}
-#pipeTable tbody tr:hover .pa .qa button:nth-child(2){transition-delay:.04s}#pipeTable tbody tr:hover .pa .qa button:nth-child(3){transition-delay:.08s}
-#pipeTable tbody tr:hover .pa .go{animation:nmc-snap .3s var(--nmc-snap)}
-#pipeTable tbody tr:hover td:first-child::before{animation:nmc-snap .3s var(--nmc-snap)}
+#pipeTable tbody tr:hover .pa .qa button:nth-child(2){transition-delay:.03s}#pipeTable tbody tr:hover .pa .qa button:nth-child(3){transition-delay:.06s}
 /* ---------- My desk ---------- */
 .stat{background:#fff;border:1px solid var(--line);border-left:3px solid var(--brand);border-radius:10px;box-shadow:0 1px 2px rgba(52,55,64,.04),0 10px 24px -16px rgba(52,55,64,.25)}
 .stat .v,.stat b{font-family:var(--serif)}
@@ -1583,7 +1576,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.15.3";
+const TOOLKIT_VERSION = "1.15.4";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
