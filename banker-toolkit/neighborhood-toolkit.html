@@ -372,7 +372,7 @@ body.obj-open .tchart .trow{font-size:13px}body.obj-open .tchart .trow input,bod
 #playTab{display:none!important;position:fixed;right:0;top:38%;z-index:70;background:var(--brand);color:#fff;border-radius:12px 0 0 12px;padding:12px 10px 12px 14px;cursor:pointer;writing-mode:vertical-rl;transform:rotate(180deg) translateX(-6px);font-weight:700;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;box-shadow:0 0 0 0 rgba(165,50,34,.45);animation:playglow 2.6s ease-in-out infinite;transition:transform .18s,box-shadow .18s;user-select:none;line-height:1}
 #playTab:hover{transform:rotate(180deg) translateX(0);box-shadow:0 6px 22px rgba(165,50,34,.35);animation:none}
 @keyframes playglow{0%,100%{box-shadow:0 0 0 0 rgba(165,50,34,.45)}50%{box-shadow:0 0 0 8px rgba(165,50,34,0)}}
-#playTabs{display:flex;gap:6px;justify-content:flex-end;align-items:center;margin:0 0 6px;flex-wrap:wrap}
+#playTabs{display:flex;gap:6px;justify-content:center;align-items:center;margin:0 0 6px;flex-wrap:wrap}
 #playTabs .ptab{background:var(--brand);color:#fff;border-radius:999px;padding:0 12px;min-height:26px;display:inline-flex;align-items:center;cursor:pointer;font-weight:700;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;line-height:1;user-select:none;white-space:nowrap;opacity:.9;transition:transform .15s,box-shadow .15s,opacity .15s}
 /* a ramp of the brand brick, light to deep, so each handle reads at a glance */
 #playTabs .ptab.intros{background:#D9775B}#playTabs .ptab.open{background:#C85A3E}#playTabs .ptab.close{background:#A53222}#playTabs .ptab.follow{background:#8C2619}#playTabs .ptab.post{background:#5E1A10}
@@ -1081,7 +1081,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.12.3";
+const TOOLKIT_VERSION = "1.12.4";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
