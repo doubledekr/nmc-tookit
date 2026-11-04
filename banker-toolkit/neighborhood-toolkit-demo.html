@@ -352,7 +352,7 @@ body.obj-open #objDrawer{display:block}body.obj-open main{margin-right:380px}
 #objDrawer .objflow{grid-template-columns:1fr;gap:8px}#objDrawer h2{font-family:var(--serif);font-size:18px;font-weight:400;margin:0}
 #objDrawer .objbox .objt{font-size:14.5px}#objDrawer .objbox.cl .objt{font-size:17px}
 body.obj-open .tchart .trow{font-size:13px}body.obj-open .tchart .trow input,body.obj-open .tchart .trow select{font-size:13px;padding:4px 6px}
-#pipeTable table.data td{padding:9px 8px}#pipeTable td:nth-child(2) .tag-good,#pipeTable td:nth-child(2) .tag-warn,#pipeTable td:nth-child(2) .tag-flat{white-space:nowrap}#pipeTable td:nth-child(7){white-space:nowrap}#pipeTable table.data{width:100%;table-layout:auto}#pipeTable table.data td{padding:8px 6px}#pipeTable table.data th{padding:8px 6px;white-space:nowrap}#pipeTable td:first-child{min-width:165px}#pipeTable td:first-child .hint{font-size:11.5px;line-height:1.35}#pipeTable td:nth-child(2) .tag-good{white-space:normal}#pipeTable td:nth-child(8){min-width:150px}#pipeTable td:nth-child(8) .tag-good{white-space:nowrap;font-size:11.5px}#pipeTable td:nth-child(8) .hint{font-size:11px;line-height:1.35}#pipeTable td:nth-child(3){white-space:nowrap}#pipeTable td:nth-child(9) .tag-good{font-size:11.5px;line-height:1.35;padding:3px 8px}#pipeTable th:last-child,#pipeTable td:last-child{width:1%;white-space:nowrap}#pipeTable .num{white-space:nowrap}
+#pipeTable table.data td{padding:9px 8px}#pipeTable td:nth-child(2) .tag-good,#pipeTable td:nth-child(2) .tag-warn,#pipeTable td:nth-child(2) .tag-flat{white-space:nowrap}#pipeTable td:nth-child(7){white-space:nowrap}#pipeTable table.data{width:100%;table-layout:auto}#pipeTable table.data td{padding:8px 6px}#pipeTable table.data th{padding:8px 6px;white-space:nowrap}#pipeTable td:first-child{min-width:165px}#pipeTable td:first-child .hint{font-size:11.5px;line-height:1.35}#pipeTable td:nth-child(2) .tag-good{white-space:normal}#pipeTable td.elig{min-width:112px}#pipeTable td.elig .tag-good{white-space:nowrap;font-size:11.5px}#pipeTable td.elig .hint{font-size:11px;line-height:1.35}#pipeTable td.opp .tag-good,#pipeTable td.opp .tag-flat,#pipeTable td.opp .tag-warn{font-size:11.5px;line-height:1.35;padding:3px 8px;white-space:normal}#pipeTable th:last-child,#pipeTable td:last-child{width:1%;white-space:nowrap}#pipeTable .num{white-space:nowrap}
 .dupbar{background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 12px;font-size:13.5px}
 #sfPanel .sfhead{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}#sfPanel .sfhead h2{margin:0;flex:1}#sfPanel .sfhead .tgl{font-size:12px;color:var(--muted)}
 #sfPanel.closed #sfBody{display:none}#sfPanel.closed{padding:12px 18px}
@@ -365,7 +365,7 @@ body.obj-open .tchart .trow{font-size:13px}body.obj-open .tchart .trow input,bod
 /* pipeline: column titles stay put */
 #pipeTable table.data thead th{position:sticky;top:var(--barh,78px);background:var(--panel);z-index:5;box-shadow:0 1px 0 var(--line)}
 /* pipeline columns: proportions set up front so the table lays out the same whatever the window started at or how long a row's text runs */
-#pipeTable table.data th:nth-child(1){width:23%}#pipeTable table.data th:nth-child(2){width:13%}#pipeTable table.data th:nth-child(3){width:9%}#pipeTable table.data th:nth-child(7){width:10%}
+#pipeTable table.data th:nth-child(1){width:21%}#pipeTable table.data th:nth-child(2){width:12%}#pipeTable table.data th:nth-child(3){width:8%}#pipeTable table.data th:nth-child(7){width:10%}#pipeTable table.data th.elig{width:16%}#pipeTable table.data th.opp{width:12%}
 #pipeTable .fuq{display:inline-flex;gap:3px;margin-top:4px}#pipeTable .fuq .btn{min-height:24px;width:26px;padding:0;font-size:12px;border-radius:6px}#pipeTable table.data th:nth-child(8){width:17%}#pipeTable table.data th:nth-child(9){width:14%}
 #s-pipeline .panel{padding-top:12px}#pipeTop{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}#pipeTop .pipe-add{margin-left:auto;display:inline-flex;gap:6px}
 /* tools: every tool folds behind its title bar */
@@ -471,7 +471,7 @@ nav button.soon{opacity:.55}
 nav [data-group] button,nav .sub button{padding-left:34px}
 aside .side-foot,#sideCard .hint{color:rgba(255,255,255,.55)}
 /* the rate card: frosted, rows on a grid, changes readable on red */
-.rate-pill{margin:12px 16px 0;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.78);box-shadow:0 1px 0 rgba(255,255,255,.18) inset,0 10px 24px -14px rgba(0,0,0,.6);backdrop-filter:blur(10px);transition:background .18s,transform .18s;position:relative;overflow:hidden}
+.rate-pill{margin:12px 16px 0;background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:rgba(255,255,255,.78);box-shadow:0 1px 0 rgba(255,255,255,.18) inset,0 10px 24px -14px rgba(0,0,0,.6);backdrop-filter:blur(10px);transition:background .18s,transform .18s;position:relative;overflow:visible}
 .rate-pill:hover{background:rgba(255,255,255,.16);transform:translateY(-1px);border-color:rgba(255,255,255,.3)}
 .rate-pill b{color:#fff;font-family:var(--serif);display:inline;font-size:inherit;font-weight:400}
 .rate-pill .rp-when{font-size:11px;color:rgba(255,255,255,.7)}
@@ -484,12 +484,12 @@ aside .side-foot,#sideCard .hint{color:rgba(255,255,255,.55)}
 .rate-pill .rp-box:hover{background:rgba(255,255,255,.24)}
 .rate-pill .rp-box b{font-size:13px;color:#fff}
 .rate-pill .rp-box.new.has{background:rgba(255,255,255,.28)}
-.rate-pill .rp-note{position:absolute;top:-7px;right:-7px;text-decoration:none;border:1.5px solid #fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;line-height:1.4;background:#fff;color:var(--brand)}
+.rate-pill .rp-note{position:absolute;top:-8px;right:-6px;z-index:2;text-decoration:none;border:1.5px solid #fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;line-height:1.4;background:#fff;color:var(--brand)}
 .rate-pill .rp-note.unseen{background:var(--brand);color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.25);animation:nmc-breathe-w 3s ease-in-out infinite}
 .rate-pill .dot{vertical-align:middle}
 /* an occasional light sweep across the card */
-.rate-pill::after{content:"";position:absolute;top:-40%;left:-70%;width:45%;height:180%;background:linear-gradient(100deg,transparent 0%,rgba(255,255,255,.22) 50%,transparent 100%);transform:skewX(-18deg);animation:nmc-shimmer 7s ease-in-out infinite;pointer-events:none}
-@keyframes nmc-shimmer{0%,78%{left:-70%}100%{left:170%}}
+.rate-pill::after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.2) 50%,transparent 65%);background-size:300% 100%;background-position:120% 0;animation:nmc-shimmer 7s ease-in-out infinite;pointer-events:none}
+@keyframes nmc-shimmer{0%,78%{background-position:120% 0}100%{background-position:-120% 0}}
 #sideInbox{margin:8px 16px 10px}
 #sideInbox .btn{width:100%;justify-content:flex-start;min-height:32px;border-radius:10px;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.22);color:#fff;backdrop-filter:blur(8px);box-shadow:none}
 #sideInbox .btn:hover{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.35);transform:none}
@@ -553,8 +553,12 @@ body.present-mode #playTabs{display:none}
 @keyframes nmc-barglow{0%,100%{box-shadow:0 0 0 0 rgba(165,50,34,0)}50%{box-shadow:0 0 0 4px rgba(165,50,34,.08)}}
 #pipeTable table.data th{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line);box-shadow:none}
 #pipeTable table.data td{border-bottom:1px solid #F0EBE1;transition:background .12s}
-#pipeTable table.data tbody tr:hover td{background:linear-gradient(90deg,#FFF9F7,var(--cream-soft))}
+#pipeTable table.data tbody tr:hover td{background:var(--cream-soft)}
 #pipeTable td:first-child b{font-weight:600}
+main{min-width:0}
+#pipeTable td:first-child{min-width:120px}#pipeTable td:nth-child(8){min-width:112px}#pipeTable td:nth-child(7){white-space:normal}#pipeTable td:nth-child(3){white-space:normal}#pipeTable td:nth-child(2) .tag-flat,#pipeTable td:nth-child(2) .tag-warn{white-space:normal}#pipeTable table.data th{white-space:normal}
+#pipeTable .fuq{flex-wrap:wrap}
+@media (max-width:1200px){#s-pipeline .panel{overflow-x:auto}#pipeTable table.data{min-width:980px}#pipeTable table.data thead th{position:static}#pipeTable td:nth-child(2) .tag-flat,#pipeTable td:nth-child(2) .tag-warn,#pipeTable td:nth-child(7) .fud,#pipeTable td:nth-child(3){white-space:nowrap}#pipeTable .fuq{flex-wrap:nowrap}}
 #pipeTable td:last-child .btn{background:#fff;color:var(--brand);border:1px solid #E6C2B9;min-height:30px;padding:0 12px;font-size:12.5px;box-shadow:none;transition:all .16s ease}
 #pipeTable td:last-child .btn::after{content:none}
 #pipeTable tbody tr:hover td:last-child .btn{background:linear-gradient(180deg,var(--nmc-red-hi),var(--brand) 60%,var(--nmc-red-lo));color:#fff;border-color:transparent;box-shadow:0 6px 12px -5px rgba(165,50,34,.6);transform:translateY(-1px)}
@@ -1472,7 +1476,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.14.2";
+const TOOLKIT_VERSION = "1.14.3";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2175,16 +2179,16 @@ function renderPipeline(){ const today=todayStr();
     ${inbox.map(it=>`<div class="btnrow" style="margin-top:6px"><span><b>${esc(it.fields.name)}</b>${it.fields.balance?` \u00b7 ${money(num(it.fields.balance))}`:""}${it.fields.rate?` @ ${pct(num(it.fields.rate))}`:""}${it.fields.leadStatus?` \u00b7 ${esc(it.fields.leadStatus)}`:""}${it.converted?` <span class="tag-good" title="The lead was converted in Salesforce \u2014 this is the loan record, the most current numbers">Converted loan</span>`:""}${it.source==="chrome-extension"?` <span class="tag-flat">via Chrome${it.pairs?" \u00b7 "+it.pairs+" fields read, "+Object.keys(it.fields||{}).length+" recognized":""}</span>`:""}</span><span style="flex:1"></span>
       <button class="btn small" onclick="importInbox('${it.id}')">Import</button><button class="btn ghost small" onclick="ackInbox('${it.id}')">Ignore</button></div>`).join("")}</div>` : "";
   $("pipeTable").innerHTML = ib + bar + seasonBar + futBar + rwBar + (!rows.length ? `<div class="empty">${pipeView!=="all"?"Nothing in this view right now \u2014 that can change with the next rate push.":"No pipeline clients yet. Add one, paste a Salesforce record, or load the samples in Settings."}</div>` :
-  `<table class="data"><thead><tr>${th("name","Client")}${th("status","Status")}${th("loanType","Type")}${th("balance","Balance","num")}${th("rate","Rate","num")}${th("payment","P&amp;I","num")}${th("followUp","Follow-up")}${rdTiers()?th("eligible","\u2728 Eligible"):""}<th>Opportunity</th><th></th></tr></thead><tbody>`+
+  `<table class="data"><thead><tr>${th("name","Client")}${th("status","Status")}${th("loanType","Type")}${th("balance","Balance","num")}${th("rate","Rate","num")}${th("payment","P&amp;I","num")}${th("followUp","Follow-up")}${rdTiers()?th("eligible","\u2728 Eligible","elig"):""}<th class="opp">Opportunity</th><th></th></tr></thead><tbody>`+
   rows.map(c=>{ const op=opportunity(c);
     return `<tr class="${(()=>{ const wi=rdWindowInfo(c); const k=[]; if(wi){ k.push("elig-week","fresh"); if(wi.today&&!c.eligibleSeen) k.push("elig-today"); } if(c.followUp&&!isDone(c)){ if(c.followUp<today) k.push("overdue"); else if(c.followUp===today) k.push("due"); } if(hs.has(c.id)||c.hot) k.push("hotrow"); return k.join(" "); })()}"><td><b>${c.hot?'<span title="Hot lead">\uD83D\uDD25 </span>':""}${esc(c.name)}</b><br><span class="hint">${c.servicer?esc(c.servicer):""}${c.phone?(c.servicer?" \u00b7 ":"")+esc(c.phone):""}</span></td>
     <td><span class="${c.status===S_DONE?"tag-good":c.status==="Lost"||(isInelig(c)&&ineligWhy(c)==="fully ineligible")?"tag-warn":"tag-flat"}">${isFuture(c)?"\uD83C\uDFE1 ":""}${esc(c.status)}${isInelig(c)&&ineligWhy(c)==="fully ineligible"?" \u00b7 no follow-up":""}</span>${onRateWatch(c)?`<br><span class="${targetHit(c)?"tag-good":"tag-flat"}" style="margin-top:3px" title="Rate watch">\u23F3 needs ${pct(c.targetRate)}${rateDrop(c)!=null?" (\u2212"+pct(rateDrop(c))+")":""}</span>`:""}${(()=>{ const si=seasonInfo(c); return si?`<br><span class="${si.tag}" style="margin-top:3px">${si.txt.replace(/ \u2014 .*$/,"")}</span>`:""; })()}${(()=>{ const fi=futureInfo(c); return fi?`<br><span class="${fi.tag}" style="margin-top:3px">${fi.txt.replace(/ \u2014 .*$/,"")}</span>`:""; })()}${c.hot&&c.hotNeed?`<br><span class="hint">need: ${esc(c.hotNeed)}</span>`:""}${c.proposalSent?`<br><span class="tag-good" style="margin-top:3px">proposal sent ${esc(c.proposalSent)}${c.proposalsSent>1?" ("+c.proposalsSent+")":""}</span>`:""}</td>
     <td>${esc(c.loanType||"")}${isFuture(c)&&c.futureProduct?`<br><span class="hint">\u2192 ${esc(c.futureProduct)}</span>`:""}</td>
     <td class="num">${c.freeClear?'<span class="tag-good">free &amp; clear</span>':money(c.balance)}</td><td class="num">${c.freeClear?"\u2014":pct(c.rate)}</td><td class="num">${c.freeClear?"\u2014":money(c.payment)}</td>
     <td><span class="fud">${esc(c.followUp||"\u2014")}${c.followUpTime?" "+esc(c.followUpTime):""}</span>${calStatus(c)==="on"?' <span title="On your Outlook calendar">\uD83D\uDCC5</span>':calStatus(c)==="moved"?' <span title="Follow-up moved since it went on your calendar \u2014 re-add it" style="opacity:.6">\uD83D\uDCC5\u2047</span>':""}${(ds.has(c.id)||(fuPending&&fuPending.id===c.id))?`<div style="margin-top:4px">${fuButtons(c,true)}</div>`:""}</td>
-    ${rdTiers()?`<td>${(()=>{ const e=rdEligibleNow(c); if(!e) return ""; const wi=rdWindowInfo(c); return `<span class="tag-good" title="Eligible under today’s rate desk rates">✨ ${RD_TIER_LABEL[e.tier]} ${pct(e.rate)}${e.assumed?" (score?)":""}</span><br><span class="hint">was ${pct(c.rate)} · drop ${pct(e.drop)}${wi?(wi.today?" · <b>new today</b>":" · new "+wi.days+"d ago")+(wi.tries?" · "+wi.tries+(wi.tries===1?" try":" tries"):""):""}${e.seasonUnknown?" · seasoning?":""}</span>`; })()}</td>`:""}
-    <td>${op?`<span class="${op.tag}">${op.txt}</span>`:""}</td>
-    <td><button class="btn small" onclick="pickClient('${c.id}');go('client')">Open</button></td></tr>`;}).join("")+`</tbody></table>`);
+    ${rdTiers()?`<td class="elig">${(()=>{ const e=rdEligibleNow(c); if(!e) return ""; const wi=rdWindowInfo(c); return `<span class="tag-good" title="Eligible under today’s rate desk rates">✨ ${RD_TIER_LABEL[e.tier]} ${pct(e.rate)}${e.assumed?" (score?)":""}</span><br><span class="hint">was ${pct(c.rate)} · drop ${pct(e.drop)}${wi?(wi.today?" · <b>new today</b>":" · new "+wi.days+"d ago")+(wi.tries?" · "+wi.tries+(wi.tries===1?" try":" tries"):""):""}${e.seasonUnknown?" · seasoning?":""}</span>`; })()}</td>`:""}
+    <td class="opp">${op?`<span class="${op.tag}">${op.txt}</span>`:""}</td>
+    <td class="go"><button class="btn small" onclick="pickClient('${c.id}');go('client')">Open</button></td></tr>`;}).join("")+`</tbody></table>`);
 }
 
 /* ---------- Salesforce parser ---------- */
