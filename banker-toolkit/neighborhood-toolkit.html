@@ -1638,7 +1638,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.16.0";
+const TOOLKIT_VERSION = "1.16.1";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1740,7 +1740,8 @@ const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<"
 const money = v => (v==null||isNaN(v)||!isFinite(v)) ? "\u2014" : "$" + Math.round(v).toLocaleString("en-US");
 const pct = v => (v==null||isNaN(v)) ? "\u2014" : Number(v).toFixed(3).replace(/0+$/,"").replace(/\.$/,"") + "%";
 const num = v => { const n = parseFloat(String(v).replace(/[$,%\s]/g,"")); return isNaN(n)?null:n; };
-const yrsMo = m => { if(m==null||!isFinite(m)) return "\u2014"; const y=Math.floor(m/12), r=Math.round(m%12);
+const yrsMo = m => { if(m==null||!isFinite(m)) return "\u2014"; if(m>360) return "30+ yr";   /* debts that never pay down at the typed payment are shown as 30+ years, never "never" */
+  const y=Math.floor(m/12), r=Math.round(m%12);
   return ((y?y+" yr ":"") + (r? r+" mo":"")).trim() || "0 mo"; };
 let _copyBtn=null; document.addEventListener("click",e=>{ const b=e.target&&e.target.closest&&e.target.closest(".btn"); _copyBtn=(b&&/^copy/i.test(b.textContent.trim()))?b:null; },true);
 function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),3200); if(/copied/i.test(msg)&&_copyBtn&&window.NMC){ NMC.copied(_copyBtn); _copyBtn=null; } }
@@ -1805,8 +1806,9 @@ function amort(P, annualPct, n, extra=0, payOverride=null){
 function debtMonths(bal, apr, pay){ const r=apr/1200; if(pay<=bal*r+0.01) return Infinity;
   if(r===0) return bal/pay; return -Math.log(1-bal*r/pay)/Math.log(1+r); }
 function debtInterest(bal, apr, pay){ const m=debtMonths(bal,apr,pay); return isFinite(m)? pay*m-bal : Infinity; }
-/* revolving debt at true minimums: the card asks for this month's interest plus 1% of the balance (floor $25), so the payment
-   shrinks as the balance does and the payoff stretches for decades. That is the honest "today's path" for a card. */
+/* revolving debt: the statement's minimum is this month's interest plus 1% of the balance (floor $25). Paid as a shrinking minimum the
+   payoff stretches for decades (cardMinPath — kept as a footnote). The proposal's "today's path" for a card is the human one: keep paying
+   today's minimum every month, level (debtMonths at cardMinNow). */
 const CARD_MIN_PCT=0.01, CARD_MIN_FLOOR=25;
 function cardMinNow(bal,apr){ bal=+bal||0; if(bal<=0) return 0; return Math.min(bal*(1+(apr||0)/1200), Math.max(CARD_MIN_FLOOR, bal*(apr||0)/1200 + bal*CARD_MIN_PCT)); }
 function cardMinPath(bal,apr,extra=0){ const r=(apr||0)/1200; let b=+bal||0, i=0, t=0; while(b>0.01&&i<1200){ i++; const int=b*r; let p=Math.max(CARD_MIN_FLOOR, int+b*CARD_MIN_PCT)+(extra||0); if(p>b+int) p=b+int; t+=int; b-=p-int; } return {months:i, interest:t}; }
@@ -1814,10 +1816,11 @@ function isRevolving(d){ return (d.type||"")==="card"; }
 /* how a debt's "today" is modeled: cards default to minimums-only unless the typed payment is clearly above the minimum (or the banker says fixed) */
 function debtPayMode(d){ if(!isRevolving(d)) return "fixed"; if(d.payMode==="fixed"||d.payMode==="min") return d.payMode; const mn=cardMinNow(d.balance,d.apr); const p=+d.pay||0; return (p>0 && mn>0 && p>mn*1.25) ? "fixed" : "min"; }
 function debtPath(d){ const bal=+d.balance||0; const extra=+d.extra||0; const mode=debtPayMode(d);
-  if(mode==="min"){ const apr=d.apr>0?+d.apr:(DEBT_TYPES.card.apr); const sc=cardMinPath(bal,apr,extra); return {mode, months:sc.months, interest:sc.interest, minNow:cardMinNow(bal,apr), payUsed:cardMinNow(bal,apr)+extra}; }
+  if(mode==="min"){ const apr=d.apr>0?+d.apr:(DEBT_TYPES.card.apr); const minNow=cardMinNow(bal,apr); const p=minNow+extra; const m=Math.min(361,debtMonths(bal,apr,p)); const stmt=cardMinPath(bal,apr,extra);
+    return {mode, months:m, interest:isFinite(m)&&m<=360?p*m-bal:p*360, minNow, payUsed:p, stmt}; }
   const p=(+d.pay||0)+extra; if(!(p>0)) return {mode:"unknown", months:0, interest:0, payUsed:0};
   if(!(d.apr>0)) return {mode, months:Math.ceil(bal/p), interest:0, payUsed:p};
-  const m=debtMonths(bal,+d.apr,p); if(!isFinite(m)) return {mode:"never", months:Infinity, interest:Infinity, payUsed:p};
+  const m=debtMonths(bal,+d.apr,p); if(!isFinite(m)||m>360) return {mode:"never", months:361, interest:p*360, payUsed:p, capped:true};   /* 30+ years: people who pay only the minimum usually keep using the card */
   return {mode, months:m, interest:p*m-bal, payUsed:p}; }
 
 /* ---------- clients ---------- */
@@ -2989,13 +2992,14 @@ function computeAnalysis(c){
   const dNeverOff = dPaths.filter(p=>p.mode==="never").map(p=>p.d);
   /* a fixed payment that never covers its interest: count what they'd pay over the new loan's term (all of it interest, balance never falls) */
   const dInt = dPaths.reduce((s,p)=>s+(isFinite(p.interest)?p.interest:p.payUsed*horizon),0);
-  if(dNeverOff.length) warnings.push(`${dNeverOff.map(d=>esc(d.name||"A debt")).join(", ")}: the payment doesn\u2019t cover the interest, so the balance never falls. Its interest is counted over the next ${a.anTerm||30} years; check the APR and payment.`);
+  if(dNeverOff.length) warnings.push(`${dNeverOff.map(d=>esc(d.name||"A debt")).join(", ")}: the payment doesn\u2019t cover the interest, so the balance never falls. The client sees \u201c30+ years\u201d and the interest is counted over 30 years \u2014 check the APR and payment.`);
   const dExtraPer = debts.reduce((s,d)=>s+(d.extra||0),0);      /* what they already pay above the minimums, per debt */
   /* longest payoff on today's path: cards at true minimums (declining), everything else at the typed payment */
   const dMonths = dPaths.length ? Math.max(...dPaths.map(p=>p.months)) : 0;
   const dMonthsEst = dPaths.some(p=>p.mode==="fixed"&&!(p.d.apr>0)&&p.d.pay>0), dMonthsUnknown = dPaths.some(p=>p.mode==="unknown");
   const dMin = dPaths.filter(p=>p.mode==="min");
   const dMinCards = dMin.length, dMinInt = dMin.reduce((s,p)=>s+p.interest,0), dMinMonths = dMin.length?Math.max(...dMin.map(p=>p.months)):0, dMinBal = dMin.reduce((s,p)=>s+(+p.d.balance||0),0);
+  const dStmtMonths = dMin.length?Math.max(...dMin.map(p=>p.stmt?p.stmt.months:0)):0, dStmtInt = dMin.reduce((s,p)=>s+(p.stmt?p.stmt.interest:0),0);   /* the statement's shrinking-minimum path, for the footnote */
   const todayPath = dMinCards ? "minimum payments" : "today\u2019s path";
   if((second||fc) && !debts.length && !(cashOut>0)) return null;
   const prog=a.anProgram||"standard"; const fhaS=prog==="fha_streamline"&&!second;
@@ -3065,7 +3069,7 @@ function computeAnalysis(c){
     for(let i=0;i<50;i++){ const mid=(lo+hi)/2; if(pmt(amt,mid,n)>newPay) hi=mid; else lo=mid; } apr=(lo+hi)/2; aprEst=false; }
   const intSavedPW = isFinite(pw.interest) ? curPathInterest - pw.interest : 0;
   const intSavedMin = curPathInterest - newSched.interest;
-  return {secType,secName,hideFirst,warnings,curMonthsSrc,allInNow,allInNew,intSavedPW,intSavedMin,dNeverOff,apr,aprEst,fc,noc,newEscrow,ltv,ladder,cust,escrowEst,escrowIsEst,pitiNow,pitiNew,second,heloc,drawYrs,ioPay,afterDrawPay,curPay,curMonths,curSched,roll,cashOut,streamline,debts,dBal,dPay,dInt,dMonths,dMonthsEst,dMonthsUnknown,dExtra,dNoApr,newP,n,newPay,newSched,outlayNow,saveMo,blended,extra,pw,pwEff,skipCash,skipN,prog,fhaS,mipAmt,escrow,curPathInterest,newPayTyped,dPaths,dPayEst,dMinCards,dMinInt,dMinMonths,dMinBal,todayPath,a};
+  return {secType,secName,hideFirst,warnings,curMonthsSrc,allInNow,allInNew,intSavedPW,intSavedMin,dNeverOff,dStmtMonths,dStmtInt,apr,aprEst,fc,noc,newEscrow,ltv,ladder,cust,escrowEst,escrowIsEst,pitiNow,pitiNew,second,heloc,drawYrs,ioPay,afterDrawPay,curPay,curMonths,curSched,roll,cashOut,streamline,debts,dBal,dPay,dInt,dMonths,dMonthsEst,dMonthsUnknown,dExtra,dNoApr,newP,n,newPay,newSched,outlayNow,saveMo,blended,extra,pw,pwEff,skipCash,skipN,prog,fhaS,mipAmt,escrow,curPathInterest,newPayTyped,dPaths,dPayEst,dMinCards,dMinInt,dMinMonths,dMinBal,todayPath,a};
 }
 
 function balanceChart(r){
@@ -3101,7 +3105,7 @@ function runAnalysis(){ { const n=$("anRateSrc"); if(n){ const t=rateSrcText(cur
   ${r.warnings.length?`<div class="panel" style="border-left:4px solid var(--warn);background:#FFF8EC"><h2 style="color:var(--warn)">Check these inputs</h2><ul style="margin:4px 0 0 18px;font-size:13px;line-height:1.6">${r.warnings.map(x=>`<li>${x}</li>`).join("")}</ul></div>`:""}
   <div class="panel"><h2>${r.second?"Your debts today vs one loan":"Today vs proposed"}</h2>
     <div class="grid4">
-      ${r.second?`<div class="stat" style="grid-column:1/-1;background:var(--cream-soft)"><div class="l" style="font-size:13px"><b>Debt consolidation \u2014 second mortgage.</b> ${c.balance&&c.rate&&!r.hideFirst?`First mortgage untouched: ${money(c.balance)} at ${pct(c.rate)}${c.payment?", "+money(c.payment)+"/mo":""}. `:""}Today: ${r.debts.length} debt${r.debts.length===1?"":"s"}, ${money(r.dBal)} owed, ${money(r.dPay)}/mo${r.blended!=null?" at "+pct(r.blended)+" blended":""}${isFinite(r.dMonths)&&r.dMonths>0?", paid off in "+yrsMo(r.dMonths)+" at today\u2019s minimums":r.dMonths===Infinity?", never paid off at today\u2019s minimums":""}. Proposed: one ${money(r.newP)} ${r.secName} at ${pct(r.a.anRate)} over ${r.a.anTerm} years.</div></div>`:""}
+      ${r.second?`<div class="stat" style="grid-column:1/-1;background:var(--cream-soft)"><div class="l" style="font-size:13px"><b>Debt consolidation \u2014 second mortgage.</b> ${c.balance&&c.rate&&!r.hideFirst?`First mortgage untouched: ${money(c.balance)} at ${pct(c.rate)}${c.payment?", "+money(c.payment)+"/mo":""}. `:""}Today: ${r.debts.length} debt${r.debts.length===1?"":"s"}, ${money(r.dBal)} owed, ${money(r.dPay)}/mo${r.blended!=null?" at "+pct(r.blended)+" blended":""}${isFinite(r.dMonths)&&r.dMonths>0?", paid off in "+yrsMo(r.dMonths)+" at today\u2019s payments":""}. Proposed: one ${money(r.newP)} ${r.secName} at ${pct(r.a.anRate)} over ${r.a.anTerm} years.</div></div>`:""}
       <div class="stat"><div class="v">${money(r.outlayNow)}</div><div class="l">${r.second?"Debt payments today / mo":"Paying now / mo"+(r.roll&&r.dPay?" (mortgage "+money(r.curPay)+" + debts "+money(r.dPay)+(r.dExtra?" + "+money(r.dExtra)+" extra":"")+")":"")}</div></div>
       <div class="stat"><div class="v">${money(r.newPay)}</div><div class="l">${r.heloc?"HELOC payment during the "+r.drawYrs+"-yr draw (interest-only, variable)":r.second?"New home equity loan":"New P&amp;I"} / mo (${pct(r.a.anRate)}, ${r.a.anTerm} yr, ${money(r.newP)} loan)${r.heloc?" \u00b7 then ~"+money(r.afterDrawPay)+"/mo":""}${r.escrow?` \u00b7 ~${money(r.newPay+r.escrow)} with escrow`:""}</div></div>
       <div class="stat green"><div class="v">${money(r.saveMo)}</div><div class="l">Monthly cash-flow savings</div></div>
@@ -3116,7 +3120,7 @@ function runAnalysis(){ { const n=$("anRateSrc"); if(n){ const t=rateSrcText(cur
       <div class="stat"><div class="v">${pct(r.a.anRate)}</div><div class="l">New rate after consolidating ${money(r.dBal)} of debt</div></div>
       ${r.extra>0?`<div class="stat highlight"><div class="v">${pct(r.pwEff)}</div><div class="l">Effective rate paying what they pay now \u2014 the ${r.a.anTerm}-yr rate that would cost the same total interest</div></div>`:""}
       <div class="stat"><div class="v">${r.debts.length}</div><div class="l">Debt${r.debts.length===1?"":"s"} wiped to zero at closing</div></div>
-      <div class="stat"><div class="v">${money(r.dInt)}</div><div class="l">Interest those debts would cost on their own${r.dMinCards?` \u2014 ${r.dMinCards} card${r.dMinCards>1?"s":""} at true minimums (interest + 1% of balance, shrinking as the balance does): ${yrsMo(r.dMinMonths)} to pay off`:""}</div></div>
+      <div class="stat"><div class="v">${money(r.dInt)}</div><div class="l">Interest those debts would cost on their own${r.dMinCards?` \u2014 ${r.dMinCards} card${r.dMinCards>1?"s":""} paying today\u2019s minimum every month: ${yrsMo(r.dMinMonths)} to pay off${r.dStmtMonths>r.dMinMonths+12?` (on the statement\u2019s shrinking minimum: ${yrsMo(r.dStmtMonths)})`:""}`:""}</div></div>
     </div>`:""}
   </div>
   <div class="panel"><h2>Pay what you pay now</h2>
@@ -3126,7 +3130,7 @@ function runAnalysis(){ { const n=$("anRateSrc"); if(n){ const t=rateSrcText(cur
       <div class="stat green"><div class="v">${yrsMo(termCut)}</div><div class="l">Term cut</div></div>
       <div class="stat green"><div class="v">${money(r.newSched.interest-r.pw.interest)}</div><div class="l">Interest saved vs minimum payments on new loan</div></div>
       <div class="stat green"><div class="v">${money(intSavedPW)}</div><div class="l">Interest saved vs staying put${r.roll&&r.debts.length?" (today\u2019s mortgage + debts)":" (today\u2019s mortgage)"}</div></div>
-      <div class="stat" style="grid-column:1/-1;background:var(--cream-soft)"><div class="l" style="font-size:12.5px">How the interest math works: today\u2019s path = the interest left on the current mortgage${r.curMonthsSrc==="assumed"?" (30 years assumed)":r.curMonthsSrc==="payment"?" (months worked out from the P&amp;I entered)":""} (${money(r.curSched.interest)})${r.roll&&r.debts.length?` + what the debts cost on ${r.todayPath} (${money(r.dInt)}${r.dMinCards?"; cards modeled at interest + 1% of balance, the payment shrinking as the balance falls \u2014 a card with a payment typed well above its minimum is treated as a fixed payment":""})`:""} = <b>${money(r.curPathInterest)}</b>. The new loan costs ${money(r.newSched.interest)} at the minimum payment${r.intSavedMin<0?` (<b>${money(-r.intSavedMin)} more</b> than staying put \u2014 a fresh ${r.a.anTerm}-year term always does; the savings come from paying what you pay now)`:` (${money(r.intSavedMin)} less than staying put)`}, and ${money(r.pw.interest)} paying what you pay now.</div></div>
+      <div class="stat" style="grid-column:1/-1;background:var(--cream-soft)"><div class="l" style="font-size:12.5px">How the interest math works: today\u2019s path = the interest left on the current mortgage${r.curMonthsSrc==="assumed"?" (30 years assumed)":r.curMonthsSrc==="payment"?" (months worked out from the P&amp;I entered)":""} (${money(r.curSched.interest)})${r.roll&&r.debts.length?` + what the debts cost on ${r.todayPath} (${money(r.dInt)}${r.dMinCards?"; cards modeled as paying today\u2019s minimum (interest + 1% of balance) every month, level \u2014 a card with a payment typed well above its minimum is treated as a fixed payment":""})`:""} = <b>${money(r.curPathInterest)}</b>. The new loan costs ${money(r.newSched.interest)} at the minimum payment${r.intSavedMin<0?` (<b>${money(-r.intSavedMin)} more</b> than staying put \u2014 a fresh ${r.a.anTerm}-year term always does; the savings come from paying what you pay now)`:` (${money(r.intSavedMin)} less than staying put)`}, and ${money(r.pw.interest)} paying what you pay now.</div></div>
     </div>
     ${r.cust?`<div class="grid4" style="margin-top:10px">
       <div class="stat" style="grid-column:1/-1;background:var(--cream-soft)"><div class="l" style="font-size:13px"><b>Or a set extra of ${money(r.cust.extra)}/mo</b> (${money(r.cust.pay)} total): paid off in <b>${yrsMo(r.cust.months)}</b> (${yrsMo(r.cust.cut)} sooner), <b>${money(r.curPathInterest-r.cust.interest)}</b> less interest than staying put, effective rate <b>${pct(r.cust.eff)}</b>${r.cust.pocket>0?` \u2014 and <b>${money(r.cust.pocket)}/mo</b> of the savings stays in their pocket`:""}.</div></div>
@@ -3414,14 +3418,14 @@ function proposalSingleHTML(){
   const intSavedPW=r.intSavedPW;
   const benefits=[];
   /* consolidation proposals stay about the debts; the header line notes the first mortgage is unchanged */
-  if(r.second&&r.dMonths===Infinity) benefits.push(`At today\u2019s minimum payments these balances <b>never pay off</b> \u2014 the consolidation loan gives them an end date of <b>${yrsMo(r.pw.months<r.n?r.pw.months:r.n)}</b>`);
+  if(r.second&&r.dMonths>360) benefits.push(`At today\u2019s payments these balances take <b>30+ years</b> \u2014 the consolidation loan gives them an end date of <b>${yrsMo(r.pw.months<r.n?r.pw.months:r.n)}</b>`);
   if(r.saveMo>0) benefits.push(`Free up <b>${money(r.saveMo)}/month</b> in cash flow from day one`);
   if(r.fhaS) benefits.push(`<b>No origination fee and no closing costs out of pocket</b> \u2014 on an FHA Streamline the lender covers the costs; the only charge is FHA's upfront mortgage insurance premium (${money(r.mipAmt)}), financed into the loan`);
   if(r.fhaS) benefits.push(`<b>No appraisal and no income re-verification</b> \u2014 the FHA Streamline is built to be simple`);
   if(r.prog==="va_irrrl"&&!r.second) benefits.push(`<b>VA IRRRL</b> \u2014 typically no appraisal or income re-verification, and the VA funding fee drops to 0.5% (waived for exempt veterans)`);
   if((r.a.anPrepay||"yes")==="yes") benefits.push(`<b>No prepayment penalty</b> \u2014 pay extra, pay it off early, or refinance again whenever it makes sense, with no fee`);
   if(r.roll&&r.debts.length) benefits.push(`Pay off <b>${debtsPhrase(r.debts)} (${money(r.dBal)})</b> \u2014 balances paid to zero at closing`);
-  if(r.roll&&r.dMinCards&&isFinite(r.dMinMonths)&&r.dMinMonths>r.n) benefits.push(`On minimum payments alone, ${r.dMinCards===1?"that card":"those "+r.dMinCards+" cards"} (${money(r.dMinBal)}) would take <b>${yrsMo(r.dMinMonths)}</b> and cost <b>${money(r.dMinInt)}</b> in interest \u2014 this loan puts an end date on it`);
+  if(r.roll&&r.dMinCards&&isFinite(r.dMinMonths)&&(r.dMinMonths>r.n||r.dMinInt>r.dMinBal*0.3)) benefits.push(`Paying today\u2019s minimum every month, ${r.dMinCards===1?"that card":"those "+r.dMinCards+" cards"} (${money(r.dMinBal)}) would take <b>${yrsMo(r.dMinMonths)}</b> and cost <b>${money(r.dMinInt)}</b> in interest${r.dStmtMonths>r.dMinMonths+24?` \u2014 and on the statement\u2019s shrinking minimum, <b>${yrsMo(r.dStmtMonths)}</b>`:""}. This loan puts an end date on it`);
   if(r.roll&&r.debts.length&&r.blended!=null&&r.a.anRate<r.blended) benefits.push(r.second
     ? `Replace a <b>${pct(r.blended)}</b> blended APR on those debts with one <b>${pct(r.a.anRate)}</b> ${r.secName}`
     : `Replace a <b>${pct(r.blended)}</b> blended rate across your mortgage and debts with one <b>${pct(r.a.anRate)}</b> loan`);
@@ -3441,7 +3445,7 @@ function proposalSingleHTML(){
    <tr><td>Rate</td><td class="num">${r.blended!=null?pct(r.blended)+" blended":"\u2014"}</td><td class="num">${pct(r.a.anRate)} ${r.secType==="heloc"?"variable (today\u2019s rate)":"fixed"}</td></tr>
    <tr><td>APR${r.aprEst?" (estimated)":""}</td><td class="num"></td><td class="num">${pct(r.apr)}</td></tr>
    <tr><td>Monthly payments</td><td class="num">${money(r.dPay)}${r.dExtra?" + "+money(r.dExtra)+" extra":""}</td><td class="num">${money(r.newPay)}${r.heloc?" interest-only during the "+r.drawYrs+"-yr draw, then ~"+money(r.afterDrawPay):""}</td></tr>
-   <tr><td>Paid off in${r.dMinCards?" <span class='hint'>(cards at minimum payments)</span>":""}</td><td class="num">${r.dMonths===Infinity?"never at these payments":isFinite(r.dMonths)&&r.dMonths>0?yrsMo(r.dMonths):"\u2014"}</td><td class="num">${yrsMo(r.n)}${r.extra>0?" (or "+yrsMo(r.pw.months)+" paying what you pay now)":""}</td></tr>
+   <tr><td>Paid off in${r.dMinCards?" <span class='hint'>(cards at minimum payments)</span>":""}</td><td class="num">${isFinite(r.dMonths)&&r.dMonths>0?yrsMo(r.dMonths):"\u2014"}</td><td class="num">${yrsMo(r.n)}${r.extra>0?" (or "+yrsMo(r.pw.months)+" paying what you pay now)":""}</td></tr>
    <tr><td><b>Total monthly</b></td><td class="num"><b>${money(r.outlayNow)}</b></td><td class="num"><b>${money(r.newPay)}</b></td></tr>
    ${r.pitiNow>0&&!r.hideFirst?`<tr><td><b>All-in each month</b> \u2014 mortgage with taxes &amp; insurance (PITI) + ${r.roll&&r.dPay>0?"today\u2019s debt payments \u2192 PITI + this loan":"this loan"}</td><td class="num"><b>${money(r.pitiNow+(r.roll?r.dPay:0))}</b>${r.roll&&r.dPay>0?`<div class="hint">${money(r.pitiNow)} mortgage + ${money(r.dPay)} debts${r.dMinCards?" (cards at minimums)":""}</div>`:""}</td><td class="num"><b>${money(r.pitiNew)}</b><div class="hint">${money(r.pitiNow)} mortgage + ${money(r.newPay)} this loan</div></td></tr>`:""}` : `
    <tr><td>Loan amount</td><td class="num">${money(c.balance)}</td><td class="num">${money(r.newP)}</td></tr>
@@ -3492,7 +3496,7 @@ function proposalSingleHTML(){
     if(r.saveMo>0) wins.push(`<div><div class="v">${money(r.saveMo)}</div><div class="l">Monthly savings</div></div>`);
     if(r.second){ const sooner=isFinite(r.dMonths)&&r.dMonths>0 ? r.dMonths-r.pw.months : null;
       if(r.extra>0&&sooner>0) wins.push(`<div><div class="v">${yrsMo(r.pw.months)}</div><div class="l">Debt-free paying what you pay now (vs ${yrsMo(r.dMonths)} today)</div></div>`);
-      else if(r.extra>0&&r.dMonths===Infinity) wins.push(`<div><div class="v">${yrsMo(r.pw.months)}</div><div class="l">Debt-free paying what you pay now (never, at today\u2019s minimums)</div></div>`); }
+      else if(r.extra>0&&r.dMonths>360) wins.push(`<div><div class="v">${yrsMo(r.pw.months)}</div><div class="l">Debt-free paying what you pay now (30+ years at today\u2019s payments)</div></div>`); }
     else if(termCut>0) wins.push(`<div><div class="v">${yrsMo(termCut)}</div><div class="l">Sooner payoff if you pay what you pay now</div></div>`);
     if(intSavedPW>0) wins.push(`<div><div class="v">${money(intSavedPW)}</div><div class="l">Interest saved paying what you pay now (vs today\u2019s ${r.roll&&r.debts.length?"mortgage + debts":"mortgage"})</div></div>`);
     if(!r.second&&r.skipCash>0) wins.push(`<div><div class="v">${money(r.skipCash)}</div><div class="l">Cash kept from skipped payment${r.skipN===1?"":"s"}</div></div>`);
@@ -3609,14 +3613,34 @@ async function renderSheet(kind, snap){ const c=cur();
   const name=title.replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"");
   const {svg,W,H}=await buildSheetSVG(html,880, (kind==="proposal"&&!snap&&c&&c.prop&&c.prop.marks)||null);
   const img=new Image(); await new Promise((ok,bad)=>{ img.onload=ok; img.onerror=()=>bad(new Error("render")); img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg); });
-  /* texting limit: keep the JPG under ~480 KB. Try full size at good quality, then ease quality, then scale — text stays crisp well below 0.8. */
-  const LIMIT=480*1024;
-  const render=(scale)=>{ const cv=document.createElement("canvas"); cv.width=Math.round(W*scale); cv.height=Math.round(H*scale);
-    const ctx=cv.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,cv.width,cv.height); ctx.scale(scale,scale); ctx.drawImage(img,0,0); return cv; };
-  let cv=render(2), jpg=null;
-  outer: for(const scale of [2,1.75,1.5,1.25]){ if(scale!==2) cv=render(scale);
-    for(const q of [0.88,0.82,0.76,0.7,0.64]){ jpg=await new Promise(res=>cv.toBlob(res,"image/jpeg",q)); if(!jpg) throw new Error("canvas"); if(jpg.size<=LIMIT) break outer; } }
-  return {c,r,title,name,cv,jpg}; }
+  /* texting limit: keep the JPG under ~480 KB. Try full size at good quality, then ease quality, then scale — text stays crisp well below 0.8.
+     Still over? Simplify the sheet itself (long schedules first, then the explanatory notes) and try again; if even that fails, warn the banker. */
+  const LIMIT=SHEET_MAX;
+  const raster=async(html)=>{ const {svg,W,H}=await buildSheetSVG(html,880, (kind==="proposal"&&!snap&&c&&c.prop&&c.prop.marks)||null);
+    const img=new Image(); await new Promise((ok,bad)=>{ img.onload=ok; img.onerror=()=>bad(new Error("render")); img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg); });
+    const render=(scale)=>{ const cv=document.createElement("canvas"); cv.width=Math.round(W*scale); cv.height=Math.round(H*scale);
+      const ctx=cv.getContext("2d"); ctx.fillStyle="#fff"; ctx.fillRect(0,0,cv.width,cv.height); ctx.scale(scale,scale); ctx.drawImage(img,0,0); return cv; };
+    let cv=render(2), jpg=null;
+    outer: for(const scale of [2,1.75,1.5,1.25,1.1]){ if(scale!==2) cv=render(scale);
+      for(const q of [0.88,0.82,0.76,0.7,0.64,0.58]){ jpg=await new Promise(res=>cv.toBlob(res,"image/jpeg",q)); if(!jpg) throw new Error("canvas"); if(jpg.size<=LIMIT) break outer; } }
+    return {cv,jpg}; };
+  let out=await raster(html), simplified=0, usedHtml=html;
+  for(const lvl of [1,2]){ if(out.jpg.size<=LIMIT) break; const lite=sheetSimplify(usedHtml,lvl); if(lite===usedHtml) continue; usedHtml=lite; out=await raster(lite); simplified=lvl; }
+  const kb=Math.round(out.jpg.size/1024); const oversize=out.jpg.size>LIMIT;
+  if(oversize) toast(`This proposal image is ${kb} K \u2014 over the ~500 K texting limit even simplified. Hide a section or an option (Customize) and try again, or email it instead.`);
+  else if(simplified) toast(`Trimmed ${simplified===1?"the year-by-year schedule":"the schedule and the notes"} so the image fits in a text (${kb} K). Email carries the full version.`);
+  return {c,r,title,name,cv:out.cv,jpg:out.jpg,kb,oversize,simplified}; }
+/* what gets dropped when a sheet is too heavy to text: level 1 = tables with 8+ rows (schedules, ladders) and the "how the math works" box;
+   level 2 = also the explanatory notes. The disclaimer, the figures and the recommendation always stay. */
+let SHEET_MAX=480*1024;   /* let, so a test can lower it */
+function sheetSimplify(html,level){ const tpl=document.createElement("template"); tpl.innerHTML=html; const wrap=document.createElement("div"); wrap.append(...tpl.content.childNodes); let n=0;
+  wrap.querySelectorAll("table").forEach(t=>{ const th=t.querySelector("thead th"); const isSched=(th&&/^year\b/i.test(th.textContent.trim()))||t.querySelectorAll("tbody>tr").length>=14; if(!isSched) return;
+    let prev=t.previousElementSibling; const gone=[]; while(prev&&(prev.tagName==="P"||prev.classList.contains("hint"))){ gone.push(prev); prev=prev.previousElementSibling; }
+    if(prev&&/^H[23]$/.test(prev.tagName)){ gone.push(prev); } let next=t.nextElementSibling; if(next&&(next.tagName==="P"||next.classList.contains("hint"))) gone.push(next);
+    gone.forEach(x=>x.remove()); t.remove(); n++; });
+  wrap.querySelectorAll(".statline>div,.stat").forEach(el=>{ if(/how the interest math works/i.test(el.textContent)){ el.remove(); n++; } });
+  if(level>=2) wrap.querySelectorAll("p,.hint").forEach(el=>{ if(el.closest(".disc")||el.closest(".brandbar")||el.closest("h1,h2,h3")) return; el.remove(); n++; });
+  return n?wrap.innerHTML:html; }
 /* ---- proposal library: a per-client record of every proposal produced ---- */
 /* one library entry per distinct proposal (which saved options are on it + the recommendation); re-exporting the same set-up refreshes that entry instead of adding another */
 function librarySig(c,kind){ const sel=propSelected(c).map(x=>x.id).sort(); const rec=c.cmp&&c.cmp.rec||"";
@@ -4499,7 +4523,7 @@ function programMatrix(c,snaps,recId){
   ${row("Total interest if you stay where you are",x=>money(x.h.todayInt))}
   ${row("Total interest with this option (minimum payments)",x=>money(x.h.newInt),x=>x.h.newInt===bestInt)}
   ${row("Mortgage paid off in",x=>x.r.second?(x.r.hideFirst?yrsMo(x.r.newSched.months)+" ("+x.r.secName+")":yrsMo(x.r.curMonths)+" (first) \u00b7 "+yrsMo(x.r.newSched.months)+" (second)"):yrsMo(x.r.newSched.months))}
-  ${anyDebts?row("Other debts paid off",x=>(x.r.roll||x.r.second)?"at closing":x.r.streamline?"":x.r.dMonths===Infinity?"never at today\u2019s minimums":x.r.dMonthsUnknown?"depends on the payments you make":x.r.dMonths>0?(x.r.dMonthsEst?"about ":"")+yrsMo(x.r.dMonths)+" if you keep paying today\u2019s minimums":"\u2014"):""}
+  ${anyDebts?row("Other debts paid off",x=>(x.r.roll||x.r.second)?"at closing":x.r.streamline?"":x.r.dMonthsUnknown?"depends on the payments you make":x.r.dMonths>0?(x.r.dMonthsEst?"about ":"")+yrsMo(x.r.dMonths)+" if you keep paying today\u2019s minimums":"\u2014"):""}
   ${comps.some(x=>x.r.secType==="heloc")?`<tr><td colspan="${comps.length+1}" class="hint" style="padding:6px 8px">HELOC columns are shown as a fixed monthly payment for comparison; HELOC rates are variable and payments may be interest-only during the draw period.</td></tr>`:""}
   ${anyPw?`<tr><td colspan="${comps.length+1}" style="background:var(--cream-soft,#F4EFE6);font-weight:700;padding:6px 8px">If you keep paying what you pay today (${money(comps[0].h.today)}/month) and put the difference toward the loan</td></tr>`:""}
   ${anyPw?row("Extra toward the loan each month",x=>x.p?money(x.p.extra):"\u2014"):""}
