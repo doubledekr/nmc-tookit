@@ -283,14 +283,14 @@ body.nmc-enter #pipeTable tr.grp{animation:none}
 /* compact: more rows on screen, less chrome everywhere on the pipeline */
 #pipeTable table.data.dense td{padding:4px 8px}
 #pipeTable table.data.dense .pc-name{font-size:13px}#pipeTable table.data.dense .pc-meta{margin-top:2px}#pipeTable table.data.dense .pc-chip{font-size:11px;padding:0 7px}
-#pipeTable table.data.dense .pc-serv,#pipeTable table.data.dense .ps .psm,#pipeTable table.data.dense .pl .pl2,#pipeTable table.data.dense .pf .pfr,#pipeTable table.data.dense .gap .gaph{max-height:0;opacity:0;overflow:hidden;margin-top:0;transform:translateY(-3px);transition:max-height .09s ease-in,opacity .06s ease-in,margin .09s ease-in,transform .09s ease-in;will-change:max-height,opacity}
-#pipeTable table.data.dense tbody tr:hover .pc-serv,#pipeTable table.data.dense tbody tr:hover .ps .psm,#pipeTable table.data.dense tbody tr:hover .pl .pl2,#pipeTable table.data.dense tbody tr:hover .pf .pfr{max-height:20px;opacity:1;transform:none;transition:max-height .11s cubic-bezier(.2,.9,.3,1.1),opacity .08s ease-out .01s,margin .11s cubic-bezier(.2,.9,.3,1.1),transform .11s cubic-bezier(.2,.9,.3,1.1)}
-#pipeTable table.data.dense tbody tr:hover .gap .gaph{max-height:34px;opacity:1;transform:none;transition:max-height .11s cubic-bezier(.2,.9,.3,1.1) .02s,opacity .08s ease-out .03s,transform .11s cubic-bezier(.2,.9,.3,1.1) .02s}
+#pipeTable table.data.dense .pc-serv,#pipeTable table.data.dense .ps .psm,#pipeTable table.data.dense .pl .pl2,#pipeTable table.data.dense .pf .pfr,#pipeTable table.data.dense .gap .gaph{max-height:0;opacity:0;overflow:hidden;margin-top:0;transform:translateY(-2px);transition:max-height .055s ease-in,opacity .04s ease-in,margin .055s ease-in,transform .055s ease-in;will-change:max-height,opacity}
+#pipeTable table.data.dense tbody tr:hover .pc-serv,#pipeTable table.data.dense tbody tr:hover .ps .psm,#pipeTable table.data.dense tbody tr:hover .pl .pl2,#pipeTable table.data.dense tbody tr:hover .pf .pfr{max-height:20px;opacity:1;transform:none;transition:max-height .07s cubic-bezier(.2,.9,.3,1.1),opacity .05s ease-out,margin .07s cubic-bezier(.2,.9,.3,1.1),transform .07s cubic-bezier(.2,.9,.3,1.1)}
+#pipeTable table.data.dense tbody tr:hover .gap .gaph{max-height:34px;opacity:1;transform:none;transition:max-height .07s cubic-bezier(.2,.9,.3,1.1) .01s,opacity .05s ease-out .015s,transform .07s cubic-bezier(.2,.9,.3,1.1) .01s}
 #pipeTable table.data.dense tbody tr:hover .pc-serv{margin-top:3px}#pipeTable table.data.dense tbody tr:hover .ps .psm{margin-top:4px}#pipeTable table.data.dense tbody tr:hover .pl .pl2{margin-top:2px}#pipeTable table.data.dense tbody tr:hover .pf .pfr{margin-top:1px}
-#pipeTable table.data.dense .pc-meta .pc-chip:nth-child(2){max-width:0;padding-left:0;padding-right:0;border-color:transparent;opacity:0;transition:max-width .09s ease-in,opacity .06s ease-in,padding .09s ease-in}
-#pipeTable table.data.dense tbody tr:hover .pc-meta .pc-chip:nth-child(2){max-width:170px;padding-left:7px;padding-right:7px;border-color:var(--line);opacity:1;transition:max-width .12s cubic-bezier(.2,.9,.3,1.02) .01s,opacity .08s ease-out .03s,padding .12s cubic-bezier(.2,.9,.3,1.02) .01s}
+#pipeTable table.data.dense .pc-meta .pc-chip:nth-child(2){max-width:0;padding-left:0;padding-right:0;border-color:transparent;opacity:0;transition:max-width .055s ease-in,opacity .04s ease-in,padding .055s ease-in}
+#pipeTable table.data.dense tbody tr:hover .pc-meta .pc-chip:nth-child(2){max-width:170px;padding-left:7px;padding-right:7px;border-color:var(--line);opacity:1;transition:max-width .08s cubic-bezier(.2,.9,.3,1.02),opacity .05s ease-out .015s,padding .08s cubic-bezier(.2,.9,.3,1.02)}
 #pipeTable table.data.dense tbody tr:hover .pot{white-space:normal;max-width:none}
-#pipeTable table.data.dense tbody tr{transition:background .08s}
+#pipeTable table.data.dense tbody tr{transition:background .05s}
 #pipeTable table.data.dense .pl .pl1{font-size:13px}#pipeTable table.data.dense .pf .pfd{font-size:12.5px}
 #pipeTable table.data.dense .gap .gapl{font-size:12px}#pipeTable table.data.dense .gap .gapbar{height:4px;margin:3px 0 0}
 #pipeTable table.data.dense .pot{font-size:11px;padding:2px 7px;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis;display:inline-block}
@@ -303,8 +303,8 @@ body.pipe-dense .atile{padding:4px 10px 4px 8px;gap:8px}body.pipe-dense .atile .
 body.pipe-dense #s-pipeline input[type=search],body.pipe-dense #s-pipeline input[type=text],body.pipe-dense #s-pipeline select{min-height:32px;font-size:13px}
 body.pipe-dense #pipeTable table.data th{padding:6px 8px;font-size:10.5px}
 /* compact unfold: the content inside the row arrives in sequence — numbers, then date, then the bar fills, then actions */
-#pipeTable table.data.dense tbody tr:hover .pf .pfr{transition-delay:.015s}#pipeTable table.data.dense tbody tr:hover .ps .psm{transition-delay:.03s}#pipeTable table.data.dense tbody tr:hover .pc-serv{transition-delay:.04s}
-#pipeTable table.data.dense tbody tr:hover .gap .gapbar i{animation:nmc-fillin .22s cubic-bezier(.2,.8,.2,1) both;transform-origin:left}
+#pipeTable table.data.dense tbody tr:hover .pf .pfr{transition-delay:.008s}#pipeTable table.data.dense tbody tr:hover .ps .psm{transition-delay:.016s}#pipeTable table.data.dense tbody tr:hover .pc-serv{transition-delay:.022s}
+#pipeTable table.data.dense tbody tr:hover .gap .gapbar i{animation:nmc-fillin .15s cubic-bezier(.2,.8,.2,1) both;transform-origin:left}
 @keyframes nmc-fillin{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 #pipeTable tbody tr .pa .qa button{opacity:0;transform:translateY(4px);transition:opacity .1s ease,transform .14s cubic-bezier(.2,.9,.3,1.2)}
 #pipeTable tbody tr:hover .pa .qa button{opacity:1;transform:none}
