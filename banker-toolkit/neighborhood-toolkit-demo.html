@@ -1085,7 +1085,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.13.13";
+const TOOLKIT_VERSION = "1.13.14";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -4886,12 +4886,15 @@ function presentSaveClose(){ const c=cur(); if(!c) return; const p=presentState(
 function presentDelClose(t){ state.settings.closes=(state.settings.closes||[]).filter(x=>x!==t); const c=cur(); if(c&&presentState(c).close===t) presentState(c).close=""; save(); renderPresentClose(); }
 /* the T-chart is the banker's own organizer; what the client gets is the proposal. If the numbers here differ from the client, save them first. */
 function presentTchartPart(c){ const p=presentState(c); const d=p.d; if(!d) return null; const r=presentCalc(c); if(!r) return null; const m=d.mortgage; const second=d.lien==="second"; const secName=d.secType==="heloc"?"HELOC":"home equity loan"; const stream=d.program==="fha_streamline"||d.program==="va_irrrl"; const showDebts=(d.roll==="yes"&&!second&&!stream)||second; const debts=d.debts.filter(x=>x.balance>0); const n=debts.length;
-  const rows=[]; rows.push(["Rate", m.rate>0?pct(m.rate):"\u2014", "\u00ab"+pct(d.rate)+"\u00bb"]);
-  if(showDebts&&n&&r.blended!=null&&!second) rows.push(["Blended rate (mortgage + debts)", pct(r.blended), "\u00ab"+pct(d.rate)+"\u00bb on everything"]);
-  if(showDebts&&n&&r.blended!=null&&second) rows.push(["Blended rate on the debts", pct(r.blended), "\u00ab"+pct(d.rate)+"\u00bb"]);
-  rows.push([second?"Mortgage":"Loan", money(m.balance||0), second?money(m.balance||0)+" stays":money(r.newP)]);
-  if(second) rows.push(["New "+secName, "\u2014", money(r.newP)+" \u00b7 "+money(r.newPay)+"/mo"]);
-  if(showDebts&&n) rows.push([n===1?(debts[0].name||"Debt"):n+" debts", money(r.dBal)+" \u00b7 "+money(r.dPay)+"/mo", "Paid off \u00b7 $0"]);
+  const rows=[];
+  if(second){ rows.push(["Rate on the debts", n&&r.blended!=null?pct(r.blended):"\u2014", "\u00ab"+pct(d.rate)+"\u00bb on the new "+secName]);
+    if(n) rows.push([n===1?(debts[0].name||"Debt"):n+" debts", money(r.dBal)+" \u00b7 "+money(r.dPay)+"/mo", "Paid off \u00b7 $0"]);
+    rows.push(["New "+secName, "\u2014", money(r.newP)+" \u00b7 "+money(r.newPay)+"/mo"]);
+    if(!d.hideFirst) rows.push(["First mortgage", money(m.balance||0)+(m.rate>0?" at "+pct(m.rate):""), "Stays exactly as is"]); }
+  else { rows.push(["Rate", m.rate>0?pct(m.rate):"\u2014", "\u00ab"+pct(d.rate)+"\u00bb"]);
+    if(showDebts&&n&&r.blended!=null) rows.push(["Blended rate (mortgage + debts)", pct(r.blended), "\u00ab"+pct(d.rate)+"\u00bb on everything"]);
+    rows.push(["Loan", money(m.balance||0), money(r.newP)]);
+    if(showDebts&&n) rows.push([n===1?(debts[0].name||"Debt"):n+" debts", money(r.dBal)+" \u00b7 "+money(r.dPay)+"/mo", "Paid off \u00b7 $0"]); }
   const cash=presentCash(d); if(cash.total>0) rows.push(["Cash to you at closing", "\u2014", "\u00ab"+money(cash.total)+"\u00bb"]);
   if(r.skipCash>0&&p.ben&&p.ben.skip) rows.push(["Payments skipped at closing", "\u2014", r.skipN+" (about "+money(r.skipCash)+")"]);
   const newOut=r.newPay;   /* same basis as the T-chart: a second lien compares the debts’ payments against the new loan’s */
@@ -5021,7 +5024,7 @@ function renderPresentBenefits(){ const c=cur(); const p=presentState(c); const 
   $("presentBenefits").innerHTML=`<h2>Benefits${pm?"":` <span class="hint" style="display:inline">\u2014 flip them on as you say them</span>`}</h2><div class="benef">${PRESENT_BENEFITS.map(([k,l])=>{ const on=!!p.ben[k]; let txt=l;
     if(k==="skip"&&r&&r.skipCash>0) txt=`Skip ${r.skipN} payment${r.skipN>1?"s":""} \u2014 about ${money(r.skipCash)} stays with you`; if(k==="cash"){ const cash=presentCash(p.d); if(cash.total>0) txt=`${money(cash.total)} cash to you at closing`; } if(k==="one"&&r&&r.debts.length>1) txt=`One payment instead of ${r.debts.length+1}`;
     return [k,txt,on]; }).concat((state.settings.benefitsCustom||[]).map(t=>["c:"+t,t,!!p.ben["c:"+t]])).map(([k,txt,on])=> pm ? (on?`<label class="on">${esc(txt)}</label>`:"") : `<label class="${on?"on":""}"><input type="checkbox" ${on?"checked":""} onchange="presentBen('${k.replace(/'/g,"\\'")}',this.checked)"> ${txt}${k.startsWith("c:")?` <span class="x" title="Remove from my benefits" onclick="event.preventDefault(); presentDelBenefit('${k.slice(2).replace(/'/g,"\\'")}')">\u2715</span>`:""}</label>`).join("")}</div>
-    ${pm?(p.goals?`<div class="greet" style="margin-top:10px;font-size:18px;color:#26262E">${esc(p.goals)}</div>`:""):`<div class="field" style="margin-top:10px"><label>Their goals &amp; why this makes sense <span class="hint">\u00b7 goes in the email as \u201cWhy this makes sense for you\u201d</span></label><textarea id="pGoals" rows="2" style="min-height:0;height:56px;font-family:inherit;font-size:13.5px" placeholder="e.g. Pay off the cards, finish the pool, and still keep $165 a month. Even though the rate is higher than your 3.25% first mortgage, the cards at 28% are what\u2019s costing you \u2014 and the mortgage stays put." oninput="presentGoals(this.value)">${esc(p.goals||"")}</textarea></div>`}
+    ${pm?(p.goals?`<div class="greet" style="margin-top:10px;font-size:18px;color:#26262E">${esc(p.goals)}</div>`:""):`<div class="field" style="margin-top:10px"><label>Their goals &amp; why this makes sense <span class="hint">\u00b7 goes in the email as \u201cWhy this makes sense for you\u201d</span></label><textarea id="pGoals" rows="2" style="min-height:0;height:56px;font-family:inherit;font-size:13.5px" placeholder="e.g. Pay off the Visa at 28% with one loan at 8.49%, finish the pool, and still keep $165 a month \u2014 same money out the door, done in 11 years instead of 33." oninput="presentGoals(this.value)">${esc(p.goals||"")}</textarea></div>`}
     ${pm?"":`<div class="btnrow" style="margin-top:8px"><input type="text" id="pBenNew" placeholder="Add your own benefit chip \u2014 \u201cRate lock is free\u201d, \u201cWe handle the payoffs\u201d" style="flex:1" onkeydown="if(event.key==='Enter') presentAddBenefit()"><button class="btn ghost small" onclick="presentAddBenefit()">Add chip</button></div>`}`; }
 function presentAddBenefit(){ const el=$("pBenNew"); const t=(el?el.value:"").trim(); if(!t){ toast("Type the benefit first"); return; } state.settings.benefitsCustom=state.settings.benefitsCustom||[]; if(!state.settings.benefitsCustom.includes(t)) state.settings.benefitsCustom.push(t); const c=cur(); if(c) presentState(c).ben["c:"+t]=true; save(); renderPresentBenefits(); }
 function presentDelBenefit(t){ state.settings.benefitsCustom=(state.settings.benefitsCustom||[]).filter(x=>x!==t); state.clients.forEach(c=>{ if(c.present&&c.present.ben) delete c.present.ben["c:"+t]; }); save(); renderPresentBenefits(); }
