@@ -58,7 +58,7 @@ tr.elig-today td{animation:rdBlink 1.2s ease-in-out 3;background:#FFFBEA}
 main{flex:1;padding:28px 32px;max-width:1150px}
 
 /* ---------- Shared ---------- */
-.clientbar{position:sticky;top:0;z-index:40;background:var(--paper);padding:10px 0 12px;margin:-10px 0 10px;border-bottom:1px solid var(--line)}
+.clientbar{position:sticky;top:0;z-index:40;background:var(--paper);padding:8px 0 10px;margin:-10px 0 10px;border-bottom:1px solid var(--line)}
 .clientbar .inner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 12px}
 .clientbar .who{font-family:var(--serif);font-size:17px;color:var(--ink);white-space:nowrap}
 .clientbar .facts{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
@@ -372,21 +372,21 @@ body.obj-open .tchart .trow{font-size:13px}body.obj-open .tchart .trow input,bod
 #playTab{display:none!important;position:fixed;right:0;top:38%;z-index:70;background:var(--brand);color:#fff;border-radius:12px 0 0 12px;padding:12px 10px 12px 14px;cursor:pointer;writing-mode:vertical-rl;transform:rotate(180deg) translateX(-6px);font-weight:700;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;box-shadow:0 0 0 0 rgba(165,50,34,.45);animation:playglow 2.6s ease-in-out infinite;transition:transform .18s,box-shadow .18s;user-select:none;line-height:1}
 #playTab:hover{transform:rotate(180deg) translateX(0);box-shadow:0 6px 22px rgba(165,50,34,.35);animation:none}
 @keyframes playglow{0%,100%{box-shadow:0 0 0 0 rgba(165,50,34,.45)}50%{box-shadow:0 0 0 8px rgba(165,50,34,0)}}
-#playTabs{position:fixed;right:0;top:22%;z-index:70;display:flex;flex-direction:column;gap:6px;align-items:flex-end}
-#playTabs .ptab{background:var(--brand);color:#fff;border-radius:10px 0 0 10px;padding:9px 9px 9px 12px;cursor:pointer;font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;line-height:1;transform:translateX(5px);transition:transform .18s,box-shadow .18s;box-shadow:0 0 0 0 rgba(165,50,34,.45);animation:playglow 2.6s ease-in-out infinite;user-select:none;white-space:nowrap}
-#playTabs .ptab{animation:none;opacity:.92}#playTabs .ptab.hot{opacity:1;animation:playglow 2.6s ease-in-out infinite, playbounce 2.6s ease-in-out infinite;padding-left:16px}
-@keyframes playbounce{0%,100%{transform:translateX(5px)}50%{transform:translateX(0)}}
-#playTabs .ptab:hover,#playTabs .ptab.on{transform:translateX(0);box-shadow:0 6px 22px rgba(165,50,34,.35);animation:none;opacity:1}
+#playTabs{display:flex;gap:6px;justify-content:flex-end;align-items:center;margin:0 0 6px;flex-wrap:wrap}
+#playTabs .ptab{background:var(--brand);color:#fff;border-radius:999px;padding:0 12px;min-height:26px;display:inline-flex;align-items:center;cursor:pointer;font-weight:700;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;line-height:1;user-select:none;white-space:nowrap;opacity:.9;transition:transform .15s,box-shadow .15s,opacity .15s}
 /* a ramp of the brand brick, light to deep, so each handle reads at a glance */
-#playTabs .ptab.intros{background:#D9775B}#playTabs .ptab.open{background:#C85A3E}#playTabs .ptab.close{background:#A53222}#playTabs .ptab.texts{background:#8C2619}#playTabs .ptab.emails{background:#6E1E13}#playTabs .ptab.post{background:#4F150D}
+#playTabs .ptab.intros{background:#D9775B}#playTabs .ptab.open{background:#C85A3E}#playTabs .ptab.close{background:#A53222}#playTabs .ptab.follow{background:#8C2619}#playTabs .ptab.post{background:#5E1A10}
+#playTabs .ptab.hot{opacity:1;animation:playglow 2.6s ease-in-out infinite, playbounce 2.6s ease-in-out infinite}
+@keyframes playbounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+#playTabs .ptab:hover,#playTabs .ptab.on{transform:translateY(-1px);box-shadow:0 6px 18px rgba(165,50,34,.3);animation:none;opacity:1}
 #playTabs .ptab.on{outline:2px solid #fff;outline-offset:-3px}
-body.play-open #playTabs{right:430px}@media (max-width:1100px){body.play-open #playTabs{display:none}}
+#playTabs .ptab::before{content:"\25B8";margin-right:6px;font-size:9px;opacity:.8}#playTabs .ptab.on::before{content:"\25BE"}
 body.present-mode #playTabs{display:none}
-#playDrawer .pmine{font-size:10px;background:#FFF3C4;color:#8A6D00;border-radius:10px;padding:1px 6px;font-weight:700}
-.ordrow{display:flex;gap:8px;align-items:center;padding:6px 8px;border-bottom:1px dashed #EFEAE0;font-size:13px}.ordrow:last-child{border-bottom:0}.ordrow .t{flex:1}.ordrow .btn{min-height:26px;padding:0 8px}
-#emailMenu .fold{display:none}#emailMenu.showimg .fold{display:block}
-#playDrawer{position:fixed;top:0;right:0;height:100vh;width:430px;max-width:94vw;background:#fff;border-left:1px solid var(--line);box-shadow:-12px 0 30px rgba(0,0,0,.12);z-index:80;display:none;flex-direction:column}
-body.play-open #playDrawer{display:flex}#playDrawer .phead{padding:14px 16px 10px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center}
+#playDrawer{position:fixed;left:232px;right:0;top:0;height:46vh;min-height:140px;max-height:92vh;background:#fff;border-bottom:1px solid var(--line);box-shadow:0 14px 30px rgba(0,0,0,.14);z-index:39;display:none;flex-direction:column;border-radius:0 0 14px 14px;margin:0 32px}
+body.play-open #playDrawer{display:flex}#playDrawer .phead{padding:10px 16px 8px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center}
+#playDrawer .pgrip{height:14px;flex:0 0 14px;cursor:ns-resize;display:flex;align-items:center;justify-content:center;background:var(--cream-soft);border-radius:0 0 14px 14px;border-top:1px solid var(--line)}#playDrawer .pgrip::before{content:"";width:46px;height:4px;border-radius:4px;background:#C9C2B4}#playDrawer .pgrip:hover::before{background:var(--brand)}
+#playDrawer .pbody{columns:2;column-gap:14px}#playDrawer .pcat,#playDrawer .pitem{break-inside:avoid}#playDrawer input[type=search]{column-span:all}#playDrawer .pbody>.hint{column-span:all}
+@media (max-width:1000px){#playDrawer .pbody{columns:1}}@media (max-width:760px){#playDrawer{left:0;margin:0 8px}}
 #playDrawer .phead h2{font-family:var(--serif);font-size:19px;font-weight:400;margin:0;flex:1}#playDrawer .pbody{overflow:auto;padding:8px 12px 24px;flex:1}
 #playDrawer .pcat{border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:#fff;overflow:hidden}#playDrawer .pcat>.ph{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;font-weight:600;font-size:13.5px;user-select:none}
 #playDrawer .pcat>.ph:hover{background:var(--cream-soft)}#playDrawer .pcat>.ph .n{color:var(--muted);font-weight:400;font-size:12px}#playDrawer .pcat>.ph .tgl{margin-left:auto;color:var(--muted);font-size:12px;transition:transform .15s}
@@ -441,7 +441,7 @@ nav button{padding:8px 16px 8px 32px;font-size:13.5px;min-height:34px}nav button
 
   <main>
     <div id="rdBanner" style="display:none"></div>
-    <div id="clientBar" class="clientbar"></div>
+    <div class="clientbar"><div id="playTabs"></div><div id="clientBar"></div></div>
     <div id="updBanner" style="display:none;background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px"></div>
     <div id="demoBanner" style="display:none;background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:13px"><b>Demo mode.</b> Sample clients, rates, team numbers, and templates — none of it is real. This file saves to its own separate slot and never touches a real toolkit on the same computer.</div>
     <!-- ================= PIPELINE ================= -->
@@ -712,8 +712,7 @@ Discover 6,100 190 24.9"></textarea>
       <div class="panel" id="presentObj"></div>
     </section>
     <div id="objDrawer"></div>
-    <div id="playTabs"></div>
-    <div id="playDrawer"><div class="phead"><h2>Playbook</h2><button class="btn ghost small" onclick="playClose()">Close &#x2715;</button></div><div class="pbody" id="playBody"></div></div>
+    <div id="playDrawer"><div class="phead"><h2>Playbook</h2><span class="hint" style="margin:0">drag the bar at the bottom to see more or roll it up · Esc closes</span><span style="flex:1"></span><button class="btn ghost small" onclick="playClose()">Close &#x2715;</button></div><div class="pbody" id="playBody"></div><div class="pgrip" id="playGrip" title="Drag to resize"></div></div>
     <section class="screen" id="s-tools">
       <div class="eyebrow">Quick math, mid-call</div><h1>Tools</h1>
       <div class="sub">No client needed — open the tool you need; everything recalculates as you type and stays filled in until you clear it.</div>
@@ -925,8 +924,8 @@ Discover 6,100 190 24.9"></textarea>
         <div class="btnrow" style="margin-bottom:10px">
           <button class="btn" onclick="addTemplate('intro')">+ Intro script</button>
           <button class="btn ghost" onclick="addTemplate('intro','open')">+ Opening objection</button>
-          <button class="btn ghost" onclick="addTemplate('text')">+ Text message</button>
-          <button class="btn ghost" onclick="addTemplate('email')">+ Email</button>
+          <button class="btn ghost" onclick="addTemplate('text','follow')">+ Follow-up text</button>
+          <button class="btn ghost" onclick="addTemplate('email','follow')">+ Follow-up email</button>
         </div>
         <div id="tmplMine"></div>
         <div class="hint" style="margin-top:8px">Tokens that auto-fill on copy: {client_first} {client} {address} {banker} {banker_first} {banker_phone} {banker_email} {banker_nmls} {rate}</div>
@@ -1082,7 +1081,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.12.1";
+const TOOLKIT_VERSION = "1.12.2";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -3081,7 +3080,7 @@ function emailParts(c,r,kind,variant,opts){ const s=state.settings; variant=vari
     {t:"p",x:`Call or text me at \u00ab${phone}\u00bb, or reply here, with any questions \u2014 or if you\u2019re ready, just say the word and I\u2019ll get the application link over to you.`},
     {t:"p",x:"Blessings,"},{t:"sig",x:sig}]; }
 const strip=x=>String(x).replace(/[\u00ab\u00bb]/g,"").replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,"$1 ($2)");
-function emailRenderText(parts){ let out=""; parts.forEach((p,i)=>{ if(p.t==="img") return; const next=parts[i+1]; let t; if(p.t==="h") t=strip(p.x)+":"; else if(p.t==="ul") t=p.x.map(l=>"\u2022 "+strip(l)).join("\n"); else if(p.t==="ol") t=p.x.map((l,i)=>(i+1)+". "+strip(l)).join("\n"); else if(p.t==="sig") t=p.x.join("\n"); else t=strip(p.x);
+function emailRenderText(parts){ let out=""; parts.forEach((p,i)=>{ if(p.t==="img"||p.t==="brand") return; const next=parts[i+1]; let t; if(p.t==="kv") t=p.x.map(r=>strip(r[0])+": "+strip(r[1])).join("\n"); else if(p.t==="note") t=strip(p.x); else if(p.t==="h") t=strip(p.x)+":"; else if(p.t==="ul") t=p.x.map(l=>"\u2022 "+strip(l)).join("\n"); else if(p.t==="ol") t=p.x.map((l,i)=>(i+1)+". "+strip(l)).join("\n"); else if(p.t==="sig") t=p.x.join("\n"); else t=strip(p.x);
   out += t + (next ? ((p.t==="h")||(next.t==="sig") ? "\n" : (next.t==="img"&&parts[i+2]) ? "\n\n" : "\n\n") : ""); }); return out; }
 /* Email markup rule: say everything twice — as an HTML attribute or tag (<font face size color>, <b>, bgcolor, cellpadding,
    border) AND as an inline style; highlights are plain spans. Some paste filters (new Outlook, Word in some setups) throw away every style
@@ -3101,6 +3100,9 @@ function emailRenderHTML(parts, imgSrc){ const hl=x=>emLinks(esc(String(x))).rep
   const body=x=>emF(x,{px:15,lh:1.5});
   const rows=parts.map((p,i)=>{
     if(p.t==="img") return imgSrc?emRow(`<img src="${imgSrc}" alt="Proposal" width="620" style="max-width:100%;width:620px;border:1px solid #E2DCCF">`)+emGap(10):"";
+    if(p.t==="brand"){ const st=state.settings; return emRow(emTable(`<tr><td valign="top">${emF(esc(st.co||"Neighborhood Mortgage Company"),{serif:true,px:22})}<br>${emF(esc(st.tag||""),{px:12,color:"#5C616E"})}</td><td valign="top" align="right">${emF(esc(st.loName||"")+(st.loNmls?" \u00b7 NMLS #"+esc(st.loNmls):"")+"<br>"+esc(st.loPhone||"")+(st.loPhone&&st.loEmail?" \u00b7 ":"")+esc(st.loEmail||"")+"<br>"+esc(p.x||""),{px:12,color:"#444444",lh:1.5})}</td></tr><tr><td colspan="2" height="3" bgcolor="#26262E" style="background-color:#26262E;height:3px;font-size:3px;line-height:3px">&nbsp;</td></tr>`))+emGap(10); }
+    if(p.t==="kv") return emRow(`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #E2DCCF">${p.x.map((r,i)=>`<tr><td bgcolor="${i%2?"#FFFFFF":"#FBF8F2"}" style="padding:8px 12px;border-bottom:1px solid #EFEAE0">${emF(hl(r[0]),{px:13,color:"#5C616E"})}</td><td bgcolor="${i%2?"#FFFFFF":"#FBF8F2"}" align="right" style="padding:8px 12px;border-bottom:1px solid #EFEAE0;white-space:nowrap">${emF(hl(r[1]),r[2]?{serif:true,px:20,color:"#A53222",b:true}:{px:15,b:true})}</td></tr>`).join("")}</table>`)+emGap(10);
+    if(p.t==="note") return emRow(emF(hl(p.x),{px:11.5,color:"#5C616E",lh:1.5}))+emGap(6);
     if(p.t==="h") return emGap(10)+emRow(emF(hl(p.x),{serif:true,px:17,color:"#A53222",b:true}))+emGap(4);
     if(p.t==="ul"||p.t==="ol") return emRow(`<${p.t} style="margin:0 0 0 22px;padding:0">${p.x.map(l=>`<li>${body(hl(l))}</li>`).join("")}</${p.t}>`)+emGap(8);
     if(p.t==="sig") return emGap(6)+emRow(emF(esc(p.x[0]),{serif:true,px:16,b:true})+"<br>"+body(esc(p.x[1]))+"<br>"+emF(esc(p.x[2]),{px:12,color:"#5C616E"}));
@@ -3277,10 +3279,28 @@ function postCloseParts(c, prod, lenderKey, extra){ const s=state.settings; cons
     {t:"h",x:"Step 3: Documents we need from you"},{t:"ol",x:docs},
     {t:"p",x:"That\u2019s it!"},{t:"p",x:`If you have any questions or I can help in any way, just let me know${phone?` \u2014 my direct line is \u00ab${phone}\u00bb (call or text)`:""}. Please reply to this email once you\u2019ve completed the steps, and I\u2019ll take it from there.`},
     {t:"p",x:"Thanks,"},{t:"sig",x:sig}] }; }
-async function postCloseDraft(prod, lenderKey){ const c=cur(); if(!c){ toast("Pick a client first"); return; }
+async function postCloseDraft(prod, lenderKey, opts){ const c=cur(); if(!c){ toast("Pick a client first"); return; } opts=opts||{};
   const extra=prompt("Anything extra to ask for in Step 3? (optional \u2014 e.g. 2025 1099 for pension, SSA benefit letter)","")||"";
-  const {subject,parts}=postCloseParts(c, prod, lenderKey, extra); const html=emailRenderHTML(parts,null); const text=emailRenderText(parts);
+  const {subject,parts}=opts.numbers?realQuoteParts(c, prod, lenderKey, extra):postCloseParts(c, prod, lenderKey, extra); const html=emailRenderHTML(parts,null); const text=emailRenderText(parts);
   await openEmlDraft((c.email||""), subject, html, text, ""); }
+/* The real-quote email: the numbers that were presented (compact, branded), the benefits that were switched on, then the
+   post-close next steps. Not a selling piece \u2014 the client already said yes; this is "here is your loan, here is what to do". */
+function realQuoteParts(c, prod, lenderKey, extra){ const s=state.settings; const p=c.present||{}; const d=p.d; const r=d?presentCalc(c):null; const first=c.name?c.name.split(/[ ,&]/)[0]:"there";
+  const base=postCloseParts(c, prod, lenderKey, extra); const real=!!(c.analysis&&c.analysis.anReal); const when=c.analysis&&c.analysis.realWhen?new Date(c.analysis.realWhen+"T12:00:00").toLocaleDateString("en-US",{month:"long",day:"numeric"}):new Date().toLocaleDateString("en-US",{month:"long",day:"numeric"});
+  const kv=[]; if(d&&r){ const second=d.lien==="second"; const secName=d.secType==="heloc"?"HELOC":"home equity loan";
+    kv.push([second?"New "+secName:"New loan", money(r.newP)+" at \u00ab"+pct(d.rate)+"\u00bb"+(d.term?" \u00b7 "+d.term+" yr":"")]);
+    kv.push(["Monthly payment"+(second?" on the "+secName:" (P&I)"), "\u00ab"+money(r.newPay)+"\u00bb", true]);
+    if(r.outlayNow>0) kv.push(["Going out today", money(r.outlayNow)+(r.debts&&r.debts.length?" (mortgage + "+r.debts.length+" debt"+(r.debts.length>1?"s":"")+")":"")]);
+    if(r.saveMo>0) kv.push(["You keep every month", "\u00ab"+money(r.saveMo)+"\u00bb", true]);
+    const cash=presentCash(d); if(cash.total>0) kv.push(["Cash to you at closing", "\u00ab"+money(cash.total)+"\u00bb", true]);
+    if(r.debts&&r.debts.length&&(r.roll||second)) kv.push(["Paid off at closing", r.debts.map(x=>x.name||"debt").join(", ")+" \u2014 "+money(r.dBal)]);
+    if(r.skipCash>0&&p.ben&&p.ben.skip) kv.push(["Skipped payments", r.skipN+" ("+money(r.skipCash)+" stays with you)"]); }
+  const bens=PRESENT_BENEFITS.filter(([k])=>p.ben&&p.ben[k]).map(([k,l])=>{ if(k==="skip"&&r&&r.skipCash>0) return "Skip "+r.skipN+" payment"+(r.skipN>1?"s":"")+" \u2014 about "+money(r.skipCash)+" stays with you"; if(k==="cash"){ const cash=presentCash(d); if(cash.total>0) return money(cash.total)+" cash to you at closing"; } return l; }).concat(Object.keys(p.ben||{}).filter(k=>k.startsWith("c:")&&p.ben[k]).map(k=>k.slice(2)));
+  const parts=[{t:"brand",x:(real?"Quoted ":"Estimated ")+when},{t:"p",x:`Hi ${first},`},{t:"p",x:`Congrats \u2014 here\u2019s the loan we went through together, the benefits you\u2019re getting, and exactly what happens next.`}];
+  if(kv.length) parts.push({t:"h",x:"Your numbers"},{t:"kv",x:kv},{t:"note",x:real?`These are the terms we quoted on ${when}. Your official figures come on the lender\u2019s Loan Estimate and Closing Disclosure.`:`These are the numbers from our conversation, not a lender quote yet \u2014 I\u2019ll confirm them once pricing is locked.`});
+  if(bens.length) parts.push({t:"h",x:"What you\u2019re getting"},{t:"ul",x:bens});
+  const rest=base.parts.slice(3);   /* drop the post-close greeting/opening; keep the steps, close and signature */
+  return {subject:`${first} \u2014 your numbers and next steps (please do today)`, parts:parts.concat([{t:"p",x:base.parts[2].x}]).concat(rest)}; }
 function postCloseTextFor(c, prod){ const s=state.settings; const first=c&&c.name?c.name.split(/[ ,&]/)[0]:"there"; const lo=(s.loName||"").split(" ")[0]||"your loan officer";
   const docs = prod==="streamline" ? "your most recent mortgage statement and homeowners insurance declaration page" : "your last 2 years of W-2s, 2 most recent pay stubs, mortgage statement and homeowners insurance declaration page";
   const why = prod==="streamline" ? "so we close in 30 days or less and you skip 2 payments" : "so the loan closes quickly";
@@ -4340,26 +4360,31 @@ function tmplPreview(s){ /* filled text with the bits that still need a hand hig
 let libCat="All", libQ="";
 function setLibCat(c){ libCat=c; renderTemplates(); }
 /* ---- the Playbook: stacked handles on the right edge, one panel each ---- */
-const PLAY_PANELS=[{k:"intros",label:"Call intros"},{k:"open",label:"Opening objections"},{k:"close",label:"Closing objections"},{k:"texts",label:"Texts"},{k:"emails",label:"Emails"},{k:"post",label:"Post-close",only:["proposal","present"]}];
+const PLAY_PANELS=[{k:"intros",label:"Call intros",short:"Intros"},{k:"open",label:"Opening objections",short:"Opening"},{k:"close",label:"Closing objections",short:"Closing"},{k:"follow",label:"Follow-up texts & emails",short:"Follow-up"},{k:"post",label:"Post-close texts & emails",short:"Post-close"}];
 /* which handles matter most on each screen: they move to the top of the stack and glow/bounce */
-const PLAY_PRIORITY={pipeline:["intros","open"],client:["intros","open"],analysis:["intros","open"],compare:["texts","emails"],proposal:["texts","emails","post"],present:["close","post"],tools:["open","close"],tmpl:[],desk:[],settings:[]};
+const PLAY_PRIORITY={pipeline:["intros","open"],client:["intros","open"],analysis:["intros","open"],compare:["follow"],proposal:["follow","post"],present:["close","post"],tools:["open","close"],tmpl:[],desk:[],settings:[]};
 var playQ="", playPanel=null;
-function playDefaultPanel(t){ return t.cat==="Call Intros"?"intros":t.cat==="Objections & Plays"?"open":t.kind==="email"?"emails":"texts"; }
+function playDefaultPanel(t){ if(t.panel==="texts"||t.panel==="emails") return "follow"; return t.cat==="Call Intros"?"intros":t.cat==="Objections & Plays"?"open":"follow"; }
 /* every item a panel can hold, in default order; user templates carry their own panel; order overrides live in state.playOrder */
 function playItems(k){ const T=state.templates||{}; let items=[];
   if(k==="close") items=OBJECTION_FLOWS.map(o=>({id:"flow:"+o.k,title:o.label,kind:"flow",flow:o,pool:"f"}));
   items=items.concat(NMC_LIBRARY.filter(t=>playDefaultPanel(t)===k).map(t=>Object.assign({},t,{pool:"n"})));
-  items=items.concat((T.mine||[]).filter(t=>(t.panel||playDefaultPanel(t))===k).map(t=>Object.assign({},t,{pool:"m",mine:true})));
+  items=items.concat((T.mine||[]).filter(t=>((t.panel==="texts"||t.panel==="emails")?"follow":(t.panel||playDefaultPanel(t)))===k).map(t=>Object.assign({},t,{pool:"m",mine:true})));
   const order=(state.playOrder||{})[k]; if(order&&order.length){ const pos=new Map(order.map((id,i)=>[id,i])); items.sort((a,b)=>(pos.has(a.id)?pos.get(a.id):1e6+items.indexOf(a))-(pos.has(b.id)?pos.get(b.id):1e6+items.indexOf(b))); }
   return items; }
 function playMove(k,id,dir){ const ids=playItems(k).map(t=>t.id); const i=ids.indexOf(id); const j=i+dir; if(i<0||j<0||j>=ids.length) return; ids.splice(j,0,ids.splice(i,1)[0]); state.playOrder=state.playOrder||{}; state.playOrder[k]=ids; save(); renderPlayOrder(); if(document.body.classList.contains("play-open")) renderPlaybook(); }
 function playResetOrder(k){ if(state.playOrder) delete state.playOrder[k]; save(); renderPlayOrder(); if(document.body.classList.contains("play-open")) renderPlaybook(); }
-function playPanelsFor(screen){ const list=PLAY_PANELS.filter(p=>!p.only||p.only.includes(screen)); const pri=PLAY_PRIORITY[screen]||[]; return pri.map(k=>list.find(p=>p.k===k)).filter(Boolean).concat(list.filter(p=>!pri.includes(p.k))); }
+function playPanelsFor(screen){ return PLAY_PANELS.filter(p=>!p.only||p.only.includes(screen)); }
 function currentScreen(){ const a=document.querySelector(".screen.active"); return a?a.id.replace(/^s-/,""):"pipeline"; }
 function renderPlayTabs(){ const el=$("playTabs"); if(!el) return; const sc=currentScreen(); const list=playPanelsFor(sc);
   if(playPanel&&!list.some(p=>p.k===playPanel)) playClose();
-  const pri=PLAY_PRIORITY[sc]||[]; el.innerHTML=list.map(p=>`<div class="ptab ${p.k}${playPanel===p.k?" on":""}${pri.includes(p.k)?" hot":""}" onclick="playOpen('${p.k}')" title="${esc(p.label)} \u2014 opens beside the page">${esc(p.label)}</div>`).join(""); }
-function playOpen(k){ if(!k){ k=playPanelsFor(currentScreen())[0].k; } if(document.body.classList.contains("obj-open")){ presentUI.obj=null; document.body.classList.remove("obj-open"); } if(playPanel===k&&document.body.classList.contains("play-open")){ playClose(); return; } playPanel=k; document.body.classList.add("play-open"); renderPlaybook(); renderPlayTabs(); setTimeout(()=>{ const q=$("playQ"); if(q) q.focus(); },30); }
+  const pri=PLAY_PRIORITY[sc]||[]; el.innerHTML=list.map(p=>`<div class="ptab ${p.k}${playPanel===p.k?" on":""}${pri.includes(p.k)?" hot":""}" onclick="playOpen('${p.k}')" title="${esc(p.label)} \u2014 opens beside the page">${esc(p.short||p.label)}</div>`).join(""); }
+function playPlace(){ const dr=$("playDrawer"); const bar=document.querySelector(".clientbar"); if(!dr) return; const top=bar?bar.getBoundingClientRect().bottom:0; dr.style.top=top+"px"; const h=+localStorage.getItem("nmcPlayH")||0; if(h) dr.style.height=Math.min(h,window.innerHeight-top-8)+"px"; dr.style.maxHeight=(window.innerHeight-top-8)+"px"; }
+function playGripInit(){ const g=$("playGrip"), dr=$("playDrawer"); if(!g||g.dataset.init) return; g.dataset.init="1"; let y0=0,h0=0;
+  const move=e=>{ const h=Math.max(120,h0+(e.clientY-y0)); dr.style.height=h+"px"; }; const up=()=>{ document.removeEventListener("pointermove",move); document.removeEventListener("pointerup",up); try{ localStorage.setItem("nmcPlayH",String(parseInt(dr.style.height)||0)); }catch(err){} };
+  g.addEventListener("pointerdown",e=>{ e.preventDefault(); y0=e.clientY; h0=dr.getBoundingClientRect().height; document.addEventListener("pointermove",move); document.addEventListener("pointerup",up); });
+  window.addEventListener("resize",()=>{ if(document.body.classList.contains("play-open")) playPlace(); }); }
+function playOpen(k){ if(!k){ k=playPanelsFor(currentScreen())[0].k; } if(k==="post") playPostNumbers=null; playGripInit(); playPlace(); if(document.body.classList.contains("obj-open")){ presentUI.obj=null; document.body.classList.remove("obj-open"); } if(playPanel===k&&document.body.classList.contains("play-open")){ playClose(); return; } playPanel=k; document.body.classList.add("play-open"); renderPlaybook(); renderPlayTabs(); setTimeout(()=>{ const q=$("playQ"); if(q) q.focus(); },30); }
 function playClose(){ document.body.classList.remove("play-open"); playPanel=null; renderPlayTabs(); }
 function playToggleItem(el){ el.classList.toggle("open"); }
 function playToggleCat(el){ el.classList.toggle("open"); }
@@ -4374,15 +4399,18 @@ function renderPlaybook(){ const el=$("playBody"); if(!el||!playPanel) return; c
   let body="";
   if(playPanel==="post"){ body=playPostHTML(c); }
   else { const items=playItems(playPanel).filter(match);
-    if(playPanel==="texts"){ const cats=[...new Set(items.map(t=>t.cat||"My templates"))]; body=cats.map((cat,i)=>{ const its=items.filter(t=>(t.cat||"My templates")===cat); return `<div class="pcat${(q||i===0)?" open":""}"><div class="ph" onclick="playToggleCat(this.parentNode)">${esc(cat)} <span class="n">${its.length}</span><span class="tgl">\u25B8</span></div><div class="pitems">${its.map(item).join("")}</div></div>`; }).join(""); }
+    if(playPanel==="follow"){ const grp=t=>t.kind==="email"?"Emails":t.kind==="vm"?"Voicemails":(t.cat||"My templates"); items.sort((a,b)=>(a.kind==="email")-(b.kind==="email")); const cats=[...new Set(items.map(grp))]; body=cats.map((cat,i)=>{ const its=items.filter(t=>grp(t)===cat); return `<div class="pcat${(q||i===0)?" open":""}"><div class="ph" onclick="playToggleCat(this.parentNode)">${esc(cat)} <span class="n">${its.length}</span><span class="tgl">\u25B8</span></div><div class="pitems">${its.map(item).join("")}</div></div>`; }).join(""); }
     else body=`<div class="pcat open"><div class="pitems">${items.map(t=>t.kind==="flow"?flowItem(t):item(t)).join("")}</div></div>`;
     if(!items.length) body=`<div class="empty">Nothing matches.</div>`; }
   el.innerHTML=(playPanel==="post"?"":`<input type="search" id="playQ" placeholder="Search ${esc(P.label.toLowerCase())}\u2026" value="${esc(playQ)}" oninput="playQ=this.value; renderPlaybook(); this.focus()"><div class="hint" style="margin:0 0 8px">${c?`Filling in for <b>${esc(c.name)}</b>`:"No client selected \u2014 client bits show as [Name]"}</div>`)+body; }
 /* post-close panel: the client's product decides the document list; the banker picks the lender */
+var playPostNumbers=null;
 function playPostHTML(c){ if(!c) return `<div class="empty">Pick a client first \u2014 the post-close email follows their product.</div>`;
+  const hasP=!!(c.present&&c.present.d); if(playPostNumbers==null) playPostNumbers=hasP&&currentScreen()==="present"; const nums=hasP&&playPostNumbers; const real=!!(c.analysis&&c.analysis.anReal);
+  const numToggle=hasP?`<label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer;background:var(--cream-soft);border-radius:10px;padding:9px 11px;margin:8px 0 6px;font-size:13px"><input type="checkbox" ${nums?"checked":""} onchange="playPostNumbers=this.checked; renderPlaybook()" style="width:auto;min-height:0;margin-top:3px"><span><b>Include the numbers we presented</b> \u2014 the real-quote email: compact numbers, the benefits you switched on, then the next steps.<br><span class="hint" style="margin:0">${real?"\u2713 Marked as a real quote"+(c.analysis.realWhen?" on "+esc(c.analysis.realWhen):""):"Not marked as a real quote yet \u2014 the email says these are estimates. Use \u201cSave numbers to client\u201d on the presentation to mark them real."}</span></span></label>`:"";
   const prod=clientProduct(c); const isStream=prod==="va_irrrl"||prod==="fha_streamline"; const key=isStream?"streamline":"equity"; const label=isStream?(prod==="fha_streamline"?"FHA Streamline":"VA Streamline"):prod==="heloc"?"HELOC":prod==="hel"?"Home equity loan":prod==="cashout"?"Cash-out refinance":prod==="none"?"Refinance (no analysis yet)":"Refinance";
-  return `<div class="hint" style="margin:8px 0 10px"><b>${esc(c.name)}</b> \u00b7 ${esc(label)} \u2192 Step 3 asks for ${isStream?"the most recent mortgage statement and the homeowners insurance declaration page":"last 2 years of W-2s, 2 most recent pay stubs, most recent mortgage statement and the homeowners insurance declaration page"}.</div>
-    <div class="pcat open"><div class="ph">Which lender? <span class="n">opens as a mail draft to ${esc(c.email||"\u2014 no email on file")}</span></div><div class="pitems">${PC_LENDERS.map(L=>`<div class="pitem"><div class="pt" onclick="postCloseDraft('${key}','${L.k}')" title="Open the draft"><b>${esc(L.name)}</b><span class="tag-flat">${L.step1?"lender steps":"generic portal"}</span></div></div>`).join("")}</div></div>
+  return numToggle+`<div class="hint" style="margin:8px 0 10px"><b>${esc(c.name)}</b> \u00b7 ${esc(label)} \u2192 Step 3 asks for ${isStream?"the most recent mortgage statement and the homeowners insurance declaration page":"last 2 years of W-2s, 2 most recent pay stubs, most recent mortgage statement and the homeowners insurance declaration page"}.</div>
+    <div class="pcat open"><div class="ph">Which lender? <span class="n">opens as a mail draft to ${esc(c.email||"\u2014 no email on file")}</span></div><div class="pitems">${PC_LENDERS.map(L=>`<div class="pitem"><div class="pt" onclick="postCloseDraft('${key}','${L.k}',{numbers:${nums?"true":"false"}})" title="Open the draft"><b>${esc(L.name)}</b><span class="tag-flat">${L.step1?"lender steps":"generic portal"}</span></div></div>`).join("")}</div></div>
     <div class="pcat open" style="margin-top:10px"><div class="ph">Post-close text <span class="n">copied to the clipboard</span></div><div class="pitems"><div class="pitem"><div class="pt" onclick="postCloseText('${key}')"><b>${isStream?"Streamline":"Cash-out / HEL / HELOC"} \u2014 \u201cI just emailed your next steps\u201d</b><span class="tag-flat">Text</span></div><div class="pu">${esc(postCloseTextFor(c,key))}</div></div></div></div>`; }
 /* Scripts & templates: order the panels, defaults always kept */
 function renderPlayOrder(){ const el=$("playOrder"); if(!el) return;
@@ -4440,7 +4468,7 @@ function renderTemplates(){ const T=state.templates||{mine:[]}; setTimeout(rende
    <div class="grid2">
      <div class="field"><label>Title</label><input type="text" value="${esc(t.title)}" oninput="updTemplate('${t.id}','title',this.value)"></div>
      <div class="grid2"><div class="field"><label>Type</label><select onchange="updTemplate('${t.id}','kind',this.value); renderTemplates()">${Object.keys(TKIND).map(k=>`<option value="${k}" ${t.kind===k?"selected":""}>${TKIND[k]}</option>`).join("")}</select></div>
-     <div class="field"><label>Playbook panel</label><select onchange="updTemplate('${t.id}','panel',this.value); renderPlayOrder()">${PLAY_PANELS.filter(p=>p.k!=="post"&&p.k!=="close").map(p=>`<option value="${p.k}" ${(t.panel||playDefaultPanel(t))===p.k?"selected":""}>${p.label}</option>`).join("")}</select></div></div>
+     <div class="field"><label>Playbook panel</label><select onchange="updTemplate('${t.id}','panel',this.value); renderPlayOrder()">${PLAY_PANELS.filter(p=>p.k!=="post"&&p.k!=="close").map(p=>`<option value="${p.k}" ${((t.panel==="texts"||t.panel==="emails")?"follow":(t.panel||playDefaultPanel(t)))===p.k?"selected":""}>${p.label}</option>`).join("")}</select></div></div>
    </div>
    <div class="field" style="display:${t.kind==="email"?"block":"none"}"><label>Subject</label><input type="text" value="${esc(t.subject||"")}" oninput="updTemplate('${t.id}','subject',this.value)"></div>
    <div class="field"><label>Body</label><textarea style="min-height:90px;font-family:inherit" oninput="updTemplate('${t.id}','body',this.value)">${esc(t.body||"")}</textarea></div>
@@ -4764,7 +4792,9 @@ function presentToClient(){ const c=cur(); if(!c) return; const p=presentState(c
   c.balance=d.mortgage.balance; c.rate=d.mortgage.rate; c.payment=d.mortgage.payment; c.monthsLeft=d.mortgage.monthsLeft; if(d.mortgage.paymentTotal) c.paymentTotal=d.mortgage.paymentTotal;
   c.debts=d.debts.filter(x=>x.balance>0).map(x=>({name:x.name||"Debt",type:x.type||debtTypeOf(x.name||""),balance:+x.balance,apr:x.apr>0?+x.apr:(DEBT_TYPES[debtTypeOf(x.name||"")]||DEBT_TYPES.other).apr,aprEst:!(x.apr>0),pay:+x.pay||0,extra:+x.extra||0,acct:"",payMode:x.payMode||""}));
   Object.assign(c.analysis,{anRate:d.rate,anTerm:d.term,anCosts:d.costs,anCashOut:d.cashOut,anSkip:d.skip,anRoll:d.roll,anLien:d.lien,anProgram:d.program,anSecondType:d.secType,anHideFirst:d.hideFirst?"yes":"no",anCustom:d.extra});
-  save(); refreshAll(); toast("Saved to "+c.name); }
+  const real=confirm("Are these real numbers \u2014 priced with the lender today?\n\nOK = mark as a REAL QUOTE (the proposal, the real-quote email and post-close drafts say so and use these terms).\nCancel = keep them as an estimate.");
+  c.analysis.anReal=real; if(real) c.analysis.realWhen=todayStr(); p.realQuote=real;
+  save(); refreshAll(); renderPresent(); toast("Saved to "+c.name+(real?" as a real quote":" as an estimate")); }
 function presentDrift(c){ const p=presentState(c); if(!p.d||p.src!=="client") return false; const d=presentFromClient(c); const m=p.d.mortgage, n=d.mortgage;
   return m.balance!==n.balance||m.rate!==n.rate||p.d.rate!==d.rate||p.d.term!==d.term||JSON.stringify(p.d.debts.map(x=>[x.name,x.balance,x.pay,x.extra||0]))!==JSON.stringify(d.debts.map(x=>[x.name,x.balance,x.pay,x.extra||0])); }
 function togglePresentMode(on){ document.body.classList.toggle("present-mode", on==null?!document.body.classList.contains("present-mode"):!!on); if(document.body.classList.contains("present-mode")) go("present"); renderPresent(); }
@@ -4780,7 +4810,7 @@ function renderPresent(keepFocus){ const c=cur(); if(!$("presentChart")) return;
   $("presentSrc").innerHTML=`<div class="btnrow" style="flex-wrap:wrap;gap:8px;align-items:center;width:100%"><button class="btn small" onclick="presentFill('client')">Fill from ${esc(c.name)}</button>
     ${snaps.length?`<select onchange="if(this.value) presentFill(this.value); this.value=''" style="width:auto"><option value="">Fill from a saved option\u2026</option>${snaps.map(x=>`<option value="snap:${x.id}">${esc(x.label)}</option>`).join("")}</select>`:""}
     <button class="btn ghost small" onclick="presentFill('blank')">Start blank</button>${(presentUI.undo||[]).length&&presentUI.undo[presentUI.undo.length-1].cid===c.id?`<button class="btn ghost small" onclick="presentUndo()" title="Put it back">\u21B6 Undo: ${esc(presentUI.undo[presentUI.undo.length-1].label)}</button>`:""}<span style="flex:1"></span>
-    ${p.d?`<button class="btn ghost small" onclick="presentToClient()">Save numbers to client</button><button class="btn small" onclick="copyImage('present')">Copy as image</button><button class="btn ghost small" onclick="downloadImage('present')">Download</button><button class="btn ghost small" onclick="emailImage('present')">Email</button>`:""}</div>
+    ${p.d?`${c.analysis&&c.analysis.anReal&&!presentDrift(c)?`<span class="tag-good" title="Saved as a real quote${c.analysis.realWhen?" on "+esc(c.analysis.realWhen):""}">\u2713 Real quote</span>`:""}<button class="btn ghost small" onclick="presentToClient()">Save numbers to client</button><button class="btn ghost small" onclick="playPostNumbers=true; playOpen('post')" title="Numbers + benefits + next steps, as a mail draft">Real-quote email</button><button class="btn small" onclick="copyImage('present')">Copy as image</button><button class="btn ghost small" onclick="downloadImage('present')">Download</button><button class="btn ghost small" onclick="emailImage('present')">Email</button>`:""}</div>
     ${p.d&&presentDrift(c)?`<div class="hint" style="margin-top:6px;color:var(--warn)">These numbers differ from the client workspace \u2014 \u201cSave numbers to client\u201d writes them back, \u201cFill from ${esc(c.name)}\u201d reloads.</div>`:""}`;
   if(!p.d){ $("presentChart").innerHTML=`<div class="empty">Fill from the client or a saved option \u2014 or <a href="#" onclick="presentFill('blank');return false">start blank and type it in</a>: debt names, balances and payments on the left, the new payment and rate on the right.</div>`; $("presentBenefits").innerHTML=""; $("presentClose").innerHTML=""; renderPresentObj(); return; }
   $("presentChart").innerHTML=presentChartHTML(c,!pm); renderPresentBenefits(); renderPresentClose(); renderPresentObj();
