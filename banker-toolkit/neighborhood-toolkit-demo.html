@@ -1085,7 +1085,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.13.14";
+const TOOLKIT_VERSION = "1.13.15";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -4914,7 +4914,7 @@ function presentEmailParts(c, opts){ opts=opts||{}; if(opts.chart==null) opts.ch
   bens.unshift(...extraLines);
   if(r&&r.extra>0&&isFinite(r.pw.months)) bens.unshift(`Pay what you pay now: keep sending ${money(r.outlayNow)} and the extra \u00ab${money(r.extra)}\u00bb goes to principal \u2014 paid off in ${yrsMo(r.pw.months)}${r.n-r.pw.months>0?" ("+yrsMo(r.n-r.pw.months)+" sooner)":""}${r.intSavedPW>0?", "+money(r.intSavedPW)+" less interest":""}, an effective rate of \u00ab${pct(r.pwEff)}\u00bb`);
   if(bens.length) parts.push({t:"h",x:"What this does for you"},{t:"ul",x:bens});
-  parts.push({t:"p",x:"Next steps are super simple: I\u2019ll send the e-signs to your email and we\u2019ll get you processed immediately. All I need from you is "+presentDocsLine(c).replace(/^just /,"")+(s.loPhone?" Questions? Call or text me at \u00ab"+s.loPhone+"\u00bb.":"")});
+  parts.push({t:"h",x:"Next steps \u2014 super simple"},{t:"p",x:"I\u2019ll send the e-signs to your email and we\u2019ll get you processed immediately. \u00abIn the morning I\u2019m walking your file over to underwriting\u00bb, so please have the e-signatures done and the documents back to me before then \u2014 that way I can get things moving the moment I sit down with the underwriter."},{t:"p",x:"What I need from you: "+presentDocsLine(c).replace(/^just /,"")+(s.loPhone?" Questions? Call or text me at \u00ab"+s.loPhone+"\u00bb.":"")});
   parts.push({t:"note",x:real?`Terms as quoted on ${when}; your official figures come on the lender\u2019s Loan Estimate and Closing Disclosure.`:"An estimate for discussion based on the numbers you gave me and today\u2019s pricing, which changes daily \u2014 not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval."});
   parts.push({t:"sig",x:[s.loName||"", s.co||"Neighborhood Mortgage Company", [s.loNmls?"NMLS #"+s.loNmls:"", s.loPhone||"", s.loEmail||""].filter(Boolean).join(" \u00b7 ")]});
   return {subject:withChart?`${first} \u2014 today vs. new, side by side`:`${first} \u2014 what this loan does for you`, parts}; }
