@@ -13,25 +13,10 @@ permissions:
   contents: write
 
 jobs:
-  build:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: macos-latest
-            script: build:mac
-            artifact: NMC-Toolkit-mac
-            glob: |
-              nmc-toolkit-desktop/dist/*.dmg
-              nmc-toolkit-desktop/dist/*.zip
-              nmc-toolkit-desktop/dist/latest-mac.yml
-          - os: windows-latest
-            script: build:win
-            artifact: NMC-Toolkit-windows
-            glob: |
-              nmc-toolkit-desktop/dist/*.exe
-              nmc-toolkit-desktop/dist/latest.yml
-    runs-on: ${{ matrix.os }}
+  # Windows is what the team runs, so it builds and publishes on its own. The Mac build runs beside it and attaches its
+  # installer to the same release whenever GitHub's macOS runners get to it (they can sit in the queue for a long time).
+  build-win:
+    runs-on: windows-latest
     defaults:
       run:
         working-directory: nmc-toolkit-desktop
@@ -43,32 +28,27 @@ jobs:
           cache: npm
           cache-dependency-path: nmc-toolkit-desktop/package-lock.json
       - run: npm ci
-      - run: npm run ${{ matrix.script }}
+      - run: npm run build:win
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"   # unsigned until certificates are added (see README-DESKTOP.md)
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.artifact }}
-          path: ${{ matrix.glob }}
+          name: NMC-Toolkit-windows
+          path: |
+            nmc-toolkit-desktop/dist/*.exe
+            nmc-toolkit-desktop/dist/latest.yml
           if-no-files-found: error
 
   release:
-    needs: build
-    # Publish whenever the run wasn't cancelled — even if one platform's build failed (GitHub's macOS runners sometimes
-    # never pick the job up). The Windows installer is what the team runs on; a missing Mac build just means Macs wait
-    # for the next release. The step below refuses to publish a release with no Windows installer in it.
-    if: ${{ !cancelled() && github.ref == 'refs/heads/main' }}
+    needs: build-win
+    if: github.ref == 'refs/heads/main'    # branch builds only produce downloadable artifacts, never a release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
+          name: NMC-Toolkit-windows
           path: out
-      - name: Require the Windows installer
-        run: |
-          ls -R out || true
-          test -n "$(find out -name '*.exe' | head -1)" || { echo "No Windows installer was built — not publishing."; exit 1; }
-          if [ -z "$(find out -name '*.dmg' | head -1)" ]; then echo "::warning::Mac build missing from this release (runner never started); Macs stay on the previous version until the next release."; fi
       - id: v
         run: echo "version=$(node -p "require('./nmc-toolkit-desktop/package.json').version")" >> "$GITHUB_OUTPUT"
       - uses: softprops/action-gh-release@v2
@@ -81,7 +61,45 @@ jobs:
             Installed copies check this page for updates automatically.
 
             - **Windows:** `NMC-Toolkit-Setup-*.exe` — unsigned, so SmartScreen may show "unrecognized app" → More info → Run anyway.
-            - **Mac:** `NMC-Toolkit-*.dmg` — unsigned, so the first open is right-click → Open.
+            - **Mac:** `NMC-Toolkit-*.dmg` — attached when the Mac build finishes (GitHub's Mac runners can lag). Unsigned, so the first open is right-click → Open.
 
             Your data is stored with the app (Settings → Open data folder) and survives updates.
           files: out/**/*
+
+  build-mac:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: nmc-toolkit-desktop
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: nmc-toolkit-desktop/package-lock.json
+      - run: npm ci
+      - run: npm run build:mac
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NMC-Toolkit-mac
+          path: |
+            nmc-toolkit-desktop/dist/*.dmg
+            nmc-toolkit-desktop/dist/*.zip
+            nmc-toolkit-desktop/dist/latest-mac.yml
+          if-no-files-found: error
+      - id: v
+        if: github.ref == 'refs/heads/main'
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Attach the Mac installer to the release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.v.outputs.version }}
+          name: NMC Toolkit ${{ steps.v.outputs.version }}
+          files: |
+            nmc-toolkit-desktop/dist/*.dmg
+            nmc-toolkit-desktop/dist/*.zip
+            nmc-toolkit-desktop/dist/latest-mac.yml
