@@ -55,3 +55,19 @@ A JSON array, newest first, each entry the same object as rates.json (without `p
 - No `format` field = format 1: the seven old tier names, mapped onto the four (680+ → 640+, 620-639, 600-619 → 580-619, <580).
 - `format: 2`: only `640+`, `620-639`, `580-619`, `<580` are read. The old names a format-2 publish also carries (for toolkits that haven't updated) are ignored.
 - A format higher than the toolkit knows is left unread; the last good rates stay in place and Settings says to update.
+
+## Market notes (toolkit v1.14.1+)
+
+The toolkit also reads `rates/market.json` (market format 1) and `rates/market-history.json` from the same feed location,
+exactly as described in the Rate Desk's CONTRACT.md:
+
+- A new `id` shows a lighter banner under the rate banner (kind label, title, text, and the rate desk's quoted `comment` when present).
+  It never changes rates, eligibility, the "now eligible" list or the rate banner.
+- The ntfy ping body now says what changed: `{"kind":"market"}` re-reads market.json, `{"kind":"rates"}` re-reads rates.json,
+  anything else re-reads both. Both files are also polled every 2 minutes.
+- A 404 on either file means "no notes yet" and is silent. A `format` above 1 is left unread and the status line asks for an update.
+- Unknown `kind`s show like any other note. `broadcast` is a message written by the rate desk.
+- `rates.json` → `market.lean` shows as a small badge on the rate banner and on My desk (Improving / Worsening / Choppy / Steady,
+  the `line` as a tooltip). Informational only; absent → nothing shown.
+- My desk lists the last 30 days of notes from market-history.json (refreshed every 30 minutes).
+- The default feed location is now `https://raw.githubusercontent.com/doubledekr/NMC-rate-desk/main/rates/` (the renamed repo; GitHub redirects the old name).
