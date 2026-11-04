@@ -369,10 +369,22 @@ body.obj-open .tchart .trow{font-size:13px}body.obj-open .tchart .trow input,bod
 #s-tools .panel.tool>.tbody{display:none;padding:4px 18px 16px}#s-tools .panel.tool.open>.tbody{display:block}#s-tools .panel.tool>.thead:hover{background:var(--cream-soft)}
 #s-tools .panel.tool>.thead .btnrow{margin-left:auto}
 /* the playbook: a folder tab on the right edge of every page, opens a drawer */
-#playTab{position:fixed;right:0;top:38%;z-index:70;background:var(--brand);color:#fff;border-radius:12px 0 0 12px;padding:12px 10px 12px 14px;cursor:pointer;writing-mode:vertical-rl;transform:rotate(180deg) translateX(-6px);font-weight:700;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;box-shadow:0 0 0 0 rgba(165,50,34,.45);animation:playglow 2.6s ease-in-out infinite;transition:transform .18s,box-shadow .18s;user-select:none;line-height:1}
+#playTab{display:none!important;position:fixed;right:0;top:38%;z-index:70;background:var(--brand);color:#fff;border-radius:12px 0 0 12px;padding:12px 10px 12px 14px;cursor:pointer;writing-mode:vertical-rl;transform:rotate(180deg) translateX(-6px);font-weight:700;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;box-shadow:0 0 0 0 rgba(165,50,34,.45);animation:playglow 2.6s ease-in-out infinite;transition:transform .18s,box-shadow .18s;user-select:none;line-height:1}
 #playTab:hover{transform:rotate(180deg) translateX(0);box-shadow:0 6px 22px rgba(165,50,34,.35);animation:none}
 @keyframes playglow{0%,100%{box-shadow:0 0 0 0 rgba(165,50,34,.45)}50%{box-shadow:0 0 0 8px rgba(165,50,34,0)}}
-body.play-open #playTab{display:none}
+#playTabs{position:fixed;right:0;top:22%;z-index:70;display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+#playTabs .ptab{background:var(--brand);color:#fff;border-radius:10px 0 0 10px;padding:9px 9px 9px 12px;cursor:pointer;font-weight:700;font-size:11px;letter-spacing:.06em;text-transform:uppercase;line-height:1;transform:translateX(5px);transition:transform .18s,box-shadow .18s;box-shadow:0 0 0 0 rgba(165,50,34,.45);animation:playglow 2.6s ease-in-out infinite;user-select:none;white-space:nowrap}
+#playTabs .ptab{animation:none;opacity:.92}#playTabs .ptab.hot{opacity:1;animation:playglow 2.6s ease-in-out infinite, playbounce 2.6s ease-in-out infinite;padding-left:16px}
+@keyframes playbounce{0%,100%{transform:translateX(5px)}50%{transform:translateX(0)}}
+#playTabs .ptab:hover,#playTabs .ptab.on{transform:translateX(0);box-shadow:0 6px 22px rgba(165,50,34,.35);animation:none;opacity:1}
+/* a ramp of the brand brick, light to deep, so each handle reads at a glance */
+#playTabs .ptab.intros{background:#D9775B}#playTabs .ptab.open{background:#C85A3E}#playTabs .ptab.close{background:#A53222}#playTabs .ptab.texts{background:#8C2619}#playTabs .ptab.emails{background:#6E1E13}#playTabs .ptab.post{background:#4F150D}
+#playTabs .ptab.on{outline:2px solid #fff;outline-offset:-3px}
+body.play-open #playTabs{right:430px}@media (max-width:1100px){body.play-open #playTabs{display:none}}
+body.present-mode #playTabs{display:none}
+#playDrawer .pmine{font-size:10px;background:#FFF3C4;color:#8A6D00;border-radius:10px;padding:1px 6px;font-weight:700}
+.ordrow{display:flex;gap:8px;align-items:center;padding:6px 8px;border-bottom:1px dashed #EFEAE0;font-size:13px}.ordrow:last-child{border-bottom:0}.ordrow .t{flex:1}.ordrow .btn{min-height:26px;padding:0 8px}
+#emailMenu .fold{display:none}#emailMenu.showimg .fold{display:block}
 #playDrawer{position:fixed;top:0;right:0;height:100vh;width:430px;max-width:94vw;background:#fff;border-left:1px solid var(--line);box-shadow:-12px 0 30px rgba(0,0,0,.12);z-index:80;display:none;flex-direction:column}
 body.play-open #playDrawer{display:flex}#playDrawer .phead{padding:14px 16px 10px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center}
 #playDrawer .phead h2{font-family:var(--serif);font-size:19px;font-weight:400;margin:0;flex:1}#playDrawer .pbody{overflow:auto;padding:8px 12px 24px;flex:1}
@@ -674,7 +686,7 @@ Discover 6,100 190 24.9"></textarea>
         <div class="grid3">
           <div class="field" style="grid-column:1/-1;max-width:420px"><label>Client</label><select id="propClientPicker" onchange="pickClient(this.value)"></select></div>
           <div class="field" style="display:none"><label>Pricing option on proposal</label><select id="propOption" onchange="renderProposalPreview()"></select></div>
-          <div class="field" style="grid-column:1/-1"><div class="btnrow"><button class="btn" onclick="copyImage('proposal')">Copy proposal</button><button class="btn ghost" onclick="sendMenu(event,'proposal',null,'email')" title="Proposal as a mail draft or as an image email">Outreach emails ▾</button><button class="btn ghost" onclick="sendMenu(event,'proposal',null,'postEmail')" title="Next-steps emails after the sale, by product and lender">Post-close emails ▾</button><button class="btn ghost" onclick="sendMenu(event,'proposal',null,'text')" title="Texts to go with the proposal, copied to the clipboard">Outreach texts ▾</button><button class="btn ghost" onclick="sendMenu(event,'proposal',null,'postText')" title="Next-steps texts after the sale">Post-close texts ▾</button><button class="btn ghost" onclick="exportImage('proposal')">Save image</button><button class="btn ghost" onclick="librarySave('proposal')">Save to library</button><button class="btn ghost" onclick="librarySave('proposal'); markSentLatest('text')" title="Logs this proposal as sent by text (Email marks itself automatically)">Mark sent by text</button></div></div>
+          <div class="field" style="grid-column:1/-1"><div class="btnrow"><button class="btn" onclick="copyImage('proposal')">Copy proposal</button><button class="btn ghost" onclick="sendMenu(event,'proposal',null,'email')" title="Proposal as a mail draft (or as an image)">Outreach emails ▾</button><button class="btn ghost" onclick="sendMenu(event,'proposal',null,'text')" title="Texts to go with the proposal, copied to the clipboard">Outreach texts ▾</button><button class="btn ghost" onclick="exportImage('proposal')">Save image</button><button class="btn ghost" onclick="librarySave('proposal')">Save to library</button><button class="btn ghost" onclick="librarySave('proposal'); markSentLatest('text')" title="Logs this proposal as sent by text (Email marks itself automatically)">Mark sent by text</button></div></div>
         </div>
         <div class="field"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="propAmort" style="width:auto" checked onchange="setPropAmort(this.checked)"> Include the year-by-year amortization table on the proposal</label></div>
         <div class="field"><label>Personal note to client (optional)</label><textarea id="propNote" style="min-height:60px;font-family:inherit" oninput="renderProposalPreview()" placeholder="e.g. Maria — here's the consolidation option we walked through on Tuesday."></textarea></div>
@@ -700,7 +712,7 @@ Discover 6,100 190 24.9"></textarea>
       <div class="panel" id="presentObj"></div>
     </section>
     <div id="objDrawer"></div>
-    <div id="playTab" onclick="playOpen()" title="Call intros, objections &amp; plays, texts and emails — on any page">Playbook</div>
+    <div id="playTabs"></div>
     <div id="playDrawer"><div class="phead"><h2>Playbook</h2><button class="btn ghost small" onclick="playClose()">Close &#x2715;</button></div><div class="pbody" id="playBody"></div></div>
     <section class="screen" id="s-tools">
       <div class="eyebrow">Quick math, mid-call</div><h1>Tools</h1>
@@ -912,11 +924,16 @@ Discover 6,100 190 24.9"></textarea>
         <div class="hint" style="margin-bottom:8px">Your own intros, texts and emails — they show up in the Playbook on every page.</div>
         <div class="btnrow" style="margin-bottom:10px">
           <button class="btn" onclick="addTemplate('intro')">+ Intro script</button>
+          <button class="btn ghost" onclick="addTemplate('intro','open')">+ Opening objection</button>
           <button class="btn ghost" onclick="addTemplate('text')">+ Text message</button>
           <button class="btn ghost" onclick="addTemplate('email')">+ Email</button>
         </div>
         <div id="tmplMine"></div>
         <div class="hint" style="margin-top:8px">Tokens that auto-fill on copy: {client_first} {client} {address} {banker} {banker_first} {banker_phone} {banker_email} {banker_nmls} {rate}</div>
+      </div>
+      <div class="panel">
+        <h2>Playbook order <span class="hint">— move anything up or down inside its panel; the defaults stay, reset any time</span></h2>
+        <div id="playOrder"></div>
       </div>
     </section>
 
@@ -1065,7 +1082,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.12.0";
+const TOOLKIT_VERSION = "1.12.1";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1746,15 +1763,15 @@ function renderPipeline(){
   const chips=$("pipeChips"); if(chips){
     const chip=(v,l,n)=>`<button class="btn small ${pipeView===v?"":"ghost "}" onclick="setPipeView('${v}')">${l}${n!=null?" ("+n+")":""}</button>`;
     const sentN=state.clients.filter(c=>!c.quick&&c.proposalSent&&!isDone(c)).length;
-    chips.innerHTML=chip("all","All")+chip("hot","\uD83D\uDD25 Hot now",al.hot.length)+chip("due","Follow-ups due",al.due.length)+chip("flag","\uD83D\uDD25 Hot leads",al.flagged.length)+chip("ratewatch","\u23F3 Rate watch",al.ratewatch.length)+chip("season","\uD83D\uDCC5 Seasoning",al.season.length)+chip("future","\uD83C\uDFE1 Future buyers",al.future.length)+(al.watch.length?chip("watch","Watching",al.watch.length):"")+chip("sent","Proposal sent",sentN)+(rdTiers()?chip("eligible","✨ New this week",rdWeekIds().length):""); }
+    chips.innerHTML=chip("all","All")+chip("hot","\uD83D\uDD25 Hot now",al.hot.length)+chip("due","Follow-ups due",al.due.length)+chip("flag","\uD83D\uDD25 Hot leads",al.flagged.length)+chip("ratewatch","\u23F3 Rate watch",al.ratewatch.length)+chip("season","\uD83D\uDCC5 Seasoning",al.season.length)+chip("future","\uD83C\uDFE1 Future buyers",al.future.length)+(al.watch.length?chip("watch","Watching",al.watch.length):"")+chip("sent","Proposal sent",sentN)+(rdTiers()?chip("elignow","\u2728 Eligible now",rdEligibleIds().length)+chip("eligible","\u2728 New this week",rdWeekIds().length):""); }
   const f=filt.value; const pf=$("pipeProduct")?$("pipeProduct").value:"";
   const q=($("pipeSearch")?$("pipeSearch").value:"").trim().toLowerCase(); const qd=q.replace(/\D/g,"");
   const hit=c=>{ if(pf && clientProduct(c)!==pf) return false; if(!q) return true; const hay=[c.name,c.email,c.address,c.servicer,c.loanType,c.status,c.notes,c.futureProduct,PRODUCT_LABELS[clientProduct(c)]].map(x=>String(x||"").toLowerCase()).join(" \u2022 ");
     if(hay.includes(q)) return true; if(qd.length>=3 && String(c.phone||"").replace(/\D/g,"").includes(qd)) return true; return false; };
   const rows=state.clients.filter(c=>!c.quick && (!f||c.status===f) && hit(c) &&
-    (pipeView==="all" || (pipeView==="hot"&&hs.has(c.id)) || (pipeView==="due"&&ds.has(c.id)) || (pipeView==="watch"&&ws.has(c.id)) || (pipeView==="ratewatch"&&rs.has(c.id)) || (pipeView==="season"&&ss.has(c.id)) || (pipeView==="sent"&&c.proposalSent&&!isDone(c)) || (pipeView==="flag"&&c.hot) || (pipeView==="future"&&fs_.has(c.id)) || (pipeView==="eligible"&&rdWindowInfo(c))))
+    (pipeView==="all" || (pipeView==="hot"&&hs.has(c.id)) || (pipeView==="due"&&ds.has(c.id)) || (pipeView==="watch"&&ws.has(c.id)) || (pipeView==="ratewatch"&&rs.has(c.id)) || (pipeView==="season"&&ss.has(c.id)) || (pipeView==="sent"&&c.proposalSent&&!isDone(c)) || (pipeView==="flag"&&c.hot) || (pipeView==="future"&&fs_.has(c.id)) || (pipeView==="eligible"&&rdWindowInfo(c)) || (pipeView==="elignow"&&rdEligibleNow(c))))
     .sort((a,b)=>{ if(pipeSort.key){ const va=sortVal(a,pipeSort.key), vb=sortVal(b,pipeSort.key); const cmp = typeof va==="number"&&typeof vb==="number" ? va-vb : String(va).localeCompare(String(vb)); return pipeSort.dir*cmp; }
-      return pipeView==="ratewatch" ? (rateDrop(a)??9)-(rateDrop(b)??9) : pipeView==="season" ? seasonDays(a)-seasonDays(b) : pipeView==="eligible" ? String(b.eligibleSince||"").localeCompare(String(a.eligibleSince||"")) : 0; });
+      return pipeView==="ratewatch" ? (rateDrop(a)??9)-(rateDrop(b)??9) : pipeView==="season" ? seasonDays(a)-seasonDays(b) : (pipeView==="eligible"||pipeView==="elignow") ? String(b.eligibleSince||"").localeCompare(String(a.eligibleSince||"")) : 0; });
   pipeRowsShown=rows;
   const bar=(al.hot.length||al.due.length)?`<div style="background:var(--cream);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.8">\uD83D\uDD14 ${al.hot.length?`<b>${al.hot.length} hot right now:</b> ${al.hot.map(c=>`<a href="#" onclick="pickClient('${c.id}');go('analysis');return false" style="color:var(--brand);font-weight:600">${esc(c.name)}</a>`).join(", ")}. `:""}${al.due.length?`<b>${al.due.length} follow-up${al.due.length===1?"":"s"} due:</b> ${al.due.map(c=>`<a href="#" onclick="pickClient('${c.id}');go('client');return false" style="color:var(--ink)">${esc(c.name)}</a>`).join(", ")}.`:""}</div>`:"";
   const seasonBar = al.season.length && pipeView!=="season" ? `<div style="background:var(--cream);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.8">\uD83D\uDCC5 <b>Seasoning:</b> ${al.season.map(c=>{ const n=seasonDays(c); return `<a href="#" onclick="pickClient('${c.id}');go('client');return false" style="color:var(--brand);font-weight:600">${esc(c.name)}</a> <span class="hint">(${n<=0?"eligible now":"in "+n+" day"+(n===1?"":"s")})</span>`; }).join(", ")} \u2014 <a href="#" onclick="setPipeView('season');return false">view</a></div>` : "";
@@ -2223,7 +2240,7 @@ function readAnalysisInputs(){ const c=cur(); if(!c) return;
     anNoCompare:$("anNoCompare")&&$("anNoCompare").checked?"yes":"no", anSecondType:$("anSecondType")?$("anSecondType").value:"hel", anHideFirst:$("anHideFirst")&&$("anHideFirst").checked?"yes":"no", anShowExtra:$("anShowExtra")&&!$("anShowExtra").checked?"no":"yes", anCustom:num($("anCustom")?$("anCustom").value:0)||0}; save();
   document.body.classList.toggle("noc", !!($("anNoCompare")&&$("anNoCompare").checked));
   document.body.classList.toggle("heloc", $("anEquity")&&$("anEquity").value==="heloc"); }
-const todayStr=()=>new Date().toISOString().slice(0,10);
+const todayStr=()=>new Date().toLocaleDateString("en-CA");   /* local calendar day — the UTC date flips at 7-8 PM Eastern and made "today" views go blank in the evening */
 function aprText(c){ try{ const r=c&&computeAnalysis(c); if(!r||r.tooSmall) return ""; return " APR "+pct(r.apr)+(r.aprEst?" (est. \u2014 rate + 0.25% until costs are entered)":" (from "+money((r.a.anCosts||0)+r.mipAmt)+" in costs)")+"."; }catch(e){ return ""; } }
 function rateSrcText(c){ const s=c&&c.analysis&&c.analysis.rateSrc; if(!c||!c.analysis||c.analysis.anRate==null) return "";
   if(c.analysis.anReal) return "\u2714 Real quote \u2014 "+pct(c.analysis.anRate)+" priced with the lender"+(c.analysis.realWhen?" "+c.analysis.realWhen:"")+(s&&s.lender?" ("+s.lender+")":"")+".";
@@ -3276,7 +3293,7 @@ function sendMenu(ev, kind, snapId, section){ ev.preventDefault(); ev.stopPropag
   const richNote = state.settings.emailRich ? " \u00b7 formatted, paste once" : ""; const c=cur(); const r=c&&computeAnalysis(c); const prev=(v)=>c&&r&&!r.tooSmall?esc(textFor(c,r,kind,v)):"";
   const want=x=>!section||section===x;
   const main=()=>(want("email")?group("Outreach email \u00b7 proposal as a mail draft, nothing to paste")+btn(`emailDraftEML('${kind}',${sid},'blank')`,"Blank + proposal","One-line note, then the proposal")+btn(`emailDraftEML('${kind}',${sid},'cold')`,"Cold reach-out + proposal","\u201cThis is what I was reaching out about\u201d, benefits, why NMC")+btn(`emailDraftEML('${kind}',${sid},'full')`,"Full email + proposal","Thanks, what I need from you, next steps, why NMC")
-    +group("Outreach email \u00b7 proposal as an image")+btn(`emailImage('${kind}',${sid},'blank')`,"Blank email","Just the image and a one-line note")+btn(`emailImage('${kind}',${sid},'cold')`,"Cold reach-out","Call/text, key benefits, why NMC"+richNote)+btn(`emailImage('${kind}',${sid},'full')`,"Full email","Options recapped, what I need, next steps, why NMC"+richNote):"")
+    +`<button type="button" class="foldbtn" onclick="event.stopPropagation(); document.getElementById('emailMenu').classList.toggle('showimg')"><b style="font-weight:600;color:var(--muted)">Send as an image instead \u25B8</b><span class="hint">Proposal pasted as a picture \u2014 for mail apps that mangle HTML</span></button><div class="fold">`+btn(`emailImage('${kind}',${sid},'blank')`,"Blank email","Just the image and a one-line note")+btn(`emailImage('${kind}',${sid},'cold')`,"Cold reach-out","Call/text, key benefits, why NMC"+richNote)+btn(`emailImage('${kind}',${sid},'full')`,"Full email","Options recapped, what I need, next steps, why NMC"+richNote)+`</div>`:"")
     +(want("text")?group("Outreach text \u00b7 copied to the clipboard")+btn(`copyText('${kind}','with')`,"Email\u2019s on its way",prev("with"))+btn(`copyText('${kind}','cold')`,"Cold text",prev("cold"))+btn(`copyText('${kind}','nudge')`,"Nudge \u2014 did it come through?",prev("nudge"))+btn(`copyText('${kind}','img')`,"No email \u00b7 with the proposal image",prev("img"))+btn(`copyText('${kind}','full')`,"No email \u00b7 details in the text",prev("full")):"")
     +(want("postEmail")?group("Post-close email \u00b7 next steps, as a mail draft")+`<button type="button" onclick="sendMenuLenders('streamline')"><b>Streamline \u25B8</b><span class="hint">VA / FHA streamline: statement + insurance page</span></button><button type="button" onclick="sendMenuLenders('equity')"><b>Cash-out / HEL / HELOC \u25B8</b><span class="hint">W-2s, pay stubs, statement, insurance page</span></button>`:"")
     +(want("postText")?group("Post-close text \u00b7 copied to the clipboard")+btn(`postCloseText('streamline')`,"Streamline",esc(postCloseTextFor(c,'streamline')))+btn(`postCloseText('equity')`,"Cash-out / HEL / HELOC",esc(postCloseTextFor(c,'equity'))):"");
@@ -3673,7 +3690,7 @@ async function fetchRates(){ const url=state.settings.feedUrl||$("setFeed").valu
   }catch(e){ $("feedStatus").textContent="Couldn't reach the feed ("+e.message+"). Check the URL and that the server sends Access-Control-Allow-Origin."; }
 }
 function hubLine(){ return apiBase()? "<br><span style=\"font-size:11px\"><span class=\"dot "+(hubOnline?"on":"off")+"\"></span>hub "+(hubOnline===true?"online":hubOnline===false?"offline":"\u2026")+"</span>" : ""; }
-function updateRatePill(){ const p=$("ratePill"); { const d=rdData(); if(d&&rdTiers(d)){ const t=rdTiers(d), pv=d.prevTiers||{}; const n=rdWeekIds().length; p.innerHTML="VA rates · "+esc(rdWhen(d.published))+"<br><b>640+ "+pct(t["640+"])+" <span style=\"font-size:12px\">"+rdArrow(t["640+"],pv["640+"])+"</span></b><span style=\"font-size:11.5px\">620–639 "+pct(t["620-639"])+" "+rdArrow(t["620-639"],pv["620-639"])+"</span>"+(n?"<br><span class=\"tag-good\" style=\"margin-top:4px\">\u2728 "+n+" new this week</span>":"")+hubLine(); return; } }
+function updateRatePill(){ const p=$("ratePill"); { const d=rdData(); if(d&&rdTiers(d)){ const t=rdTiers(d), pv=d.prevTiers||{}; const n=rdWeekIds().length; p.innerHTML="VA rates · "+esc(rdWhen(d.published))+"<br><b>640+ "+pct(t["640+"])+" <span style=\"font-size:12px\">"+rdArrow(t["640+"],pv["640+"])+"</span></b><span style=\"font-size:11.5px\">620–639 "+pct(t["620-639"])+" "+rdArrow(t["620-639"],pv["620-639"])+"</span>"+"<div style=\"display:flex;gap:6px;margin-top:6px\"><a href=\"#\" onclick=\"event.stopPropagation();go('pipeline');setPipeView('elignow');return false\" class=\"tag-flat\" style=\"text-decoration:none;flex:1;text-align:center\" title=\"Everyone eligible under today\u2019s rates\">Eligible <b>"+rdEligibleIds().length+"</b></a><a href=\"#\" onclick=\"event.stopPropagation();go('pipeline');setPipeView('eligible');return false\" class=\""+(n?"tag-good":"tag-flat")+"\" style=\"text-decoration:none;flex:1;text-align:center\" title=\"Became eligible this week\">New <b>"+n+"</b></a></div>"+hubLine(); return; } }
   if(!state.rates||!state.rates.rates){ p.innerHTML="Rate feed<br><b>"+(apiBase()?"waiting for hub":"not connected")+"</b>"+hubLine(); return; }
   const e=Object.entries(state.rates.rates)[0];
   const hotN=eligibleIds().length;
@@ -4322,32 +4339,55 @@ function tmplPreview(s){ /* filled text with the bits that still need a hand hig
  return esc(tmplFill(s)).replace(/\[([^\]\n]{1,40})\]/g,'<mark style="background:#F6E8D8;color:#9A4E0E;border-radius:3px;padding:0 3px;font-weight:600">[$1]</mark>'); }
 let libCat="All", libQ="";
 function setLibCat(c){ libCat=c; renderTemplates(); }
-/* ---- the Playbook: every script, text and email in a side drawer on any page ---- */
-var playQ="", playOpenCats=null;
-function playOpen(){ document.body.classList.add("play-open"); renderPlaybook(); setTimeout(()=>{ const q=$("playQ"); if(q) q.focus(); },30); }
-function playClose(){ document.body.classList.remove("play-open"); }
-function playToggleCat(k){ playOpenCats=playOpenCats||new Set(); if(playOpenCats.has(k)) playOpenCats.delete(k); else playOpenCats.add(k); renderPlaybook(); }
+/* ---- the Playbook: stacked handles on the right edge, one panel each ---- */
+const PLAY_PANELS=[{k:"intros",label:"Call intros"},{k:"open",label:"Opening objections"},{k:"close",label:"Closing objections"},{k:"texts",label:"Texts"},{k:"emails",label:"Emails"},{k:"post",label:"Post-close",only:["proposal","present"]}];
+/* which handles matter most on each screen: they move to the top of the stack and glow/bounce */
+const PLAY_PRIORITY={pipeline:["intros","open"],client:["intros","open"],analysis:["intros","open"],compare:["texts","emails"],proposal:["texts","emails","post"],present:["close","post"],tools:["open","close"],tmpl:[],desk:[],settings:[]};
+var playQ="", playPanel=null;
+function playDefaultPanel(t){ return t.cat==="Call Intros"?"intros":t.cat==="Objections & Plays"?"open":t.kind==="email"?"emails":"texts"; }
+/* every item a panel can hold, in default order; user templates carry their own panel; order overrides live in state.playOrder */
+function playItems(k){ const T=state.templates||{}; let items=[];
+  if(k==="close") items=OBJECTION_FLOWS.map(o=>({id:"flow:"+o.k,title:o.label,kind:"flow",flow:o,pool:"f"}));
+  items=items.concat(NMC_LIBRARY.filter(t=>playDefaultPanel(t)===k).map(t=>Object.assign({},t,{pool:"n"})));
+  items=items.concat((T.mine||[]).filter(t=>(t.panel||playDefaultPanel(t))===k).map(t=>Object.assign({},t,{pool:"m",mine:true})));
+  const order=(state.playOrder||{})[k]; if(order&&order.length){ const pos=new Map(order.map((id,i)=>[id,i])); items.sort((a,b)=>(pos.has(a.id)?pos.get(a.id):1e6+items.indexOf(a))-(pos.has(b.id)?pos.get(b.id):1e6+items.indexOf(b))); }
+  return items; }
+function playMove(k,id,dir){ const ids=playItems(k).map(t=>t.id); const i=ids.indexOf(id); const j=i+dir; if(i<0||j<0||j>=ids.length) return; ids.splice(j,0,ids.splice(i,1)[0]); state.playOrder=state.playOrder||{}; state.playOrder[k]=ids; save(); renderPlayOrder(); if(document.body.classList.contains("play-open")) renderPlaybook(); }
+function playResetOrder(k){ if(state.playOrder) delete state.playOrder[k]; save(); renderPlayOrder(); if(document.body.classList.contains("play-open")) renderPlaybook(); }
+function playPanelsFor(screen){ const list=PLAY_PANELS.filter(p=>!p.only||p.only.includes(screen)); const pri=PLAY_PRIORITY[screen]||[]; return pri.map(k=>list.find(p=>p.k===k)).filter(Boolean).concat(list.filter(p=>!pri.includes(p.k))); }
+function currentScreen(){ const a=document.querySelector(".screen.active"); return a?a.id.replace(/^s-/,""):"pipeline"; }
+function renderPlayTabs(){ const el=$("playTabs"); if(!el) return; const sc=currentScreen(); const list=playPanelsFor(sc);
+  if(playPanel&&!list.some(p=>p.k===playPanel)) playClose();
+  const pri=PLAY_PRIORITY[sc]||[]; el.innerHTML=list.map(p=>`<div class="ptab ${p.k}${playPanel===p.k?" on":""}${pri.includes(p.k)?" hot":""}" onclick="playOpen('${p.k}')" title="${esc(p.label)} \u2014 opens beside the page">${esc(p.label)}</div>`).join(""); }
+function playOpen(k){ if(!k){ k=playPanelsFor(currentScreen())[0].k; } if(document.body.classList.contains("obj-open")){ presentUI.obj=null; document.body.classList.remove("obj-open"); } if(playPanel===k&&document.body.classList.contains("play-open")){ playClose(); return; } playPanel=k; document.body.classList.add("play-open"); renderPlaybook(); renderPlayTabs(); setTimeout(()=>{ const q=$("playQ"); if(q) q.focus(); },30); }
+function playClose(){ document.body.classList.remove("play-open"); playPanel=null; renderPlayTabs(); }
 function playToggleItem(el){ el.classList.toggle("open"); }
-function playGroups(){ const T=state.templates||{}; const mine=(T.mine||[]).map(t=>Object.assign({},t,{cat:"My templates",pool:"m"}));
-  const lib=NMC_LIBRARY.map(t=>Object.assign({},t,{pool:"n"}));
-  const g=[]; const add=(key,label,items,extra)=>{ if(items.length||extra) g.push({key,label,items,extra}); };
-  add("intros","Call intros",lib.filter(t=>t.cat==="Call Intros"));
-  add("obj","Objections & plays",lib.filter(t=>t.cat==="Objections & Plays"),true);
-  const texts=lib.filter(t=>t.kind==="text"); const cats=[...new Set(texts.map(t=>t.cat))]; cats.forEach(c=>add("txt:"+c,"Texts \u00b7 "+c,texts.filter(t=>t.cat===c)));
-  add("vm","Voicemails",lib.filter(t=>t.kind==="vm")); add("email","Emails",lib.filter(t=>t.kind==="email")); add("other","Explainers & how-tos",lib.filter(t=>t.kind==="intro"&&t.cat!=="Call Intros"&&t.cat!=="Objections & Plays"));
-  add("mine","My templates",mine); return g; }
-function renderPlaybook(){ const el=$("playBody"); if(!el) return; const c=cur(); const q=playQ.toLowerCase();
-  const match=t=>!q||(t.title+" "+(t.use||"")+" "+(t.cat||"")+" "+tmplFill(t.body||"")).toLowerCase().includes(q);
-  const groups=playGroups(); const open=playOpenCats||new Set(q?groups.map(g=>g.key):["obj"]);
-  const item=t=>`<div class="pitem"><div class="pt" onclick="playToggleItem(this.parentNode)"><b>${esc(t.title)}</b><span class="tag-flat">${TKIND[t.kind]||t.kind}</span></div>${t.use?`<div class="pu">${esc(t.use)}</div>`:""}<div class="pb">${tmplPreview(t.body||"")}${t.kind==="intro"?"":`<div class="btnrow" style="margin-top:8px"><button class="btn small" onclick="copyTmplById('${t.pool}','${t.id}')">Copy${c?" for "+esc(c.name.split(/[ ,&]/)[0]):""}</button></div>`}</div></div>`;
-  const flows=q?OBJECTION_FLOWS.filter(o=>(o.label+" "+o.concern+" "+o.response).toLowerCase().includes(q)):OBJECTION_FLOWS;
-  const flowItem=o=>`<div class="pitem"><div class="pt" onclick="playToggleItem(this.parentNode)"><b>${o.label}</b><span class="tag-flat">closing flow</span></div><div class="pb" style="background:none;padding:0"><div class="objflow">
+function playToggleCat(el){ el.classList.toggle("open"); }
+function renderPlaybook(){ const el=$("playBody"); if(!el||!playPanel) return; const c=cur(); const q=playQ.toLowerCase(); const P=PLAY_PANELS.find(p=>p.k===playPanel)||PLAY_PANELS[0];
+  const head=document.querySelector("#playDrawer .phead h2"); if(head) head.textContent=P.label;
+  const match=t=>!q||(t.title+" "+(t.use||"")+" "+(t.cat||"")+" "+tmplFill(t.body||"")+" "+(t.flow?t.flow.concern+" "+t.flow.response:"")).toLowerCase().includes(q);
+  const mine=t=>t.mine?` <span class="pmine">mine</span>`:"";
+  const item=t=>`<div class="pitem"><div class="pt" onclick="playToggleItem(this.parentNode)"><b>${esc(t.title)}${mine(t)}</b><span class="tag-flat">${TKIND[t.kind]||t.kind}</span></div>${t.use?`<div class="pu">${esc(t.use)}</div>`:""}<div class="pb">${tmplPreview(t.body||"")}${t.kind==="intro"?"":`<div class="btnrow" style="margin-top:8px"><button class="btn small" onclick="copyTmplById('${t.pool}','${t.id}')">Copy${c?" for "+esc(c.name.split(/[ ,&]/)[0]):""}</button></div>`}</div></div>`;
+  const flowItem=t=>{ const o=t.flow; return `<div class="pitem"><div class="pt" onclick="playToggleItem(this.parentNode)"><b>${o.label}</b><span class="tag-flat">closing flow</span></div><div class="pb" style="background:none;padding:0"><div class="objflow">
     <div class="objbox"><div class="objl">Frame</div><div class="objt">${esc(o.frame)}</div></div><div class="objbox tr"><div class="objl">Translate \u00b7 concern</div><div class="objt">${esc(o.concern)}</div></div><div class="objbox tr"><div class="objl">Translate \u00b7 feeling</div><div class="objt">${esc(o.feeling)}</div></div>
-    <div class="objbox ag"><div class="objl">Agree</div><div class="objt">${esc(o.agree)}</div></div><div class="objbox rs"><div class="objl">Respond</div><div class="objt">${esc(o.response)} <i>${esc(o.benefit)}</i></div></div><div class="objbox tn"><div class="objl">Transition</div><div class="objt">${esc(o.transition)}</div></div><div class="objbox cl"><div class="objl">Close</div><div class="objt">${esc(o.close)}</div></div></div></div></div>`;
-  el.innerHTML=`<input type="search" id="playQ" placeholder="Search the playbook\u2026" value="${esc(playQ)}" oninput="playQ=this.value; renderPlaybook(); this.focus()"><div class="hint" style="margin:0 0 8px">${c?`Filling in for <b>${esc(c.name)}</b>`:"No client selected \u2014 client bits show as [Name]"}</div>`+
-    groups.map(g=>{ const items=g.items.filter(match); const fl=g.key==="obj"?flows:[]; if(!items.length&&!fl.length) return ""; const isOpen=open.has(g.key);
-      return `<div class="pcat${isOpen?" open":""}"><div class="ph" onclick="playToggleCat('${g.key.replace(/'/g,"\\'")}')">${esc(g.label)} <span class="n">${items.length+fl.length}</span><span class="tgl">\u25B8</span></div><div class="pitems">${fl.map(flowItem).join("")}${items.map(item).join("")}</div></div>`; }).join("")||`<div class="empty">Nothing matches.</div>`;
-  if(q&&!playOpenCats) playOpenCats=null; }
+    <div class="objbox ag"><div class="objl">Agree</div><div class="objt">${esc(o.agree)}</div></div><div class="objbox rs"><div class="objl">Respond</div><div class="objt">${esc(o.response)} <i>${esc(o.benefit)}</i></div></div><div class="objbox tn"><div class="objl">Transition</div><div class="objt">${esc(o.transition)}</div></div><div class="objbox cl"><div class="objl">Close</div><div class="objt">${esc(o.close)}</div></div>${c?`<div class="objbox"><div class="objl">What they\u2019ll need</div><div class="objt">${esc(presentDocsLine(c))}</div></div>`:""}</div></div></div>`; };
+  let body="";
+  if(playPanel==="post"){ body=playPostHTML(c); }
+  else { const items=playItems(playPanel).filter(match);
+    if(playPanel==="texts"){ const cats=[...new Set(items.map(t=>t.cat||"My templates"))]; body=cats.map((cat,i)=>{ const its=items.filter(t=>(t.cat||"My templates")===cat); return `<div class="pcat${(q||i===0)?" open":""}"><div class="ph" onclick="playToggleCat(this.parentNode)">${esc(cat)} <span class="n">${its.length}</span><span class="tgl">\u25B8</span></div><div class="pitems">${its.map(item).join("")}</div></div>`; }).join(""); }
+    else body=`<div class="pcat open"><div class="pitems">${items.map(t=>t.kind==="flow"?flowItem(t):item(t)).join("")}</div></div>`;
+    if(!items.length) body=`<div class="empty">Nothing matches.</div>`; }
+  el.innerHTML=(playPanel==="post"?"":`<input type="search" id="playQ" placeholder="Search ${esc(P.label.toLowerCase())}\u2026" value="${esc(playQ)}" oninput="playQ=this.value; renderPlaybook(); this.focus()"><div class="hint" style="margin:0 0 8px">${c?`Filling in for <b>${esc(c.name)}</b>`:"No client selected \u2014 client bits show as [Name]"}</div>`)+body; }
+/* post-close panel: the client's product decides the document list; the banker picks the lender */
+function playPostHTML(c){ if(!c) return `<div class="empty">Pick a client first \u2014 the post-close email follows their product.</div>`;
+  const prod=clientProduct(c); const isStream=prod==="va_irrrl"||prod==="fha_streamline"; const key=isStream?"streamline":"equity"; const label=isStream?(prod==="fha_streamline"?"FHA Streamline":"VA Streamline"):prod==="heloc"?"HELOC":prod==="hel"?"Home equity loan":prod==="cashout"?"Cash-out refinance":prod==="none"?"Refinance (no analysis yet)":"Refinance";
+  return `<div class="hint" style="margin:8px 0 10px"><b>${esc(c.name)}</b> \u00b7 ${esc(label)} \u2192 Step 3 asks for ${isStream?"the most recent mortgage statement and the homeowners insurance declaration page":"last 2 years of W-2s, 2 most recent pay stubs, most recent mortgage statement and the homeowners insurance declaration page"}.</div>
+    <div class="pcat open"><div class="ph">Which lender? <span class="n">opens as a mail draft to ${esc(c.email||"\u2014 no email on file")}</span></div><div class="pitems">${PC_LENDERS.map(L=>`<div class="pitem"><div class="pt" onclick="postCloseDraft('${key}','${L.k}')" title="Open the draft"><b>${esc(L.name)}</b><span class="tag-flat">${L.step1?"lender steps":"generic portal"}</span></div></div>`).join("")}</div></div>
+    <div class="pcat open" style="margin-top:10px"><div class="ph">Post-close text <span class="n">copied to the clipboard</span></div><div class="pitems"><div class="pitem"><div class="pt" onclick="postCloseText('${key}')"><b>${isStream?"Streamline":"Cash-out / HEL / HELOC"} \u2014 \u201cI just emailed your next steps\u201d</b><span class="tag-flat">Text</span></div><div class="pu">${esc(postCloseTextFor(c,key))}</div></div></div></div>`; }
+/* Scripts & templates: order the panels, defaults always kept */
+function renderPlayOrder(){ const el=$("playOrder"); if(!el) return;
+  el.innerHTML=PLAY_PANELS.filter(p=>p.k!=="post").map(p=>{ const items=playItems(p.k); const custom=!!((state.playOrder||{})[p.k]||[]).length;
+    return `<div class="pcat open" style="margin-bottom:10px"><div class="ph" style="cursor:default">${esc(p.label)} <span class="n">${items.length}</span>${custom?`<a href="#" class="hint" style="margin-left:auto" onclick="playResetOrder('${p.k}');return false">Reset order</a>`:""}</div><div class="pitems">${items.map((t,i)=>`<div class="ordrow"><span class="t">${esc(t.title)}${t.mine?' <span class="pmine">mine</span>':""}</span><button class="btn ghost small" ${i===0?"disabled":""} onclick="playMove('${p.k}','${t.id}',-1)">\u25B2</button><button class="btn ghost small" ${i===items.length-1?"disabled":""} onclick="playMove('${p.k}','${t.id}',1)">\u25BC</button></div>`).join("")}</div></div>`; }).join(""); }
 function setLibQ(v){ libQ=(v||"").trim().toLowerCase(); renderTemplates(); }
 function renderLibrary_nmc(){ const el=$("tmplNmc"); if(!el) return; const c=cur();
  const cats=["All"]; NMC_LIBRARY.forEach(t=>{ if(!cats.includes(t.cat)) cats.push(t.cat); });
@@ -4380,13 +4420,13 @@ function tmplCard(t,pool,by){ return `<div class="stat" style="margin-bottom:8px
    <div class="btnrow"><button class="btn small" onclick="copyTmplById('${pool}','${t.id}')">Copy</button>${pool!=="m"?`<button class="btn ghost small" onclick="saveToMine('${pool}','${t.id}')">Save to mine</button>`:""}</div></div>
   ${t.subject?`<div class="hint">Subject: ${esc(t.subject)}</div>`:""}
   <div style="font-size:13px;white-space:pre-wrap;margin-top:4px">${tmplPreview(t.body||"")}</div></div>`; }
-function addTemplate(kind){ state.templates.mine.push({id:"m"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),
+function addTemplate(kind,panel){ state.templates.mine.push({id:"m"+Date.now().toString(36)+Math.random().toString(36).slice(2,5),panel:panel||"",
  kind,title:"",subject:"",body:"",shared:false}); save(); renderTemplates(); }
 function updTemplate(id,k,v){ const t=tmplPoolGet("m",id); if(!t) return;
  t[k]= k==="shared"? !!v : v; save(); if(k==="shared") pushSharedTemplates(false); }
 function delTemplate(id){ state.templates.mine=(state.templates.mine||[]).filter(t=>t.id!==id);
  save(); renderTemplates(); pushSharedTemplates(false); }
-function renderTemplates(){ const T=state.templates||{mine:[]};
+function renderTemplates(){ const T=state.templates||{mine:[]}; setTimeout(renderPlayOrder,0);
  const comp=$("tmplCompany"), sh=$("tmplShared"), mine=$("tmplMine");
  if(!comp) return; renderLibrary_nmc();
  const cList=(T.company&&T.company.templates)||[];
@@ -4399,7 +4439,8 @@ function renderTemplates(){ const T=state.templates||{mine:[]};
  mine.innerHTML = m.length? m.map(t=>`<div class="stat" style="margin-bottom:10px">
    <div class="grid2">
      <div class="field"><label>Title</label><input type="text" value="${esc(t.title)}" oninput="updTemplate('${t.id}','title',this.value)"></div>
-     <div class="field"><label>Type</label><select onchange="updTemplate('${t.id}','kind',this.value); renderTemplates()">${Object.keys(TKIND).map(k=>`<option value="${k}" ${t.kind===k?"selected":""}>${TKIND[k]}</option>`).join("")}</select></div>
+     <div class="grid2"><div class="field"><label>Type</label><select onchange="updTemplate('${t.id}','kind',this.value); renderTemplates()">${Object.keys(TKIND).map(k=>`<option value="${k}" ${t.kind===k?"selected":""}>${TKIND[k]}</option>`).join("")}</select></div>
+     <div class="field"><label>Playbook panel</label><select onchange="updTemplate('${t.id}','panel',this.value); renderPlayOrder()">${PLAY_PANELS.filter(p=>p.k!=="post"&&p.k!=="close").map(p=>`<option value="${p.k}" ${(t.panel||playDefaultPanel(t))===p.k?"selected":""}>${p.label}</option>`).join("")}</select></div></div>
    </div>
    <div class="field" style="display:${t.kind==="email"?"block":"none"}"><label>Subject</label><input type="text" value="${esc(t.subject||"")}" oninput="updTemplate('${t.id}','subject',this.value)"></div>
    <div class="field"><label>Body</label><textarea style="min-height:90px;font-family:inherit" oninput="updTemplate('${t.id}','body',this.value)">${esc(t.body||"")}</textarea></div>
@@ -4901,7 +4942,7 @@ function toolsToQuote(){ const m=toolsModel(); if(!m.ok){ toast("Fill in today's
 /* one debts panel (table, Add debt, Paste a list) shared by the Client workspace and the Savings analysis: it moves to whichever screen is open */
 function placeDebtPanel(s){ const p=$("debtPanel"); if(!p) return; if(s==="client"){ const h=$("debtHostClient"); if(h&&p.parentNode!==h) h.appendChild(p); }
   else if(s==="analysis"){ const m=$("debtHome"); if(m&&p.previousElementSibling!==m) m.insertAdjacentElement("afterend",p); } }
-function go(s){ if(s!=="present"&&document.body.classList.contains("obj-open")){ presentUI.obj=null; document.body.classList.remove("obj-open"); } document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));
+function go(s){ if(s!=="present"&&document.body.classList.contains("obj-open")){ presentUI.obj=null; document.body.classList.remove("obj-open"); } setTimeout(renderPlayTabs,0); document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));
   $("s-"+s).classList.add("active"); placeDebtPanel(s);
   if(s==="tmpl") renderTemplates();
   if(s==="tools") toolsInit();
