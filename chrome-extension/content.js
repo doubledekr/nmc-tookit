@@ -118,10 +118,15 @@
 
   /* Lightning collapses sections (and the bookmarklet is usually clicked after the banker scrolled around): open them first */
   function expandSections(){ let n=0; try{ document.querySelectorAll('button.slds-section__title-action[aria-expanded="false"], .slds-section:not(.slds-is-open) .slds-section__title-action, button[aria-expanded="false"].test-id__section-header-button').forEach(b=>{ try{ b.click(); n++; }catch(e){} }); }catch(e){} return n; }
-  function readLead(){ const opened=expandSections(); return new Promise(res=>setTimeout(async()=>{ const h=harvestPage(); h.opened=opened; h.via='page';
-      const r0=recordFromUrl(); h.obj=r0?r0.obj:'';
-      try{ const a=await apiLead(); if(a){ h.text=a.text+'\n'+h.text; h.pairs=a.pairs+h.pairs; h.apiPairs=a.pairs; h.via='api'; h.obj=a.obj; } }catch(e){ h.apiError=e.message; }
-      res(h); }, opened?500:0)); }
+  /* Lightning renders a section's fields a beat after it opens (and lazily on first view), so a harvest taken too early comes back
+     thin or empty — the "first send is blank, second works" symptom. Wait for the DOM to go quiet, then read; if the read is still
+     thin, read once more after a short pause and keep whichever found more. */
+  function settle(maxMs){ return new Promise(res=>{ let t=null; const done=()=>{ try{ mo.disconnect(); }catch(e){} clearTimeout(cap); res(); }; const mo=new MutationObserver(()=>{ clearTimeout(t); t=setTimeout(done,350); }); try{ mo.observe(document.documentElement,{childList:true,subtree:true,characterData:true}); }catch(e){} t=setTimeout(done,350); const cap=setTimeout(done,maxMs||2500); }); }
+  async function readOnce(opened){ const h=harvestPage(); h.opened=opened; h.via='page'; const r0=recordFromUrl(); h.obj=r0?r0.obj:'';
+    try{ const a=await apiLead(); if(a){ h.text=a.text+'\n'+h.text; h.pairs=a.pairs+h.pairs; h.apiPairs=a.pairs; h.via='api'; h.obj=a.obj; } }catch(e){ h.apiError=e.message; } return h; }
+  function readLead(){ const opened=expandSections(); return (async()=>{ await settle(opened?3000:1200); let h=await readOnce(opened);
+      if(h.pairs<8){ await new Promise(r=>setTimeout(r,900)); const h2=await readOnce(opened); if(h2.pairs>h.pairs){ h2.retried=true; h=h2; } }
+      return h; })(); }
   function send(cb){ readLead().then(h=>{
     if(!h.text||h.text.length<40){ toast('Nothing to read here \u2014 open a lead or contact record first.', false); if(cb) cb({ok:false,pairs:0,error:'nothing to read'}); return; }
     toast('Read '+h.pairs+' fields'+(h.via==='api'?' ('+h.apiPairs+' direct from the record)':h.apiError?' (record lookup failed: '+h.apiError+')':'')+' \u2014 sending to the NMC toolkit\u2026', true);

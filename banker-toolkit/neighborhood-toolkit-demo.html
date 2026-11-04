@@ -1476,7 +1476,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.14.3";
+const TOOLKIT_VERSION = "1.14.4";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -4433,7 +4433,7 @@ function sfIncoming(p){ if(!p||!p.text) return; p.text=scrubSF(p.text); if(p.ext
   try{ parseSFText(p.text); }catch(e){ toast("Couldn\u2019t read that Salesforce page"); return; }
   const F=(lastSF&&lastSF.fields)||{}; const debts=(lastSF&&lastSF.debts)||[];
   const id="ext"+Date.now().toString(36);
-  state.inbox=(state.inbox||[]).filter(x=>!(x.source==="chrome-extension"&&x.fields&&F.name&&x.fields.name===F.name));   /* resend replaces */
+  state.inbox=(state.inbox||[]).filter(x=>!(x.source==="chrome-extension"&&((x.fields&&F.name&&x.fields.name===F.name)||(p.url&&x.url===p.url&&Date.now()-Date.parse(x.when||0)<10*60*1000)||(!(x.fields&&x.fields.name)&&Date.now()-Date.parse(x.when||0)<10*60*1000))));   /* a resend replaces the earlier one — same name, same record, or a thin read from the last few minutes */
   const pairs = p.pairs>0 ? p.pairs : Math.max(0, Math.floor(((p.text.split("----- page text -----")[0]||"").trim().split(/\n/).length)/2));
   const converted = p.obj==="Opportunity" || /\/Opportunity\/006/.test(p.url||"");
   state.inbox.unshift({id, fields:F, debts, text:p.text, pairs, when:p.when||new Date().toISOString(), source:"chrome-extension", url:p.url||"", converted});
