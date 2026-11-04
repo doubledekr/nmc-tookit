@@ -54,13 +54,21 @@ jobs:
 
   release:
     needs: build
-    if: github.ref == 'refs/heads/main'    # branch builds only produce downloadable artifacts, never a release
+    # Publish whenever the run wasn't cancelled — even if one platform's build failed (GitHub's macOS runners sometimes
+    # never pick the job up). The Windows installer is what the team runs on; a missing Mac build just means Macs wait
+    # for the next release. The step below refuses to publish a release with no Windows installer in it.
+    if: ${{ !cancelled() && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           path: out
+      - name: Require the Windows installer
+        run: |
+          ls -R out || true
+          test -n "$(find out -name '*.exe' | head -1)" || { echo "No Windows installer was built — not publishing."; exit 1; }
+          test -z "$(find out -name '*.dmg' | head -1)" && echo "::warning::Mac build missing from this release (runner never started); Macs stay on the previous version until the next release."
       - id: v
         run: echo "version=$(node -p "require('./nmc-toolkit-desktop/package.json').version")" >> "$GITHUB_OUTPUT"
       - uses: softprops/action-gh-release@v2
