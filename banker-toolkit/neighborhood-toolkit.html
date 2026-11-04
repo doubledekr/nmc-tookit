@@ -557,7 +557,7 @@ body.present-mode #playTabs{display:none}
 #pipeTable table.data tbody tr:hover td{background:var(--cream-soft)}
 
 main{min-width:0}
-#pipeTable td:first-child{min-width:120px}#pipeTable td:nth-child(8){min-width:112px}#pipeTable td:nth-child(7){white-space:normal}#pipeTable td:nth-child(3){white-space:normal}#pipeTable td:nth-child(2) .tag-flat,#pipeTable td:nth-child(2) .tag-warn{white-space:normal}#pipeTable table.data th{white-space:normal}
+
 #pipeTable .fuq{flex-wrap:wrap}
 @media (max-width:1200px){#s-pipeline .panel{overflow-x:auto}#pipeTable table.data{min-width:980px}#pipeTable table.data thead th{position:static}#pipeTable .ps .tag-flat,#pipeTable .ps .tag-warn,#pipeTable .pf .fud{white-space:nowrap}#pipeTable .fuq{flex-wrap:nowrap}}
 #pipeTable td:last-child .btn{background:#fff;color:var(--brand);border:1px solid #E6C2B9;min-height:30px;padding:0 12px;font-size:12.5px;box-shadow:none;transition:all .16s ease}
@@ -636,21 +636,33 @@ body.nmc-enter svg.chart circle{animation:nmc-tagpop .4s cubic-bezier(.2,.9,.3,1
 #noticeFoot .btn{min-height:26px;font-size:11.5px;padding:0 10px}
 #mkBanner .notice{background:#fff;border:1px solid var(--line);border-left:3px solid #6B7DA8;border-radius:10px;padding:10px 14px;font-size:13.5px;box-shadow:0 1px 2px rgba(52,55,64,.04),0 10px 24px -16px rgba(52,55,64,.25)}
 #mkBanner .notice .mkrow{display:flex;gap:12px;align-items:flex-start}#mkBanner .notice .mknote{flex:1;min-width:0}
+/* ---------- alert tiles above the pipeline: a count you can click to filter ---------- */
+.atiles{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}
+.atile{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-left:3px solid var(--line);border-radius:10px;padding:7px 12px 7px 10px;box-shadow:0 1px 2px rgba(52,55,64,.04);transition:transform .14s,box-shadow .14s,border-color .14s;font-family:var(--sans)}
+.atile:hover{transform:translateY(-1px);box-shadow:0 8px 18px -10px rgba(107,31,21,.35);border-color:#C9C2B4}
+.atile .an{font-family:var(--serif);font-size:22px;line-height:1;color:var(--ink);min-width:26px;text-align:center}
+.atile .al{display:flex;flex-direction:column;font-size:12.5px;font-weight:600;color:var(--ink);line-height:1.2}
+.atile .al .as{font-size:10.5px;font-weight:500;color:var(--muted);margin-top:2px}
+.atile .ag{color:var(--brand);font-size:16px;margin-left:2px;transition:transform .15s}.atile:hover .ag{transform:translateX(2px)}
+.atile.now{border-left-color:var(--brand)}.atile.now .an{color:var(--brand)}.atile.now{animation:nmc-barglow 4s ease-in-out infinite 1s}
+.atile.hot{border-left-color:#E0633F}.atile.fresh{border-left-color:var(--good)}.atile.fresh .an{color:var(--good)}
+body.nmc-enter .atile{animation:nmc-rowin .4s var(--nmc-ease) both .15s}
 /* ---------- pipeline rows: client, status, loan, follow-up, rate gap, opportunity, actions ---------- */
 #pipeTable table.data th{white-space:normal}
 #pipeTable table.data td{vertical-align:top;padding:9px 10px}
 #pipeTable table.data.dense td{padding:5px 10px}
 #pipeTable tbody tr:not(.grp){cursor:pointer}
-#pipeTable .pc{min-width:150px}
+#pipeTable .pc{min-width:150px;max-width:260px}
 #pipeTable .pc-name{font-weight:600;font-size:14px;line-height:1.25;display:block}
 #pipeTable .pc-meta{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;align-items:center}
-.pc-chip{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:999px;padding:1px 8px;line-height:1.5;cursor:copy;transition:background .12s,border-color .12s,transform .18s var(--nmc-snap);font-variant-numeric:tabular-nums;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.pc-chip{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:999px;padding:1px 8px;line-height:1.5;cursor:copy;transition:background .12s,border-color .12s,transform .18s var(--nmc-snap);font-variant-numeric:tabular-nums;white-space:nowrap;max-width:170px;overflow:hidden;text-overflow:ellipsis}
 .pc-chip:hover{background:var(--cream-soft);border-color:#C9C2B4}
 .pc-chip.copied{background:#E3F1E7;border-color:#BBD6C6;color:#1F4D38;animation:nmc-snap .32s var(--nmc-snap)}
 .pc-chip .ic{width:.85em;height:.85em;margin-right:0;opacity:.7}
 #pipeTable .pc-serv{font-size:11px;color:var(--muted);display:block;margin-top:3px}
-#pipeTable table.data.dense .pc-serv{display:none}
-#pipeTable .ps .psm{font-size:11px;color:var(--muted);margin-top:4px;white-space:nowrap;display:flex;align-items:center;gap:3px}
+
+#pipeTable .ps .tag-flat,#pipeTable .ps .tag-warn,#pipeTable .ps .tag-good{white-space:nowrap}
+#pipeTable .ps .psm{font-size:11px;color:var(--muted);margin-top:4px;white-space:normal;display:flex;align-items:center;gap:3px;flex-wrap:wrap;line-height:1.35}
 #pipeTable .ps .psm .good{color:var(--good)}
 #pipeTable .pl{white-space:nowrap;font-variant-numeric:tabular-nums}
 #pipeTable .pl .pl1{font-size:13.5px;color:var(--ink)}#pipeTable .pl .pl1 b{font-weight:600}
@@ -661,15 +673,16 @@ body.nmc-enter svg.chart circle{animation:nmc-tagpop .4s cubic-bezier(.2,.9,.3,1
 #pipeTable tr.overdue .pf .pfd{animation:nmc-hum 1.8s ease-in-out infinite}#pipeTable tbody tr:hover .pf .pfd{animation:none}
 #pipeTable .pf .pfc .ic{opacity:.6}#pipeTable .pf .pfc.moved .ic{opacity:.35}
 #pipeTable .pf .pfq{opacity:0;transition:opacity .15s;margin-top:5px}#pipeTable tbody tr:hover .pf .pfq,#pipeTable .pf .pfq.stay{opacity:1}
-#pipeTable .pe{min-width:160px}
+#pipeTable .pe{min-width:150px;max-width:230px}
 .gap .gapl{font-size:12.5px;white-space:nowrap;font-variant-numeric:tabular-nums}.gap .gapl b{font-weight:600}.gap .gapl .arr{color:var(--muted);margin:0 3px}
 .gap .gapbar{position:relative;height:6px;border-radius:3px;background:#EEE9DE;margin:5px 0 3px}
 .gap .gapbar i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:linear-gradient(90deg,#D9A441,#2E6B4F);transition:width .6s var(--nmc-ease)}
 .gap.ok .gapbar i{background:linear-gradient(90deg,#5FA882,#2E6B4F)}.gap.mk .gapbar i{background:linear-gradient(90deg,#C9D2E6,#6B7DA8)}.gap.mk .gaph b{color:#3F4556}.gap.near .gapbar i{background:linear-gradient(90deg,#E8C25A,#D9A441)}.gap.up .gapbar i{width:0!important}
 .gap .gapbar s{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);border-radius:1px;opacity:.55}
-.gap .gaph{font-size:11px;color:var(--muted);white-space:nowrap}.gap .gaph b{font-weight:600}.gap.ok .gaph b{color:var(--good)}.gap.near .gaph b{color:#8A6D00}.gap.up .gaph b{color:var(--muted)}
+.gap .gaph{font-size:11px;color:var(--muted);white-space:normal;line-height:1.4}.gap .gaph b{font-weight:600}.gap.ok .gaph b{color:var(--good)}.gap.near .gaph b{color:#8A6D00}.gap.up .gaph b{color:var(--muted)}
 .gap .q{display:inline-block;border:1px dashed #C9C2B4;border-radius:999px;padding:0 6px;color:var(--muted);font-size:10.5px;margin-left:2px;cursor:help}
-#pipeTable .po{max-width:200px}
+#pipeTable .po{max-width:170px;min-width:100px}
+#pipeTable .pot{white-space:normal}
 #pipeTable .pot{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:#1F4D38;background:linear-gradient(180deg,#EAF4EE,#E0EEE5);border-left:3px solid var(--good);border-radius:6px;padding:4px 8px;line-height:1.3;cursor:help;box-shadow:0 1px 0 #fff inset}
 #pipeTable .pot.warn{color:var(--warn);background:#FFF6F3;border-left-color:var(--warn)}#pipeTable .pot.flat{color:var(--muted);background:#fff;border:1px solid var(--line);border-left-width:3px}
 #pipeTable .pa{white-space:nowrap;text-align:right;width:36px;position:relative}
@@ -688,6 +701,27 @@ body.nmc-enter svg.chart circle{animation:nmc-tagpop .4s cubic-bezier(.2,.9,.3,1
 .dens button{all:unset;cursor:pointer;font-size:11.5px;padding:2px 10px;border-radius:999px;color:var(--muted)}.dens button.on{background:var(--cream);color:var(--brand);font-weight:600}
 body.nmc-enter #pipeTable tr.grp{animation:none}
 #pipeTable .pe .gap .new{color:var(--good)}
+/* compact: more rows on screen, less chrome everywhere on the pipeline */
+#pipeTable table.data.dense td{padding:4px 8px}
+#pipeTable table.data.dense .pc-name{font-size:13px}#pipeTable table.data.dense .pc-meta{margin-top:2px}#pipeTable table.data.dense .pc-chip{font-size:11px;padding:0 7px}
+#pipeTable table.data.dense .pc-serv,#pipeTable table.data.dense .ps .psm,#pipeTable table.data.dense .pl .pl2,#pipeTable table.data.dense .pf .pfr,#pipeTable table.data.dense .gap .gaph{max-height:0;opacity:0;overflow:hidden;margin-top:0;transition:max-height .22s var(--nmc-ease),opacity .18s ease,margin .22s var(--nmc-ease)}
+#pipeTable table.data.dense tbody tr:hover .pc-serv,#pipeTable table.data.dense tbody tr:hover .ps .psm,#pipeTable table.data.dense tbody tr:hover .pl .pl2,#pipeTable table.data.dense tbody tr:hover .pf .pfr,#pipeTable table.data.dense tbody tr:hover .gap .gaph{max-height:48px;opacity:1}
+#pipeTable table.data.dense tbody tr:hover .pc-serv{margin-top:3px}#pipeTable table.data.dense tbody tr:hover .ps .psm{margin-top:4px}#pipeTable table.data.dense tbody tr:hover .pl .pl2{margin-top:2px}#pipeTable table.data.dense tbody tr:hover .pf .pfr{margin-top:1px}
+#pipeTable table.data.dense .pc-meta .pc-chip:nth-child(2){max-width:0;padding-left:0;padding-right:0;border-color:transparent;opacity:0;transition:max-width .25s var(--nmc-ease),opacity .18s ease,padding .25s var(--nmc-ease)}
+#pipeTable table.data.dense tbody tr:hover .pc-meta .pc-chip:nth-child(2){max-width:170px;padding-left:7px;padding-right:7px;border-color:var(--line);opacity:1}
+#pipeTable table.data.dense tbody tr:hover .pot{white-space:normal;max-width:none}
+#pipeTable table.data.dense tbody tr{transition:background .12s}
+#pipeTable table.data.dense .pl .pl1{font-size:13px}#pipeTable table.data.dense .pf .pfd{font-size:12.5px}
+#pipeTable table.data.dense .gap .gapl{font-size:12px}#pipeTable table.data.dense .gap .gapbar{height:4px;margin:3px 0 0}
+#pipeTable table.data.dense .pot{font-size:11px;padding:2px 7px;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis;display:inline-block}
+#pipeTable table.data.dense tr.grp td{padding:10px 8px 2px!important}
+#pipeTable table.data.dense .pf .pfq{margin-top:2px}#pipeTable table.data.dense .fuq .btn{min-height:20px;width:22px;font-size:11px}
+#pipeTable table.data.dense .pa .qa{bottom:4px}
+body.pipe-dense #pipeTop .btn{min-height:26px;font-size:11.5px;padding:0 9px}body.pipe-dense #pipeTop .btn .cnt{font-size:10px;padding:0 5px}
+body.pipe-dense #pipeTop{gap:4px}
+body.pipe-dense .atile{padding:4px 10px 4px 8px;gap:8px}body.pipe-dense .atile .an{font-size:17px}body.pipe-dense .atile .al{font-size:11.5px}body.pipe-dense .atile .al .as{display:none}
+body.pipe-dense #s-pipeline input[type=search],body.pipe-dense #s-pipeline input[type=text],body.pipe-dense #s-pipeline select{min-height:32px;font-size:13px}
+body.pipe-dense #pipeTable table.data th{padding:6px 8px;font-size:10.5px}
 /* ---------- My desk ---------- */
 .stat{background:#fff;border:1px solid var(--line);border-left:3px solid var(--brand);border-radius:10px;box-shadow:0 1px 2px rgba(52,55,64,.04),0 10px 24px -16px rgba(52,55,64,.25)}
 .stat .v,.stat b{font-family:var(--serif)}
@@ -1534,7 +1568,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.15.0";
+const TOOLKIT_VERSION = "1.15.1";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2219,7 +2253,7 @@ function pipeFollow(c){ if(!c.followUp) return {k:"",date:"",time:"",rel:""}; co
 /* how far today's rate for their tier sits below their rate, against the eligibility drop. VA clients measure against the
    rate desk tier; anyone else against the market feed when there is one. */
 function rateGapHTML(c){ if(!(c.rate>0)||c.freeClear||c.quick) return ""; let tr=null, label="", assumed=false;
-  if(/\bVA\b/i.test(c.loanType||"")){ const r=rdRateFor(c); if(r&&r.rate>0){ tr=r.rate; label=RD_TIER_LABEL[r.tier]||r.tier; assumed=!!r.assumed; } }
+  if(/\bVA\b/i.test(c.loanType||"")){ const r=rdRateFor(c); if(r&&r.rate>0){ tr=r.rate; label=r.tier==="<580"?"under 580":(RD_TIER_LABEL[r.tier]||r.tier); assumed=!!r.assumed; } }
   if(tr==null){ const f=feedRateFor(c); if(f>0){ tr=f; label="market"; } }
   if(tr==null) return "";
   const need=+state.settings.rdDrop||0.5; const drop=c.rate-tr; const span=Math.max(need*2,1); const fill=Math.max(0,Math.min(100,drop/span*100)); const thr=Math.min(95,need/span*100);
@@ -2236,7 +2270,7 @@ function pipeRowClick(ev,id){ if(ev.target.closest("button,a,.pc-chip,input,sele
 async function copyChip(ev){ ev.stopPropagation(); const el=ev.currentTarget; const v=el.dataset.copy||""; if(!v) return; try{ await navigator.clipboard.writeText(v); }catch(e){ const ta=document.createElement("textarea"); ta.value=v; document.body.appendChild(ta); ta.select(); try{ document.execCommand("copy"); }catch(e2){} ta.remove(); }
   if(el.classList.contains("pc-chip")){ const h=el.innerHTML; el.classList.add("copied"); el.innerHTML=NMC.icon("check")+"Copied"; setTimeout(()=>{ el.classList.remove("copied"); el.innerHTML=h; },1000); } else toast("Copied "+v); }
 function pipeDensity(v){ state.settings.pipeDense=!!v; save(); renderPipeline(); }
-function renderPipeline(){ const today=todayStr();
+function renderPipeline(){ const today=todayStr(); document.body.classList.toggle("pipe-dense",!!state.settings.pipeDense);
   const filt=$("pipeFilter"); if(filt.options.length<=1)
     STATUSES.forEach(s=>{const o=document.createElement("option");o.textContent=s;filt.appendChild(o);});
   const al=pipeAlerts();
@@ -2254,9 +2288,15 @@ function renderPipeline(){ const today=todayStr();
     .sort((a,b)=>{ if(pipeSort.key){ const va=sortVal(a,pipeSort.key), vb=sortVal(b,pipeSort.key); const cmp = typeof va==="number"&&typeof vb==="number" ? va-vb : String(va).localeCompare(String(vb)); return pipeSort.dir*cmp; }
       return pipeView==="ratewatch" ? (rateDrop(a)??9)-(rateDrop(b)??9) : pipeView==="season" ? seasonDays(a)-seasonDays(b) : (pipeView==="eligible"||pipeView==="elignow") ? String(b.eligibleSince||"").localeCompare(String(a.eligibleSince||"")) : 0; });
   pipeRowsShown=rows;
-  const bar=(al.hot.length||al.due.length)?`<div class="hotbar live" style="background:var(--cream);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.8">\uD83D\uDD14 ${al.hot.length?`<b>${al.hot.length} hot right now:</b> ${al.hot.map(c=>`<a href="#" onclick="pickClient('${c.id}');go('analysis');return false" style="color:var(--brand);font-weight:600">${esc(c.name)}</a>`).join(", ")}. `:""}${al.due.length?`<b>${al.due.length} follow-up${al.due.length===1?"":"s"} due:</b> ${al.due.map(c=>`<a href="#" onclick="pickClient('${c.id}');go('client');return false" style="color:var(--ink)">${esc(c.name)}</a>`).join(", ")}.`:""}</div>`:"";
-  const seasonBar = al.season.length && pipeView!=="season" ? `<div class="hotbar" style="background:var(--cream);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.8">\uD83D\uDCC5 <b>Seasoning:</b> ${al.season.map(c=>{ const n=seasonDays(c); return `<a href="#" onclick="pickClient('${c.id}');go('client');return false" style="color:var(--brand);font-weight:600">${esc(c.name)}</a> <span class="hint">(${n<=0?"eligible now":"in "+n+" day"+(n===1?"":"s")})</span>`; }).join(", ")} \u2014 <a href="#" onclick="setPipeView('season');return false">view</a></div>` : "";
-  const futBar = al.futureDue.length && pipeView!=="future" ? `<div class="hotbar" style="background:var(--cream);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px;line-height:1.8">\uD83C\uDFE1 <b>Future buyers:</b> ${al.futureDue.map(c=>{ const n=futureDays(c); return `<a href="#" onclick="pickClient('${c.id}');go('client');return false" style="color:var(--brand);font-weight:600">${esc(c.name)}</a> <span class="hint">(${n<=0?"window open":"in "+n+" day"+(n===1?"":"s")}${c.futureProduct?" \u00b7 "+esc(c.futureProduct):""})</span>`; }).join(", ")} \u2014 <a href="#" onclick="setPipeView('future');return false">view</a></div>` : "";
+  /* alert tiles: a count and a click, not a list of names (the groups below already name everyone) */
+  const tile=(view,icon,n,label,sub,cls)=> n>0&&pipeView!==view ? `<button type="button" class="atile ${cls||""}" onclick="setPipeView('${view}')"><span class="an">${n}</span><span class="al">${icon}${label}${sub?`<span class="as">${sub}</span>`:""}</span><span class="ag">\u203A</span></button>` : "";
+  const overdueN=al.due.filter(c=>c.followUp&&c.followUp<today).length;
+  const tiles=[ tile("due","\uD83D\uDD52 ",al.due.length,al.due.length===1?"follow-up due":"follow-ups due",overdueN?overdueN+" overdue":"today","now"),
+    tile("hot","\uD83D\uDD25 ",al.hot.length,al.hot.length===1?"hot right now":"hot right now","rates moved in their favor","hot"),
+    rdTiers()?tile("eligible","\u2728 ",rdWeekIds().length,"newly eligible","this week","fresh"):"",
+    tile("season","\uD83D\uDCC5 ",al.season.length,"seasoning",al.season.some(c=>seasonDays(c)<=0)?"some eligible now":"coming up",""),
+    tile("future","\uD83C\uDFE1 ",al.futureDue.length,al.futureDue.length===1?"future buyer":"future buyers","window opening","") ].filter(Boolean);
+  const bar=tiles.length?`<div class="atiles">${tiles.join("")}</div>`:""; const seasonBar="", futBar="";
   const rwBar = pipeView==="ratewatch" ? `<div class="btnrow hotbar" style="background:var(--cream);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px"><span>\u23F3 <b>${al.ratewatch.length}</b> waiting on a rate drop, smallest drop first \u2014 paste this list to capital markets when the market moves.</span><span style="flex:1"></span><button class="btn small" onclick="copyRateWatch()">Copy list</button></div>` : "";
   const inbox=(state.inbox||[]);
   const ib = inbox.length? `<div style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px">
@@ -2278,7 +2318,7 @@ function renderPipeline(){ const today=todayStr();
     <td class="pl">${c.freeClear?`<div class="pl1"><span class="typ">${esc(c.loanType||"")}</span><span class="tag-good">free &amp; clear</span></div>`:`<div class="pl1"><span class="typ">${esc(pipeType(c.loanType))}</span><b>${c.balance>0?money(c.balance):"\u2014"}</b></div><div class="pl2">${c.rate>0?`<em>${pct(c.rate)}</em>`:"rate \u2014"} \u00b7 ${c.payment>0?`<em>${money(c.payment)}</em>/mo`:"P&amp;I \u2014"}</div>`}${isFuture(c)&&c.futureProduct?`<div class="pl2">\u2192 ${esc(c.futureProduct)}</div>`:""}</td>
     <td class="pf ${fu.k}">${fu.date?`<div class="pfd"><span class="fud">${fu.date}${fu.time?" \u00b7 "+fu.time:""}</span>${cal==="on"?` <span class="pfc" title="On your Outlook calendar">${NMC.icon("calendar")}</span>`:cal==="moved"?` <span class="pfc moved" title="Follow-up moved since it went on your calendar \u2014 re-add it">${NMC.icon("calendar")}</span>`:""}</div><div class="pfr">${fu.rel}</div>${(ds.has(c.id)||(fuPending&&fuPending.id===c.id))?`<div class="pfq${fuPending&&fuPending.id===c.id?" stay":""}">${fuButtons(c,true)}</div>`:""}`:`<span class="hint">\u2014</span>`}</td>
     ${rdTiers()?`<td class="pe">${rateGapHTML(c)}</td>`:""}
-    <td class="po">${op?pipeOppHTML(op):""}</td>
+    <td class="po">${op&&!(fu.k&&/follow-up due/i.test(op.txt))?pipeOppHTML(op):""}</td>
     <td class="pa"><span class="qa">${c.phone?`<button type="button" title="Copy phone" data-copy="${esc(c.phone)}" onclick="copyChip(event)">${NMC.icon("phone")}</button>`:""}<button type="button" title="Follow-up texts & emails" onclick="event.stopPropagation();pickClient('${c.id}');go('client');playOpen('follow')">${NMC.icon("chat")}</button><button type="button" title="Presentation" onclick="event.stopPropagation();pickClient('${c.id}');go('present')">${NMC.icon("present")}</button></span><span class="go" title="Open">\u203A</span></td></tr>`;}).join("")+`</tbody></table>`);
 }
 
