@@ -1085,7 +1085,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.13.15";
+const TOOLKIT_VERSION = "1.13.16";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -3112,7 +3112,7 @@ function emailRenderHTML(parts, imgSrc){ const hl=x=>emLinks(esc(String(x))).rep
     if(p.t==="brand"){ const st=state.settings; return emRow(emTable(`<tr><td valign="top">${emF(esc(st.co||"Neighborhood Mortgage Company"),{serif:true,px:22})}<br>${emF(esc(st.tag||""),{px:12,color:"#5C616E"})}</td><td valign="top" align="right">${emF(esc(st.loName||"")+(st.loNmls?" \u00b7 NMLS #"+esc(st.loNmls):"")+"<br>"+esc(st.loPhone||"")+(st.loPhone&&st.loEmail?" \u00b7 ":"")+esc(st.loEmail||"")+"<br>"+esc(p.x||""),{px:12,color:"#444444",lh:1.5})}</td></tr><tr><td colspan="2" height="3" bgcolor="#26262E" style="background-color:#26262E;height:3px;font-size:3px;line-height:3px">&nbsp;</td></tr>`))+emGap(10); }
     if(p.t==="kv") return emRow(`<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid #E2DCCF">${p.x.map((r,i)=>`<tr><td bgcolor="${i%2?"#FFFFFF":"#FBF8F2"}" style="padding:8px 12px;border-bottom:1px solid #EFEAE0">${emF(hl(r[0]),{px:13,color:"#5C616E"})}</td><td bgcolor="${i%2?"#FFFFFF":"#FBF8F2"}" align="right" style="padding:8px 12px;border-bottom:1px solid #EFEAE0;white-space:nowrap">${emF(hl(r[1]),r[2]?{serif:true,px:20,color:"#A53222",b:true}:{px:15,b:true})}</td></tr>`).join("")}</table>`)+emGap(10);
     if(p.t==="note") return emRow(emF(hl(p.x),{px:11.5,color:"#5C616E",lh:1.5}))+emGap(6);
-    if(p.t==="tchart"){ const cell=(x,o)=>`<td align="${o.align||"right"}" bgcolor="${o.bg||"#FFFFFF"}" style="background-color:${o.bg||"#FFFFFF"};padding:8px 12px;border-bottom:1px solid #EFEAE0;white-space:nowrap${o.left?";border-left:2px solid #2E6B4F":""}">${x}</td>`;
+    if(p.t==="tchart"){ const cell=(x,o)=>`<td align="${o.align||"right"}" bgcolor="${o.bg||"#FFFFFF"}" style="background-color:${o.bg||"#FFFFFF"};padding:8px 12px;border-bottom:1px solid #EFEAE0${o.align==="left"?"":";white-space:nowrap"}${o.left?";border-left:2px solid #2E6B4F":""}">${x}</td>`;
       const head=`<tr><td style="padding:6px 12px"></td><td align="right" bgcolor="#FBECE9" style="background-color:#FBECE9;padding:7px 12px">${emF("TODAY",{px:11,b:true,color:"#A53222"})}</td><td align="right" bgcolor="#E3F1E7" style="background-color:#E3F1E7;padding:7px 12px;border-left:2px solid #2E6B4F">${emF("NEW",{px:11,b:true,color:"#2E6B4F"})}</td></tr>`;
       const rows=p.x.rows.map(r=>`<tr>${cell(emF(hl(r[0]),{px:13,color:"#5C616E"}),{align:"left"})}${cell(emF(hl(r[1]),{px:14}),{})}${cell(emF(hl(r[2]),{px:14,b:true}),{left:true})}</tr>`).join("");
       const tot=p.x.total?`<tr>${cell(emF(hl(p.x.total[0]),{px:13,b:true}),{align:"left",bg:"#FBF8F2"})}${cell(emF(hl(p.x.total[1]),{serif:true,px:20,color:"#A53222"}),{bg:"#FBF8F2"})}${cell(emF(hl(p.x.total[2]),{serif:true,px:20,color:"#2E6B4F",b:true}),{bg:"#FBF8F2",left:true})}</tr>`:"";
@@ -4890,15 +4890,16 @@ function presentTchartPart(c){ const p=presentState(c); const d=p.d; if(!d) retu
   if(second){ rows.push(["Rate on the debts", n&&r.blended!=null?pct(r.blended):"\u2014", "\u00ab"+pct(d.rate)+"\u00bb on the new "+secName]);
     if(n) rows.push([n===1?(debts[0].name||"Debt"):n+" debts", money(r.dBal)+" \u00b7 "+money(r.dPay)+"/mo", "Paid off \u00b7 $0"]);
     rows.push(["New "+secName, "\u2014", money(r.newP)+" \u00b7 "+money(r.newPay)+"/mo"]);
-    if(!d.hideFirst) rows.push(["First mortgage", money(m.balance||0)+(m.rate>0?" at "+pct(m.rate):""), "Stays exactly as is"]); }
+    if(!d.hideFirst) rows.push(["First mortgage", money(m.balance||0)+(m.rate>0?" at "+pct(m.rate):"")+(m.payment>0?" \u00b7 "+money(m.payment)+"/mo":""), "Stays \u00b7 "+(m.payment>0?money(m.payment)+"/mo":"as is")]); }
   else { rows.push(["Rate", m.rate>0?pct(m.rate):"\u2014", "\u00ab"+pct(d.rate)+"\u00bb"]);
     if(showDebts&&n&&r.blended!=null) rows.push(["Blended rate (mortgage + debts)", pct(r.blended), "\u00ab"+pct(d.rate)+"\u00bb on everything"]);
     rows.push(["Loan", money(m.balance||0), money(r.newP)]);
     if(showDebts&&n) rows.push([n===1?(debts[0].name||"Debt"):n+" debts", money(r.dBal)+" \u00b7 "+money(r.dPay)+"/mo", "Paid off \u00b7 $0"]); }
   const cash=presentCash(d); if(cash.total>0) rows.push(["Cash to you at closing", "\u2014", "\u00ab"+money(cash.total)+"\u00bb"]);
   if(r.skipCash>0&&p.ben&&p.ben.skip) rows.push(["Payments skipped at closing", "\u2014", r.skipN+" (about "+money(r.skipCash)+")"]);
-  const newOut=r.newPay;   /* same basis as the T-chart: a second lien compares the debts’ payments against the new loan’s */
-  return {t:"tchart",x:{rows, total:["Going out each month", money(r.outlayNow), "\u00ab"+money(newOut)+"\u00bb"], band:r.saveMo>0?"You keep "+money(r.saveMo)+" every month":(cash.total>0?money(cash.total)+" to you at closing":"")}}; }
+  /* when the first mortgage is in the picture, both sides carry its payment: today = mortgage + debts, new = mortgage + new loan; the saving is the same either way */
+  const firstPay=second&&!d.hideFirst&&m.payment>0?m.payment:0; const todayOut=second?firstPay+(r.dPay||0):r.outlayNow; const newOut=second?firstPay+r.newPay:r.newPay;
+  return {t:"tchart",x:{rows, total:["Going out each month", money(todayOut), "\u00ab"+money(newOut)+"\u00bb"], band:r.saveMo>0?"You keep "+money(r.saveMo)+" every month":(cash.total>0?money(cash.total)+" to you at closing":"")}}; }
 function showDebtsFor(d){ if(!d) return false; const second=d.lien==="second"; const stream=d.program==="fha_streamline"||d.program==="va_irrrl"; return (d.roll==="yes"&&!second&&!stream)||second; }
 function presentEmailParts(c, opts){ opts=opts||{}; if(opts.chart==null) opts.chart=false; const s=state.settings; const p=presentState(c); const r=presentCalc(c); const first=c.name?c.name.split(/[ ,&]/)[0]:"there"; const real=!!(c.analysis&&c.analysis.anReal); const when=new Date().toLocaleDateString("en-US",{month:"long",day:"numeric"});
   const bens=PRESENT_BENEFITS.filter(([k])=>p.ben&&p.ben[k]&&k!=="skip"&&k!=="cash").map(([k,l])=>l).concat(Object.keys(p.ben||{}).filter(k=>k.startsWith("c:")&&p.ben[k]).map(k=>k.slice(2)));
