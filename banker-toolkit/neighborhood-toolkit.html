@@ -386,12 +386,14 @@ body.present-mode #playTabs{display:none}
 body.play-open #playDrawer{display:flex}#playDrawer .phead{padding:10px 16px 8px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center}
 #playDrawer .pgrip{height:14px;flex:0 0 14px;cursor:ns-resize;display:flex;align-items:center;justify-content:center;background:var(--cream-soft);border-radius:0 0 14px 14px;border-top:1px solid var(--line)}#playDrawer .pgrip::before{content:"";width:46px;height:4px;border-radius:4px;background:#C9C2B4}#playDrawer .pgrip:hover::before{background:var(--brand)}
 #playDrawer .pbody{columns:2;column-gap:14px}#playDrawer .pcat,#playDrawer .pitem{break-inside:avoid}#playDrawer input[type=search]{column-span:all}#playDrawer .pbody>.hint{column-span:all}
+#playDrawer .pbody.list{columns:auto}#playDrawer .pbody.list .pgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:6px 10px;align-items:start}#playDrawer .pbody.list .pgrid .pitem{border:1px solid var(--line);border-radius:10px;background:#fff}#playDrawer .pbody.list .pcat{display:contents}#playDrawer .pbody.list .pitems{display:contents}
 @media (max-width:1000px){#playDrawer .pbody{columns:1}}@media (max-width:760px){#playDrawer{left:0;margin:0 8px}}
 #playDrawer .phead h2{font-family:var(--serif);font-size:19px;font-weight:400;margin:0;flex:1}#playDrawer .pbody{overflow:auto;padding:8px 12px 24px;flex:1}
 #playDrawer .pcat{border:1px solid var(--line);border-radius:10px;margin-bottom:8px;background:#fff;overflow:hidden}#playDrawer .pcat>.ph{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:pointer;font-weight:600;font-size:13.5px;user-select:none}
 #playDrawer .pcat>.ph:hover{background:var(--cream-soft)}#playDrawer .pcat>.ph .n{color:var(--muted);font-weight:400;font-size:12px}#playDrawer .pcat>.ph .tgl{margin-left:auto;color:var(--muted);font-size:12px;transition:transform .15s}
 #playDrawer .pcat.open>.ph .tgl{transform:rotate(90deg)}#playDrawer .pcat>.pitems{display:none;border-top:1px solid var(--line)}#playDrawer .pcat.open>.pitems{display:block}
-#playDrawer .pitem{padding:9px 12px;border-bottom:1px dashed #EFEAE0}#playDrawer .pitem:last-child{border-bottom:0}#playDrawer .pitem .pt{display:flex;gap:8px;align-items:baseline;cursor:pointer}
+#playDrawer .pitem{padding:9px 12px;border-bottom:1px dashed #EFEAE0}#playDrawer .pitem:last-child{border-bottom:0}#playDrawer .pitem .pt{display:flex;gap:8px;align-items:baseline;cursor:pointer}#playDrawer .pitem .pt::before{content:"\25B8";color:var(--brand);font-size:11px;flex:0 0 auto;transition:transform .12s}#playDrawer .pitem.open .pt::before{transform:rotate(90deg)}#playDrawer .pitem .pt:hover b{color:var(--brand)}
+#playDrawer .pitem .pmv{display:inline-flex;gap:2px;margin-left:auto}#playDrawer .pitem .pmv button{all:unset;cursor:pointer;color:#B5AE9F;font-size:11px;padding:0 3px;line-height:1}#playDrawer .pitem .pmv button:hover{color:var(--brand)}#playDrawer .pitem .pmv button[disabled]{opacity:.3;cursor:default}
 #playDrawer .pitem .pt b{font-size:13.5px;flex:1}#playDrawer .pitem .pu{font-size:12px;color:var(--muted);margin-top:2px}#playDrawer .pitem .pb{display:none;font-size:13px;white-space:pre-wrap;margin-top:8px;line-height:1.5;background:var(--cream-soft);border-radius:8px;padding:8px 10px}
 #playDrawer .pitem.open .pb{display:block}#playDrawer .pitem .objflow{margin-top:8px;grid-template-columns:1fr;gap:6px}#playDrawer .pitem .objbox .objt{font-size:13px}
 #playDrawer input[type=search]{margin:10px 0 8px}
@@ -924,7 +926,7 @@ Discover 6,100 190 24.9"></textarea>
         <div class="hint" style="margin-bottom:8px">Your own intros, texts and emails — they show up in the Playbook on every page.</div>
         <div class="btnrow" style="margin-bottom:10px">
           <button class="btn" onclick="addTemplate('intro')">+ Intro script</button>
-          <button class="btn ghost" onclick="addTemplate('intro','open')">+ Opening objection</button>
+          <button class="btn ghost" onclick="addTemplate('intro','open')">+ Initial objection</button>
           <button class="btn ghost" onclick="addTemplate('text','follow')">+ Follow-up text</button>
           <button class="btn ghost" onclick="addTemplate('email','follow')">+ Follow-up email</button>
         </div>
@@ -1082,7 +1084,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.13.0";
+const TOOLKIT_VERSION = "1.13.2";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1137,7 +1139,7 @@ function fuNext(id,when,time){ const c=state.clients.find(x=>x.id===id); if(!c) 
   c.followUp=when||""; c.followUpTime=time||""; if(c.log&&c.log[0]&&!c.log[0].next) c.log[0].next=when||"none";
   if(when&&c.status!=="Needs follow-up"&&!isDone(c)) c.status="Needs follow-up";
   fuPending=null; save(); refreshAll(); toast(when?"Next follow-up "+when+(time?" "+time:""):"No further follow-up set"); }
-function fuNextPick(id){ const d=prompt("Next follow-up date (YYYY-MM-DD)", fuAddDays(1)); if(d&&/^\d{4}-\d{2}-\d{2}$/.test(d)) fuNext(id,d,""); }
+async function fuNextPick(id){ const d=await askText("Next follow-up date", "", fuAddDays(1), {type:"date",ok:"Set it"}); if(d&&/^\d{4}-\d{2}-\d{2}$/.test(d)) fuNext(id,d,""); }
 function fuNextChips(c){ const id=c.id; const chip=(l,fn)=>`<button class="chip" onclick="${fn}">${l}</button>`;
   return `<span class="hint">Next:</span> ${chip("Tomorrow",`fuNext('${id}','${fuAddDays(1)}','')`)}${chip("3 days",`fuNext('${id}','${fuAddDays(3)}','')`)}${chip("1 week",`fuNext('${id}','${fuAddDays(7)}','')`)}${chip("Pick a date",`fuNextPick('${id}')`)}${chip("None",`fuNext('${id}','','')`)}`; }
 function fuButtons(c,compact){ const id=c.id; const b=(l,o,cls)=>`<button class="btn ${cls||"ghost "}small" onclick="fuClose('${id}','${o}')">${l}</button>`;
@@ -1668,7 +1670,7 @@ function rateWatchText(){ const L=rateWatchList(); if(!L.length) return "";
   return `Rate watch \u2014 ${L.length} client${L.length===1?"":"s"} waiting on a drop (${new Date().toLocaleDateString("en-US")})\n`+L.map(c=>{ const d=rateDrop(c);
     return `\u2022 ${c.name}: ${c.loanType}${c.balance?", "+money(c.balance):""}${c.rate?", now "+pct(c.rate):""} \u2192 needs ${pct(c.targetRate)}${d!=null?" ("+d.toFixed(3).replace(/0+$/,"").replace(/\.$/,"")+" lower)":""}${c.seasonDate?", seasoned "+c.seasonDate:""}`; }).join("\n"); }
 function copyRateWatch(){ const t=rateWatchText(); if(!t){ toast("No one is on rate watch"); return; }
-  (navigator.clipboard&&navigator.clipboard.writeText ? navigator.clipboard.writeText(t) : Promise.reject()).then(()=>toast("Rate-watch list copied"),()=>prompt("Copy this:",t)); }
+  (navigator.clipboard&&navigator.clipboard.writeText ? navigator.clipboard.writeText(t) : Promise.reject()).then(()=>toast("Rate-watch list copied"),()=>askText("Copy this", "Clipboard access was blocked \u2014 select and copy it here.", t, {multi:true,ok:"Done"})); }
 function opportunity(c){ const fr=feedRateFor(c);
   if(targetHit(c)) return {tag:"tag-good", txt:"Rate alert hit \u2014 feed "+pct(fr)+" \u2264 target "+pct(c.targetRate)};
   if(onRateWatch(c) && fr==null){ const d=rateDrop(c); return {tag:"tag-flat", txt:"\u23F3 Waiting for "+pct(c.targetRate)+(d!=null?" \u2014 "+pct(d)+" below their rate":"")}; }
@@ -3213,11 +3215,16 @@ async function emailDraftEML(kind, snapId, variant){ const c=cur(); const snap=s
   const html = snap ? snap.html : (kind==="compare" ? compareHTML() : proposalHTML()); if(html.includes('class="empty"')){ toast(kind==="compare"?"Add at least two complete scenarios first":"Finish the analysis first"); return; }
   const r=c&&!snap&&computeAnalysis(c); const title=snap?snap.title:sheetTitle(kind,c,r); if(!snap&&c) libraryAdd(kind, html, title);
   const marks=(!snap&&c&&c.prop&&c.prop.marks)||[]; const {html:emailHtml, text}=emailProposalMessage(c, r&&!r.tooSmall?r:null, kind, variant, html, marks);
-  const to=emailAskFor(c); const subject=emailSubjectFor(c, r&&!r.tooSmall?r:null, kind, variant, title);
+  const to=await emailAskFor(c); const subject=emailSubjectFor(c, r&&!r.tooSmall?r:null, kind, variant, title);
   if(c){ const e=snap||c.library[0]; if(e&&!e.sent) libSent(e.id,"email"); }
   await openEmlDraft(to, subject, emailHtml, text, hlCountNote(marks)); }
 /* no address on file: ask once, save it to the client, and use it — or leave it blank and fill the To line in the mail app */
-function emailAskFor(c){ if(!c||(c.email||"").trim()) return c?c.email.trim():""; const v=prompt("No email address on file for "+c.name+".\n\nType it to save it to the client and use it here \u2014 or leave blank and fill in the To line in your mail app.",""); const e=(v||"").trim(); if(e&&/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){ c.email=e; save(); refreshAll(); return e; } if(e) toast("That didn\u2019t look like an email address \u2014 the draft opens with To blank"); return ""; }
+/* askText: the toolkit's own prompt. window.prompt() does not exist in the desktop app (Electron throws), so every question goes through this. Resolves to the string, or null on Cancel. */
+function askText(title, hint, def, opts){ opts=opts||{}; return new Promise(res=>{ const old=$("askBox"); if(old) old.remove(); const box=document.createElement("div"); box.id="askBox"; box.style.cssText="position:fixed;inset:0;background:rgba(35,36,43,.45);z-index:9600;display:flex;align-items:center;justify-content:center";
+  box.innerHTML=`<div style="background:#fff;border-radius:14px;padding:18px 20px;width:460px;max-width:92vw;box-shadow:0 10px 30px rgba(0,0,0,.2)"><div style="font-family:var(--serif);font-size:18px;margin-bottom:6px">${esc(title)}</div>${hint?`<div class="hint" style="margin:0 0 10px">${hint}</div>`:""}${opts.multi?`<textarea id="askVal" style="min-height:70px;font-family:inherit">${esc(def||"")}</textarea>`:`<input type="${opts.type||"text"}" id="askVal" value="${esc(def||"")}" placeholder="${esc(opts.placeholder||"")}">`}<div class="btnrow" style="margin-top:12px;justify-content:flex-end"><button class="btn ghost small" id="askNo">${esc(opts.cancel||"Cancel")}</button><button class="btn small" id="askOk">${esc(opts.ok||"OK")}</button></div></div>`;
+  const done=v=>{ box.remove(); res(v); }; box.querySelector("#askOk").onclick=()=>done(box.querySelector("#askVal").value); box.querySelector("#askNo").onclick=()=>done(null); box.addEventListener("click",e=>{ if(e.target===box) done(null); });
+  box.addEventListener("keydown",e=>{ if(e.key==="Enter"&&!opts.multi){ e.preventDefault(); done(box.querySelector("#askVal").value); } if(e.key==="Escape") done(null); }); document.body.appendChild(box); setTimeout(()=>{ const i=box.querySelector("#askVal"); if(i){ i.focus(); if(i.select) i.select(); } },20); }); }
+async function emailAskFor(c){ if(!c||(c.email||"").trim()) return c?c.email.trim():""; const v=await askText("No email on file for "+c.name, "Type it to save it to the client and use it here \u2014 or leave it blank and fill in the To line in your mail app.", "", {type:"email",placeholder:"name@example.com",ok:"Use it",cancel:"Leave blank"}); const e=(v||"").trim(); if(e&&/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e)){ c.email=e; save(); refreshAll(); return e; } if(e) toast("That didn\u2019t look like an email address \u2014 the draft opens with To blank"); return ""; }
 async function openEmlDraft(to, subject, html, text, note){ const eml=buildEML(to, subject, html, text); const name=(subject.replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"")||"email")+".eml";
   if(window.nmcDesktop&&window.nmcDesktop.openDraft){ const ok=await window.nmcDesktop.openDraft(name, eml); toast(ok?"Draft opened in your mail app"+(to?" to "+to:" \u2014 To is blank, add the address there")+" \u00b7 it\u2019s the formatted email itself, nothing to paste"+(note||""):"Couldn\u2019t open the draft \u2014 the .eml was saved to your temp folder"); return; }
   const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([eml],{type:"message/rfc822"})); a.download=name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
@@ -3244,7 +3251,7 @@ function textFor(c,r,kind,variant){ const s=state.settings; const first=c&&c.nam
     return `Hi ${first}, ${who}. Here\u2019s the ${what} I put together for you:\n${lines.join("\n")}\n\u2022 No out-of-pocket costs, no prepayment penalty\n${docs}\n${tail}`; }
   return `Hi ${first}, ${me}. I just emailed you the ${what} I put together for you${colon} Take a look when you get a minute — reply here${phone} with any questions.`; }
 async function copyText(kind, variant){ const c=cur(); if(!c){ toast("Pick a client first"); return; } const r=computeAnalysis(c); if(!r||r.tooSmall&&kind!=="compare"){ toast("Finish the analysis first"); return; }
-  const t=textFor(c, r, kind, variant); try{ await navigator.clipboard.writeText(t); toast("Text copied ("+t.length+" characters) — paste it into your texting app"); }catch(e){ prompt("Copy this:", t); } }
+  const t=textFor(c, r, kind, variant); try{ await navigator.clipboard.writeText(t); toast("Text copied ("+t.length+" characters) — paste it into your texting app"); }catch(e){ askText("Copy this text", "Clipboard access was blocked \u2014 select and copy it here.", t, {multi:true,ok:"Done"}); } }
 function textMenu(ev, kind){ ev.preventDefault(); ev.stopPropagation(); const old=$("emailMenu"); if(old){ old.remove(); if(old.dataset.for==="text|"+kind) return; }
   const b=ev.currentTarget||ev.target; const rect=b.getBoundingClientRect(); const m=document.createElement("div"); m.id="emailMenu"; m.dataset.for="text|"+kind;
   const c=cur(); const r=c&&computeAnalysis(c); const prev=(v)=>c&&r&&!r.tooSmall?esc(textFor(c,r,kind,v)):"";
@@ -3290,9 +3297,9 @@ function postCloseParts(c, prod, lenderKey, extra){ const s=state.settings; cons
     {t:"p",x:"That\u2019s it!"},{t:"p",x:`If you have any questions or I can help in any way, just let me know${phone?` \u2014 my direct line is \u00ab${phone}\u00bb (call or text)`:""}. Please reply to this email once you\u2019ve completed the steps, and I\u2019ll take it from there.`},
     {t:"p",x:"Thanks,"},{t:"sig",x:sig}] }; }
 async function postCloseDraft(prod, lenderKey, opts){ const c=cur(); if(!c){ toast("Pick a client first"); return; } opts=opts||{};
-  const extra=prompt("Anything extra to ask for in Step 3? (optional \u2014 e.g. 2025 1099 for pension, SSA benefit letter)","")||"";
+  const extra=(await askText("Anything extra to ask for in Step 3?", "Optional \u2014 e.g. 2025 1099 for pension, SSA benefit letter. Leave blank for the standard list.", "", {placeholder:"extra documents, comma-separated",ok:"Open the draft",cancel:"Skip"}))||"";
   const {subject,parts}=opts.numbers?realQuoteParts(c, prod, lenderKey, extra):postCloseParts(c, prod, lenderKey, extra); const html=emailRenderHTML(parts,null); const text=emailRenderText(parts);
-  await openEmlDraft(emailAskFor(c), subject, html, text, ""); }
+  await openEmlDraft(await emailAskFor(c), subject, html, text, ""); }
 /* The real-quote email: the numbers that were presented (compact, branded), the benefits that were switched on, then the
    post-close next steps. Not a selling piece \u2014 the client already said yes; this is "here is your loan, here is what to do". */
 function realQuoteParts(c, prod, lenderKey, extra){ const s=state.settings; const p=c.present||{}; const d=p.d; const r=d?presentCalc(c):null; const first=c.name?c.name.split(/[ ,&]/)[0]:"there";
@@ -3315,7 +3322,7 @@ function postCloseTextFor(c, prod){ const s=state.settings; const first=c&&c.nam
   const docs = prod==="streamline" ? "your most recent mortgage statement and homeowners insurance declaration page" : "your last 2 years of W-2s, 2 most recent pay stubs, mortgage statement and homeowners insurance declaration page";
   const why = prod==="streamline" ? "so we close in 30 days or less and you skip 2 payments" : "so the loan closes quickly";
   return `Hi ${first}, it\u2019s ${lo} with Neighborhood Mortgage \u2014 congrats! I just emailed your next steps: set up your account, e-sign the application package, and send me ${docs}. Please knock those out today ${why}. Questions? Call or text me at ${s.loPhone||"my direct line"}.`; }
-async function postCloseText(prod){ const c=cur(); if(!c){ toast("Pick a client first"); return; } const t=postCloseTextFor(c,prod); try{ await navigator.clipboard.writeText(t); toast("Post-close text copied \u2014 paste it into your message"); }catch(e){ prompt("Copy this text:", t); } }
+async function postCloseText(prod){ const c=cur(); if(!c){ toast("Pick a client first"); return; } const t=postCloseTextFor(c,prod); try{ await navigator.clipboard.writeText(t); toast("Post-close text copied \u2014 paste it into your message"); }catch(e){ askText("Copy this text", "Clipboard access was blocked \u2014 select and copy it here.", t, {multi:true,ok:"Done"}); } }
 function sendMenu(ev, kind, snapId, section){ ev.preventDefault(); ev.stopPropagation(); const old=$("emailMenu"); if(old){ old.remove(); if(old.dataset.for==="send|"+kind+"|"+(snapId||"")+"|"+(section||"")) return; }
   const b=ev.currentTarget||ev.target; const rect=b.getBoundingClientRect(); const m=document.createElement("div"); m.id="emailMenu"; m.dataset.for="send|"+kind+"|"+(snapId||"")+"|"+(section||"");
   const sid=snapId?"'"+snapId+"'":"null"; const group=(t)=>`<div class="hint" style="padding:6px 10px 2px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:10.5px">${t}</div>`;
@@ -3605,7 +3612,7 @@ function rdChime(dir){ try{ rdAudio=rdAudio||new (window.AudioContext||window.we
 /* the mailbox: every rate update this toolkit received, with its note and what it meant here; unread = newer than the last time it was opened */
 function rdUnreadCount(){ const H=state.rdHistory||[]; const seen=state.rdInboxSeen||""; return H.filter(h=>!h.first&&String(h.version)>seen).length; }
 document.addEventListener("keydown",e=>{ if(e.key==="Escape"&&document.body.classList.contains("play-open")) playClose(); });
-function renderSideInbox(){ if(document.body.classList.contains("play-open")) renderPlaybook(); const el=$("sideInbox"); if(!el) return; if(!rdTiers()&&!(state.rdHistory||[]).length){ el.innerHTML=""; return; } const n=rdUnreadCount();
+function renderSideInbox(){ if(document.body.classList.contains("play-open")) renderPlaybook(); try{ updateRatePill(); }catch(e){} const el=$("sideInbox"); if(!el) return; if(!rdTiers()&&!(state.rdHistory||[]).length){ el.innerHTML=""; return; } const n=rdUnreadCount();
   el.innerHTML=`<button class="btn ghost small" onclick="rdInbox(event)" title="Rate updates and messages from the rate desk">\uD83D\uDD14 Rate updates${n?` <span style="background:var(--brand);color:#fff;border-radius:10px;font-size:10.5px;padding:1px 7px;line-height:1.4;margin-left:auto">${n} new</span>`:""}</button>`; }
 function rdBellHTML(){ if(!rdTiers()&&!(state.rdHistory||[]).length) return ""; const n=rdUnreadCount(); return `<button class="btn ghost small" onclick="rdInbox(event)" title="Rate updates" style="position:relative;flex:0 0 auto">\uD83D\uDD14${n?`<span style="position:absolute;top:-6px;right:-6px;background:var(--brand);color:#fff;border-radius:10px;font-size:10px;padding:1px 5px;line-height:1.3">${n}</span>`:""}</button>`; }
 function rdInbox(ev){ ev.preventDefault(); ev.stopPropagation(); const old=$("emailMenu"); if(old){ old.remove(); if(old.dataset.for==="rdInbox") return; }
@@ -3968,7 +3975,7 @@ function showBmModal(manual){ const m=$("bmModal"); if(!m) return; const a=$("bm
 function bmDone(){ bmInstalled(); $("bmModal").style.display="none"; toast("Bookmark marked current \u2014 v"+BOOKMARKLET_VERSION); }
 function bmLater(){ $("bmModal").style.display="none"; }
 function bmCopyCode(){ const src=$("sfBmLink"); const code=src?decodeURIComponent(src.getAttribute("href")):""; if(!code) return;
-  (navigator.clipboard&&navigator.clipboard.writeText ? navigator.clipboard.writeText(code) : Promise.reject()).then(()=>toast("Bookmark code copied \u2014 paste it as the bookmark\u2019s URL"),()=>prompt("Copy this:",code)); }
+  (navigator.clipboard&&navigator.clipboard.writeText ? navigator.clipboard.writeText(code) : Promise.reject()).then(()=>toast("Bookmark code copied \u2014 paste it as the bookmark\u2019s URL"),()=>askText("Copy this", "Clipboard access was blocked \u2014 select and copy it here.", code, {multi:true,ok:"Done"})); }
 /* Chrome extension → desktop listener → here: parse like a paste, drop it in the Pipeline inbox, and open the preview */
 function sfIncoming(p){ if(!p||!p.text) return; p.text=scrubSF(p.text); if(p.extVersion) state.extSeen=p.extVersion;
   try{ parseSFText(p.text); }catch(e){ toast("Couldn\u2019t read that Salesforce page"); return; }
@@ -4365,14 +4372,33 @@ function tmplFill(s){ const c=cur(); const st=state.settings;
  const map={"{client_first}":first, "{client}":c?c.name:"[Name]", "{address}":c&&c.address?c.address:"[property address]",
   "{banker}":st.loName||"[your name]", "{banker_first}":bf, "{banker_phone}":st.loPhone||"[your cell]", "{banker_email}":st.loEmail||"[your email]",
   "{banker_nmls}":(st.loNmls||"[your NMLS]").replace(/^#/,""), "{rate}": c&&c.analysis&&c.analysis.anRate? pct(c.analysis.anRate) : "[rate]"};
- return String(s||"").replace(/\{client_first\}|\{client\}|\{address\}|\{banker_phone\}|\{banker_email\}|\{banker_nmls\}|\{banker_first\}|\{banker\}|\{rate\}/g, m=>map[m]);
+ return tmplSmart(String(s||"").replace(/\{client_first\}|\{client\}|\{address\}|\{banker_phone\}|\{banker_email\}|\{banker_nmls\}|\{banker_first\}|\{banker\}|\{rate\}/g, m=>map[m]), c);
 }
+/* The [X] / [Y] placeholders fill from the client when the number is known; what the toolkit can't know stays bracketed for a hand swap.
+   Rate is product-aware: VA streamline = their rate less the 0.5% net-benefit drop (or the rate desk tier rate when lower),
+   cash-out / refi = today's par (rate desk 640+, the analysis rate, or the feed), HEL / HELOC = roughly par + 3 (second liens run 2-4% over). */
+function tmplProductRate(c){ if(!c) return null; const prod=clientProduct(c); const a=c.analysis||{}; const rd=rdTiers(); const par=(rd&&rd["640+"])||(a.anRate>0?a.anRate:null)||feedRateFor(c);
+  if(prod==="va_irrrl"||(prod==="none"&&c.loanType==="VA")){ const e=rdRateFor(c); const drop=c.rate>0?c.rate-(state.settings.rdDrop||0.5):null; const cands=[e&&e.rate,drop].filter(x=>x>0); return cands.length?Math.min(...cands):par; }
+  if(prod==="hel"||prod==="heloc") return par?Math.round((par+3)*8)/8:null;
+  if(a.anRate>0) return a.anRate; return par; }
+function tmplSmart(s, c){ if(!c||!/\[(X|Y|X\.XXX|X,XXX)\]/.test(s)) return s;
+  const cards=(c.debts||[]).filter(d=>(d.type||"")==="card"||/card|visa|master|amex|discover|capital one/i.test(d.name||"")).reduce((t,d)=>t+(+d.balance||0),0);
+  const allDebt=(c.debts||[]).reduce((t,d)=>t+(+d.balance||0),0); const bal=c.balance>0?c.balance:null; const eq=c.value>0&&bal?Math.max(0,c.value*0.8-bal):null;
+  let r=null; try{ r=c.analysis&&c.analysis.anRate>0?computeAnalysis(c):null; }catch(e){} const save=r&&!r.tooSmall&&r.saveMo>0?r.saveMo:null; const newPay=r&&!r.tooSmall&&r.newPay>0?r.newPay:null;
+  const rate=tmplProductRate(c); const M=v=>money(v).replace(/^\$/,"");
+  if(cards>0||allDebt>0) s=s.replace(/\$\[X\](?= (in|on|of) (your )?(the )?(credit|cards|card))/g,"$"+M(cards||allDebt));
+  if(bal) s=s.replace(/\$\[Y\]/g,"$"+M(bal));
+  if(rate) s=s.replace(/\[X\]%/g,pct(rate).replace(/%$/,"")+"%").replace(/\[X\.XXX\]%/g,pct(rate).replace(/%$/,"")+"%");
+  if(save) s=s.replace(/\$\[X\]\/mo/g,"$"+M(save)+"/mo");
+  if(eq) s=s.replace(/\$\[X\](?= in usable equity)/g,"$"+M(eq));
+  if(newPay) s=s.replace(/\$\[X,XXX\]/g,"$"+M(newPay));
+  return s; }
 function tmplPreview(s){ /* filled text with the bits that still need a hand highlighted */
  return esc(tmplFill(s)).replace(/\[([^\]\n]{1,40})\]/g,'<mark style="background:#F6E8D8;color:#9A4E0E;border-radius:3px;padding:0 3px;font-weight:600">[$1]</mark>'); }
 let libCat="All", libQ="";
 function setLibCat(c){ libCat=c; renderTemplates(); }
 /* ---- the Playbook: stacked handles on the right edge, one panel each ---- */
-const PLAY_PANELS=[{k:"intros",label:"Call intros",short:"Intros"},{k:"open",label:"Opening objections",short:"Opening"},{k:"close",label:"Closing objections",short:"Closing"},{k:"follow",label:"Follow-up texts & emails",short:"Follow-up"},{k:"post",label:"Post-close texts & emails",short:"Post-close"}];
+const PLAY_PANELS=[{k:"intros",label:"Call intros",short:"Intros"},{k:"open",label:"Initial objections",short:"Initial objections"},{k:"close",label:"Closing objections",short:"Closing objections"},{k:"follow",label:"Follow-up texts & emails",short:"Follow-up"},{k:"post",label:"Post-close texts & emails",short:"Post-close"}];
 /* which handles matter most on each screen: they move to the top of the stack and glow/bounce */
 const PLAY_PRIORITY={pipeline:["intros","open"],client:["intros","open"],analysis:["intros","open"],compare:["follow"],proposal:["follow","post"],present:["close","post"],tools:["open","close"],tmpl:[],desk:[],settings:[]};
 var playQ="", playPanel=null;
@@ -4398,26 +4424,39 @@ function playGripInit(){ const g=$("playGrip"), dr=$("playDrawer"); if(!g||g.dat
   const move=e=>{ const h=Math.max(120,h0+(e.clientY-y0)); dr.style.height=h+"px"; }; const up=()=>{ document.removeEventListener("pointermove",move); document.removeEventListener("pointerup",up); try{ localStorage.setItem("nmcPlayH",String(parseInt(dr.style.height)||0)); }catch(err){} };
   g.addEventListener("pointerdown",e=>{ e.preventDefault(); y0=e.clientY; h0=dr.getBoundingClientRect().height; document.addEventListener("pointermove",move); document.addEventListener("pointerup",up); });
   window.addEventListener("resize",()=>{ if(document.body.classList.contains("play-open")) playPlace(); }); }
-function playOpen(k){ if(!k){ k=playPanelsFor(currentScreen())[0].k; } if(k==="post") playPostNumbers=null; playGripInit(); playPlace(); if(document.body.classList.contains("obj-open")){ presentUI.obj=null; document.body.classList.remove("obj-open"); } if(playPanel===k&&document.body.classList.contains("play-open")){ playClose(); return; } playPanel=k; document.body.classList.add("play-open"); renderPlaybook(); renderPlayTabs(); setTimeout(()=>{ const q=$("playQ"); if(q) q.focus(); },30); }
-function playClose(){ document.body.classList.remove("play-open"); playPanel=null; renderPlayTabs(); }
+/* open / close keeps what you had: closing (Close, Esc, or a click anywhere outside) hides the panel; reopening the same tab brings it back exactly as it was — expanded items, category, scroll — unless the client changed in between */
+var playLast=null, playRenderedFor=null, playScroll=0;
+function playOpen(k){ if(!k){ k=playPanelsFor(currentScreen())[0].k; } playGripInit(); playPlace(); if(document.body.classList.contains("obj-open")){ presentUI.obj=null; document.body.classList.remove("obj-open"); }
+  if(playPanel===k&&document.body.classList.contains("play-open")){ playClose(); return; }
+  const same=playLast===k&&playRenderedFor===(cur()?cur().id:"")&&$("playBody")&&$("playBody").children.length;
+  playPanel=k; document.body.classList.add("play-open"); if(!same){ if(k==="post") playPostNumbers=null; renderPlaybook(); playRenderedFor=cur()?cur().id:""; } else { const pb=$("playBody"); if(pb) pb.scrollTop=playScroll; }
+  playLast=k; renderPlayTabs(); if(!same) setTimeout(()=>{ const q=$("playQ"); if(q) q.focus(); },30); }
+function playClose(){ const pb=$("playBody"); if(pb) playScroll=pb.scrollTop; document.body.classList.remove("play-open"); playPanel=null; renderPlayTabs(); }
+document.addEventListener("pointerdown",e=>{ if(!document.body.classList.contains("play-open")) return; if(e.target.closest("#playDrawer,#playTabs,#askBox,#emailMenu,#rdMsgModal")) return; playClose(); });
 function playToggleItem(el){ el.classList.toggle("open"); }
 function playToggleCat(el){ el.classList.toggle("open"); }
-function renderPlaybook(){ const el=$("playBody"); if(!el||!playPanel) return; const c=cur(); const q=playQ.toLowerCase(); const P=PLAY_PANELS.find(p=>p.k===playPanel)||PLAY_PANELS[0];
+function renderPlaybook(){ const el=$("playBody"); if(!el||!playPanel) return; const c=cur(); playRenderedFor=c?c.id:""; const q=playQ.toLowerCase(); const P=PLAY_PANELS.find(p=>p.k===playPanel)||PLAY_PANELS[0];
   const head=document.querySelector("#playDrawer .phead h2"); if(head) head.textContent=P.label;
   const match=t=>!q||(t.title+" "+(t.use||"")+" "+(t.cat||"")+" "+tmplFill(t.body||"")+" "+(t.flow?t.flow.concern+" "+t.flow.response:"")).toLowerCase().includes(q);
   const mine=t=>t.mine?` <span class="pmine">mine</span>`:"";
-  const item=t=>`<div class="pitem" data-id="${t.id}"><div class="pt" onclick="playToggleItem(this.parentNode)"><b>${esc(t.title||"(untitled)")}${mine(t)}</b><span class="tag-flat">${TKIND[t.kind]||t.kind}</span></div>${t.use?`<div class="pu">${esc(t.use)}</div>`:""}<div class="pb">${tmplPreview(t.body||"")}<div class="btnrow" style="margin-top:8px">${t.kind==="intro"?"":`<button class="btn small" onclick="copyTmplById('${t.pool}','${t.id}')">Copy${c?" for "+esc(c.name.split(/[ ,&]/)[0]):""}</button>`}${t.mine?`<button class="btn ghost small" onclick="playEdit('${t.id}')">Edit</button><button class="btn ghost small" onclick="if(confirm('Delete this one?')){ delTemplate('${t.id}'); renderPlaybook(); }">Delete</button>`:""}</div></div></div>`;
+  const listPanel=["intros","open","close"].includes(playPanel); const openN=playPanel==="intros"?2:0;
+  const item=(t,i,arr)=>`<div class="pitem${listPanel&&i<openN?" open":""}" data-id="${t.id}"><div class="pt" onclick="playToggleItem(this.parentNode)"><b>${esc(t.title||"(untitled)")}${mine(t)}</b><span class="tag-flat">${TKIND[t.kind]||t.kind}</span>${listPanel&&!q?`<span class="pmv" onclick="event.stopPropagation()"><button title="Move up" ${i===0?"disabled":""} onclick="playMove('${playPanel}','${t.id}',-1)">\u25B2</button><button title="Move down" ${arr&&i===arr.length-1?"disabled":""} onclick="playMove('${playPanel}','${t.id}',1)">\u25BC</button></span>`:""}</div>${t.use?`<div class="pu">${esc(t.use)}</div>`:""}<div class="pb">${tmplPreview(t.body||"")}<div class="btnrow" style="margin-top:8px">${t.kind==="intro"?"":`<button class="btn small" onclick="copyTmplById('${t.pool}','${t.id}')">Copy${c?" for "+esc(c.name.split(/[ ,&]/)[0]):""}</button>`}${t.mine?`<button class="btn ghost small" onclick="playEdit('${t.id}')">Edit</button><button class="btn ghost small" onclick="if(confirm('Delete this one?')){ delTemplate('${t.id}'); renderPlaybook(); }">Delete</button>`:t.kind==="flow"?"":`<button class="btn ghost small" onclick="playEditDefault('${t.pool}','${t.id}')" title="Makes your own copy; the default stays">Make my version</button>`}</div></div></div>`;
   const flowItem=t=>{ const o=t.flow; return `<div class="pitem"><div class="pt" onclick="playToggleItem(this.parentNode)"><b>${o.label}</b><span class="tag-flat">closing flow</span></div><div class="pb" style="background:none;padding:0"><div class="objflow">
     <div class="objbox"><div class="objl">Frame</div><div class="objt">${esc(o.frame)}</div></div><div class="objbox tr"><div class="objl">Translate \u00b7 concern</div><div class="objt">${esc(o.concern)}</div></div><div class="objbox tr"><div class="objl">Translate \u00b7 feeling</div><div class="objt">${esc(o.feeling)}</div></div>
     <div class="objbox ag"><div class="objl">Agree</div><div class="objt">${esc(o.agree)}</div></div><div class="objbox rs"><div class="objl">Respond</div><div class="objt">${esc(o.response)} <i>${esc(o.benefit)}</i></div></div><div class="objbox tn"><div class="objl">Transition</div><div class="objt">${esc(o.transition)}</div></div><div class="objbox cl"><div class="objl">Close</div><div class="objt">${esc(o.close)}</div></div>${c?`<div class="objbox"><div class="objl">What they\u2019ll need</div><div class="objt">${esc(presentDocsLine(c))}</div></div>`:""}</div></div></div>`; };
   let body="";
   if(playPanel==="post"){ body=playPostHTML(c); }
   else { const items=playItems(playPanel).filter(match);
-    if(playPanel==="follow"){ const grp=t=>t.kind==="email"?"Emails":t.kind==="vm"?"Voicemails":(t.cat||"My templates"); items.sort((a,b)=>(a.kind==="email")-(b.kind==="email")); const cats=[...new Set(items.map(grp))]; body=cats.map((cat,i)=>{ const its=items.filter(t=>grp(t)===cat); return `<div class="pcat${(q||i===0)?" open":""}"><div class="ph" onclick="playToggleCat(this.parentNode)">${esc(cat)} <span class="n">${its.length}</span><span class="tgl">\u25B8</span></div><div class="pitems">${its.map(item).join("")}</div></div>`; }).join(""); }
-    else body=(playPanel==="close"?"":playAddFormHTML(playPanel))+`<div class="pcat open"><div class="pitems">${items.map(t=>t.kind==="flow"?flowItem(t):item(t)).join("")}</div></div>`;
+    if(playPanel==="follow"){ const grp=playFollowGroup; const cats=PLAY_FOLLOW_CATS.filter(k=>items.some(t=>grp(t)===k)); const sel=state.playFollowCat&&cats.includes(state.playFollowCat)?state.playFollowCat:cats[0];
+      if(!q){ const its=items.filter(t=>grp(t)===sel); body=`<div class="field" style="margin:0 0 10px"><label>Category</label><select onchange="state.playFollowCat=this.value; save(); renderPlaybook()" style="max-width:360px">${cats.map(k=>`<option value="${esc(k)}" ${k===sel?"selected":""}>${esc(k)} (${items.filter(t=>grp(t)===k).length})</option>`).join("")}</select></div><div class="pgrid">${its.map((t,i,arr)=>item(t,i,arr)).join("")}</div>`; }
+      else { body=cats.map((cat,i)=>{ const its=items.filter(t=>grp(t)===cat); return `<div class="pcat open"><div class="ph" onclick="playToggleCat(this.parentNode)">${esc(cat)} <span class="n">${its.length}</span><span class="tgl">\u25B8</span></div><div class="pitems">${its.map((t,j,arr)=>item(t,j,arr)).join("")}</div></div>`; }).join(""); } }
+    else body=(playPanel==="close"?"":playAddFormHTML(playPanel))+(playPanel==="intros"?`<div class="hint" style="margin:0 0 6px">Top two stay open \u2014 move your go-to intros up with \u25B2, or add a new one.</div>`:"")+`<div class="pgrid">${items.map((t,i,arr)=>t.kind==="flow"?flowItem(t):item(t,i,arr)).join("")}</div>`;
     if(playPanel==="follow") body=playAddFormHTML(playPanel)+body;
     if(!items.length) body=`<div class="empty">Nothing matches.</div>`; }
-  el.innerHTML=(playPanel==="post"?"":`<input type="search" id="playQ" placeholder="Search ${esc(P.label.toLowerCase())}\u2026" value="${esc(playQ)}" oninput="playQ=this.value; renderPlaybook(); this.focus()"><div class="hint" style="margin:0 0 8px">${c?`Filling in for <b>${esc(c.name)}</b>`:"No client selected \u2014 client bits show as [Name]"}</div>`)+body; }
+  el.classList.toggle("list",["intros","open","close","follow"].includes(playPanel)); el.innerHTML=(playPanel==="post"||["intros","open","close"].includes(playPanel)?"":`<input type="search" id="playQ" placeholder="Search ${esc(P.label.toLowerCase())}\u2026" value="${esc(playQ)}" oninput="playQ=this.value; renderPlaybook(); this.focus()"><div class="hint" style="margin:0 0 8px">${c?`Filling in for <b>${esc(c.name)}</b>`:"No client selected \u2014 client bits show as [Name]"}</div>`)+body; }
+/* follow-up categories, in the order the team thinks about them */
+const PLAY_FOLLOW_CATS=["VA Streamline","Cash-out","HELOC / HEL","Generic outreach","Program explainers","Post-call","Trust & verification","Emails","My templates"];
+function playFollowGroup(t){ if(t.mine) return "My templates"; if(t.kind==="email") return "Emails"; const c=t.cat||""; if(/^VA Streamline/.test(c)) return "VA Streamline"; if(/Cash-Out/i.test(c)) return "Cash-out"; if(/HELOC|Equity/i.test(c)) return "HELOC / HEL"; if(/Generic/i.test(c)) return "Generic outreach"; if(/Explainer|How-To/i.test(c)) return "Program explainers"; if(/Post-Call/i.test(c)) return "Post-call"; if(/Trust/i.test(c)) return "Trust & verification"; return "Generic outreach"; }
 /* add your own intro / play / text / email right inside the panel — these change day to day */
 var playEditing=null;
 function playAddFormHTML(k){ const kinds=k==="follow"?[["text","Text"],["email","Email"],["vm","Voicemail"]]:[["intro",k==="intros"?"Intro script":"Objection play"]]; const e=playEditing&&playEditing.panel===k?playEditing:null; const t=e?tmplPoolGet("m",e.id):null;
@@ -4429,6 +4468,10 @@ function playAddFormHTML(k){ const kinds=k==="follow"?[["text","Text"],["email",
 function playSaveNew(k){ const title=($("playNewTitle")||{}).value||"", body=($("playNewBody")||{}).value||"", kind=($("playNewKind")||{}).value||"intro"; if(!body.trim()){ toast("Type the words first"); return; }
   let t=playEditing&&playEditing.id?tmplPoolGet("m",playEditing.id):null; if(!t){ addTemplate(kind,k); t=state.templates.mine[state.templates.mine.length-1]; }
   t.title=title.trim()||body.trim().slice(0,40); t.body=body; t.kind=kind; t.panel=k; save(); playEditing=null; renderPlaybook(); renderPlayOrder(); toast("Saved to your "+(k==="intros"?"intros":k==="open"?"plays":"follow-ups")); }
+/* editing a default never changes it: a copy becomes yours, placed just above the default so it's the go-to */
+function playEditDefault(pool,id){ const src=tmplPoolGet(pool,id); if(!src) return; const k=playDefaultPanel(src); addTemplate(src.kind,k); const t=state.templates.mine[state.templates.mine.length-1]; t.title=(src.title||"")+" \u2014 my version"; t.body=src.body||""; t.use=src.use||""; t.subject=src.subject||"";
+  const ids=playItems(k).map(x=>x.id).filter(x=>x!==t.id); const at=ids.indexOf(id); ids.splice(at<0?0:at,0,t.id); state.playOrder=state.playOrder||{}; state.playOrder[k]=ids; save();
+  playEditing={panel:k,id:t.id}; renderPlaybook(); renderPlayOrder(); const el=$("playNewBody"); if(el) el.focus(); toast("Your version is above the default \u2014 edit away, the default stays"); }
 function playEdit(id){ const t=tmplPoolGet("m",id); if(!t) return; playEditing={panel:(t.panel==="texts"||t.panel==="emails")?"follow":(t.panel||playDefaultPanel(t)),id}; renderPlaybook(); const el=$("playNewBody"); if(el) el.focus(); }
 /* post-close panel: the client's product decides the document list; the banker picks the lender */
 var playPostNumbers=null;
@@ -5013,7 +5056,7 @@ function go(s){ if(s!=="present"&&document.body.classList.contains("obj-open")){
   if(s==="compare") renderCompare();
   if(s==="desk") renderDesk();
 }
-function refreshAll(){ renderPickers(); fillClientForm(); renderPipeline(); renderSavedOptions();
+function refreshAll(){ renderPickers(); fillClientForm(); renderPipeline(); renderSavedOptions(); try{ updateRatePill(); }catch(e){}
   fillAnalysisInputs(); renderDebts(); runAnalysis(); renderProposalPreview(); renderBlocks(); renderCompare(); renderDesk(); if($("s-tmpl").classList.contains("active")) renderTemplates(); }
 document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>{ if(b.classList.contains("soon")){ toast("Coming soon \u2014 not part of this rollout yet"); return; } go(b.dataset.s); }));
 load(); migrate();
