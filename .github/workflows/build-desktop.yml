@@ -68,7 +68,7 @@ jobs:
         run: |
           ls -R out || true
           test -n "$(find out -name '*.exe' | head -1)" || { echo "No Windows installer was built — not publishing."; exit 1; }
-          test -z "$(find out -name '*.dmg' | head -1)" && echo "::warning::Mac build missing from this release (runner never started); Macs stay on the previous version until the next release."
+          if [ -z "$(find out -name '*.dmg' | head -1)" ]; then echo "::warning::Mac build missing from this release (runner never started); Macs stay on the previous version until the next release."; fi
       - id: v
         run: echo "version=$(node -p "require('./nmc-toolkit-desktop/package.json').version")" >> "$GITHUB_OUTPUT"
       - uses: softprops/action-gh-release@v2
