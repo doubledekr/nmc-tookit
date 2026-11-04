@@ -350,7 +350,7 @@ body.obj-open #objDrawer{display:block}body.obj-open main{margin-right:380px}
 #objDrawer .objflow{grid-template-columns:1fr;gap:8px}#objDrawer h2{font-family:var(--serif);font-size:18px;font-weight:400;margin:0}
 #objDrawer .objbox .objt{font-size:14.5px}#objDrawer .objbox.cl .objt{font-size:17px}
 body.obj-open .tchart .trow{font-size:13px}body.obj-open .tchart .trow input,body.obj-open .tchart .trow select{font-size:13px;padding:4px 6px}
-#pipeTable table.data td{padding:9px 8px}#pipeTable td:nth-child(2) .tag-good,#pipeTable td:nth-child(2) .tag-warn,#pipeTable td:nth-child(2) .tag-flat{white-space:nowrap}#pipeTable td:nth-child(7){white-space:nowrap}#pipeTable td:first-child{min-width:150px}
+#pipeTable table.data td{padding:9px 8px}#pipeTable td:nth-child(2) .tag-good,#pipeTable td:nth-child(2) .tag-warn,#pipeTable td:nth-child(2) .tag-flat{white-space:nowrap}#pipeTable td:nth-child(7){white-space:nowrap}#pipeTable table.data{width:100%;table-layout:auto}#pipeTable table.data td{padding:8px 6px}#pipeTable table.data th{padding:8px 6px;white-space:nowrap}#pipeTable td:first-child{min-width:165px}#pipeTable td:first-child .hint{font-size:11.5px;line-height:1.35}#pipeTable td:nth-child(2) .tag-good{white-space:normal}#pipeTable td:nth-child(8){min-width:150px}#pipeTable td:nth-child(8) .tag-good{white-space:nowrap;font-size:11.5px}#pipeTable td:nth-child(8) .hint{font-size:11px;line-height:1.35}#pipeTable td:nth-child(3){white-space:nowrap}#pipeTable td:nth-child(9) .tag-good{font-size:11.5px;line-height:1.35;padding:3px 8px}#pipeTable th:last-child,#pipeTable td:last-child{width:1%;white-space:nowrap}#pipeTable .num{white-space:nowrap}
 .dupbar{background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 12px;font-size:13.5px}
 #sfPanel .sfhead{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}#sfPanel .sfhead h2{margin:0;flex:1}#sfPanel .sfhead .tgl{font-size:12px;color:var(--muted)}
 #sfPanel.closed #sfBody{display:none}#sfPanel.closed{padding:12px 18px}
@@ -1085,7 +1085,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.13.4";
+const TOOLKIT_VERSION = "1.13.5";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1117,9 +1117,9 @@ const onRateWatch=c=>!c.quick&&!isDone(c)&&isInelig(c)&&!!c.ineligRate&&c.target
 const onSeasonWatch=c=>!c.quick&&!isDone(c)&&isInelig(c)&&!!c.ineligSeason&&!!c.seasonDate;
 const ineligWhy=c=>{ if(!isInelig(c)) return ""; const w=[]; if(c.ineligRate) w.push("rate"); if(c.ineligSeason) w.push("seasoning"); if(c.ineligFull||!w.length) return "fully ineligible"; return w.join(" + "); };
 const isDone=c=>c.status===S_DONE||c.status==="Lost";
-function nextBizDay(){ const d=new Date(); d.setDate(d.getDate()+1); while(d.getDay()===0||d.getDay()===6) d.setDate(d.getDate()+1); return d.toISOString().slice(0,10); }
+function nextBizDay(){ const d=new Date(); d.setDate(d.getDate()+1); while(d.getDay()===0||d.getDay()===6) d.setDate(d.getDate()+1); return d.toLocaleDateString("en-CA"); }
 /* side effects of a disposition: Complete = loan sold & closed (counts toward the month); Ineligible-rate needs the rate to reach; follow-up needs a date */
-function applyDispo(c){ if(c.status===S_DONE&&!c.closedAt) c.closedAt=new Date().toISOString().slice(0,10);
+function applyDispo(c){ if(c.status===S_DONE&&!c.closedAt) c.closedAt=new Date().toLocaleDateString("en-CA");
   if(c.status===S_RATE){ if(!c.ineligRate&&!c.ineligSeason&&!c.ineligFull) c.ineligRate=true;   /* default reason: waiting on the rate */
     if(c.ineligRate&&!(c.targetRate>0)&&c.rate>0) c.targetRate=+(c.rate-0.5).toFixed(3); }
   if(c.status==="Needs follow-up"&&!c.followUp) c.followUp=nextBizDay();
@@ -1129,8 +1129,8 @@ function dispo(st){ const c=cur(); if(!c) return; c.status=st; applyDispo(c); sa
 /* follow-ups are closed with an outcome, logged on the client, and replaced by the next one (or nothing) */
 const FU_OUT={done:"Done \u2014 spoke with them",noanswer:"No answer / left VM",resched:"Rescheduled",sent:"Proposal sent"};
 let fuPending=null;   /* {id, outcome} waiting for a "next" choice */
-function fuStamp(){ const d=new Date(); return d.toISOString().slice(0,10)+" "+d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}); }
-function fuDateStr(d){ return d.toISOString().slice(0,10); }
+function fuStamp(){ const d=new Date(); return d.toLocaleDateString("en-CA")+" "+d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}); }
+function fuDateStr(d){ return d.toLocaleDateString("en-CA"); }
 function fuAddDays(n){ const d=new Date(); d.setDate(d.getDate()+n); if(n>0){ while(d.getDay()===0||d.getDay()===6) d.setDate(d.getDate()+1); } return fuDateStr(d); }
 function fuClose(id,outcome){ const c=state.clients.find(x=>x.id===id); if(!c) return;
   c.log=c.log||[]; c.log.unshift({when:fuStamp(), outcome, due:c.followUp||"", dueTime:c.followUpTime||""}); if(c.log.length>60) c.log.length=60;
@@ -1566,7 +1566,7 @@ function quickStreamline(delta){ const c=cur(); if(!c||!(c.rate>0)) return;
   toast((m==="va"?"VA IRRRL":"FHA Streamline")+" at "+pct(a.anRate)+" \u2014 "+delta+" below today\u2019s "+pct(c.rate)+". Swap in real pricing before you quote."); }
 /* seasoning: N months from today (or from the Salesforce close date when it's on file) */
 function setSeason(months){ const c=cur(); if(!c) return; if(months!=null&&isInelig(c)){ c.ineligSeason=true; c.ineligFull=false; }
-  if(months==null){ c.seasonDate=""; } else { const d=new Date(); d.setMonth(d.getMonth()+months); c.seasonDate=d.toISOString().slice(0,10); }
+  if(months==null){ c.seasonDate=""; } else { const d=new Date(); d.setMonth(d.getMonth()+months); c.seasonDate=d.toLocaleDateString("en-CA"); }
   save(); fillClientForm(); renderPipeline(); toast(c.seasonDate?"Seasoning date set \u2014 "+c.seasonDate:"Seasoning date cleared"); }
 const seasonLead=()=>+(state.settings.seasonLead)||7;
 /* future buyers: a date, or a window counted from when the status was set */
@@ -1678,7 +1678,7 @@ function opportunity(c){ const fr=feedRateFor(c);
   if(onRateWatch(c) && fr!=null) return {tag:"tag-flat", txt:"Waiting for "+pct(c.targetRate)+" \u2014 "+(fr-c.targetRate).toFixed(3)+"% more drop needed"};
   if(fr!=null && c.rate!=null && c.rate-fr>=0.5) return {tag:"tag-good", txt:"Streamline window \u2014 market is "+(c.rate-fr).toFixed(2)+"% below their rate"};
   if(fr!=null && c.rate!=null && c.rate-fr>0 && c.rate-fr<0.5) return {tag:"tag-flat", txt:"Watching \u2014 "+(0.5-(c.rate-fr)).toFixed(2)+"% more drop needed"};
-  if(c.followUp && c.followUp<=new Date().toISOString().slice(0,10)) return {tag:"tag-warn", txt:"Follow-up due"};
+  if(c.followUp && c.followUp<=new Date().toLocaleDateString("en-CA")) return {tag:"tag-warn", txt:"Follow-up due"};
   return null;
 }
 let pipeView="all";
@@ -1689,7 +1689,7 @@ function setPipeSort(k){ if(pipeSort.key!==k){ pipeSort={key:k,dir:1}; } else if
 function sortVal(c,k){ if(k==="eligible"){ const wi=rdWindowInfo(c); const e=rdEligibleNow(c); return wi ? "0"+String(99999999999999-Date.parse(c.eligibleSince||0)) : e ? "1" : "9"; } if(k==="balance"||k==="rate"||k==="payment") return c[k]==null?(pipeSort.dir===1?1e12:-1):+c[k]; if(k==="followUp") return c.followUp||"9999"; return String(c[k]||"").toLowerCase(); }
 function th(k,label,cls){ const on=pipeSort.key===k; return `<th class="${cls||""}" style="cursor:pointer;user-select:none;white-space:nowrap" title="Sort by ${label.replace(/&amp;/g,"&")}" onclick="setPipeSort('${k}')">${label}${on?(pipeSort.dir===1?" \u25b2":" \u25bc"):""}</th>`; }
 function pipeAlerts(){
-  const today=new Date().toISOString().slice(0,10);
+  const today=new Date().toLocaleDateString("en-CA");
   const act=c=>!c.quick&&!isDone(c);
   const hotSet=new Set(eligibleIds());
   const hot=state.clients.filter(c=>act(c)&&hotSet.has(c.id));
@@ -1736,7 +1736,7 @@ function renderCalHint(){ const el=$("calHint"); if(!el) return; const c=cur(); 
 let pipeRowsShown=[];
 function calMenu(ev){ ev.preventDefault(); ev.stopPropagation(); const old=$("emailMenu"); if(old){ old.remove(); if(old.dataset.for==="cal") return; }
   const b=ev.currentTarget||ev.target; const rect=b.getBoundingClientRect(); const m=document.createElement("div"); m.id="emailMenu"; m.dataset.for="cal";
-  const today=new Date().toISOString().slice(0,10); const wk=new Date(); wk.setDate(wk.getDate()+7); const week=wk.toISOString().slice(0,10);
+  const today=new Date().toLocaleDateString("en-CA"); const wk=new Date(); wk.setDate(wk.getDate()+7); const week=wk.toLocaleDateString("en-CA");
   const shown=pipeRowsShown.filter(c=>c.followUp); const due=state.clients.filter(c=>!c.quick&&c.followUp&&c.followUp<=today&&!isDone(c)); const thisWeek=state.clients.filter(c=>!c.quick&&c.followUp&&c.followUp>=today&&c.followUp<=week&&!isDone(c));
   const fresh=xs=>xs.filter(c=>calStatus(c)!=="on"); const opt=(fn,title,sub)=>`<button type="button" onclick="document.getElementById('emailMenu').remove(); ${fn}"><b>${title}</b><span class="hint">${sub}</span></button>`;
   const viewName=(pipeView==="all"?"the pipeline":$("pipeChips")&&[...$("pipeChips").querySelectorAll("button")].find(x=>!x.classList.contains("ghost"))?[...$("pipeChips").querySelectorAll("button")].find(x=>!x.classList.contains("ghost")).textContent.replace(/\s*\(\d+\)$/,""):"this view");
@@ -1747,7 +1747,7 @@ function calMenu(ev){ ev.preventDefault(); ev.stopPropagation(); const old=$("em
     +opt(`calAddMany('shownNew')`,`Only the new ones shown (${fresh(shown).length})`,`Skips follow-ups already added at their current date and time`);
   m.style.cssText=`position:fixed;left:${Math.min(rect.left, window.innerWidth-340)}px;top:${rect.bottom+4}px;z-index:9000;max-width:340px`; document.body.appendChild(m);
   setTimeout(()=>document.addEventListener("click", function h(e){ if(!m.contains(e.target)){ m.remove(); document.removeEventListener("click",h); } }),0); }
-function calAddMany(which){ const today=new Date().toISOString().slice(0,10); const wk=new Date(); wk.setDate(wk.getDate()+7); const week=wk.toISOString().slice(0,10);
+function calAddMany(which){ const today=new Date().toLocaleDateString("en-CA"); const wk=new Date(); wk.setDate(wk.getDate()+7); const week=wk.toLocaleDateString("en-CA");
   let list = which==="due" ? state.clients.filter(c=>!c.quick&&c.followUp&&c.followUp<=today&&!isDone(c)) : which==="week" ? state.clients.filter(c=>!c.quick&&c.followUp&&c.followUp>=today&&c.followUp<=week&&!isDone(c)) : pipeRowsShown.filter(c=>c.followUp);
   if(which==="shownNew") list=list.filter(c=>calStatus(c)!=="on");
   calOpenICS(list.map(calEventFor).filter(Boolean), which==="due"?"Follow-ups due":which==="week"?"Follow-ups this week":"Follow-ups"); }
@@ -3470,11 +3470,11 @@ function blocksCSV(){ const rows=[["banker","nmls","start","label","minutes","di
 function exportBlocksCSV(){ if(!state.blocks.length){ toast("No blocks yet"); return; }
   const csv=blocksCSV();
   const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
-  a.download="call-blocks-"+new Date().toISOString().slice(0,10)+".csv"; a.click(); URL.revokeObjectURL(a.href); }
+  a.download="call-blocks-"+new Date().toLocaleDateString("en-CA")+".csv"; a.click(); URL.revokeObjectURL(a.href); }
 
 /* ---------- samples & rate demo ---------- */
 function loadSamples(silent){
-  const fu=new Date(Date.now()+2*86400000).toISOString().slice(0,10);
+  const fu=new Date(Date.now()+2*86400000).toLocaleDateString("en-CA");
   const mk=o=>Object.assign(blankClient(),o);
   const samples=[
    mk({name:"Darnell Washington", status:"Needs follow-up", loanType:"VA", phone:"(313) 555-0142", email:"d.washington@example.com",
@@ -3706,7 +3706,7 @@ function clearLogo(){ state.settings.logo=""; save(); fillSettingsUI(); applyBra
 function exportJSON(){ const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob);
   const who=(state.settings.loName||"").trim().replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"");
-  a.download=(who?who+"-":"")+"nmc-toolkit-"+new Date().toISOString().slice(0,10)+".json"; a.click(); URL.revokeObjectURL(a.href); toast("Data exported"); }
+  a.download=(who?who+"-":"")+"nmc-toolkit-"+new Date().toLocaleDateString("en-CA")+".json"; a.click(); URL.revokeObjectURL(a.href); toast("Data exported"); }
 function importText(text){ try{ const s=JSON.parse(text); if(!s.clients||!s.settings) throw 0;
     state=s; save(); location.reload(); }catch(e){ toast("That file doesn't look like a toolkit export"); } }
 function importJSON(input){ const f=input.files[0]; if(!f) return; const rd=new FileReader();
@@ -4069,7 +4069,7 @@ function seedDemo(){
     mkB(1,13,"Block 3",19,7,3,1), mkB(2,9,"Block 1",23,8,3,0), mkB(2,11,"Block 2",25,9,4,1),
     mkB(3,9,"Block 1",22,7,2,1), mkB(4,13,"Block 3",20,6,3,1), mkB(5,9,"Block 1",27,10,4,2) ];
   state.templates={
-    company:{updated:new Date().toISOString().slice(0,10), templates:[
+    company:{updated:new Date().toLocaleDateString("en-CA"), templates:[
       {id:"c1",kind:"intro",title:"Warm loan review opener",body:"Hi {client_first}, this is {banker} with Neighborhood Mortgage \u2014 I\u2019m the one who looks after your loan. Rates moved this week and I\u2019m calling everyone I think it helps. Do you have two minutes for me to show you what it looks like on your numbers?"},
       {id:"c2",kind:"text",title:"Rate-move heads up",body:"{client_first}, it\u2019s {banker} at Neighborhood Mortgage. Rates shifted and your loan is one of the ones it helps. Want me to send the side-by-side? Reply YES and I\u2019ll text it over."},
       {id:"c3",kind:"email",title:"Your savings proposal",subject:"{client_first} \u2014 your side-by-side, as promised",body:"Hi {client_first},\n\nAttached is the savings proposal we walked through. The short version: same house, same life, less interest.\n\nQuestions, call or text me any time.\n\n{banker}\nNMLS #{banker_nmls} \u00b7 {banker_phone}"}]},
