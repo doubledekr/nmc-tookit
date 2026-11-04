@@ -606,8 +606,6 @@ body.nmc-enter svg.chart path[stroke]:nth-of-type(2){animation-delay:.15s}body.n
 body.nmc-enter svg.chart circle{animation:nmc-tagpop .4s cubic-bezier(.2,.9,.3,1.4) both 1.2s}
 
 /* ---------- market notes: the lighter banner and the lean badge ---------- */
-#mkBanner{background:#fff;border:1px solid var(--line);border-left:3px solid #6B7DA8;border-radius:10px;padding:10px 14px;margin:0 0 12px;font-size:13.5px;box-shadow:0 1px 2px rgba(52,55,64,.04),0 10px 24px -16px rgba(52,55,64,.25);animation:nmc-menuin .24s var(--nmc-ease)}
-#mkBanner .mkrow{display:flex;gap:12px;align-items:flex-start}#mkBanner .mknote{flex:1;min-width:0}
 .mknote .mkhead{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
 .mknote .mkkind{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:#6B7DA8;font-weight:700}
 .mknote .mktext{margin-top:3px;line-height:1.5;color:var(--ink)}
@@ -617,6 +615,22 @@ body.nmc-enter svg.chart circle{animation:nmc-tagpop .4s cubic-bezier(.2,.9,.3,1
 .mkdesk .mknote{padding:8px 0;border-bottom:1px solid #F0EBE1;font-size:13px}.mkdesk .mknote:last-child{border-bottom:none}
 .lean{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;letter-spacing:.02em;border-radius:999px;padding:1px 9px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:default;vertical-align:middle;font-family:var(--sans);text-transform:none}
 .lean-improving{color:var(--good);border-color:#BBD6C6;background:#F2F9F4}.lean-worsening{color:var(--warn);border-color:#E6C2B9;background:#FFF6F3}.lean-choppy{color:#8A6D00;border-color:#E8D88A;background:#FFFBEA}.lean-steady{color:#3F4556;border-color:#C9D2E6;background:#F3F6FC}
+/* ---------- the notice stack: newest open on top, the rest folded to a line ---------- */
+#noticeStack{display:flex;flex-direction:column;gap:6px;margin:0 0 12px}
+#noticeStack:empty{display:none}
+#noticeStack .notice{margin:0!important}
+#noticeStack .notice.folded{display:block!important;padding:0!important;background:#fff!important;border:1px solid var(--line)!important;border-left-width:3px!important;box-shadow:0 1px 2px rgba(52,55,64,.04)!important;overflow:hidden;animation:none}
+#noticeStack .notice.folded>*:not(.nfold){display:none!important}
+#noticeStack .nfold{display:flex;align-items:center;gap:10px;padding:6px 12px;font-size:12.5px;color:var(--ink);cursor:pointer;min-height:30px;transition:background .15s}
+#noticeStack .nfold:hover{background:var(--cream-soft)}
+#noticeStack .nfold .nsum{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#noticeStack .nfold .nx{all:unset;cursor:pointer;color:var(--muted);font-size:12px;padding:2px 6px;border-radius:6px}#noticeStack .nfold .nx:hover{color:var(--brand);background:#fff}
+#noticeStack #rdBanner.folded{border-left-color:var(--brand)!important}#noticeStack .notice.mk.folded{border-left-color:#6B7DA8!important}#noticeStack #updBanner.folded{border-left-color:#6B7DA8!important}
+#noticeStack .notice.top{animation:nmc-menuin .22s var(--nmc-ease)}
+#noticeFoot{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:0 4px}
+#noticeFoot .btn{min-height:26px;font-size:11.5px;padding:0 10px}
+#mkBanner .notice{background:#fff;border:1px solid var(--line);border-left:3px solid #6B7DA8;border-radius:10px;padding:10px 14px;font-size:13.5px;box-shadow:0 1px 2px rgba(52,55,64,.04),0 10px 24px -16px rgba(52,55,64,.25)}
+#mkBanner .notice .mkrow{display:flex;gap:12px;align-items:flex-start}#mkBanner .notice .mknote{flex:1;min-width:0}
 /* ---------- My desk ---------- */
 .stat{background:#fff;border:1px solid var(--line);border-left:3px solid var(--brand);border-radius:10px;box-shadow:0 1px 2px rgba(52,55,64,.04),0 10px 24px -16px rgba(52,55,64,.25)}
 .stat .v,.stat b{font-family:var(--serif)}
@@ -709,10 +723,8 @@ body.nmc-bg *,body.nmc-bg *::before,body.nmc-bg *::after{animation-play-state:pa
   </aside>
 
   <main>
-    <div id="rdBanner" style="display:none"></div>
-    <div id="mkBanner" style="display:none"></div>
+    <div id="noticeStack"><div id="rdBanner" class="notice" style="display:none"></div><div id="mkBanner" style="display:none"></div><div id="updBanner" class="notice" style="display:none;background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px"></div><div id="noticeFoot" style="display:none"></div></div>
     <div class="clientbar"><div id="playTabs"></div><div id="clientBar"></div></div>
-    <div id="updBanner" style="display:none;background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px"></div>
     <div id="demoBanner" style="display:none;background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:16px;font-size:13px"><b>Demo mode.</b> Sample clients, rates, team numbers, and templates — none of it is real. This file saves to its own separate slot and never touches a real toolkit on the same computer.</div>
     <!-- ================= PIPELINE ================= -->
     <section class="screen active" id="s-pipeline">
@@ -1460,7 +1472,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.14.1";
+const TOOLKIT_VERSION = "1.14.2";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -3968,11 +3980,11 @@ function rdNotify(j, fresh){ try{ const t=rdTiers(j)||{}; const body=`640+ ${pct
     if(Notification.permission==="granted") show(); else if(Notification.permission!=="denied") Notification.requestPermission().then(p=>{ if(p==="granted") show(); }); }catch(e){} }
 function rdArrow(now,prev){ if(prev==null||now==null) return ""; const d=+(now-prev).toFixed(3); if(Math.abs(d)<0.0005) return `<span class="hint" title="unchanged">—</span>`; return `<span class="${d>0?"up":"down"}" title="vs previous publish">${d>0?"▲":"▼"}${Math.abs(d).toFixed(3).replace(/0$/,"")}</span>`; }
 function rdWhen(iso){ try{ return new Date(iso).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}); }catch(e){ return ""; } }
-function renderRdBanner(){ const b=$("rdBanner"); if(!b) return; const d=rdData(); if(!d||d.dismissed||state.settings.rdBanner===false||!d.how||d.how==="first"){ b.style.display="none"; return; }
+function renderRdBanner(){ const b=$("rdBanner"); if(!b) return; const d=rdData(); if(!d||d.dismissed||state.settings.rdBanner===false||!d.how||d.how==="first"){ b.style.display="none"; layoutNotices(); return; }
   const t=rdTiers(d)||{}; const p=d.prevTiers||{}; const n=(d.freshIds||[]).filter(id=>state.clients.some(c=>c.id===id)).length; const wk=rdWeekIds().length; const assumed=(d.freshIds||[]).filter(id=>{ const c=state.clients.find(x=>x.id===id); return c&&c.eligibleAssumed; }).length;
-  b.style.display="flex"; b.innerHTML=`<b>🔔 New VA rates</b><span class="hint">${rdWhen(d.published)}${d.by?" · "+esc(d.by):""}</span>${rdLeanHTML(d.market)}<span class="tiers">${RD_TIERS.map(k=>`<span><span class="hint" style="font-family:var(--sans);font-size:11px">${RD_TIER_LABEL[k]}</span> ${pct(t[k])} ${rdArrow(t[k],p[k])}</span>`).join("")}</span>
+  b.style.display="flex"; b.dataset.at=String(Date.parse(d.receivedAt||d.published)||0); b.dataset.nid="rates:"+d.version; b.dataset.summary=`New VA rates \u00b7 640+ ${pct(t["640+"])}${n?` \u00b7 ${n} new today`:""}`; b.innerHTML=`<b>🔔 New VA rates</b><span class="hint">${rdWhen(d.published)}${d.by?" · "+esc(d.by):""}</span>${rdLeanHTML(d.market)}<span class="tiers">${RD_TIERS.map(k=>`<span><span class="hint" style="font-family:var(--sans);font-size:11px">${RD_TIER_LABEL[k]}</span> ${pct(t[k])} ${rdArrow(t[k],p[k])}</span>`).join("")}</span>
     ${n||wk?`<span class="tag-good" style="font-size:13px">✨ ${n} new today${assumed?` (${assumed} assumed)`:""} · ${wk} this week</span>`:`<span class="hint">no saved clients newly eligible</span>`}${d.note?`<span class="hint" style="flex-basis:100%;margin-top:-4px"><i>${esc(d.note)}</i></span>`:""}
-    <span style="flex:1"></span>${(n||wk)?`<button class="btn small" onclick="go('pipeline');setPipeView('eligible')">View</button>`:""}<button class="btn ghost small" onclick="rdDismiss()">Dismiss</button>`; }
+    <span style="flex:1"></span>${(n||wk)?`<button class="btn small" onclick="go('pipeline');setPipeView('eligible')">View</button>`:""}<button class="btn ghost small" onclick="rdDismiss()">Dismiss</button>`; layoutNotices(); }
 function rdInboxOpen(i){ const h=(window._rdInboxList||[])[i]; if(!h) return; const t=h.tiers||{}, p=h.prev||{}; const dir=rdDirection(t,p); const old=$("emailMenu"); if(old) old.remove();
   const when=new Date(h.published).toLocaleString("en-US",{weekday:"short",month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}); const box=document.createElement("div"); box.id="rdMsgModal"; box.style.cssText="position:fixed;inset:0;background:rgba(35,36,43,.45);z-index:9500;display:flex;align-items:center;justify-content:center";
   box.innerHTML=`<div style="background:#fff;border-radius:14px;padding:20px 22px;width:560px;max-width:92vw;max-height:88vh;overflow:auto;box-shadow:0 10px 30px rgba(0,0,0,.2)"><div style="display:flex;gap:10px;align-items:baseline"><h2 style="margin:0">Rate update · ${esc(when)}</h2><span style="flex:1"></span><button class="btn ghost small" onclick="document.getElementById('rdMsgModal').remove()">Close</button></div>
@@ -4005,16 +4017,27 @@ function mkApply(j, how){ if(!mkValid(j)) return false;
   const note={format:j.format,id:String(j.id),at:j.at||j.id,by:j.by||"",kind:String(j.kind||"note"),title:String(j.title||MK_KIND_LABEL[j.kind]||"Market note"),text:String(j.text).slice(0,280),comment:j.comment?String(j.comment).slice(0,200):"",tenYear:j.tenYear&&typeof j.tenYear==="object"?j.tenYear:null,lean:j.lean&&typeof j.lean==="object"?j.lean:null};
   const today=new Date(note.at).toLocaleDateString("en-CA")===todayStr();
   state.market=Object.assign({},note,{receivedAt:new Date().toISOString(),how,dismissed:how==="first"&&!today});   /* on first load, only a note from today shows */
-  mkRemember(note); save(); renderMkBanner(); renderMkDesk(); return true; }
-function mkRemember(n){ const H=(state.marketHistory||[]).filter(h=>h.id!==n.id); H.unshift(n); const cutoff=Date.now()-30*86400000; state.marketHistory=H.filter(h=>Date.parse(h.at)>cutoff).sort((a,b)=>Date.parse(b.at)-Date.parse(a.at)).slice(0,200); }
+  mkRemember(Object.assign({},note,{live:true,receivedAt:state.market.receivedAt})); if(state.market.dismissed) mkMarkDismissed(note.id); save(); renderMkBanner(); renderMkDesk(); return true; }
+function mkMarkDismissed(id){ state.mkDismissed=(state.mkDismissed||[]).filter(x=>x!==id); state.mkDismissed.unshift(id); state.mkDismissed=state.mkDismissed.slice(0,300); }
+function mkOpenNotes(){ const seen=new Set(state.mkDismissed||[]); const cutoff=Date.now()-3*86400000; return (state.marketHistory||[]).filter(h=>h.live&&!seen.has(h.id)&&Date.parse(h.receivedAt||h.at)>cutoff); }
+function mkRemember(n){ const old=(state.marketHistory||[]).find(h=>h.id===n.id); if(old&&old.live&&!n.live){ n=Object.assign({},n,{live:true,receivedAt:old.receivedAt}); } const H=(state.marketHistory||[]).filter(h=>h.id!==n.id); H.unshift(n); const cutoff=Date.now()-30*86400000; state.marketHistory=H.filter(h=>Date.parse(h.at)>cutoff).sort((a,b)=>Date.parse(b.at)-Date.parse(a.at)).slice(0,200); }
 async function mkPoll(){ if(mkBusy) return; mkBusy=true; try{ const j=await mkGet("market.json",false); if(j) mkApply(j, state.market?"poll":"first"); if(!state.mkHistoryAt||Date.now()-state.mkHistoryAt>30*60*1000){ try{ const H=await mkGet("market-history.json",false); if(Array.isArray(H)){ H.filter(mkValid).filter(h=>!(+h.format>MK_FORMAT_MAX)).forEach(h=>mkRemember({id:String(h.id),at:h.at||h.id,by:h.by||"",kind:String(h.kind||"note"),title:String(h.title||MK_KIND_LABEL[h.kind]||"Market note"),text:String(h.text).slice(0,280),comment:h.comment?String(h.comment).slice(0,200):"",tenYear:h.tenYear||null,lean:h.lean||null})); state.mkHistoryAt=Date.now(); save(); renderMkDesk(); } }catch(e){} } }catch(e){} mkBusy=false; }
 async function mkOnPing(){ for(let i=0;i<3;i++){ try{ const j=await mkGet("market.json",true); if(j&&mkApply(j,"ping")) return; if(j&&state.market&&j.id===state.market.id&&i>0) return; }catch(e){} await new Promise(r=>setTimeout(r,2500*(i+1))); } }
-function mkDismiss(){ if(state.market){ state.market.dismissed=true; save(); } renderMkBanner(); }
+function mkDismiss(id){ if(state.market&&(!id||state.market.id===id)){ state.market.dismissed=true; } if(id) mkMarkDismissed(id); else if(state.market) mkMarkDismissed(state.market.id); save(); renderMkBanner(); }
 function mkWhen(iso){ try{ const d=new Date(iso); const sameDay=d.toLocaleDateString("en-CA")===todayStr(); return sameDay?d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}):d.toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"}); }catch(e){ return ""; } }
 function rdLeanHTML(m){ const l=m&&m.lean; if(!l||!l.state) return ""; const st=String(l.state).toLowerCase(); const arrow={improving:"\u2197",worsening:"\u2198",choppy:"\u2195",steady:"\u2192"}[st]||"\u2022"; const label=l.label||st.charAt(0).toUpperCase()+st.slice(1); const ty=m.tenYear&&m.tenYear.y!=null?` \u00b7 10-yr ${(+m.tenYear.y).toFixed(2)}%${m.tenYear.dayBps!=null?" ("+(m.tenYear.dayBps>0?"+":"")+m.tenYear.dayBps+" bps)":""}`:""; return `<span class="lean lean-${esc(st)}" title="${esc((l.line||"")+(ty?" \u2014"+ty:""))}">${arrow} ${esc(label)}</span>`; }
 function mkNoteHTML(n, full){ return `<div class="mknote kind-${esc(n.kind)}"><div class="mkhead"><span class="mkkind">${esc(MK_KIND_LABEL[n.kind]||n.kind)}</span>${n.title&&n.title.toLowerCase()!==String(MK_KIND_LABEL[n.kind]||n.kind).toLowerCase()?`<b>${esc(n.title)}</b>`:""}<span class="hint">${mkWhen(n.at)}${n.by?" \u00b7 "+esc(n.by):""}</span>${rdLeanHTML(n)}</div><div class="mktext">${esc(n.text)}</div>${n.comment?`<div class="mkcomment">\u201C${esc(n.comment)}\u201D${n.by?` <span class="hint">\u2014 ${esc(n.by)}</span>`:""}</div>`:""}</div>`; }
-function renderMkBanner(){ const b=$("mkBanner"); if(!b) return; const n=state.market; if(!n||n.dismissed||state.settings.mkBanner===false){ b.style.display="none"; return; }
-  b.style.display="block"; b.innerHTML=`<div class="mkrow">${mkNoteHTML(n)}<button class="btn ghost small" onclick="mkDismiss()">Dismiss</button></div>`; }
+function renderMkBanner(){ const b=$("mkBanner"); if(!b) return; const open=state.settings.mkBanner===false?[]:mkOpenNotes(); if(!open.length){ b.style.display="none"; b.innerHTML=""; layoutNotices(); return; }
+  b.style.display="contents"; b.innerHTML=open.map(n=>`<div class="notice mk" data-at="${Date.parse(n.receivedAt||n.at)||0}" data-nid="mk:${esc(n.id)}" data-summary="${esc((MK_KIND_LABEL[n.kind]||n.kind)+(n.title&&n.title.toLowerCase()!==String(MK_KIND_LABEL[n.kind]||n.kind).toLowerCase()?" \u00b7 "+n.title:"")+" \u00b7 "+n.text.slice(0,90)+(n.text.length>90?"\u2026":""))}"><div class="mkrow">${mkNoteHTML(n)}<button class="btn ghost small" onclick="mkDismiss('${esc(n.id)}')">Dismiss</button></div></div>`).join(""); layoutNotices(); }
+/* ---- the notice stack: everything dismissable, newest on top and open, the rest folded to one line each ---- */
+let noticeOpen=null;
+function layoutNotices(){ const st=$("noticeStack"); if(!st) return; const items=[...st.querySelectorAll(".notice")].filter(e=>e.style.display!=="none"); const foot=$("noticeFoot");
+  items.sort((a,b)=>(+b.dataset.at||0)-(+a.dataset.at||0)); items.forEach((e,i)=>{ e.style.order=String(i); });
+  const openEl=items.find(e=>e.dataset.nid&&e.dataset.nid===noticeOpen)||items[0]; items.forEach(e=>{ const folded=items.length>1&&e!==openEl; e.classList.toggle("folded",folded); e.classList.toggle("top",e===openEl);
+    let f=e.querySelector(":scope>.nfold"); if(folded){ if(!f){ f=document.createElement("div"); f.className="nfold"; e.prepend(f); } f.innerHTML=`<span class="nsum">${esc(e.dataset.summary||e.textContent.trim().slice(0,90))}</span><button type="button" class="nx" title="Dismiss">\u2715</button>`; f.onclick=ev=>{ if(ev.target.classList.contains("nx")){ ev.stopPropagation(); noticeDismiss(e); return; } noticeOpen=e.dataset.nid||null; layoutNotices(); }; } else if(f) f.remove(); });
+  if(foot){ foot.style.display=items.length>1?"flex":"none"; foot.style.order="999"; foot.innerHTML=`<span class="hint">${items.length} notices</span><button type="button" class="btn ghost small" onclick="noticeDismissAll()">Dismiss all</button>`; } }
+function noticeDismiss(e){ const id=e.dataset.nid||""; if(id.startsWith("mk:")) mkDismiss(id.slice(3)); else if(id.startsWith("rates:")) rdDismiss(); else if(e.id==="updBanner"){ e.style.display="none"; layoutNotices(); } }
+function noticeDismissAll(){ const st=$("noticeStack"); [...st.querySelectorAll(".notice")].filter(e=>e.style.display!=="none").forEach(noticeDismiss); }
 function renderMkDesk(){ const el=$("mkDesk"); if(!el) return; const H=(state.marketHistory||[]).slice(0,12); if(!H.length){ el.innerHTML=state.mkNewer?`<div class="hint" style="margin-top:8px"><span class="tag-warn">Market notes are in a newer format (v${esc(state.mkNewer)}) than this toolkit reads \u2014 update the toolkit.</span></div>`:""; return; }
   el.innerHTML=`<div class="mkdesk"><h3>Market notes <span class="hint">\u00b7 from the rate desk, last 30 days \u00b7 informational, never a rate change</span></h3>${H.map(n=>mkNoteHTML(n)).join("")}</div>`; }
 function rdStart(){ clearInterval(rdTimer); rdPoll(false); rdTimer=setInterval(()=>rdPoll(false), 2*60*1000); window.addEventListener("online",()=>{ rdPoll(false); if(rdSSE){ try{ rdSSE.close(); }catch(e){} rdSSE=null; rdSSETopic=""; rdSubscribe(); } }); }
@@ -5548,11 +5571,12 @@ if(DEMO){ document.body.classList.add("demo"); const bn=$("demoBanner"); if(bn) 
 { const v=$("verTag"); if(v) v.textContent="v"+appVersion()+(DESK?" desktop":" browser")+" \u00b7 "; }
 if(/-beta\./.test(appVersion())){ const bn=$("updBanner"); if(bn){ bn.style.display="block"; bn.innerHTML=`<b>Beta build</b> \u2014 this is the test version with the Chrome extension. It keeps its own data file and never updates itself; newer betas are posted on the <a href="#" onclick="DESK&&DESK.openReleases();return false">releases page</a>.`; } }
 if(DESK){ DESK.setHub(apiBase()||""); DESK.onUpdateStatus(s=>{ const b=$("updBanner"); if(!b) return;
-    b.style.display="block"; b.innerHTML = s.state==="ready"
-      ? `<div class="btnrow"><span><b>Update available:</b> version ${esc(s.version)} is ready. Everything you\u2019re working on is saved \u2014 update whenever you have a moment.</span><span style="flex:1"></span><button class="btn small" onclick="DESK.installUpdate()">Update now</button><button class="btn ghost small" onclick="this.closest('#updBanner').style.display='none'">Later</button></div>`
+    b.style.display="block"; b.dataset.at=String(Date.now()); b.dataset.nid="upd:"+s.version; b.dataset.summary="Update available \u00b7 version "+s.version; b.innerHTML = s.state==="ready"
+      ? `<div class="btnrow"><span><b>Update available:</b> version ${esc(s.version)} is ready. Everything you\u2019re working on is saved \u2014 update whenever you have a moment.</span><span style="flex:1"></span><button class="btn small" onclick="DESK.installUpdate()">Update now</button><button class="btn ghost small" onclick="this.closest('#updBanner').style.display='none';layoutNotices()">Later</button></div>`
       : s.state==="manual"
-      ? `<div class="btnrow"><span><b>Update available:</b> version ${esc(s.version)}. Download the new installer and drag it over the app \u2014 your data stays put.</span><span style="flex:1"></span><button class="btn small" onclick="DESK.openReleases&&DESK.openReleases()">Download update</button><button class="btn ghost small" onclick="this.closest('#updBanner').style.display='none'">Later</button></div>`
+      ? `<div class="btnrow"><span><b>Update available:</b> version ${esc(s.version)}. Download the new installer and drag it over the app \u2014 your data stays put.</span><span style="flex:1"></span><button class="btn small" onclick="DESK.openReleases&&DESK.openReleases()">Download update</button><button class="btn ghost small" onclick="this.closest('#updBanner').style.display='none';layoutNotices()">Later</button></div>`
       : "<b>Downloading update</b> to version "+esc(s.version)+" in the background\u2026";
+    layoutNotices();
     const su=$("sideUpd"); if(su){ su.style.display="block"; su.innerHTML = s.state==="ready" ? `<button class="btn small" style="width:100%;min-height:28px;font-size:11.5px" onclick="DESK.installUpdate()" title="Everything is saved \u2014 restarts the app">\u2B06 Update to v${esc(s.version)}</button>` : s.state==="manual" ? `<button class="btn ghost small" style="width:100%;min-height:28px;font-size:11.5px" onclick="DESK.openReleases&&DESK.openReleases()">\u2B06 v${esc(s.version)} available</button>` : `<span class="tag-flat" style="font-size:10.5px">\u2B07 downloading v${esc(s.version)}\u2026</span>`; } });
   document.body.classList.add("desktop"); const b=$("deskBox"); if(b) b.style.display="block";
   if(DESK.onSfIncoming) DESK.onSfIncoming(sfIncoming); renderExtStatus();

@@ -185,8 +185,6 @@ body.nmc-enter svg.chart path[stroke]:nth-of-type(2){animation-delay:.15s}body.n
 body.nmc-enter svg.chart circle{animation:nmc-tagpop .4s cubic-bezier(.2,.9,.3,1.4) both 1.2s}
 
 /* ---------- market notes: the lighter banner and the lean badge ---------- */
-#mkBanner{background:#fff;border:1px solid var(--line);border-left:3px solid #6B7DA8;border-radius:10px;padding:10px 14px;margin:0 0 12px;font-size:13.5px;box-shadow:0 1px 2px rgba(52,55,64,.04),0 10px 24px -16px rgba(52,55,64,.25);animation:nmc-menuin .24s var(--nmc-ease)}
-#mkBanner .mkrow{display:flex;gap:12px;align-items:flex-start}#mkBanner .mknote{flex:1;min-width:0}
 .mknote .mkhead{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
 .mknote .mkkind{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:#6B7DA8;font-weight:700}
 .mknote .mktext{margin-top:3px;line-height:1.5;color:var(--ink)}
@@ -196,6 +194,22 @@ body.nmc-enter svg.chart circle{animation:nmc-tagpop .4s cubic-bezier(.2,.9,.3,1
 .mkdesk .mknote{padding:8px 0;border-bottom:1px solid #F0EBE1;font-size:13px}.mkdesk .mknote:last-child{border-bottom:none}
 .lean{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;letter-spacing:.02em;border-radius:999px;padding:1px 9px;border:1px solid var(--line);background:#fff;color:var(--muted);cursor:default;vertical-align:middle;font-family:var(--sans);text-transform:none}
 .lean-improving{color:var(--good);border-color:#BBD6C6;background:#F2F9F4}.lean-worsening{color:var(--warn);border-color:#E6C2B9;background:#FFF6F3}.lean-choppy{color:#8A6D00;border-color:#E8D88A;background:#FFFBEA}.lean-steady{color:#3F4556;border-color:#C9D2E6;background:#F3F6FC}
+/* ---------- the notice stack: newest open on top, the rest folded to a line ---------- */
+#noticeStack{display:flex;flex-direction:column;gap:6px;margin:0 0 12px}
+#noticeStack:empty{display:none}
+#noticeStack .notice{margin:0!important}
+#noticeStack .notice.folded{display:block!important;padding:0!important;background:#fff!important;border:1px solid var(--line)!important;border-left-width:3px!important;box-shadow:0 1px 2px rgba(52,55,64,.04)!important;overflow:hidden;animation:none}
+#noticeStack .notice.folded>*:not(.nfold){display:none!important}
+#noticeStack .nfold{display:flex;align-items:center;gap:10px;padding:6px 12px;font-size:12.5px;color:var(--ink);cursor:pointer;min-height:30px;transition:background .15s}
+#noticeStack .nfold:hover{background:var(--cream-soft)}
+#noticeStack .nfold .nsum{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#noticeStack .nfold .nx{all:unset;cursor:pointer;color:var(--muted);font-size:12px;padding:2px 6px;border-radius:6px}#noticeStack .nfold .nx:hover{color:var(--brand);background:#fff}
+#noticeStack #rdBanner.folded{border-left-color:var(--brand)!important}#noticeStack .notice.mk.folded{border-left-color:#6B7DA8!important}#noticeStack #updBanner.folded{border-left-color:#6B7DA8!important}
+#noticeStack .notice.top{animation:nmc-menuin .22s var(--nmc-ease)}
+#noticeFoot{display:flex;align-items:center;justify-content:flex-end;gap:10px;padding:0 4px}
+#noticeFoot .btn{min-height:26px;font-size:11.5px;padding:0 10px}
+#mkBanner .notice{background:#fff;border:1px solid var(--line);border-left:3px solid #6B7DA8;border-radius:10px;padding:10px 14px;font-size:13.5px;box-shadow:0 1px 2px rgba(52,55,64,.04),0 10px 24px -16px rgba(52,55,64,.25)}
+#mkBanner .notice .mkrow{display:flex;gap:12px;align-items:flex-start}#mkBanner .notice .mknote{flex:1;min-width:0}
 /* ---------- My desk ---------- */
 .stat{background:#fff;border:1px solid var(--line);border-left:3px solid var(--brand);border-radius:10px;box-shadow:0 1px 2px rgba(52,55,64,.04),0 10px 24px -16px rgba(52,55,64,.25)}
 .stat .v,.stat b{font-family:var(--serif)}
