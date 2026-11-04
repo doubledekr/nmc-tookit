@@ -283,13 +283,14 @@ body.nmc-enter #pipeTable tr.grp{animation:none}
 /* compact: more rows on screen, less chrome everywhere on the pipeline */
 #pipeTable table.data.dense td{padding:4px 8px}
 #pipeTable table.data.dense .pc-name{font-size:13px}#pipeTable table.data.dense .pc-meta{margin-top:2px}#pipeTable table.data.dense .pc-chip{font-size:11px;padding:0 7px}
-#pipeTable table.data.dense .pc-serv,#pipeTable table.data.dense .ps .psm,#pipeTable table.data.dense .pl .pl2,#pipeTable table.data.dense .pf .pfr,#pipeTable table.data.dense .gap .gaph{max-height:0;opacity:0;overflow:hidden;margin-top:0;transition:max-height .22s var(--nmc-ease),opacity .18s ease,margin .22s var(--nmc-ease)}
-#pipeTable table.data.dense tbody tr:hover .pc-serv,#pipeTable table.data.dense tbody tr:hover .ps .psm,#pipeTable table.data.dense tbody tr:hover .pl .pl2,#pipeTable table.data.dense tbody tr:hover .pf .pfr,#pipeTable table.data.dense tbody tr:hover .gap .gaph{max-height:48px;opacity:1}
+#pipeTable table.data.dense .pc-serv,#pipeTable table.data.dense .ps .psm,#pipeTable table.data.dense .pl .pl2,#pipeTable table.data.dense .pf .pfr,#pipeTable table.data.dense .gap .gaph{max-height:0;opacity:0;overflow:hidden;margin-top:0;transform:translateY(-3px);transition:max-height .14s ease-in,opacity .1s ease-in,margin .14s ease-in,transform .14s ease-in;will-change:max-height,opacity}
+#pipeTable table.data.dense tbody tr:hover .pc-serv,#pipeTable table.data.dense tbody tr:hover .ps .psm,#pipeTable table.data.dense tbody tr:hover .pl .pl2,#pipeTable table.data.dense tbody tr:hover .pf .pfr{max-height:20px;opacity:1;transform:none;transition:max-height .17s cubic-bezier(.2,.9,.3,1.1),opacity .12s ease-out .03s,margin .17s cubic-bezier(.2,.9,.3,1.1),transform .17s cubic-bezier(.2,.9,.3,1.1)}
+#pipeTable table.data.dense tbody tr:hover .gap .gaph{max-height:34px;opacity:1;transform:none;transition:max-height .17s cubic-bezier(.2,.9,.3,1.1),opacity .12s ease-out .03s,transform .17s cubic-bezier(.2,.9,.3,1.1)}
 #pipeTable table.data.dense tbody tr:hover .pc-serv{margin-top:3px}#pipeTable table.data.dense tbody tr:hover .ps .psm{margin-top:4px}#pipeTable table.data.dense tbody tr:hover .pl .pl2{margin-top:2px}#pipeTable table.data.dense tbody tr:hover .pf .pfr{margin-top:1px}
-#pipeTable table.data.dense .pc-meta .pc-chip:nth-child(2){max-width:0;padding-left:0;padding-right:0;border-color:transparent;opacity:0;transition:max-width .25s var(--nmc-ease),opacity .18s ease,padding .25s var(--nmc-ease)}
-#pipeTable table.data.dense tbody tr:hover .pc-meta .pc-chip:nth-child(2){max-width:170px;padding-left:7px;padding-right:7px;border-color:var(--line);opacity:1}
+#pipeTable table.data.dense .pc-meta .pc-chip:nth-child(2){max-width:0;padding-left:0;padding-right:0;border-color:transparent;opacity:0;transition:max-width .14s ease-in,opacity .1s ease-in,padding .14s ease-in}
+#pipeTable table.data.dense tbody tr:hover .pc-meta .pc-chip:nth-child(2){max-width:170px;padding-left:7px;padding-right:7px;border-color:var(--line);opacity:1;transition:max-width .2s cubic-bezier(.2,.9,.3,1.05),opacity .12s ease-out .04s,padding .2s cubic-bezier(.2,.9,.3,1.05)}
 #pipeTable table.data.dense tbody tr:hover .pot{white-space:normal;max-width:none}
-#pipeTable table.data.dense tbody tr{transition:background .12s}
+#pipeTable table.data.dense tbody tr{transition:background .1s}#pipeTable table.data.dense td{transition:padding .17s cubic-bezier(.2,.9,.3,1.1)}#pipeTable table.data.dense tbody tr:hover td{padding-top:7px;padding-bottom:7px}
 #pipeTable table.data.dense .pl .pl1{font-size:13px}#pipeTable table.data.dense .pf .pfd{font-size:12.5px}
 #pipeTable table.data.dense .gap .gapl{font-size:12px}#pipeTable table.data.dense .gap .gapbar{height:4px;margin:3px 0 0}
 #pipeTable table.data.dense .pot{font-size:11px;padding:2px 7px;white-space:nowrap;max-width:160px;overflow:hidden;text-overflow:ellipsis;display:inline-block}
