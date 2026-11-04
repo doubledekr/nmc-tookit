@@ -37,7 +37,11 @@
     arrowUp:  '<path d="M8 13V3M4 7l4-4 4 4"/>',
     arrowDown:'<path d="M8 3v10M4 9l4 4 4-4"/>',
     star:     '<path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z" fill="currentColor" stroke="none"/>',
-    starO:    '<path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/>'
+    starO:    '<path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/>',
+    phone:    '<path d="M3.5 2.5h2.5l1.2 3-1.5 1.2a9 9 0 0 0 3.6 3.6l1.2-1.5 3 1.2v2.5a1 1 0 0 1-1 1A11.5 11.5 0 0 1 2.5 3.5a1 1 0 0 1 1-1z"/>',
+    mail:     '<rect x="2" y="3.5" width="12" height="9" rx="1.5"/><path d="M2 5l6 4 6-4"/>',
+    send:     '<path d="M14 2L2 7l5 2 2 5z"/>',
+    present:  '<rect x="2" y="3" width="12" height="8" rx="1"/><path d="M8 11v3M5.5 14h5"/>'
   };
   const EMOJI = {
     "\u{1F525}":"flame", "✨":"sparkle", "\u{1F514}":"bell", "⏳":"hourglass", "\u{1F4C5}":"calendar",

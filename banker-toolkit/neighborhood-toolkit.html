@@ -352,7 +352,7 @@ body.obj-open #objDrawer{display:block}body.obj-open main{margin-right:380px}
 #objDrawer .objflow{grid-template-columns:1fr;gap:8px}#objDrawer h2{font-family:var(--serif);font-size:18px;font-weight:400;margin:0}
 #objDrawer .objbox .objt{font-size:14.5px}#objDrawer .objbox.cl .objt{font-size:17px}
 body.obj-open .tchart .trow{font-size:13px}body.obj-open .tchart .trow input,body.obj-open .tchart .trow select{font-size:13px;padding:4px 6px}
-#pipeTable table.data td{padding:9px 8px}#pipeTable td:nth-child(2) .tag-good,#pipeTable td:nth-child(2) .tag-warn,#pipeTable td:nth-child(2) .tag-flat{white-space:nowrap}#pipeTable td:nth-child(7){white-space:nowrap}#pipeTable table.data{width:100%;table-layout:auto}#pipeTable table.data td{padding:8px 6px}#pipeTable table.data th{padding:8px 6px;white-space:nowrap}#pipeTable td:first-child{min-width:165px}#pipeTable td:first-child .hint{font-size:11.5px;line-height:1.35}#pipeTable td:nth-child(2) .tag-good{white-space:normal}#pipeTable td.elig{min-width:112px}#pipeTable td.elig .tag-good{white-space:nowrap;font-size:11.5px}#pipeTable td.elig .hint{font-size:11px;line-height:1.35}#pipeTable td.opp .tag-good,#pipeTable td.opp .tag-flat,#pipeTable td.opp .tag-warn{font-size:11.5px;line-height:1.35;padding:3px 8px;white-space:normal}#pipeTable th:last-child,#pipeTable td:last-child{width:1%;white-space:nowrap}#pipeTable .num{white-space:nowrap}
+#pipeTable table.data td{padding:9px 8px}#pipeTable table.data{width:100%;table-layout:auto}#pipeTable table.data td{padding:8px 6px}#pipeTable table.data th{padding:8px 6px;white-space:nowrap}#pipeTable td:first-child{min-width:165px}#pipeTable td:first-child .hint{font-size:11.5px;line-height:1.35}#pipeTable th:last-child,#pipeTable td:last-child{width:1%;white-space:nowrap}#pipeTable .num{white-space:nowrap}
 .dupbar{background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 12px;font-size:13.5px}
 #sfPanel .sfhead{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none}#sfPanel .sfhead h2{margin:0;flex:1}#sfPanel .sfhead .tgl{font-size:12px;color:var(--muted)}
 #sfPanel.closed #sfBody{display:none}#sfPanel.closed{padding:12px 18px}
@@ -365,7 +365,7 @@ body.obj-open .tchart .trow{font-size:13px}body.obj-open .tchart .trow input,bod
 /* pipeline: column titles stay put */
 #pipeTable table.data thead th{position:sticky;top:var(--barh,78px);background:var(--panel);z-index:5;box-shadow:0 1px 0 var(--line)}
 /* pipeline columns: proportions set up front so the table lays out the same whatever the window started at or how long a row's text runs */
-#pipeTable table.data th:nth-child(1){width:21%}#pipeTable table.data th:nth-child(2){width:12%}#pipeTable table.data th:nth-child(3){width:8%}#pipeTable table.data th:nth-child(7){width:10%}#pipeTable table.data th.elig{width:16%}#pipeTable table.data th.opp{width:12%}
+#pipeTable table.data th.pc{width:22%}#pipeTable table.data th.ps{width:12%}#pipeTable table.data th.pl{width:14%}#pipeTable table.data th.pf{width:11%}#pipeTable table.data th.pe{width:17%}#pipeTable table.data th.po{width:14%}
 #pipeTable .fuq{display:inline-flex;gap:3px;margin-top:4px}#pipeTable .fuq .btn{min-height:24px;width:26px;padding:0;font-size:12px;border-radius:6px}#pipeTable table.data th:nth-child(8){width:17%}#pipeTable table.data th:nth-child(9){width:14%}
 #s-pipeline .panel{padding-top:12px}#pipeTop{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}#pipeTop .pipe-add{margin-left:auto;display:inline-flex;gap:6px}
 /* tools: every tool folds behind its title bar */
@@ -484,7 +484,8 @@ aside .side-foot,#sideCard .hint{color:rgba(255,255,255,.55)}
 .rate-pill .rp-box:hover{background:rgba(255,255,255,.24)}
 .rate-pill .rp-box b{font-size:13px;color:#fff}
 .rate-pill .rp-box.new.has{background:rgba(255,255,255,.28)}
-.rate-pill .rp-note{position:absolute;top:-8px;right:-6px;z-index:2;text-decoration:none;border:1.5px solid #fff;border-radius:12px;padding:1px 7px;font-size:11px;font-weight:700;line-height:1.4;background:#fff;color:var(--brand)}
+.rate-pill .rp-note{position:absolute;top:-10px;right:-6px;z-index:2;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:4px;height:24px;min-width:28px;padding:0 9px;border:1.5px solid #fff;border-radius:13px;font-size:11.5px;font-weight:700;line-height:1;background:#fff;color:var(--brand);box-shadow:0 4px 10px -4px rgba(0,0,0,.5)}
+.rate-pill .rp-note .ic{margin:0;width:14px;height:14px;vertical-align:0;stroke-width:1.8}
 .rate-pill .rp-note.unseen{background:var(--brand);color:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.25);animation:nmc-breathe-w 3s ease-in-out infinite}
 .rate-pill .dot{vertical-align:middle}
 /* an occasional light sweep across the card */
@@ -554,16 +555,16 @@ body.present-mode #playTabs{display:none}
 #pipeTable table.data th{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600;border-bottom:1px solid var(--line);box-shadow:none}
 #pipeTable table.data td{border-bottom:1px solid #F0EBE1;transition:background .12s}
 #pipeTable table.data tbody tr:hover td{background:var(--cream-soft)}
-#pipeTable td:first-child b{font-weight:600}
+
 main{min-width:0}
 #pipeTable td:first-child{min-width:120px}#pipeTable td:nth-child(8){min-width:112px}#pipeTable td:nth-child(7){white-space:normal}#pipeTable td:nth-child(3){white-space:normal}#pipeTable td:nth-child(2) .tag-flat,#pipeTable td:nth-child(2) .tag-warn{white-space:normal}#pipeTable table.data th{white-space:normal}
 #pipeTable .fuq{flex-wrap:wrap}
-@media (max-width:1200px){#s-pipeline .panel{overflow-x:auto}#pipeTable table.data{min-width:980px}#pipeTable table.data thead th{position:static}#pipeTable td:nth-child(2) .tag-flat,#pipeTable td:nth-child(2) .tag-warn,#pipeTable td:nth-child(7) .fud,#pipeTable td:nth-child(3){white-space:nowrap}#pipeTable .fuq{flex-wrap:nowrap}}
+@media (max-width:1200px){#s-pipeline .panel{overflow-x:auto}#pipeTable table.data{min-width:980px}#pipeTable table.data thead th{position:static}#pipeTable .ps .tag-flat,#pipeTable .ps .tag-warn,#pipeTable .pf .fud{white-space:nowrap}#pipeTable .fuq{flex-wrap:nowrap}}
 #pipeTable td:last-child .btn{background:#fff;color:var(--brand);border:1px solid #E6C2B9;min-height:30px;padding:0 12px;font-size:12.5px;box-shadow:none;transition:all .16s ease}
 #pipeTable td:last-child .btn::after{content:none}
 #pipeTable tbody tr:hover td:last-child .btn{background:linear-gradient(180deg,var(--nmc-red-hi),var(--brand) 60%,var(--nmc-red-lo));color:#fff;border-color:transparent;box-shadow:0 6px 12px -5px rgba(165,50,34,.6);transform:translateY(-1px)}
-#pipeTable td:nth-child(9) .tag-good{background:linear-gradient(180deg,#EAF4EE,#E0EEE5);border:none;border-left:3px solid var(--good);border-radius:6px;padding:4px 8px;font-weight:500;color:#1F4D38;line-height:1.35;box-shadow:0 1px 0 #fff inset}
-#pipeTable td:nth-child(8) .tag-good{background:linear-gradient(180deg,#EAF4EE,#E0EEE5);border:none;color:#1F4D38}
+
+
 tr.elig-week td{background:transparent}
 tr.elig-today td{animation:nmc-eligsweep 1.6s ease-out 1;background:transparent}
 @keyframes nmc-eligsweep{0%{background:#E3F1E7}100%{background:transparent}}
@@ -580,14 +581,14 @@ tr.elig-today td{animation:nmc-eligsweep 1.6s ease-out 1;background:transparent}
 @keyframes nmc-breathe-g{0%,100%{box-shadow:0 0 0 0 rgba(46,107,79,.5);opacity:.85}50%{box-shadow:0 0 0 7px rgba(46,107,79,0);opacity:1}}
 @keyframes nmc-breathe-w{0%,100%{box-shadow:0 0 0 0 rgba(255,255,255,.45)}50%{box-shadow:0 0 0 5px rgba(255,255,255,0)}}
 @keyframes nmc-flicker{0%,100%{transform:scale(1);opacity:.8}30%{transform:scale(1.25);opacity:1}55%{transform:scale(.95);opacity:.75}75%{transform:scale(1.15);opacity:1}}
-#pipeTable tr.due td:nth-child(7) .fud{color:#8A6D00;font-weight:600}
-#pipeTable tr.overdue td:nth-child(7) .fud{color:var(--brand);font-weight:700;animation:nmc-hum 1.8s ease-in-out infinite}
+
+
 @keyframes nmc-hum{0%,100%{opacity:1}50%{opacity:.55}}
 #pipeTable tbody tr:hover td:first-child::before{animation:none;opacity:1;box-shadow:0 0 0 3px rgba(52,55,64,.06)}
-#pipeTable tbody tr:hover td:nth-child(7) .fud{animation:none}
-#pipeTable tr.hotrow .ic.flame{transform-origin:50% 90%;animation:nmc-flame 1.6s ease-in-out infinite}
+
+#pipeTable tr.hotrow .pc-name .ic.flame{transform-origin:50% 90%;animation:nmc-flame 1.6s ease-in-out infinite}
 @keyframes nmc-flame{0%,100%{transform:scale(1) rotate(0)}25%{transform:scale(1.12) rotate(-3deg)}50%{transform:scale(.96) rotate(2deg)}75%{transform:scale(1.08) rotate(-1deg)}}
-#pipeTable td:nth-child(8) .tag-good .ic,#pipeTop .btn .ic.sparkle{animation:nmc-twinkle 5s ease-in-out infinite}
+
 @keyframes nmc-twinkle{0%,88%,100%{transform:scale(1) rotate(0);opacity:1}92%{transform:scale(1.35) rotate(20deg);opacity:.9}96%{transform:scale(.9) rotate(-10deg)}}
 /* entrance: only when a screen or view is just opened (body.nmc-enter), never on a background re-render */
 body.nmc-enter .screen.active{animation:nmc-screenin .32s var(--nmc-ease)}
@@ -596,7 +597,7 @@ body.nmc-enter #pipeTable table.data tbody tr{animation:nmc-rowin .42s var(--nmc
 body.nmc-enter #pipeTable table.data tbody tr:nth-child(1){animation-delay:.03s}body.nmc-enter #pipeTable table.data tbody tr:nth-child(2){animation-delay:.08s}body.nmc-enter #pipeTable table.data tbody tr:nth-child(3){animation-delay:.13s}body.nmc-enter #pipeTable table.data tbody tr:nth-child(4){animation-delay:.18s}body.nmc-enter #pipeTable table.data tbody tr:nth-child(5){animation-delay:.23s}body.nmc-enter #pipeTable table.data tbody tr:nth-child(6){animation-delay:.28s}body.nmc-enter #pipeTable table.data tbody tr:nth-child(7){animation-delay:.33s}body.nmc-enter #pipeTable table.data tbody tr:nth-child(8){animation-delay:.38s}body.nmc-enter #pipeTable table.data tbody tr:nth-child(n+9){animation-delay:.42s}
 @keyframes nmc-rowin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 body.nmc-enter #pipeTable .tag-good,body.nmc-enter #pipeTable .tag-flat,body.nmc-enter #pipeTable .tag-warn{animation:nmc-tagpop .5s cubic-bezier(.2,.9,.3,1.4) both .35s}
-body.nmc-enter #pipeTable td:nth-child(9) .tag-good{animation:nmc-tagpop .5s cubic-bezier(.2,.9,.3,1.3) both .5s}
+body.nmc-enter 
 @keyframes nmc-tagpop{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:none}}
 body.nmc-enter #pipeTop .btn{animation:nmc-rowin .4s ease both}body.nmc-enter #pipeTop .btn:nth-child(2){animation-delay:.04s}body.nmc-enter #pipeTop .btn:nth-child(3){animation-delay:.08s}body.nmc-enter #pipeTop .btn:nth-child(4){animation-delay:.12s}body.nmc-enter #pipeTop .btn:nth-child(5){animation-delay:.16s}body.nmc-enter #pipeTop .btn:nth-child(6){animation-delay:.2s}body.nmc-enter #pipeTop .btn:nth-child(7){animation-delay:.24s}body.nmc-enter #pipeTop .btn:nth-child(n+8){animation-delay:.28s}
 body.nmc-enter #pipeTable .hotbar{animation:nmc-rowin .4s ease both .2s}
@@ -635,6 +636,58 @@ body.nmc-enter svg.chart circle{animation:nmc-tagpop .4s cubic-bezier(.2,.9,.3,1
 #noticeFoot .btn{min-height:26px;font-size:11.5px;padding:0 10px}
 #mkBanner .notice{background:#fff;border:1px solid var(--line);border-left:3px solid #6B7DA8;border-radius:10px;padding:10px 14px;font-size:13.5px;box-shadow:0 1px 2px rgba(52,55,64,.04),0 10px 24px -16px rgba(52,55,64,.25)}
 #mkBanner .notice .mkrow{display:flex;gap:12px;align-items:flex-start}#mkBanner .notice .mknote{flex:1;min-width:0}
+/* ---------- pipeline rows: client, status, loan, follow-up, rate gap, opportunity, actions ---------- */
+#pipeTable table.data th{white-space:normal}
+#pipeTable table.data td{vertical-align:top;padding:9px 10px}
+#pipeTable table.data.dense td{padding:5px 10px}
+#pipeTable tbody tr:not(.grp){cursor:pointer}
+#pipeTable .pc{min-width:150px}
+#pipeTable .pc-name{font-weight:600;font-size:14px;line-height:1.25;display:block}
+#pipeTable .pc-meta{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;align-items:center}
+.pc-chip{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:999px;padding:1px 8px;line-height:1.5;cursor:copy;transition:background .12s,border-color .12s,transform .18s var(--nmc-snap);font-variant-numeric:tabular-nums;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.pc-chip:hover{background:var(--cream-soft);border-color:#C9C2B4}
+.pc-chip.copied{background:#E3F1E7;border-color:#BBD6C6;color:#1F4D38;animation:nmc-snap .32s var(--nmc-snap)}
+.pc-chip .ic{width:.85em;height:.85em;margin-right:0;opacity:.7}
+#pipeTable .pc-serv{font-size:11px;color:var(--muted);display:block;margin-top:3px}
+#pipeTable table.data.dense .pc-serv{display:none}
+#pipeTable .ps .psm{font-size:11px;color:var(--muted);margin-top:4px;white-space:nowrap;display:flex;align-items:center;gap:3px}
+#pipeTable .ps .psm .good{color:var(--good)}
+#pipeTable .pl{white-space:nowrap;font-variant-numeric:tabular-nums}
+#pipeTable .pl .pl1{font-size:13.5px;color:var(--ink)}#pipeTable .pl .pl1 b{font-weight:600}
+#pipeTable .pl .pl2{font-size:11.5px;color:var(--muted);margin-top:2px;white-space:nowrap}#pipeTable .pl .pl2 em{font-style:normal;color:var(--ink)}
+#pipeTable .pl .typ{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--brand);background:#FFF3F0;border-radius:4px;padding:0 5px;margin-right:6px;vertical-align:1px}
+#pipeTable .pf{white-space:nowrap}#pipeTable .pf .pfd{font-size:13px;font-weight:600}#pipeTable .pf .pfr{font-size:11px;color:var(--muted);margin-top:1px}
+#pipeTable .pf.due .pfd{color:#8A6D00}#pipeTable .pf.over .pfd{color:var(--brand)}
+#pipeTable tr.overdue .pf .pfd{animation:nmc-hum 1.8s ease-in-out infinite}#pipeTable tbody tr:hover .pf .pfd{animation:none}
+#pipeTable .pf .pfc .ic{opacity:.6}#pipeTable .pf .pfc.moved .ic{opacity:.35}
+#pipeTable .pf .pfq{opacity:0;transition:opacity .15s;margin-top:5px}#pipeTable tbody tr:hover .pf .pfq,#pipeTable .pf .pfq.stay{opacity:1}
+#pipeTable .pe{min-width:160px}
+.gap .gapl{font-size:12.5px;white-space:nowrap;font-variant-numeric:tabular-nums}.gap .gapl b{font-weight:600}.gap .gapl .arr{color:var(--muted);margin:0 3px}
+.gap .gapbar{position:relative;height:6px;border-radius:3px;background:#EEE9DE;margin:5px 0 3px}
+.gap .gapbar i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:linear-gradient(90deg,#D9A441,#2E6B4F);transition:width .6s var(--nmc-ease)}
+.gap.ok .gapbar i{background:linear-gradient(90deg,#5FA882,#2E6B4F)}.gap.mk .gapbar i{background:linear-gradient(90deg,#C9D2E6,#6B7DA8)}.gap.mk .gaph b{color:#3F4556}.gap.near .gapbar i{background:linear-gradient(90deg,#E8C25A,#D9A441)}.gap.up .gapbar i{width:0!important}
+.gap .gapbar s{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);border-radius:1px;opacity:.55}
+.gap .gaph{font-size:11px;color:var(--muted);white-space:nowrap}.gap .gaph b{font-weight:600}.gap.ok .gaph b{color:var(--good)}.gap.near .gaph b{color:#8A6D00}.gap.up .gaph b{color:var(--muted)}
+.gap .q{display:inline-block;border:1px dashed #C9C2B4;border-radius:999px;padding:0 6px;color:var(--muted);font-size:10.5px;margin-left:2px;cursor:help}
+#pipeTable .po{max-width:200px}
+#pipeTable .pot{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:#1F4D38;background:linear-gradient(180deg,#EAF4EE,#E0EEE5);border-left:3px solid var(--good);border-radius:6px;padding:4px 8px;line-height:1.3;cursor:help;box-shadow:0 1px 0 #fff inset}
+#pipeTable .pot.warn{color:var(--warn);background:#FFF6F3;border-left-color:var(--warn)}#pipeTable .pot.flat{color:var(--muted);background:#fff;border:1px solid var(--line);border-left-width:3px}
+#pipeTable .pa{white-space:nowrap;text-align:right;width:36px;position:relative}
+#pipeTable .pa .qa{position:absolute;right:8px;bottom:8px;transform:translateX(6px);display:inline-flex;gap:3px;opacity:0;transition:opacity .15s,transform .18s var(--nmc-ease);background:rgba(255,255,255,.92);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:10px;padding:2px;box-shadow:0 8px 20px -10px rgba(107,31,21,.35);pointer-events:none}#pipeTable tbody tr:hover .pa .qa{opacity:1;transform:none;pointer-events:auto}
+#pipeTable .pa .qa button{all:unset;cursor:pointer;width:28px;height:28px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);border:1px solid transparent;transition:all .14s}
+#pipeTable .pa .qa button:hover{background:#fff;border-color:var(--line);color:var(--brand);transform:translateY(-1px);box-shadow:0 4px 10px -6px rgba(165,50,34,.4)}
+#pipeTable .pa .qa button .ic{margin:0;width:15px;height:15px}
+#pipeTable .pa .go{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:8px;color:var(--brand);font-size:18px;line-height:1;margin-left:4px;transition:transform .15s,background .15s}#pipeTable tbody tr:hover .pa .go{transform:translateX(2px);background:#fff}
+#pipeTable tr.grp td{background:transparent!important;border-bottom:none!important;padding:16px 10px 4px!important;cursor:default}
+#pipeTable tr.grp td .g{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700;display:flex;align-items:center;gap:8px}
+#pipeTable tr.grp td .g::after{content:"";flex:1;height:1px;background:var(--line)}
+#pipeTable tr.grp td .g .n{background:var(--cream-soft);border-radius:999px;padding:0 7px;color:var(--ink);font-size:11px;letter-spacing:0}
+#pipeTable tr.grp.now td .g{color:var(--brand)}#pipeTable tr.grp.fresh td .g{color:var(--good)}
+#pipeTable tr.grp td:first-child::before{content:none}
+.dens{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px;background:#fff;vertical-align:middle;margin-right:6px}
+.dens button{all:unset;cursor:pointer;font-size:11.5px;padding:2px 10px;border-radius:999px;color:var(--muted)}.dens button.on{background:var(--cream);color:var(--brand);font-weight:600}
+body.nmc-enter #pipeTable tr.grp{animation:none}
+#pipeTable .pe .gap .new{color:var(--good)}
 /* ---------- My desk ---------- */
 .stat{background:#fff;border:1px solid var(--line);border-left:3px solid var(--brand);border-radius:10px;box-shadow:0 1px 2px rgba(52,55,64,.04),0 10px 24px -16px rgba(52,55,64,.25)}
 .stat .v,.stat b{font-family:var(--serif)}
@@ -663,6 +716,7 @@ body.nmc-enter svg.chart circle{animation:nmc-tagpop .4s cubic-bezier(.2,.9,.3,1
 .tchart .pw b{color:var(--ink)}
 #s-present .panel textarea,#s-present .panel input[type=text]{border:1px solid var(--line);border-radius:9px;min-height:40px;padding:8px 12px;font-size:14px}
 .ticking{color:var(--brand)!important;-webkit-text-fill-color:var(--brand)!important;background:none!important;transition:color .3s}
+aside .ticking,aside .ticking *{color:#FFC2B3!important;-webkit-text-fill-color:#FFC2B3!important}
 /* benefit toggles: a box that clicks green and a checkmark that draws */
 .benef label{position:relative;padding-left:30px;user-select:none;transition:transform .18s var(--nmc-snap),background .15s,border-color .15s,color .15s}
 .benef label input{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
@@ -1406,7 +1460,11 @@ Discover 6,100 190 24.9"></textarea>
     arrowUp:  '<path d="M8 13V3M4 7l4-4 4 4"/>',
     arrowDown:'<path d="M8 3v10M4 9l4 4 4-4"/>',
     star:     '<path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z" fill="currentColor" stroke="none"/>',
-    starO:    '<path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/>'
+    starO:    '<path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/>',
+    phone:    '<path d="M3.5 2.5h2.5l1.2 3-1.5 1.2a9 9 0 0 0 3.6 3.6l1.2-1.5 3 1.2v2.5a1 1 0 0 1-1 1A11.5 11.5 0 0 1 2.5 3.5a1 1 0 0 1 1-1z"/>',
+    mail:     '<rect x="2" y="3.5" width="12" height="9" rx="1.5"/><path d="M2 5l6 4 6-4"/>',
+    send:     '<path d="M14 2L2 7l5 2 2 5z"/>',
+    present:  '<rect x="2" y="3" width="12" height="8" rx="1"/><path d="M8 11v3M5.5 14h5"/>'
   };
   const EMOJI = {
     "\u{1F525}":"flame", "✨":"sparkle", "\u{1F514}":"bell", "⏳":"hourglass", "\u{1F4C5}":"calendar",
@@ -1476,7 +1534,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.14.5";
+const TOOLKIT_VERSION = "1.15.0";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2151,6 +2209,33 @@ const VA_LENDER_ID="7485220000";
 function vaLenderNote(){ const c=cur(); const a=c&&c.analysis; const va=!!(c&&(c.loanType==="VA"||(a&&a.anProgram==="va_irrrl"))); return va?" \u00b7 VA Lender ID #"+VA_LENDER_ID:""; }
 function clientProduct(c){ const a=c&&c.analysis; if(!a||!(a.anRate>0)) return "none";
   if(a.anLien==="fc") return "fc"; if(a.anLien==="second") return a.anSecondType==="heloc"?"heloc":"hel"; if(a.anProgram==="va_irrrl") return "va_irrrl"; if(a.anProgram==="fha_streamline") return "fha_streamline"; return (+a.anCashOut||0)>0?"cashout":"refi"; }
+/* ---- pipeline presentation helpers ---- */
+function pipeDate(d){ if(!d) return ""; const t=new Date(d+"T12:00:00"); return isNaN(t)?esc(d):t.toLocaleDateString("en-US",{month:"short",day:"numeric"}); }
+function pipeTime(t){ if(!t) return ""; const d=new Date("2000-01-01T"+t); return isNaN(d)?esc(t):d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}); }
+function pipeType(t){ t=String(t||""); return t==="Conventional"?"Conv":t; }
+function pipeFollow(c){ if(!c.followUp) return {k:"",date:"",time:"",rel:""}; const today=todayStr(); const days=Math.round((Date.parse(c.followUp)-Date.parse(today))/864e5); const done=isDone(c);
+  const k=done?"":days<0?"over":days===0?"due":""; const rel=done?"":days<0?`${-days}d overdue`:days===0?"today":days===1?"tomorrow":days<7?`in ${days}d`:new Date(c.followUp+"T12:00:00").toLocaleDateString("en-US",{weekday:"short"});
+  return {k, date:pipeDate(c.followUp), time:pipeTime(c.followUpTime), rel}; }
+/* how far today's rate for their tier sits below their rate, against the eligibility drop. VA clients measure against the
+   rate desk tier; anyone else against the market feed when there is one. */
+function rateGapHTML(c){ if(!(c.rate>0)||c.freeClear||c.quick) return ""; let tr=null, label="", assumed=false;
+  if(/\bVA\b/i.test(c.loanType||"")){ const r=rdRateFor(c); if(r&&r.rate>0){ tr=r.rate; label=RD_TIER_LABEL[r.tier]||r.tier; assumed=!!r.assumed; } }
+  if(tr==null){ const f=feedRateFor(c); if(f>0){ tr=f; label="market"; } }
+  if(tr==null) return "";
+  const need=+state.settings.rdDrop||0.5; const drop=c.rate-tr; const span=Math.max(need*2,1); const fill=Math.max(0,Math.min(100,drop/span*100)); const thr=Math.min(95,need/span*100);
+  const e=rdEligibleNow(c); const mk=label==="market"; const k=e?"ok":mk?(drop>0?"mk":"up"):drop>0?"near":"up"; const wi=e?rdWindowInfo(c):null;
+  const tail=mk?(drop>0?`<b>\u25BC${drop.toFixed(3)} below</b> today\u2019s market`:`<b>\u25B2${(-drop).toFixed(3)}</b> above today\u2019s market`):k==="up"?`<b>\u25B2${(-drop).toFixed(3)}</b> above today`:k==="ok"?`<b>\u25BC${drop.toFixed(3)} below</b> \u00b7 eligible${wi?(wi.today?" \u00b7 <b class=\"new\">new today</b>":" \u00b7 new "+wi.days+"d ago")+(wi.tries?" \u00b7 "+wi.tries+(wi.tries===1?" try":" tries"):""):""}${e&&e.seasonUnknown?` \u00b7 <span class="q" title="Confirm 6 payments made and 210 days since the first payment">seasoning?</span>`:""}`:`<b>\u25BC${drop.toFixed(3)} below</b> \u00b7 needs ${need.toFixed(2)}`;
+  return `<div class="gap ${k}" title="${esc(`Their rate ${pct(c.rate)} vs today's ${label} rate ${pct(tr)}${assumed?" (score unknown — median tier assumed)":""}. ${need.toFixed(2)} below their rate counts as eligible.`)}"><div class="gapl"><span class="was">${pct(c.rate)}</span><span class="arr">\u2192</span><b>${pct(tr)}</b> <span class="hint">${esc(label)}${assumed?"?":""}</span></div><div class="gapbar"><i style="width:${fill}%"></i>${mk?"":`<s style="left:${thr}%"></s>`}</div><div class="gaph">${tail}</div></div>`; }
+function pipeOppHTML(op){ const full=String(op.txt||"").replace(/<[^>]+>/g,""); const short=full.split(/ \u2014 |: /)[0].replace(/^\u23F3\s?/,""); const cls=op.tag==="tag-warn"?"warn":op.tag==="tag-flat"?"flat":""; const icon=/streamline/i.test(full)?"bolt":/waiting/i.test(full)?"hourglass":/follow-up/i.test(full)?"clock":/future|buyer/i.test(full)?"home":"";
+  return `<span class="pot ${cls}" title="${esc(full)}">${icon?NMC.icon(icon):""}${esc(short)}</span>`; }
+/* groups, in the order a banker works them; only when the list isn't explicitly sorted or filtered to one kind */
+function pipeGrouped(rows,hs){ if(pipeSort.key||pipeView!=="all") return rows.map(c=>({c})); const today=todayStr(); const g=c=>{ if(c.followUp&&!isDone(c)&&c.followUp<=today) return 0; if(rdWindowInfo(c)) return 1; if(hs.has(c.id)||c.hot) return 2; return 3; };
+  const L=[["now","Needs you today"],["fresh","Newly eligible"],["hot","Hot leads"],["rest","Everyone else"]]; const buckets=[[],[],[],[]]; rows.forEach(c=>buckets[g(c)].push(c)); const out=[]; const nonEmpty=buckets.filter(b=>b.length).length;
+  buckets.forEach((b,i)=>{ if(!b.length) return; if(nonEmpty>1) out.push({group:L[i][0],label:L[i][1],n:b.length}); b.forEach(c=>out.push({c})); }); return out; }
+function pipeRowClick(ev,id){ if(ev.target.closest("button,a,.pc-chip,input,select,.fuq")) return; pickClient(id); go("client"); }
+async function copyChip(ev){ ev.stopPropagation(); const el=ev.currentTarget; const v=el.dataset.copy||""; if(!v) return; try{ await navigator.clipboard.writeText(v); }catch(e){ const ta=document.createElement("textarea"); ta.value=v; document.body.appendChild(ta); ta.select(); try{ document.execCommand("copy"); }catch(e2){} ta.remove(); }
+  if(el.classList.contains("pc-chip")){ const h=el.innerHTML; el.classList.add("copied"); el.innerHTML=NMC.icon("check")+"Copied"; setTimeout(()=>{ el.classList.remove("copied"); el.innerHTML=h; },1000); } else toast("Copied "+v); }
+function pipeDensity(v){ state.settings.pipeDense=!!v; save(); renderPipeline(); }
 function renderPipeline(){ const today=todayStr();
   const filt=$("pipeFilter"); if(filt.options.length<=1)
     STATUSES.forEach(s=>{const o=document.createElement("option");o.textContent=s;filt.appendChild(o);});
@@ -2159,7 +2244,7 @@ function renderPipeline(){ const today=todayStr();
   const chips=$("pipeChips"); if(chips){
     const chip=(v,l,n)=>`<button class="btn small ${pipeView===v?"":"ghost "}" onclick="setPipeView('${v}')">${l}${n!=null?` <span class="cnt" data-tick="pipe.${v}" data-tick-first="no">${n}</span>`:""}</button>`;
     const sentN=state.clients.filter(c=>!c.quick&&c.proposalSent&&!isDone(c)).length;
-    chips.innerHTML=chip("all","All")+chip("hot","\uD83D\uDD25 Hot now",al.hot.length)+chip("due","Follow-ups due",al.due.length)+chip("flag","\uD83D\uDD25 Hot leads",al.flagged.length)+chip("ratewatch","\u23F3 Rate watch",al.ratewatch.length)+chip("season","\uD83D\uDCC5 Seasoning",al.season.length)+chip("future","\uD83C\uDFE1 Future buyers",al.future.length)+(al.watch.length?chip("watch","Watching",al.watch.length):"")+chip("sent","Proposal sent",sentN)+(rdTiers()?chip("elignow","\u2728 Eligible now",rdEligibleIds().length)+chip("eligible","\u2728 New this week",rdWeekIds().length):""); }
+    chips.innerHTML=`<span class="dens"><button type="button" class="${state.settings.pipeDense?"":"on"}" onclick="pipeDensity(false)">Comfortable</button><button type="button" class="${state.settings.pipeDense?"on":""}" onclick="pipeDensity(true)">Compact</button></span>`+chip("all","All")+chip("hot","\uD83D\uDD25 Hot now",al.hot.length)+chip("due","Follow-ups due",al.due.length)+chip("flag","\uD83D\uDD25 Hot leads",al.flagged.length)+chip("ratewatch","\u23F3 Rate watch",al.ratewatch.length)+chip("season","\uD83D\uDCC5 Seasoning",al.season.length)+chip("future","\uD83C\uDFE1 Future buyers",al.future.length)+(al.watch.length?chip("watch","Watching",al.watch.length):"")+chip("sent","Proposal sent",sentN)+(rdTiers()?chip("elignow","\u2728 Eligible now",rdEligibleIds().length)+chip("eligible","\u2728 New this week",rdWeekIds().length):""); }
   const f=filt.value; const pf=$("pipeProduct")?$("pipeProduct").value:"";
   const q=($("pipeSearch")?$("pipeSearch").value:"").trim().toLowerCase(); const qd=q.replace(/\D/g,"");
   const hit=c=>{ if(pf && clientProduct(c)!==pf) return false; if(!q) return true; const hay=[c.name,c.email,c.address,c.servicer,c.loanType,c.status,c.notes,c.futureProduct,PRODUCT_LABELS[clientProduct(c)]].map(x=>String(x||"").toLowerCase()).join(" \u2022 ");
@@ -2179,16 +2264,22 @@ function renderPipeline(){ const today=todayStr();
     ${inbox.map(it=>`<div class="btnrow" style="margin-top:6px"><span><b>${esc(it.fields.name)}</b>${it.fields.balance?` \u00b7 ${money(num(it.fields.balance))}`:""}${it.fields.rate?` @ ${pct(num(it.fields.rate))}`:""}${it.fields.leadStatus?` \u00b7 ${esc(it.fields.leadStatus)}`:""}${it.converted?` <span class="tag-good" title="The lead was converted in Salesforce \u2014 this is the loan record, the most current numbers">Converted loan</span>`:""}${it.source==="chrome-extension"?` <span class="tag-flat">via Chrome${it.pairs?" \u00b7 "+it.pairs+" fields read, "+Object.keys(it.fields||{}).length+" recognized":""}</span>`:""}</span><span style="flex:1"></span>
       <button class="btn small" onclick="importInbox('${it.id}')">Import</button><button class="btn ghost small" onclick="ackInbox('${it.id}')">Ignore</button></div>`).join("")}</div>` : "";
   $("pipeTable").innerHTML = ib + bar + seasonBar + futBar + rwBar + (!rows.length ? `<div class="empty">${pipeView!=="all"?"Nothing in this view right now \u2014 that can change with the next rate push.":"No pipeline clients yet. Add one, paste a Salesforce record, or load the samples in Settings."}</div>` :
-  `<table class="data"><thead><tr>${th("name","Client")}${th("status","Status")}${th("loanType","Type")}${th("balance","Balance","num")}${th("rate","Rate","num")}${th("payment","P&amp;I","num")}${th("followUp","Follow-up")}${rdTiers()?th("eligible","\u2728 Eligible","elig"):""}<th class="opp">Opportunity</th><th></th></tr></thead><tbody>`+
-  rows.map(c=>{ const op=opportunity(c);
-    return `<tr class="${(()=>{ const wi=rdWindowInfo(c); const k=[]; if(wi){ k.push("elig-week","fresh"); if(wi.today&&!c.eligibleSeen) k.push("elig-today"); } if(c.followUp&&!isDone(c)){ if(c.followUp<today) k.push("overdue"); else if(c.followUp===today) k.push("due"); } if(hs.has(c.id)||c.hot) k.push("hotrow"); return k.join(" "); })()}"><td><b>${c.hot?'<span title="Hot lead">\uD83D\uDD25 </span>':""}${esc(c.name)}</b><br><span class="hint">${c.servicer?esc(c.servicer):""}${c.phone?(c.servicer?" \u00b7 ":"")+esc(c.phone):""}</span></td>
-    <td><span class="${c.status===S_DONE?"tag-good":c.status==="Lost"||(isInelig(c)&&ineligWhy(c)==="fully ineligible")?"tag-warn":"tag-flat"}">${isFuture(c)?"\uD83C\uDFE1 ":""}${esc(c.status)}${isInelig(c)&&ineligWhy(c)==="fully ineligible"?" \u00b7 no follow-up":""}</span>${onRateWatch(c)?`<br><span class="${targetHit(c)?"tag-good":"tag-flat"}" style="margin-top:3px" title="Rate watch">\u23F3 needs ${pct(c.targetRate)}${rateDrop(c)!=null?" (\u2212"+pct(rateDrop(c))+")":""}</span>`:""}${(()=>{ const si=seasonInfo(c); return si?`<br><span class="${si.tag}" style="margin-top:3px">${si.txt.replace(/ \u2014 .*$/,"")}</span>`:""; })()}${(()=>{ const fi=futureInfo(c); return fi?`<br><span class="${fi.tag}" style="margin-top:3px">${fi.txt.replace(/ \u2014 .*$/,"")}</span>`:""; })()}${c.hot&&c.hotNeed?`<br><span class="hint">need: ${esc(c.hotNeed)}</span>`:""}${c.proposalSent?`<br><span class="tag-good" style="margin-top:3px">proposal sent ${esc(c.proposalSent)}${c.proposalsSent>1?" ("+c.proposalsSent+")":""}</span>`:""}</td>
-    <td>${esc(c.loanType||"")}${isFuture(c)&&c.futureProduct?`<br><span class="hint">\u2192 ${esc(c.futureProduct)}</span>`:""}</td>
-    <td class="num">${c.freeClear?'<span class="tag-good">free &amp; clear</span>':money(c.balance)}</td><td class="num">${c.freeClear?"\u2014":pct(c.rate)}</td><td class="num">${c.freeClear?"\u2014":money(c.payment)}</td>
-    <td><span class="fud">${esc(c.followUp||"\u2014")}${c.followUpTime?" "+esc(c.followUpTime):""}</span>${calStatus(c)==="on"?' <span title="On your Outlook calendar">\uD83D\uDCC5</span>':calStatus(c)==="moved"?' <span title="Follow-up moved since it went on your calendar \u2014 re-add it" style="opacity:.6">\uD83D\uDCC5\u2047</span>':""}${(ds.has(c.id)||(fuPending&&fuPending.id===c.id))?`<div style="margin-top:4px">${fuButtons(c,true)}</div>`:""}</td>
-    ${rdTiers()?`<td class="elig">${(()=>{ const e=rdEligibleNow(c); if(!e) return ""; const wi=rdWindowInfo(c); return `<span class="tag-good" title="Eligible under today’s rate desk rates">✨ ${RD_TIER_LABEL[e.tier]} ${pct(e.rate)}${e.assumed?" (score?)":""}</span><br><span class="hint">was ${pct(c.rate)} · drop ${pct(e.drop)}${wi?(wi.today?" · <b>new today</b>":" · new "+wi.days+"d ago")+(wi.tries?" · "+wi.tries+(wi.tries===1?" try":" tries"):""):""}${e.seasonUnknown?" · seasoning?":""}</span>`; })()}</td>`:""}
-    <td class="opp">${op?`<span class="${op.tag}">${op.txt}</span>`:""}</td>
-    <td class="go"><button class="btn small" onclick="pickClient('${c.id}');go('client')">Open</button></td></tr>`;}).join("")+`</tbody></table>`);
+  `<table class="data${state.settings.pipeDense?" dense":""}"><thead><tr>${th("name","Client","pc")}${th("status","Status","ps")}${th("balance","Loan","pl")}${th("followUp","Follow-up","pf")}${rdTiers()?th("eligible","Rate gap","pe"):""}<th class="po">Opportunity</th><th class="pa"></th></tr></thead><tbody>`+
+  pipeGrouped(rows,hs).map(item=>{ if(item.group) return `<tr class="grp ${item.group}"><td colspan="7"><div class="g">${item.label}<span class="n">${item.n}</span></div></td></tr>`; const c=item.c; const op=opportunity(c);
+    const statusMeta=[ onRateWatch(c)?`<span class="${targetHit(c)?"good":""}" title="Rate watch">${NMC.icon("hourglass")}needs ${pct(c.targetRate)}${rateDrop(c)!=null?" (\u2212"+pct(rateDrop(c))+")":""}</span>`:"",
+      (()=>{ const si=seasonInfo(c); return si?`<span title="${esc(si.txt)}">${NMC.icon("calendar")}${esc(si.txt.replace(/ \u2014 .*$/,"").replace(/^\uD83D\uDCC5\s?/,""))}</span>`:""; })(),
+      (()=>{ const fi=futureInfo(c); return fi?`<span title="${esc(fi.txt)}">${NMC.icon("home")}${esc(fi.txt.replace(/ \u2014 .*$/,"").replace(/^\uD83C\uDFE1\s?/,""))}</span>`:""; })(),
+      c.hot&&c.hotNeed?`<span>need: ${esc(c.hotNeed)}</span>`:"",
+      c.proposalSent?`<span title="Proposal sent ${esc(c.proposalSent)}">${NMC.icon("send")}proposal sent ${pipeDate(c.proposalSent)}${c.proposalsSent>1?" \u00b7 \u00d7"+c.proposalsSent:""}</span>`:"" ].filter(Boolean);
+    const fu=pipeFollow(c); const cal=calStatus(c);
+    return `<tr class="${(()=>{ const wi=rdWindowInfo(c); const k=[]; if(wi){ k.push("elig-week","fresh"); if(wi.today&&!c.eligibleSeen) k.push("elig-today"); } if(c.followUp&&!isDone(c)){ if(c.followUp<today) k.push("overdue"); else if(c.followUp===today) k.push("due"); } if(hs.has(c.id)||c.hot) k.push("hotrow"); return k.join(" "); })()}" data-id="${c.id}" onclick="pipeRowClick(event,'${c.id}')">
+    <td class="pc"><span class="pc-name">${c.hot?'<span title="Hot lead">\uD83D\uDD25 </span>':""}${esc(c.name)}</span><div class="pc-meta">${c.phone?`<span class="pc-chip" data-copy="${esc(c.phone)}" title="Click to copy" onclick="copyChip(event)">${NMC.icon("phone")}${esc(c.phone)}</span>`:""}${c.email?`<span class="pc-chip" data-copy="${esc(c.email)}" title="Click to copy" onclick="copyChip(event)">${NMC.icon("mail")}${esc(c.email)}</span>`:""}</div>${c.servicer?`<span class="pc-serv">${esc(c.servicer)}</span>`:""}</td>
+    <td class="ps"><span class="${c.status===S_DONE?"tag-good":c.status==="Lost"||(isInelig(c)&&ineligWhy(c)==="fully ineligible")?"tag-warn":"tag-flat"}">${isFuture(c)?"\uD83C\uDFE1 ":""}${esc(c.status)}${isInelig(c)&&ineligWhy(c)==="fully ineligible"?" \u00b7 no follow-up":""}</span>${statusMeta.map(m=>`<div class="psm">${m}</div>`).join("")}</td>
+    <td class="pl">${c.freeClear?`<div class="pl1"><span class="typ">${esc(c.loanType||"")}</span><span class="tag-good">free &amp; clear</span></div>`:`<div class="pl1"><span class="typ">${esc(pipeType(c.loanType))}</span><b>${c.balance>0?money(c.balance):"\u2014"}</b></div><div class="pl2">${c.rate>0?`<em>${pct(c.rate)}</em>`:"rate \u2014"} \u00b7 ${c.payment>0?`<em>${money(c.payment)}</em>/mo`:"P&amp;I \u2014"}</div>`}${isFuture(c)&&c.futureProduct?`<div class="pl2">\u2192 ${esc(c.futureProduct)}</div>`:""}</td>
+    <td class="pf ${fu.k}">${fu.date?`<div class="pfd"><span class="fud">${fu.date}${fu.time?" \u00b7 "+fu.time:""}</span>${cal==="on"?` <span class="pfc" title="On your Outlook calendar">${NMC.icon("calendar")}</span>`:cal==="moved"?` <span class="pfc moved" title="Follow-up moved since it went on your calendar \u2014 re-add it">${NMC.icon("calendar")}</span>`:""}</div><div class="pfr">${fu.rel}</div>${(ds.has(c.id)||(fuPending&&fuPending.id===c.id))?`<div class="pfq${fuPending&&fuPending.id===c.id?" stay":""}">${fuButtons(c,true)}</div>`:""}`:`<span class="hint">\u2014</span>`}</td>
+    ${rdTiers()?`<td class="pe">${rateGapHTML(c)}</td>`:""}
+    <td class="po">${op?pipeOppHTML(op):""}</td>
+    <td class="pa"><span class="qa">${c.phone?`<button type="button" title="Copy phone" data-copy="${esc(c.phone)}" onclick="copyChip(event)">${NMC.icon("phone")}</button>`:""}<button type="button" title="Follow-up texts & emails" onclick="event.stopPropagation();pickClient('${c.id}');go('client');playOpen('follow')">${NMC.icon("chat")}</button><button type="button" title="Presentation" onclick="event.stopPropagation();pickClient('${c.id}');go('present')">${NMC.icon("present")}</button></span><span class="go" title="Open">\u203A</span></td></tr>`;}).join("")+`</tbody></table>`);
 }
 
 /* ---------- Salesforce parser ---------- */
