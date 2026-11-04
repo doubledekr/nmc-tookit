@@ -1085,7 +1085,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.13.8";
+const TOOLKIT_VERSION = "1.13.9";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -4823,6 +4823,7 @@ function presentSetEl(path,el){ if(el&&el.validity&&el.validity.badInput) return
 function presentDebtEl(i,k,el){ if(el&&el.validity&&el.validity.badInput) return; presentDebt(i,k,el.value); }
 const presentUI={debtPaste:false,termPaste:false,parsed:null};
 function presentIntro(v){ const c=cur(); if(!c) return; presentState(c).intro=v; save(); }
+function presentGoals(v){ const c=cur(); if(!c) return; presentState(c).goals=v; save(); }
 function presentToggle(k){ presentUI[k]=!presentUI[k]; if(!presentUI[k]) presentUI.parsed=null; renderPresent(); setTimeout(()=>{ const el=$(k==="debtPaste"?"pDebtPaste":"pTermPaste"); if(el) el.focus(); },0); }
 function presentParseDebts(){ const el=$("pDebtPaste"); const text=el?el.value:""; if(!text.trim()){ toast("Paste the debts first"); return; }
   const res=debtRowsFromText(text);
@@ -4895,7 +4896,9 @@ function presentEmailParts(c){ const s=state.settings; const p=presentState(c); 
   const bens=PRESENT_BENEFITS.filter(([k])=>p.ben&&p.ben[k]&&k!=="skip"&&k!=="cash").map(([k,l])=>l).concat(Object.keys(p.ben||{}).filter(k=>k.startsWith("c:")&&p.ben[k]).map(k=>k.slice(2)));
   const parts=[{t:"brand",x:(real?"Quoted ":"Prepared ")+when},{t:"p",x:`Hi ${first},`},{t:"p",x:"Here\u2019s the side-by-side we walked through."}];
   const tc=presentTchartPart(c); if(tc) parts.push(tc);
-  if(bens.length) parts.push({t:"ul",x:bens});
+  if((p.goals||"").trim()) parts.push({t:"h",x:"Why this makes sense for you"},{t:"p",x:p.goals.trim()});
+  if(r&&r.extra>0&&isFinite(r.pw.months)) bens.unshift(`Pay what you pay now: keep sending ${money(r.outlayNow)} and the extra \u00ab${money(r.extra)}\u00bb goes to principal \u2014 paid off in ${yrsMo(r.pw.months)}${r.n-r.pw.months>0?" ("+yrsMo(r.n-r.pw.months)+" sooner)":""}${r.intSavedPW>0?", "+money(r.intSavedPW)+" less interest":""}, an effective rate of \u00ab${pct(r.pwEff)}\u00bb`);
+  if(bens.length) parts.push({t:"h",x:"What this does for you"},{t:"ul",x:bens});
   parts.push({t:"p",x:"Next steps are super simple: I\u2019ll send the e-signs to your email and we\u2019ll get you processed immediately. All I need from you is "+presentDocsLine(c).replace(/^just /,"")+(s.loPhone?" Questions? Call or text me at \u00ab"+s.loPhone+"\u00bb.":"")});
   parts.push({t:"note",x:real?`Terms as quoted on ${when}; your official figures come on the lender\u2019s Loan Estimate and Closing Disclosure.`:"An estimate for discussion based on the numbers you gave me and today\u2019s pricing, which changes daily \u2014 not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval."});
   parts.push({t:"sig",x:[s.loName||"", s.co||"Neighborhood Mortgage Company", [s.loNmls?"NMLS #"+s.loNmls:"", s.loPhone||"", s.loEmail||""].filter(Boolean).join(" \u00b7 ")]});
@@ -5002,6 +5005,7 @@ function renderPresentBenefits(){ const c=cur(); const p=presentState(c); const 
   $("presentBenefits").innerHTML=`<h2>Benefits${pm?"":` <span class="hint" style="display:inline">\u2014 flip them on as you say them</span>`}</h2><div class="benef">${PRESENT_BENEFITS.map(([k,l])=>{ const on=!!p.ben[k]; let txt=l;
     if(k==="skip"&&r&&r.skipCash>0) txt=`Skip ${r.skipN} payment${r.skipN>1?"s":""} \u2014 about ${money(r.skipCash)} stays with you`; if(k==="cash"){ const cash=presentCash(p.d); if(cash.total>0) txt=`${money(cash.total)} cash to you at closing`; } if(k==="one"&&r&&r.debts.length>1) txt=`One payment instead of ${r.debts.length+1}`;
     return [k,txt,on]; }).concat((state.settings.benefitsCustom||[]).map(t=>["c:"+t,t,!!p.ben["c:"+t]])).map(([k,txt,on])=> pm ? (on?`<label class="on">${esc(txt)}</label>`:"") : `<label class="${on?"on":""}"><input type="checkbox" ${on?"checked":""} onchange="presentBen('${k.replace(/'/g,"\\'")}',this.checked)"> ${txt}${k.startsWith("c:")?` <span class="x" title="Remove from my benefits" onclick="event.preventDefault(); presentDelBenefit('${k.slice(2).replace(/'/g,"\\'")}')">\u2715</span>`:""}</label>`).join("")}</div>
+    ${pm?(p.goals?`<div class="greet" style="margin-top:10px;font-size:18px;color:#26262E">${esc(p.goals)}</div>`:""):`<div class="field" style="margin-top:10px"><label>Their goals &amp; why this makes sense <span class="hint">\u00b7 goes in the email as \u201cWhy this makes sense for you\u201d</span></label><textarea id="pGoals" rows="2" style="min-height:0;height:56px;font-family:inherit;font-size:13.5px" placeholder="e.g. Pay off the cards, finish the pool, and still keep $165 a month. Even though the rate is higher than your 3.25% first mortgage, the cards at 28% are what\u2019s costing you \u2014 and the mortgage stays put." oninput="presentGoals(this.value)">${esc(p.goals||"")}</textarea></div>`}
     ${pm?"":`<div class="btnrow" style="margin-top:8px"><input type="text" id="pBenNew" placeholder="Add your own benefit chip \u2014 \u201cRate lock is free\u201d, \u201cWe handle the payoffs\u201d" style="flex:1" onkeydown="if(event.key==='Enter') presentAddBenefit()"><button class="btn ghost small" onclick="presentAddBenefit()">Add chip</button></div>`}`; }
 function presentAddBenefit(){ const el=$("pBenNew"); const t=(el?el.value:"").trim(); if(!t){ toast("Type the benefit first"); return; } state.settings.benefitsCustom=state.settings.benefitsCustom||[]; if(!state.settings.benefitsCustom.includes(t)) state.settings.benefitsCustom.push(t); const c=cur(); if(c) presentState(c).ben["c:"+t]=true; save(); renderPresentBenefits(); }
 function presentDelBenefit(t){ state.settings.benefitsCustom=(state.settings.benefitsCustom||[]).filter(x=>x!==t); state.clients.forEach(c=>{ if(c.present&&c.present.ben) delete c.present.ben["c:"+t]; }); save(); renderPresentBenefits(); }
