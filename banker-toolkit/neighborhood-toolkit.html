@@ -361,7 +361,7 @@ body.obj-open .tchart .trow{font-size:13px}body.obj-open .tchart .trow input,bod
 ::-webkit-scrollbar-thumb{background:#C9C2B4;border-radius:10px;border:3px solid var(--paper)}::-webkit-scrollbar-thumb:hover{background:var(--brand)}
 #objDrawer::-webkit-scrollbar-thumb,#playDrawer::-webkit-scrollbar-thumb,#emailMenu::-webkit-scrollbar-thumb{border-color:#fff}
 /* pipeline: column titles stay put */
-#pipeTable table.data thead th{position:sticky;top:78px;background:var(--panel);z-index:5;box-shadow:0 1px 0 var(--line)}
+#pipeTable table.data thead th{position:sticky;top:var(--barh,78px);background:var(--panel);z-index:5;box-shadow:0 1px 0 var(--line)}
 #s-pipeline .panel{padding-top:12px}#pipeTop{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}#pipeTop .pipe-add{margin-left:auto;display:inline-flex;gap:6px}
 /* tools: every tool folds behind its title bar */
 #s-tools .panel.tool{padding:0;overflow:hidden}#s-tools .panel.tool>.thead{display:flex;align-items:center;gap:10px;padding:12px 18px;cursor:pointer;user-select:none}
@@ -1081,7 +1081,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.12.6";
+const TOOLKIT_VERSION = "1.12.7";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -4382,6 +4382,8 @@ function renderPlayTabs(){ const el=$("playTabs"); if(!el) return; const sc=curr
   if(playPanel&&!list.some(p=>p.k===playPanel)) playClose();
   const pri=PLAY_PRIORITY[sc]||[]; el.innerHTML=list.map(p=>`<div class="ptab ${p.k}${playPanel===p.k?" on":""}${pri.includes(p.k)?" hot":""}" onclick="playOpen('${p.k}')" title="${esc(p.label)} \u2014 opens beside the page">${esc(p.short||p.label)}</div>`).join(""); }
 function playPlace(){ const dr=$("playDrawer"); const bar=document.querySelector(".clientbar"); if(!dr) return; const top=bar?bar.getBoundingClientRect().bottom:0; dr.style.top=top+"px"; const h=+localStorage.getItem("nmcPlayH")||0; if(h) dr.style.height=Math.min(h,window.innerHeight-top-8)+"px"; dr.style.maxHeight=(window.innerHeight-top-8)+"px"; }
+/* the sticky bar's height feeds the pipeline's sticky column headers */
+(function(){ const set=()=>{ const bar=document.querySelector(".clientbar"); if(bar) document.documentElement.style.setProperty("--barh",(bar.getBoundingClientRect().height-10)+"px"); }; if("ResizeObserver" in window){ const ro=new ResizeObserver(set); window.addEventListener("load",()=>{ const bar=document.querySelector(".clientbar"); if(bar) ro.observe(bar); set(); }); } else window.addEventListener("load",set); })();
 function playGripInit(){ const g=$("playGrip"), dr=$("playDrawer"); if(!g||g.dataset.init) return; g.dataset.init="1"; let y0=0,h0=0;
   const move=e=>{ const h=Math.max(120,h0+(e.clientY-y0)); dr.style.height=h+"px"; }; const up=()=>{ document.removeEventListener("pointermove",move); document.removeEventListener("pointerup",up); try{ localStorage.setItem("nmcPlayH",String(parseInt(dr.style.height)||0)); }catch(err){} };
   g.addEventListener("pointerdown",e=>{ e.preventDefault(); y0=e.clientY; h0=dr.getBoundingClientRect().height; document.addEventListener("pointermove",move); document.addEventListener("pointerup",up); });
