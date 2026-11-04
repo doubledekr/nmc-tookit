@@ -135,7 +135,7 @@ ipcMain.handle("update:openReleases", () => { shell.openExternal(IS_BETA ? "http
 ipcMain.handle("update:install", () => { if (!updater) return false; flushWrites(); setTimeout(() => updater.quitAndInstall(false, true), 300); return true; });
 
 function createWindow(){
-  const win = mainWin = new BrowserWindow({ width: 1360, height: 900, minWidth: 1100, minHeight: 700, title: "NMC Toolkit " + app.getVersion(),
+  const win = mainWin = new BrowserWindow({ width: 1360, height: 900, minWidth: 1220, minHeight: 800, title: "NMC Toolkit " + app.getVersion(),
     backgroundColor: "#FBF8F2", icon: path.join(__dirname, "build", "icon.png"),
     webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: false } });
   win.loadFile(path.join(__dirname, "app", "neighborhood-toolkit.html"));
