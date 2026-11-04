@@ -364,6 +364,8 @@ body.obj-open .tchart .trow{font-size:13px}body.obj-open .tchart .trow input,bod
 #objDrawer::-webkit-scrollbar-thumb,#playDrawer::-webkit-scrollbar-thumb,#emailMenu::-webkit-scrollbar-thumb{border-color:#fff}
 /* pipeline: column titles stay put */
 #pipeTable table.data thead th{position:sticky;top:var(--barh,78px);background:var(--panel);z-index:5;box-shadow:0 1px 0 var(--line)}
+/* pipeline columns: proportions set up front so the table lays out the same whatever the window started at or how long a row's text runs */
+#pipeTable table.data th:nth-child(1){width:23%}#pipeTable table.data th:nth-child(2){width:13%}#pipeTable table.data th:nth-child(3){width:9%}#pipeTable table.data th:nth-child(7){width:9%}#pipeTable table.data th:nth-child(8){width:17%}#pipeTable table.data th:nth-child(9){width:14%}
 #s-pipeline .panel{padding-top:12px}#pipeTop{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}#pipeTop .pipe-add{margin-left:auto;display:inline-flex;gap:6px}
 /* tools: every tool folds behind its title bar */
 #s-tools .panel.tool{padding:0;overflow:hidden}#s-tools .panel.tool>.thead{display:flex;align-items:center;gap:10px;padding:12px 18px;cursor:pointer;user-select:none}
@@ -1087,7 +1089,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.13.17";
+const TOOLKIT_VERSION = "1.13.18";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -5176,7 +5178,7 @@ if(DEMO && state.clients.length===0 && !seededFlag){
   seedDemo(); try{ localStorage.setItem("nmc_demo_seeded","1"); }catch(e){}
 }
 if(!state.currentId && state.clients.length) state.currentId=state.clients[0].id;
-if(state.settings.partnerLogo==="none"){ state.settings.partnerLogo=""; state.settings.partnerHidden=true; save(); } bindClientFields(); applyBrandCss(); fillSettingsUI(); updateRatePill(); refreshAll(); setupPolling(); rdMigrateTiers(); renderRdBanner(); setTimeout(rdStart, 1500); maybeSetup(); renderBmStatus(); maybeBmUpdate(); renderBrandStatus(); amortRestore(); purchRestore(); setTimeout(()=>fetchBrandAssets(false).catch(()=>{}), 3000); initAutosave();
+if(state.settings.partnerLogo==="none"){ state.settings.partnerLogo=""; state.settings.partnerHidden=true; save(); } bindClientFields(); applyBrandCss(); fillSettingsUI(); updateRatePill(); refreshAll(); renderPlayTabs(); setupPolling(); rdMigrateTiers(); renderRdBanner(); setTimeout(rdStart, 1500); maybeSetup(); renderBmStatus(); maybeBmUpdate(); renderBrandStatus(); amortRestore(); purchRestore(); setTimeout(()=>fetchBrandAssets(false).catch(()=>{}), 3000); initAutosave();
 if(DEMO){ try{ sampleTeam(); }catch(e){} }
 if(state.settings.poll && state.settings.feedUrl) fetchRates();
 
