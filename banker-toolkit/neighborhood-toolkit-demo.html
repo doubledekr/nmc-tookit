@@ -1085,7 +1085,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.13.9";
+const TOOLKIT_VERSION = "1.13.10";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -4885,6 +4885,8 @@ function presentDelClose(t){ state.settings.closes=(state.settings.closes||[]).f
 /* the T-chart is the banker's own organizer; what the client gets is the proposal. If the numbers here differ from the client, save them first. */
 function presentTchartPart(c){ const p=presentState(c); const d=p.d; if(!d) return null; const r=presentCalc(c); if(!r) return null; const m=d.mortgage; const second=d.lien==="second"; const secName=d.secType==="heloc"?"HELOC":"home equity loan"; const stream=d.program==="fha_streamline"||d.program==="va_irrrl"; const showDebts=(d.roll==="yes"&&!second&&!stream)||second; const debts=d.debts.filter(x=>x.balance>0); const n=debts.length;
   const rows=[]; rows.push(["Rate", m.rate>0?pct(m.rate):"\u2014", "\u00ab"+pct(d.rate)+"\u00bb"]);
+  if(showDebts&&n&&r.blended!=null&&!second) rows.push(["Blended rate (mortgage + debts)", pct(r.blended), "\u00ab"+pct(d.rate)+"\u00bb on everything"]);
+  if(showDebts&&n&&r.blended!=null&&second) rows.push(["Blended rate on the debts", pct(r.blended), "\u00ab"+pct(d.rate)+"\u00bb"]);
   rows.push([second?"Mortgage":"Loan", money(m.balance||0), second?money(m.balance||0)+" stays":money(r.newP)]);
   if(second) rows.push(["New "+secName, "\u2014", money(r.newP)+" \u00b7 "+money(r.newPay)+"/mo"]);
   if(showDebts&&n) rows.push([n===1?(debts[0].name||"Debt"):n+" debts", money(r.dBal)+" \u00b7 "+money(r.dPay)+"/mo", "Paid off \u00b7 $0"]);
@@ -4892,11 +4894,17 @@ function presentTchartPart(c){ const p=presentState(c); const d=p.d; if(!d) retu
   if(r.skipCash>0&&p.ben&&p.ben.skip) rows.push(["Payments skipped at closing", "\u2014", r.skipN+" (about "+money(r.skipCash)+")"]);
   const newOut=r.newPay;   /* same basis as the T-chart: a second lien compares the debts’ payments against the new loan’s */
   return {t:"tchart",x:{rows, total:["Going out each month", money(r.outlayNow), "\u00ab"+money(newOut)+"\u00bb"], band:r.saveMo>0?"You keep "+money(r.saveMo)+" every month":(cash.total>0?money(cash.total)+" to you at closing":"")}}; }
+function showDebtsFor(d){ if(!d) return false; const second=d.lien==="second"; const stream=d.program==="fha_streamline"||d.program==="va_irrrl"; return (d.roll==="yes"&&!second&&!stream)||second; }
 function presentEmailParts(c){ const s=state.settings; const p=presentState(c); const r=presentCalc(c); const first=c.name?c.name.split(/[ ,&]/)[0]:"there"; const real=!!(c.analysis&&c.analysis.anReal); const when=new Date().toLocaleDateString("en-US",{month:"long",day:"numeric"});
   const bens=PRESENT_BENEFITS.filter(([k])=>p.ben&&p.ben[k]&&k!=="skip"&&k!=="cash").map(([k,l])=>l).concat(Object.keys(p.ben||{}).filter(k=>k.startsWith("c:")&&p.ben[k]).map(k=>k.slice(2)));
   const parts=[{t:"brand",x:(real?"Quoted ":"Prepared ")+when},{t:"p",x:`Hi ${first},`},{t:"p",x:"Here\u2019s the side-by-side we walked through."}];
   const tc=presentTchartPart(c); if(tc) parts.push(tc);
   if((p.goals||"").trim()) parts.push({t:"h",x:"Why this makes sense for you"},{t:"p",x:p.goals.trim()});
+  const extraLines=[];
+  if(r&&showDebtsFor(p.d)&&r.dMinCards&&isFinite(r.dMinMonths)&&r.dMinMonths>0) extraLines.push(`Payoffs: on minimum payments ${r.dMinCards===1?"that card takes":"those "+r.dMinCards+" cards take"} ${yrsMo(r.dMinMonths)} and ${money(r.dMinInt)} in interest \u2014 they\u2019re paid off at closing instead`);
+  if(r&&showDebtsFor(p.d)&&r.blended!=null&&r.blended>p.d.rate) extraLines.push(p.d.lien==="second"?`Blended rate: the debts you\u2019re paying today blend to \u00ab${pct(r.blended)}\u00bb \u2014 the new ${p.d.secType==="heloc"?"HELOC":"home equity loan"} replaces them at ${pct(p.d.rate)}`:`Blended rate: today your mortgage and debts blend to \u00ab${pct(r.blended)}\u00bb \u2014 the new loan is ${pct(p.d.rate)} on all of it`);
+  if(r&&!(r.extra>0)&&r.pwEff&&p.d.pwCustom>0) extraLines.push(`Effective rate: paying ${money(p.d.pwCustom)} a month works out to \u00ab${pct(r.pwEff)}\u00bb in your pocket`);
+  bens.unshift(...extraLines);
   if(r&&r.extra>0&&isFinite(r.pw.months)) bens.unshift(`Pay what you pay now: keep sending ${money(r.outlayNow)} and the extra \u00ab${money(r.extra)}\u00bb goes to principal \u2014 paid off in ${yrsMo(r.pw.months)}${r.n-r.pw.months>0?" ("+yrsMo(r.n-r.pw.months)+" sooner)":""}${r.intSavedPW>0?", "+money(r.intSavedPW)+" less interest":""}, an effective rate of \u00ab${pct(r.pwEff)}\u00bb`);
   if(bens.length) parts.push({t:"h",x:"What this does for you"},{t:"ul",x:bens});
   parts.push({t:"p",x:"Next steps are super simple: I\u2019ll send the e-signs to your email and we\u2019ll get you processed immediately. All I need from you is "+presentDocsLine(c).replace(/^just /,"")+(s.loPhone?" Questions? Call or text me at \u00ab"+s.loPhone+"\u00bb.":"")});
