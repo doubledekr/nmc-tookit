@@ -48,6 +48,7 @@ ipcMain.handle("data:path", () => dataDir());
 ipcMain.on("data:pathSync", e => { e.returnValue = dataDir(); });
 ipcMain.on("app:versionSync", e => { e.returnValue = app.getVersion(); });
 ipcMain.handle("data:openFolder", () => shell.openPath(dataDir()));
+ipcMain.on("win:toggleMax", e => { const w = BrowserWindow.fromWebContents(e.sender); if (!w) return; if (process.platform === "darwin") { w.isFullScreen() ? w.setFullScreen(false) : (w.isMaximized() ? w.unmaximize() : w.maximize()); } else { w.isMaximized() ? w.unmaximize() : w.maximize(); } });
 /* drag a rendered image (the loan-officer card) out of the app as a real file, so it drops into texting apps and email as an attachment */
 ipcMain.on("drag:file", (e, name, dataUrl, iconUrl) => { try { const { nativeImage } = require("electron"); const dir = path.join(app.getPath("temp"), "nmc-toolkit-drag"); fs.mkdirSync(dir, { recursive: true });
   const file = path.join(dir, String(name || "image.png").replace(/[^a-z0-9._-]+/gi, "-")); const m = /^data:([^;]+);base64,(.*)$/s.exec(String(dataUrl || "")); if (!m) return;
@@ -135,9 +136,16 @@ ipcMain.handle("update:openReleases", () => { shell.openExternal(IS_BETA ? "http
 ipcMain.handle("update:install", () => { if (!updater) return false; flushWrites(); setTimeout(() => updater.quitAndInstall(false, true), 300); return true; });
 
 function createWindow(){
+  /* Our own title band instead of the stock one: the page draws a 38px strip (red over the sidebar, paper over the content) and the OS
+     keeps only its window buttons — Windows draws them top-right (title-bar overlay), macOS keeps its traffic lights top-left.
+     Snap layouts, the system shadow and Windows 11's rounded corners all still apply because this is still a normal window. */
+  const mac = process.platform === "darwin";
   const win = mainWin = new BrowserWindow({ width: 1360, height: 900, minWidth: 1220, minHeight: 800, title: "NMC Toolkit " + app.getVersion(),
-    backgroundColor: "#FBF8F2", icon: path.join(__dirname, "build", "icon.png"),
+    backgroundColor: "#FBF8F2", icon: path.join(__dirname, "build", "icon.png"), show: false,
+    titleBarStyle: mac ? "hiddenInset" : "hidden",
+    ...(mac ? { trafficLightPosition: { x: 14, y: 12 } } : { titleBarOverlay: { color: "#FBF8F2", symbolColor: "#2B2622", height: 38 } }),
     webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: false } });
+  win.once("ready-to-show", () => win.show());                                     /* appears painted, never a white flash */
   win.loadFile(path.join(__dirname, "app", "neighborhood-toolkit.html"));
   /* right-click menu: cut / copy / paste / select all in any field, copy on any selected text */
   win.webContents.on("context-menu", (e, p) => {

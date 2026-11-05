@@ -2,6 +2,9 @@
    and, when present, stores its data through these calls instead of browser storage. */
 const { contextBridge, ipcRenderer } = require("electron");
 contextBridge.exposeInMainWorld("nmcDesktop", {
+  platform: process.platform,                                   /* "win32" | "darwin" — the page lays out the title band for each */
+  titleBand: 38,                                                /* px the page reserves at the top for the window buttons */
+  toggleMaximize: () => ipcRenderer.send("win:toggleMax"),       /* double-click on the band, like a title bar */
   readData: () => ipcRenderer.sendSync("data:read"),          /* sync: the toolkit loads state at startup */
   writeData: (json) => ipcRenderer.send("data:write", json),
   wipeData: () => ipcRenderer.invoke("data:wipe"),

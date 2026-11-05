@@ -856,6 +856,15 @@ body.nmc-bg *,body.nmc-bg *::before,body.nmc-bg *::after{animation-play-state:pa
 @media (max-width:1240px){.cb-quick .qb span,.cb-quick .qb{font-size:11.5px}.clientbar .facts{display:none}}
 /* the layout is designed down to 1180x760 of content (the desktop window won't go below 1220x800 outer); in a browser, scroll rather than crush */
 #app{min-width:1180px}
+/* ===== desktop title band: the shell hides the stock title bar; the page draws its own 38px strip and the OS keeps only its buttons ===== */
+body.nmc-band .nmc-tb{position:sticky;top:0;z-index:1000;height:38px;display:flex;-webkit-app-region:drag;user-select:none}
+body.nmc-band .nmc-tb .l{width:232px;flex:none;background:var(--nmc-side);box-shadow:inset -1px 0 0 rgba(255,255,255,.08)}
+body.nmc-band .nmc-tb .r{flex:1;background:var(--paper)}
+body.nmc-band aside{top:38px;height:calc(100vh - 38px);padding-top:14px}
+body.nmc-band #app{min-height:calc(100vh - 38px)}
+body.nmc-band .clientbar{top:38px}
+body.nmc-band.nmc-mac .nmc-tb .l{padding-left:84px}   /* room for the traffic lights */
+@media print{.nmc-tb{display:none}}
 </style>
 </head>
 <body>
@@ -1640,7 +1649,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.16.2";
+const TOOLKIT_VERSION = "1.17.0";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1749,6 +1758,10 @@ let _copyBtn=null; document.addEventListener("click",e=>{ const b=e.target&&e.ta
 function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),3200); if(/copied/i.test(msg)&&_copyBtn&&window.NMC){ NMC.copied(_copyBtn); _copyBtn=null; } }
 function save(){ writeStore(JSON.stringify(state)); mirrorSeq++; scheduleAutosave(); }
 const DESK = window.nmcDesktop || null;
+/* desktop shell with a hidden title bar: draw the 38px band the window buttons sit in (red over the sidebar, paper over the content) */
+if(DESK&&DESK.titleBand){ document.body.classList.add("nmc-band"); if(DESK.platform==="darwin") document.body.classList.add("nmc-mac");
+  const tb=document.createElement("div"); tb.className="nmc-tb"; tb.innerHTML='<div class="l"></div><div class="r"></div>'; document.body.prepend(tb);
+  tb.addEventListener("dblclick",()=>{ if(DESK.toggleMaximize) DESK.toggleMaximize(); }); }
 function appVersion(){ try{ return (DESK&&DESK.version())||TOOLKIT_VERSION; }catch(e){ return TOOLKIT_VERSION; } }   /* present only inside the desktop app (preload bridge) */
 function readStore(){ if(DESK){ try{ return DESK.readData(); }catch(e){ return null; } } return localStorage.getItem(LS_KEY); }
 function writeStore(json){ if(DESK){ try{ DESK.writeData(json); }catch(e){} } try{ localStorage.setItem(LS_KEY, json); }catch(e){} }
