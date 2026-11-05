@@ -1146,7 +1146,7 @@ Discover 6,100 190 24.9"></textarea>
           <div class="field" style="grid-column:1/-1;margin-bottom:6px"><div class="btnrow"><button class="btn" onclick="copyImage('proposal')">Copy proposal</button><button class="btn ghost" onclick="sendMenu(event,'proposal',null,'email')" title="Proposal as a mail draft (or as an image)">Outreach emails ▾</button><button class="btn ghost" onclick="sendMenu(event,'proposal',null,'text')" title="Texts to go with the proposal, copied to the clipboard">Outreach texts ▾</button><button class="btn ghost" onclick="exportImage('proposal')">Save image</button><button class="btn ghost" onclick="librarySave('proposal')">Save to library</button><button class="btn ghost" onclick="sentMenu(event)" title="Log this proposal as sent — by email, text, or both (email drafts mark themselves)">Mark as sent ▾</button></div></div>
         </div>
         <div class="field" style="margin:12px 0 10px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--ink);text-transform:none"><input type="checkbox" id="propAmort" style="width:auto;min-height:0" checked onchange="setPropAmort(this.checked)"> Include the year-by-year amortization table on the proposal</label></div>
-        <div class="field"><label>Personal note to client (optional)</label><textarea id="propNote" style="min-height:60px;font-family:inherit" oninput="renderProposalPreview()" placeholder="e.g. Maria — here's the consolidation option we walked through on Tuesday."></textarea></div>
+        <div class="field"><label>Personal note to client (optional)</label><textarea id="propNote" style="min-height:60px;font-family:inherit" oninput="propNoteInput()" placeholder="e.g. Maria — here's the consolidation option we walked through on Tuesday."></textarea></div>
         <div class="field"><label>Saved options from Savings analysis <span class="hint" style="display:inline">(check one for a single proposal, two or more for a side-by-side · ★ marks your recommendation)</span></label><div id="propSnapList"></div></div>
         <div class="field" id="propCmpWhyWrap" style="display:none"><label>Banker notes on the recommendation (prints on the side-by-side)</label><textarea id="propCmpWhy" style="min-height:50px;font-family:inherit" oninput="setCmpWhy(this.value); const el=$('propPreview'); if(el) el.innerHTML=proposalHTML();" placeholder="e.g. The cash-out frees up the most each month and clears the cards for good; the IRRRL is the lighter-touch option if you'd rather leave the balance alone."></textarea></div>
         <div class="field" style="display:none"><label>Lender pricing on this proposal (check to include · star one as your recommendation)</label><div id="propOptsList"></div></div>
@@ -1651,7 +1651,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.17.6";
+const TOOLKIT_VERSION = "1.17.7";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -3584,7 +3584,11 @@ function renderPropSnaps(){ const c=cur(); const el=$("propSnapList"); if(!el) r
     + `<div class="hint" style="margin-top:6px">${sel.length===0?"None checked \u2014 the proposal follows the analysis screen.":sel.length===1?"One checked \u2014 a single proposal for "+esc(sel[0].label)+".":sel.length+" checked \u2014 a side-by-side proposal"+(rec?"":" (\u2606 star the one you recommend)")+"."}</div>`;
   const w=$("propCmpWhyWrap"); if(w){ w.style.display=(sel.length>=2&&rec)?"block":"none"; const t=$("propCmpWhy"); if(t&&document.activeElement!==t) t.value=(c.cmp&&c.cmp.why)||""; }
   const so=$("propSaveOpt"); if(so) so.style.display = sel.length===0 ? "" : "none"; }
-function renderProposalPreview(){ renderPropOptionPicker(); renderPropOptions(); renderPropSnaps(); renderLibrary(); const el=$("propPreview"); if(el){ el.innerHTML=proposalHTML(true); el.classList.toggle("customize",propCustomize); } renderHiddenBar();
+/* the personal note is per client — it used to be one shared box, so the last note typed followed you to the next client */
+let propNoteFor=null;
+function propNoteInput(){ const c=cur(); if(c){ c.propNote=$("propNote").value; save(); } renderProposalPreview(); }
+function syncPropNote(){ const el=$("propNote"); if(!el) return; const c=cur(); const id=c?c.id:null; if(id!==propNoteFor||el.value!==(c&&c.propNote||"")){ if(document.activeElement===el&&id===propNoteFor) return; el.value=c&&c.propNote?c.propNote:""; propNoteFor=id; } }
+function renderProposalPreview(){ syncPropNote(); renderPropOptionPicker(); renderPropOptions(); renderPropSnaps(); renderLibrary(); const el=$("propPreview"); if(el){ el.innerHTML=proposalHTML(true); el.classList.toggle("customize",propCustomize); } renderHiddenBar();
   const ps=$("propRateSrc"); if(ps){ const t=rateSrcText(cur()); ps.textContent=t; ps.style.color = /ESTIMATE/.test(t)?"var(--warn)":"var(--muted)"; } }
 const APP_TITLE=document.title;
 function printAs(title, html){ /* the browser prints the page title in the header, so give the
@@ -5851,7 +5855,7 @@ function go(s){ if(s!=="present"&&document.body.classList.contains("obj-open")){
   if(s==="compare") renderCompare();
   if(s==="desk") renderDesk();
 }
-function refreshAll(){ renderPickers(); fillClientForm(); renderPipeline(); renderSavedOptions(); try{ updateRatePill(); }catch(e){}
+function refreshAll(){ renderPickers(); fillClientForm(); try{ syncPropNote(); }catch(e){} renderPipeline(); renderSavedOptions(); try{ updateRatePill(); }catch(e){}
   fillAnalysisInputs(); renderDebts(); runAnalysis(); renderProposalPreview(); renderBlocks(); renderCompare(); renderDesk(); if($("s-tmpl").classList.contains("active")) renderTemplates(); }
 document.querySelectorAll("nav button").forEach(b=>b.addEventListener("click",()=>{ if(b.classList.contains("soon")){ toast("Coming soon \u2014 not part of this rollout yet"); return; } go(b.dataset.s); }));
 load(); migrate();
