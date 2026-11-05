@@ -867,6 +867,18 @@ body.nmc-band .clientbar{top:38px}
 body.nmc-band.nmc-mac .nmc-tb .l{padding-left:84px}   /* room for the traffic lights */
 @media print{.nmc-tb{display:none}}
 .clientbar .cb-phone{font-size:12.5px;padding:3px 10px 3px 8px;margin-right:2px;font-weight:600}.clientbar .cb-phone .ic{width:1em;height:1em;margin:0;opacity:.7}
+
+/* ===== follow-up mode strip (top of the client bar) ===== */
+.clientbar .fuq-strip{flex:0 0 100%;display:flex;align-items:center;gap:10px;margin:-2px 0 6px;padding:6px 8px 6px 10px;border-radius:10px;background:linear-gradient(180deg,#FFF6F3,#FDEDE8);border:1px solid #F0CFC5;font-size:12.5px;color:var(--ink);animation:nmc-menuin .2s cubic-bezier(.2,.9,.3,1.2)}
+.clientbar .fuq-strip.off{background:#FBF8F2;border-color:var(--line)}
+.fuq-strip .fq-t{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--brand);letter-spacing:.02em}.fuq-strip .fq-t .ic{width:1em;height:1em;margin:0}
+.fuq-strip .fq-n{color:var(--muted)}.fuq-strip .fq-n b{color:var(--ink);font-variant-numeric:tabular-nums}
+.fuq-strip .fq-bar{width:110px;height:5px;border-radius:3px;background:#EADFD3;overflow:hidden;flex:none}.fuq-strip .fq-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--nmc-red-hi),var(--brand));border-radius:3px;transition:width .35s cubic-bezier(.2,.9,.3,1)}
+.fuq-strip .fq-hint{color:var(--muted);font-size:12px}.fuq-strip .sp{flex:1}
+.fuq-strip .fq-next{color:var(--muted);font-size:12px;white-space:nowrap}.fuq-strip .fq-next b{color:var(--ink)}
+.fuq-strip .fq-b{all:unset;cursor:pointer;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:#fff;white-space:nowrap;transition:all .14s}
+.fuq-strip .fq-b:hover{border-color:var(--brand);color:var(--brand)}.fuq-strip .fq-b.x{color:var(--muted)}
+.atile.fq .al{font-weight:700}
 </style>
 </head>
 <body>
@@ -1651,7 +1663,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.17.7";
+const TOOLKIT_VERSION = "1.18.0";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1705,7 +1717,7 @@ function fuClose(id,outcome){ const c=state.clients.find(x=>x.id===id); if(!c) r
 function fuNext(id,when,time){ const c=state.clients.find(x=>x.id===id); if(!c) return;
   c.followUp=when||""; c.followUpTime=time||""; if(!time) c.apptLen=0; if(c.log&&c.log[0]&&!c.log[0].next) c.log[0].next=when||"none";
   if(when&&c.status!=="Needs follow-up"&&!isDone(c)) c.status="Needs follow-up";
-  fuPending=null; save(); refreshAll(); toast(when?"Next follow-up "+when+(time?" "+time:""):"No further follow-up set"); }
+  fuPending=null; save(); refreshAll(); toast(when?"Next follow-up "+when+(time?" "+time:""):"No further follow-up set"); fuqAdvance(id,"next:"+(when||"none")); }
 async function fuNextPick(id){ const d=await askText("Next follow-up date", "", fuAddDays(1), {type:"date",ok:"Set it"}); if(d&&/^\d{4}-\d{2}-\d{2}$/.test(d)) fuNext(id,d,""); }
 function fuNextChips(c){ const id=c.id; const chip=(l,fn)=>`<button class="chip" onclick="${fn}">${l}</button>`;
   return `<span class="hint">Next:</span> ${chip("Tomorrow",`fuNext('${id}','${fuAddDays(1)}','')`)}${chip("3 days",`fuNext('${id}','${fuAddDays(3)}','')`)}${chip("1 week",`fuNext('${id}','${fuAddDays(7)}','')`)}${chip("Pick a date",`fuNextPick('${id}')`)}${chip("None",`fuNext('${id}','','')`)}`; }
@@ -1992,17 +2004,17 @@ function cbStatusCls(st){ return st==="New lead"?"s-new":st==="Needs follow-up"?
 function cbSetStatus(ev,st){ ev.stopPropagation(); const c=cur(); if(!c) return; c.status=st; cbOpen=null; save(); refreshAll(); toast("Status: "+st); }
 function cbFollowDays(ev,days){ ev.stopPropagation(); const c=cur(); if(!c) return; cbSetFollow(c, days==null?"":fuAddDays(days)); }
 function cbFollowDate(ev){ ev.stopPropagation(); const d=$("cbFuDate")&&$("cbFuDate").value; if(!/^\d{4}-\d{2}-\d{2}$/.test(d||"")){ toast("Pick a date"); return; } cbSetFollow(cur(), d); }
-function cbSetFollow(c,date){ if(!c) return; c.followUp=date||""; c.followUpTime=""; c.apptLen=0; if(date&&c.status!=="Needs follow-up"&&!isDone(c)) c.status="Needs follow-up"; if(c.log&&c.log[0]&&!c.log[0].next) c.log[0].next=date||"none"; fuPending=null; cbOpen=null; save(); refreshAll(); toast(date?"Follow-up "+fuNice(date):"No follow-up set"); }
+function cbSetFollow(c,date){ if(!c) return; c.followUp=date||""; c.followUpTime=""; c.apptLen=0; if(date&&c.status!=="Needs follow-up"&&!isDone(c)) c.status="Needs follow-up"; if(c.log&&c.log[0]&&!c.log[0].next) c.log[0].next=date||"none"; fuPending=null; cbOpen=null; save(); refreshAll(); toast(date?"Follow-up "+fuNice(date):"No follow-up set"); fuqAdvance(c.id,date?"next:"+date:"none"); }
 function cbNoAnswer(ev){ ev.stopPropagation(); const c=cur(); if(!c) return; const next=fuAddDays(1); c.log=c.log||[]; c.log.unshift({when:fuStamp(), outcome:"noanswer", due:c.followUp||"", dueTime:c.followUpTime||"", next}); if(c.log.length>60) c.log.length=60;
-  c.followUp=next; c.followUpTime=""; c.apptLen=0; if(c.status!=="Needs follow-up"&&!isDone(c)) c.status="Needs follow-up"; fuPending=null; cbOpen=null; save(); refreshAll(); toast("No answer \u2014 in "+fuNice(next)+"\u2019s follow-ups"); }
+  c.followUp=next; c.followUpTime=""; c.apptLen=0; if(c.status!=="Needs follow-up"&&!isDone(c)) c.status="Needs follow-up"; fuPending=null; cbOpen=null; save(); refreshAll(); toast("No answer \u2014 in "+fuNice(next)+"\u2019s follow-ups"); fuqAdvance(c.id,"noanswer"); }
 function cbAbandon(ev){ ev.stopPropagation(); const c=cur(); if(!c) return; c.log=c.log||[]; c.log.unshift({when:fuStamp(), outcome:"abandon", due:c.followUp||"", dueTime:c.followUpTime||"", next:"none"}); if(c.log.length>60) c.log.length=60;
-  c.followUp=""; c.followUpTime=""; c.apptLen=0; fuPending=null; cbOpen=null; save(); refreshAll(); toast("Follow-ups stopped \u2014 "+(c.name||"client")+" stays in your pipeline"); }
+  c.followUp=""; c.followUpTime=""; c.apptLen=0; fuPending=null; cbOpen=null; save(); refreshAll(); toast("Follow-ups stopped \u2014 "+(c.name||"client")+" stays in your pipeline"); fuqAdvance(c.id,"abandon"); }
 function cbApptDefaults(){ const d=new Date(); d.setMinutes(d.getMinutes()+30); const m=d.getMinutes(); d.setMinutes(m<30?30:60,0,0); if(d.getHours()>=17){ d.setDate(d.getDate()+1); d.setHours(10,0,0,0); } while(d.getDay()===0||d.getDay()===6){ d.setDate(d.getDate()+1); d.setHours(10,0,0,0); }
   return {date:d.toLocaleDateString("en-CA"), time:String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")}; }
 function cbBookAppt(ev){ ev.stopPropagation(); const c=cur(); if(!c) return; const d=$("cbApDate").value, t=$("cbApTime").value, len=+$("cbApLen").value||15; if(!/^\d{4}-\d{2}-\d{2}$/.test(d)||!/^\d{2}:\d{2}$/.test(t)){ toast("Pick a date and time"); return; }
   c.log=c.log||[]; c.log.unshift({when:fuStamp(), outcome:"appt", due:c.followUp||"", dueTime:c.followUpTime||"", next:d+" "+t}); if(c.log.length>60) c.log.length=60;
   c.followUp=d; c.followUpTime=t; c.apptLen=len; if(c.status!=="Needs follow-up"&&!isDone(c)) c.status="Needs follow-up"; fuPending=null; cbOpen=null; save(); refreshAll();
-  calOpenICS([calEventFor(c)], "Call "+(c.name||"")); }
+  calOpenICS([calEventFor(c)], "Call "+(c.name||"")); fuqAdvance(c.id,"appt"); }
 function fuNice(d){ if(!d) return ""; const t=todayStr(); if(d===t) return "today"; const tm=new Date(); tm.setDate(tm.getDate()+1); if(d===tm.toLocaleDateString("en-CA")) return "tomorrow"; const [Y,M,D]=d.split("-").map(Number); return new Date(Y,M-1,D).toLocaleDateString("en-US",{weekday:"short",month:"short",day:"numeric"}); }
 function cbControlsHTML(c){ if(!c||c.quick) return ""; const ic=n=>NMC.icon(n); const today=todayStr(); const fu=c.followUp; const k=fu?(fu<today?"over":fu===today?"due":""):""; const appt=c.apptLen>0&&c.followUpTime;
   const statusPop=cbOpen==="status"?`<div class="cb-pop status" onclick="event.stopPropagation()"><div class="ph">Disposition</div><div class="chips">${STATUSES.map(st=>`<span class="chip${st===c.status?" on":""}" onclick="cbSetStatus(event,'${st}')">${esc(st)}</span>`).join("")}</div></div>`:"";
@@ -2014,6 +2026,59 @@ function cbControlsHTML(c){ if(!c||c.quick) return ""; const ic=n=>NMC.icon(n); 
     <span class="cb-act fu ${k}${appt?" appt":""}" onclick="cbToggle(event,'fu')" title="Follow-up day"><span class="ic-w">${ic(appt?"calendar":"clock")}</span>${fuLabel}${k==="over"?`<span class="rel">overdue</span>`:""}<span class="car">\u25BE</span>${fuPop}</span>
     <span class="cb-quick"><button type="button" class="qb" onclick="cbNoAnswer(event)" title="No answer \u2014 try again tomorrow">${ic("x")}No answer</button><button type="button" class="qb" onclick="cbAbandon(event)" title="Stop following up (stays in the pipeline)">${ic("redo")}Abandon</button><span class="cb-act cal" onclick="cbToggle(event,'appt')" title="Book a firm appointment (Outlook, 15 min)">${ic("calendar")}Calendar${apPop}</span></span>
   </span>`; }
+/* ===== Follow-up mode: work the day's follow-ups back to back =====
+   state.fuq = {started:ms, day, ids:[...in order], done:{id:outcome}, cur:id} is saved with everything else, so pausing or closing
+   the app keeps your place. fuqLive is this window only: after a restart the session is there but paused until you resume it. */
+let fuqLive=false;
+function fuqStampMs(w){ const m=/^(\d{4})-(\d{2})-(\d{2}) (\d{1,2}):(\d{2})\s*([AP]M)/i.exec(w||""); if(!m) return 0; let h=+m[4]%12; if(/p/i.test(m[6])) h+=12; return new Date(+m[1],+m[2]-1,+m[3],h,+m[5]).getTime(); }
+function fuqIsAppt(c){ return c.apptLen>0&&!!c.followUpTime; }
+/* who belongs in today's follow-ups: active, due today or overdue, not a firm appointment (those are on the calendar) */
+function fuqCandidates(){ const today=todayStr(); const hs=new Set(eligibleIds());
+  return state.clients.filter(c=>!c.quick&&!isDone(c)&&c.status!=="Lost"&&c.followUp&&c.followUp<=today&&!fuqIsAppt(c))
+    .sort((a,b)=>a.followUp.localeCompare(b.followUp) || (hs.has(b.id)-hs.has(a.id)) || (a.followUpTime||"99").localeCompare(b.followUpTime||"99") || (a.name||"").localeCompare(b.name||"")); }
+/* handled since the session started: any logged contact or sent proposal, an appointment, the follow-up moved out or cleared, closed/lost */
+function fuqHandled(c,started){ if(!c) return "gone"; const today=todayStr(); const from=Math.floor(started/60000)*60000;   /* log stamps are to the minute */
+  if(isDone(c)||c.status==="Lost") return "closed";
+  if(fuqIsAppt(c)) return "appointment";
+  if((c.log||[]).some(e=>fuqStampMs(e.when)>=from)) return "contacted";
+  if(!c.followUp||c.followUp>today) return "rescheduled";
+  return ""; }
+function fuqRemaining(){ const q=state.fuq; if(!q) return []; return q.ids.filter(id=>!q.done[id]); }
+function fuqStart(){ const q=state.fuq; const left=q?fuqRemaining():[];
+  if(q&&left.length){ fuqResume(); return; }
+  const ids=fuqCandidates().map(c=>c.id); if(!ids.length){ toast("No follow-ups due \u2014 you\u2019re clear"); return; }
+  state.fuq={started:Date.now(), day:todayStr(), ids, done:{}, cur:ids[0]}; fuqLive=true; save(); fuqOpen(ids[0]);
+  toast(`Follow-up mode \u2014 ${ids.length} to work. Disposition each one and the next opens.`); }
+/* resume: drop whoever was handled while you were away, add anyone newly due, carry on from where you stopped */
+function fuqResume(){ const q=state.fuq; if(!q) return fuqStart(); let dropped=0;
+  q.ids.forEach(id=>{ if(q.done[id]) return; const c=state.clients.find(x=>x.id===id); const why=fuqHandled(c,q.started); if(why){ q.done[id]="away:"+why; dropped++; } });
+  const have=new Set(q.ids); const fresh=fuqCandidates().filter(c=>!have.has(c.id)&&!fuqHandled(c,q.started)).map(c=>c.id); q.ids.push(...fresh);
+  const left=fuqRemaining(); if(!left.length){ fuqFinish(dropped?`Everyone left was handled while you were away (${dropped}).`:""); return; }
+  if(!q.cur||q.done[q.cur]) q.cur=left[0]; fuqLive=true; save(); fuqOpen(q.cur);
+  toast(`Resumed \u2014 ${left.length} left`+(dropped?` \u00b7 ${dropped} handled while you were away`:"")+(fresh.length?` \u00b7 ${fresh.length} newly due added`:"")); }
+function fuqOpen(id){ const c=state.clients.find(x=>x.id===id); if(!c){ fuqNext(); return; } state.fuq.cur=id; save(); pickClient(id);
+  let r=null; try{ r=computeAnalysis(c); }catch(e){} go(r&&!r.tooSmall?"proposal":"client"); window.scrollTo(0,0); }
+function fuqNext(){ const q=state.fuq; if(!q) return; const left=fuqRemaining(); if(!left.length){ fuqFinish(); return; }
+  const i=q.ids.indexOf(q.cur); const after=q.ids.slice(i+1).filter(id=>!q.done[id]); fuqOpen(after[0]||left[0]); }
+/* a disposition on the lead you're on: log it on the session and open the next one */
+function fuqAdvance(id,outcome){ const q=state.fuq; if(!fuqLive||!q||q.cur!==id) return; q.done[id]=outcome||"done"; save();
+  const left=fuqRemaining(); const nxt=left.length?state.clients.find(x=>x.id===(q.ids.slice(q.ids.indexOf(id)+1).find(x=>!q.done[x])||left[0])):null;
+  renderClientBar(); setTimeout(()=>{ if(!fuqLive||state.fuq!==q) return; if(nxt) fuqOpen(nxt.id); else fuqFinish(); }, 650); }
+function fuqSkip(ev){ if(ev) ev.stopPropagation(); const q=state.fuq; if(!q) return; if(fuqRemaining().length<2){ toast("That\u2019s the last one"); return; }
+  const i=q.ids.indexOf(q.cur), id=q.cur, open=x=>!q.done[x]; q.ids.splice(i,1); q.ids.push(id); save();   /* skipped leads go to the end */
+  fuqOpen(q.ids.slice(i,-1).find(open)||q.ids.slice(0,i).find(open)); }
+function fuqBack(ev){ if(ev) ev.stopPropagation(); const q=state.fuq; if(!q) return; const i=q.ids.indexOf(q.cur); const prev=q.ids.slice(0,i).filter(id=>!q.done[id]).pop(); if(prev) fuqOpen(prev); else toast("You\u2019re on the first one"); }
+function fuqPause(ev){ if(ev) ev.stopPropagation(); fuqLive=false; save(); renderClientBar(); renderPipeline(); toast(`Paused \u2014 ${fuqRemaining().length} left. Resume from the pipeline whenever you\u2019re back.`); }
+function fuqFinish(note){ const q=state.fuq; const n=q?Object.keys(q.done).filter(k=>!/^away:/.test(q.done[k])).length:0; state.fuq=null; fuqLive=false; save(); renderClientBar(); go("pipeline");
+  toast((n?`Follow-ups done \u2014 ${n} worked. `:"Follow-ups done. ")+(note||"")); }
+function fuqEnd(ev){ if(ev) ev.stopPropagation(); fuqFinish("Session ended."); }
+function fuqStripHTML(c){ const q=state.fuq; if(!fuqLive||!q) return ""; const total=q.ids.length; const doneN=q.ids.filter(id=>q.done[id]).length; const onIt=c&&c.id===q.cur;
+  const left=fuqRemaining(); const i=q.ids.indexOf(q.cur); const nextId=q.ids.slice(i+1).find(id=>!q.done[id])||left.find(id=>id!==q.cur); const nx=nextId&&state.clients.find(x=>x.id===nextId);
+  const pct=total?Math.round(doneN/total*100):0;
+  return `<div class="fuq-strip${onIt?"":" off"}"><span class="fq-t">${NMC.icon("clock")}Follow-up mode</span><span class="fq-n"><b>${Math.min(doneN+1,total)}</b> of ${total}</span><span class="fq-bar"><i style="width:${pct}%"></i></span>
+    ${onIt?`<span class="fq-hint">Disposition below to open the next</span>`:`<button type="button" class="fq-b" onclick="fuqOpen(state.fuq.cur)">Back to ${esc((state.clients.find(x=>x.id===q.cur)||{}).name||"current")}</button>`}
+    <span class="sp"></span>${nx?`<span class="fq-next">next: <b>${esc(nx.name||"")}</b></span>`:`<span class="fq-next">last one</span>`}
+    <button type="button" class="fq-b" onclick="fuqBack(event)" title="Previous lead">\u2039 Back</button><button type="button" class="fq-b" onclick="fuqSkip(event)" title="Move to the end of the list">Skip</button><button type="button" class="fq-b" onclick="fuqPause(event)" title="Keep your place and step away">Pause</button><button type="button" class="fq-b x" onclick="fuqEnd(event)" title="End the session">End</button></div>`; }
 function fmtTime12(t){ if(!t) return ""; const [h,m]=t.split(":").map(Number); const ap=h>=12?"PM":"AM"; return ((h+11)%12+1)+":"+String(m).padStart(2,"0")+" "+ap; }
 function renderClientBar(){ const bar=$("clientBar"); if(!bar) return; const c=cur();
   const sel=`<select id="gClientPicker" onchange="this.value?pickClient(this.value):clearClient()"></select>`;
@@ -2033,7 +2098,7 @@ function renderClientBar(){ const bar=$("clientBar"); if(!bar) return; const c=c
     { const e=rdEligibleNow(c); if(e) facts.push(`<span class="tag-good" title="Eligible under today\u2019s rate desk rates">\u2728 eligible since ${pct(e.rate)} (${RD_TIER_LABEL[e.tier]}${e.assumed?", score?":""})</span>`); }
     if(c.hot) facts.push(`<span class="tag-warn">\uD83D\uDD25 hot</span>`); { const fi=futureInfo(c); if(fi) facts.push(`<span class="${fi.tag}">${fi.txt.replace(/ \u2014 .*$/,"")}</span>`); }
     { const t=clientTime(c); const tz=clientTz(c); if(t) facts.push(`<span class="tag-flat" title="${esc(tz)}">\uD83D\uDD52 ${t}${tz!=="America/New_York"?" (their time)":""}</span>`); }
-    bar.innerHTML=`<div class="inner">${card}${bell}<span class="hint" style="margin:0">Working with</span><span class="who">${esc(c.name)}</span>${c.phone?`<span class="pc-chip cb-phone" data-copy="${esc(c.phone)}" title="Click to copy" onclick="copyChip(event)">${NMC.icon("phone")}${esc(c.phone)}</span>`:""}${cbControlsHTML(c)}<div class="facts">${facts.join("")}</div><span style="flex:1"></span><span style="display:inline-flex;gap:6px;align-items:center;white-space:nowrap">${sel}<button class="btn ghost small" onclick="go('client')">Open</button><button class="btn ghost small" onclick="clearClient()" title="Deselect">\u2715</button></span></div>`; }
+    bar.innerHTML=`<div class="inner">${fuqStripHTML(c)}${card}${bell}<span class="hint" style="margin:0">Working with</span><span class="who">${esc(c.name)}</span>${c.phone?`<span class="pc-chip cb-phone" data-copy="${esc(c.phone)}" title="Click to copy" onclick="copyChip(event)">${NMC.icon("phone")}${esc(c.phone)}</span>`:""}${cbControlsHTML(c)}<div class="facts">${facts.join("")}</div><span style="flex:1"></span><span style="display:inline-flex;gap:6px;align-items:center;white-space:nowrap">${sel}<button class="btn ghost small" onclick="go('client')">Open</button><button class="btn ghost small" onclick="clearClient()" title="Deselect">\u2715</button></span></div>`; }
   const g=$("gClientPicker"); if(g){ g.innerHTML = state.clients.length ? `<option value="" ${!state.currentId?"selected":""}>\u2014 choose a client \u2014</option>`+state.clients.map(x=>`<option value="${x.id}" ${x.id===state.currentId?"selected":""}>${x.quick?"\u26A1 ":""}${esc(x.name)}</option>`).join("") : `<option value="">\u2014 no clients yet \u2014</option>`; }
 }
 /* P&I vs escrow: bankers usually know the total payment; we split it automatically from balance/rate/term */
@@ -2423,7 +2488,11 @@ function renderPipeline(){ const today=todayStr(); document.body.classList.toggl
   /* alert tiles: a count and a click, not a list of names (the groups below already name everyone) */
   const tile=(view,icon,n,label,sub,cls)=> n>0&&pipeView!==view ? `<button type="button" class="atile ${cls||""}" onclick="setPipeView('${view}')"><span class="an">${n}</span><span class="al">${icon}${label}${sub?`<span class="as">${sub}</span>`:""}</span><span class="ag">\u203A</span></button>` : "";
   const overdueN=al.due.filter(c=>c.followUp&&c.followUp<today).length;
-  const tiles=[ tile("due","\uD83D\uDD52 ",al.due.length,al.due.length===1?"follow-up due":"follow-ups due",overdueN?overdueN+" overdue":"today","now"),
+  const fq=state.fuq, fqLeft=fq?fuqRemaining().length:0;
+  const fuTile = fq&&fqLeft&&!fuqLive ? `<button type="button" class="atile now fq" onclick="fuqResume()"><span class="an">${fqLeft}</span><span class="al">\u25B6 Resume follow-ups<span class="as">left where you paused</span></span><span class="ag">\u203A</span></button>`
+    : fq&&fuqLive ? `<button type="button" class="atile now fq" onclick="fuqOpen(state.fuq.cur)"><span class="an">${fqLeft}</span><span class="al">\u25B6 Back to follow-ups<span class="as">you\u2019re in follow-up mode</span></span><span class="ag">\u203A</span></button>`
+    : al.due.length ? `<button type="button" class="atile now fq" onclick="fuqStart()"><span class="an">${al.due.length}</span><span class="al">\u25B6 Start follow-ups<span class="as">${overdueN?overdueN+" overdue \u00b7 ":""}one after another</span></span><span class="ag">\u203A</span></button>` : "";
+  const tiles=[ fuTile,
     tile("hot","\uD83D\uDD25 ",al.hot.length,al.hot.length===1?"hot right now":"hot right now","rates moved in their favor","hot"),
     rdTiers()?tile("eligible","\u2728 ",rdWeekIds().length,"newly eligible","this week","fresh"):"",
     tile("season","\uD83D\uDCC5 ",al.season.length,"seasoning",al.season.some(c=>seasonDays(c)<=0)?"some eligible now":"coming up",""),
