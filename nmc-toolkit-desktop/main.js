@@ -140,7 +140,7 @@ function createWindow(){
      keeps only its window buttons — Windows draws them top-right (title-bar overlay), macOS keeps its traffic lights top-left.
      Snap layouts, the system shadow and Windows 11's rounded corners all still apply because this is still a normal window. */
   const mac = process.platform === "darwin";
-  const win = mainWin = new BrowserWindow({ width: 1400, height: 900, minWidth: 1360, minHeight: 840, title: "NMC Toolkit " + app.getVersion(),
+  const win = mainWin = new BrowserWindow({ width: 1500, height: 900, minWidth: 1500, minHeight: 840, title: "NMC Toolkit " + app.getVersion(),
     backgroundColor: "#FBF8F2", icon: path.join(__dirname, "build", "icon.png"), show: false,
     titleBarStyle: mac ? "hiddenInset" : "hidden",
     ...(mac ? { trafficLightPosition: { x: 14, y: 12 } } : { titleBarOverlay: { color: "#FBF8F2", symbolColor: "#2B2622", height: 38 } }),
