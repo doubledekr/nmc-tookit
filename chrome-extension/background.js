@@ -7,7 +7,7 @@ async function getPort(){ const s = await chrome.storage.local.get("port"); retu
 
 async function postToApp(payload){
   const port = await getPort();
-  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 2500);
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 4000);
   try {
     const r = await fetch(`http://127.0.0.1:${port}/sf`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload), signal: ctl.signal });
     clearTimeout(t);
@@ -29,7 +29,8 @@ async function copyViaTab(tabId, text){
 chrome.runtime.onMessage.addListener((msg, sender, reply) => {
   if(msg && msg.type === "nmc:send"){
     (async () => {
-      const res = await postToApp({ text: msg.text, url: msg.url, title: msg.title, pairs: msg.pairs||0, via: msg.via||"page", apiPairs: msg.apiPairs||0, obj: msg.obj||"", extVersion: msg.extVersion||chrome.runtime.getManifest().version, when: new Date().toISOString(), source: "chrome-extension" });
+      let res = await postToApp({ text: msg.text, url: msg.url, title: msg.title, pairs: msg.pairs||0, via: msg.via||"page", apiPairs: msg.apiPairs||0, obj: msg.obj||"", extVersion: msg.extVersion||chrome.runtime.getManifest().version, when: new Date().toISOString(), source: "chrome-extension" });
+      if(!res.ok && res.error !== "timed out"){ await new Promise(r => setTimeout(r, 600)); res = await postToApp({ text: msg.text, url: msg.url, title: msg.title, pairs: msg.pairs||0, via: msg.via||"page", apiPairs: msg.apiPairs||0, obj: msg.obj||"", extVersion: msg.extVersion||chrome.runtime.getManifest().version, when: new Date().toISOString(), source: "chrome-extension" }); }   /* one quick retry: the app may be re-binding its port */
       if(res.ok){ await chrome.storage.local.set({ lastSent: { when: Date.now(), title: msg.title } }); reply(res); return; }
       const copied = sender.tab ? await copyViaTab(sender.tab.id, msg.text) : false;
       reply({ ok:false, copied, error: res.error });

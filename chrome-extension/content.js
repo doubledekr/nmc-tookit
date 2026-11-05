@@ -104,7 +104,8 @@
   function leadIdFromUrl(){ const r=recordFromUrl(); return r?r.id:null; }
   async function apiLead(){
     const rec0=recordFromUrl(); if(!rec0) return null; const id=rec0.id; const FIELDS=API_FIELDS_ALL;
-    const r=await fetch('/services/data/v61.0/ui-api/record-ui/'+id+'?layoutTypes=Full&modes=View',{credentials:'same-origin'}); if(!r.ok) throw new Error('UI API '+r.status);
+    const ctl=new AbortController(); const tt=setTimeout(()=>ctl.abort(),4000);   /* a slow UI API call used to hold the whole send hostage */
+    let r; try{ r=await fetch('/services/data/v61.0/ui-api/record-ui/'+id+'?layoutTypes=Full&modes=View',{credentials:'same-origin',signal:ctl.signal}); }finally{ clearTimeout(tt); } if(!r.ok) throw new Error('UI API '+r.status);
     const j=await r.json(); const rec=j.records&&j.records[id]; if(!rec||!rec.fields) throw new Error('no record');
     const lines=[]; let n=0; const seen={};
     for(const [api,label] of FIELDS){ const f=rec.fields[api]; if(!f) continue; let v=f.value; if(v==null||v==='') continue; if(seen[label]) continue;
@@ -124,7 +125,7 @@
   function settle(maxMs){ return new Promise(res=>{ let t=null; const done=()=>{ try{ mo.disconnect(); }catch(e){} clearTimeout(cap); res(); }; const mo=new MutationObserver(()=>{ clearTimeout(t); t=setTimeout(done,350); }); try{ mo.observe(document.documentElement,{childList:true,subtree:true,characterData:true}); }catch(e){} t=setTimeout(done,350); const cap=setTimeout(done,maxMs||2500); }); }
   async function readOnce(opened){ const h=harvestPage(); h.opened=opened; h.via='page'; const r0=recordFromUrl(); h.obj=r0?r0.obj:'';
     try{ const a=await apiLead(); if(a){ h.text=a.text+'\n'+h.text; h.pairs=a.pairs+h.pairs; h.apiPairs=a.pairs; h.via='api'; h.obj=a.obj; } }catch(e){ h.apiError=e.message; } return h; }
-  function readLead(){ const opened=expandSections(); return (async()=>{ await settle(opened?3000:1200); let h=await readOnce(opened);
+  function readLead(){ const opened=expandSections(); return (async()=>{ await settle(opened?2000:800); let h=await readOnce(opened);
       if(h.pairs<8){ await new Promise(r=>setTimeout(r,900)); const h2=await readOnce(opened); if(h2.pairs>h.pairs){ h2.retried=true; h=h2; } }
       return h; })(); }
   function send(cb){ readLead().then(h=>{
@@ -135,7 +136,7 @@
       if(chrome.runtime.lastError){ toast('Extension error: '+chrome.runtime.lastError.message, false); if(cb) cb({ok:false,pairs:h.pairs,error:chrome.runtime.lastError.message}); return; }
       if(res&&res.ok) toast('Sent '+h.pairs+' fields'+(h.obj==='Opportunity'?' from the converted loan':(h.obj==='Contact'||h.obj==='Account')?' from the '+h.obj.toLowerCase()+' (open the Loan or Lead record for the full numbers)':'')+' to the NMC toolkit \u2014 top of your Pipeline as New from Salesforce.', true);
       else if(res&&res.copied) toast('Toolkit app isn\u2019t running \u2014 copied '+h.pairs+' fields to the clipboard instead. Use Paste from clipboard & parse.', false);
-      else toast('Couldn\u2019t reach the toolkit app'+(res&&res.error?': '+res.error:'')+'. Is NMC Toolkit open?', false);
+      else toast('Couldn\u2019t reach the toolkit app'+(res&&res.error?': '+res.error:'')+'. Is NMC Toolkit open? If it is, quit it fully and reopen it.', false);
       if(cb) cb(Object.assign({pairs:h.pairs,chars:h.text.length,via:h.via,apiPairs:h.apiPairs||0,apiError:h.apiError},res||{}));
     }); }catch(e){ toast('The NMC extension was updated \u2014 reload this page (F5) and click again.', false); if(cb) cb({ok:false,pairs:h.pairs,error:'extension reloaded'}); } });
   }

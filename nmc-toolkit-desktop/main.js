@@ -115,9 +115,15 @@ function startSfListener(){
       return; }
     res.writeHead(404, cors); res.end();
   });
-  sfServer.on("error", e => { console.error("SF listener failed on port " + SF_PORT + ": " + e.message); sfServer = null; });
+  /* The port can be busy for a moment after an update restarts the app (the old instance is still letting go). Before, one failed bind
+     left the listener dead for the whole session and every send from the extension fell back to the clipboard. Now it keeps trying:
+     every 2s for the first minute, then every 15s. */
+  sfServer.on("error", e => { console.error("SF listener failed on port " + SF_PORT + ": " + e.message); try { sfServer.close(); } catch (err) {} sfServer = null;
+    sfRetries++; setTimeout(startSfListener, sfRetries < 30 ? 2000 : 15000); });
+  sfServer.on("listening", () => { sfRetries = 0; });
   sfServer.listen(SF_PORT, "127.0.0.1");
 }
+let sfRetries = 0;
 ipcMain.on("sf:statusSync", e => { e.returnValue = { listening: !!sfServer && sfServer.listening, port: SF_PORT, lastAt: sfLastAt, extSeen: sfExtSeen, extShipped: shippedExtVersion() }; });
 ipcMain.handle("sf:openExtensionFolder", () => { const p = path.join(process.resourcesPath || __dirname, "chrome-extension"); const alt = path.join(__dirname, "..", "chrome-extension"); return shell.openPath(fs.existsSync(p) ? p : alt); });
 ipcMain.on("sf:extensionPathSync", e => { const p = path.join(process.resourcesPath || __dirname, "chrome-extension"); const alt = path.join(__dirname, "..", "chrome-extension"); e.returnValue = fs.existsSync(p) ? p : alt; });
@@ -164,11 +170,15 @@ function createWindow(){
   return win;
 }
 app.setAppUserModelId("com.neighborhoodmc.toolkit");   /* Windows: lets desktop notifications show the app name */
+/* one running copy at a time — a second launch (double-clicked shortcut, update restart overlap) just focuses the first,
+   so two instances never fight over the data file or the extension's port */
+if (!app.requestSingleInstanceLock()) { app.quit(); }
 app.whenReady().then(() => {
   Menu.setApplicationMenu(Menu.buildFromTemplate([
     { label: "NMC Toolkit", submenu: [{ role: "reload" }, { role: "toggleDevTools" }, { type: "separator" }, { role: "quit" }] },
     { role: "editMenu" }, { role: "viewMenu" }, { role: "windowMenu" } ]));
   createWindow(); setupUpdates(); startSfListener();
+  app.on("second-instance", () => { if (mainWin && !mainWin.isDestroyed()) { if (mainWin.isMinimized()) mainWin.restore(); mainWin.show(); mainWin.focus(); } });
   app.on("activate", () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
 });
 app.on("before-quit", flushWrites);
