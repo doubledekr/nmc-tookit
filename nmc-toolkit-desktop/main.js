@@ -113,6 +113,21 @@ function startSfListener(){
         if (mainWin && !mainWin.isDestroyed()) { mainWin.webContents.send("sf:incoming", { text: j.text, url: j.url || "", title: j.title || "", when: j.when || new Date().toISOString(), source: j.source || "chrome-extension", pairs: +j.pairs || 0, via: j.via || "", apiPairs: +j.apiPairs || 0, obj: typeof j.obj === "string" ? j.obj.slice(0, 20) : "", extVersion: sfExtSeen }); if (mainWin.isMinimized()) mainWin.restore(); mainWin.focus(); }
         res.writeHead(200, Object.assign({ "Content-Type": "application/json" }, cors)); res.end(JSON.stringify({ ok: true, version: app.getVersion() })); });
       return; }
+    /* Lender autofill: the extension asks for the client selected in the toolkit. This hands OUT client data, so unlike /sf it only
+       answers a Chrome extension (websites can't fake the Origin header) on a loopback Host (blocks DNS-rebinding tricks), and only over POST
+       (Chrome always sends Origin on POST). No wildcard CORS here. */
+    if (req.url.startsWith("/client")) {
+      const origin = String(req.headers.origin || ""), host = String(req.headers.host || "");
+      const extOk = /^chrome-extension:\/\/[a-p]{32}$/.test(origin), hostOk = /^(127\.0\.0\.1|localhost):\d+$/.test(host);
+      if (req.method !== "POST" || !extOk || !hostOk) { res.writeHead(403); res.end("forbidden"); return; }
+      const hdr = { "Content-Type": "application/json", "Access-Control-Allow-Origin": origin, "Vary": "Origin", "Cache-Control": "no-store" };
+      if (!mainWin || mainWin.isDestroyed()) { res.writeHead(200, hdr); res.end(JSON.stringify({ ok: false, error: "toolkit window is closed" })); return; }
+      mainWin.webContents.executeJavaScript("JSON.stringify(typeof window.nmcLenderPacket==='function' ? {ok:true, client:window.nmcLenderPacket()} : {ok:false, error:'update the toolkit'})", true)
+        .then(t => { let j = null; try { j = JSON.parse(t); } catch (e) {}
+          if (j && j.ok && !j.client) j = { ok: false, error: "no client selected in the toolkit" };
+          res.writeHead(200, hdr); res.end(JSON.stringify(Object.assign({ version: app.getVersion() }, j || { ok: false, error: "toolkit didn't answer" }))); })
+        .catch(e => { res.writeHead(200, hdr); res.end(JSON.stringify({ ok: false, error: String(e && e.message || e) })); });
+      return; }
     res.writeHead(404, cors); res.end();
   });
   /* The port can be busy for a moment after an update restarts the app (the old instance is still letting go). Before, one failed bind

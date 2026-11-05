@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "NMC Toolkit — Send lead from Salesforce",
-  "description": "Adds a “Send to NMC toolkit” button to Salesforce lead and loan pages. Reads the open record (a lead, or a converted lead’s loan) and hands it to the NMC Toolkit desktop app on this computer.",
-  "version": "0.3.3",
+  "name": "NMC Toolkit — Salesforce send & lender autofill",
+  "description": "Sends Salesforce leads to the NMC Toolkit app and fills Rocket Pro / Village pricing pages with the selected client.",
+  "version": "0.4.0",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",
@@ -19,6 +19,8 @@
     "https://*.force.com/*",
     "https://*.salesforce.com/*",
     "https://*.salesforce-setup.com/*",
+    "https://app.rocketpro.com/*",
+    "https://epc.optimalblue.com/*",
     "http://127.0.0.1/*"
   ],
   "background": {
@@ -33,6 +35,17 @@
       ],
       "js": [
         "content.js"
+      ],
+      "run_at": "document_idle",
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "https://app.rocketpro.com/*",
+        "https://epc.optimalblue.com/*"
+      ],
+      "js": [
+        "lender-fill.js"
       ],
       "run_at": "document_idle",
       "all_frames": true

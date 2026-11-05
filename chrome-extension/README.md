@@ -16,6 +16,18 @@ If the desktop app isn't running the extension copies the lead to the clipboard 
 The desktop app ships this folder inside its install and replaces it on every app update.
 Restart Chrome after a toolkit update and the extension picks up the new code.
 
+## Lender autofill (Rocket Pro + Village Capital)
+On **Rocket Pro → New Scenario** (app.rocketpro.com) and **Village Capital's quick price** in TPO Connect (the Optimal Blue frame,
+epc.optimalblue.com) a **Fill from NMC Toolkit** button appears bottom-right. It asks the desktop app for the client **selected in the toolkit**,
+shows what it will fill as (the product from the proposal, else the savings analysis — changeable), then types/selects the fields.
+Filled fields are outlined green, ones it couldn't fill amber. It never clicks Price or Submit.
+
+VA Streamline defaults — Rocket: FICO and VantageScore = the credit score, monthly income $15,000, Refinance – Rate/Term, Correspondent,
+VA, prior VA loan Yes, value = balance + $100,000, no second mortgage. Village: base loan = balance + $5,000, purchase price = balance,
+appraised value = balance + $100,000, DTI 0, lead source VA. Name, credit score, address and ZIP come from the client.
+
+The app only hands client data to a Chrome extension (POST /client, checked by Origin) — a website open in Chrome can't read it.
+
 ## Port
 Default `47831`. Change it in the extension popup if something else on the PC uses that port
 (set `NMC_SF_PORT` for the app to match).

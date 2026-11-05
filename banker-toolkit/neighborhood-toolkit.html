@@ -1663,7 +1663,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.18.0";
+const TOOLKIT_VERSION = "1.19.0";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2436,6 +2436,22 @@ const VA_LENDER_ID="7485220000";
 function vaLenderNote(){ const c=cur(); const a=c&&c.analysis; const va=!!(c&&(c.loanType==="VA"||(a&&a.anProgram==="va_irrrl"))); return va?" \u00b7 VA Lender ID #"+VA_LENDER_ID:""; }
 function clientProduct(c){ const a=c&&c.analysis; if(!a||!(a.anRate>0)) return "none";
   if(a.anLien==="fc") return "fc"; if(a.anLien==="second") return a.anSecondType==="heloc"?"heloc":"hel"; if(a.anProgram==="va_irrrl") return "va_irrrl"; if(a.anProgram==="fha_streamline") return "fha_streamline"; return (+a.anCashOut||0)>0?"cashout":"refi"; }
+/* ---- lender autofill (Chrome extension → desktop listener → here): the selected client's loan packet for Rocket Pro / Village pricing pages.
+   The product comes from the proposal (first option checked on it), else the savings analysis. Only what the pricing forms need — no phone, email or notes. */
+function lenderAddr(s){ s=String(s||"").replace(/\s+/g," ").trim(); const out={full:s,street:"",city:"",state:"",zip:""}; if(!s) return out;
+  const z=s.match(/\b(\d{5})(?:-\d{4})?\s*$/); if(z){ out.zip=z[1]; s=s.slice(0,z.index).trim().replace(/,$/,""); }
+  const st=s.match(/[,\s]([A-Za-z]{2})$/); if(st){ out.state=st[1].toUpperCase(); s=s.slice(0,st.index).trim().replace(/,$/,""); }
+  const parts=s.split(",").map(x=>x.trim()).filter(Boolean); if(parts.length>=2){ out.city=parts.pop(); out.street=parts.join(", "); } else out.street=s;
+  return out; }
+function lenderPacket(){ const c=cur(); if(!c) return null;
+  const sel=(typeof propSelected==="function")?propSelected(c):[]; const a=Object.assign({}, c.analysis||{}, sel.length?sel[0].inputs:{});
+  const m=modeOf(a); const product = m==="va"?"va_irrrl" : m==="fha"?"fha_streamline" : m==="second"?(a.anSecondType==="heloc"?"heloc":"hel") : m==="fc"?"fc" : ((+a.anCashOut||0)>0?"cashout":"refi");
+  const nm=String(c.name||"").trim().split(/\s+/); const last=nm.length>1?nm.pop():""; 
+  return { v:1, id:c.id, name:c.name||"", first:nm.join(" "), last, address:lenderAddr(c.address),
+    product, productLabel:PRODUCT_LABELS[product]||"", productFrom: sel.length?"proposal":"analysis",
+    balance:c.balance??null, value:c.value??null, fico:c.fico??null, currentLoanType:c.loanType||"", currentRate:c.rate??null,
+    newRate:a.anRate??null, term:+a.anTerm||30, cashOut:+a.anCashOut||0 }; }
+window.nmcLenderPacket=lenderPacket;
 /* ---- pipeline presentation helpers ---- */
 function pipeDate(d){ if(!d) return ""; const t=new Date(d+"T12:00:00"); return isNaN(t)?esc(d):t.toLocaleDateString("en-US",{month:"short",day:"numeric"}); }
 function pipeTime(t){ if(!t) return ""; const d=new Date("2000-01-01T"+t); return isNaN(d)?esc(t):d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}); }

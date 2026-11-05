@@ -22,6 +22,19 @@ async function ping(){
   try { const r = await fetch(`http://127.0.0.1:${port}/ping`, { cache:"no-store" }); if(!r.ok) return null; return await r.json(); } catch(e){ return null; }
 }
 
+/* Lender autofill: POST so Chrome stamps our chrome-extension:// Origin, which is the only caller the app will answer. */
+async function getClient(){
+  const port = await getPort();
+  const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 5000);
+  try {
+    const r = await fetch(`http://127.0.0.1:${port}/client`, { method:"POST", headers:{ "Content-Type":"text/plain" }, body:"{}", cache:"no-store", signal: ctl.signal });
+    clearTimeout(t);
+    if(r.status === 404) return { ok:false, error:"Update the NMC Toolkit app — this version can’t share clients yet" };
+    if(!r.ok) return { ok:false, error:"app replied "+r.status };
+    return await r.json();
+  } catch(e){ clearTimeout(t); return { ok:false, error: e.name==="AbortError" ? "the toolkit app didn’t answer" : "Open the NMC Toolkit app on this computer" }; }
+}
+
 async function copyViaTab(tabId, text){
   try { await chrome.scripting.executeScript({ target:{ tabId }, func: (t) => navigator.clipboard.writeText(t), args:[text] }); return true; } catch(e){ return false; }
 }
@@ -38,4 +51,5 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
     return true;
   }
   if(msg && msg.type === "nmc:ping"){ ping().then(j => reply(j)); return true; }
+  if(msg && msg.type === "nmc:client"){ getClient().then(j => reply(j)); return true; }   /* lender autofill: the client selected in the toolkit */
 });
