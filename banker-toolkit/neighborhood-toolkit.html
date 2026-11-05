@@ -879,6 +879,21 @@ body.nmc-band.nmc-mac .nmc-tb .l{padding-left:84px}   /* room for the traffic li
 .fuq-strip .fq-b{all:unset;cursor:pointer;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:#fff;white-space:nowrap;transition:all .14s}
 .fuq-strip .fq-b:hover{border-color:var(--brand);color:var(--brand)}.fuq-strip .fq-b.x{color:var(--muted)}
 .atile.fq .al{font-weight:700}
+
+/* VA IRRRL fee recoupment (banker-only) */
+.vrtabs{display:inline-flex;gap:0;background:rgba(255,255,255,.8);border:1px solid var(--line);border-radius:999px;padding:3px;margin:0 0 12px}
+.vrtabs button{background:transparent;border:0;color:var(--muted);font:600 12.5px var(--sans);padding:0 14px;min-height:28px;border-radius:999px;cursor:pointer}
+.vrtabs button.on{background:var(--brand);color:#fff}
+.vrtabs .vrwarn{align-self:center;margin:0 10px 0 6px;font-size:12px;color:var(--warn);font-weight:600}
+.vr{max-width:760px}
+.vr .vrrow{display:grid;grid-template-columns:1fr 180px;gap:6px 14px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}
+.vr .vrrow label{font-size:13px;font-weight:600;color:var(--ink);text-transform:none;letter-spacing:0;margin:0}
+.vr .vrrow .hint{grid-column:1/2;margin:0;font-size:11.5px}
+.vr .vrrow input{text-align:right;font-variant-numeric:tabular-nums}
+.vr .vrrow input.bad{border-color:#A53222;background:#FBECE9}
+.vr .vrrow.ro{background:var(--cream-soft);padding:8px 8px;border-radius:8px;border-bottom:0;margin:6px 0}
+.vr .vrrow.ro .v{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.vr .loancheck{margin-top:12px}
 </style>
 </head>
 <body>
@@ -1151,6 +1166,8 @@ Discover 6,100 190 24.9"></textarea>
     <section class="screen" id="s-proposal">
       <div class="eyebrow">Ready to send</div><h1>Client proposal</h1>
       <div class="sub">A branded Neighborhood Mortgage savings proposal — copy it, send it, or save the image.</div>
+      <div id="propVaTabs" class="vrtabs" style="display:none"></div>
+      <div class="panel" id="propVaPanel" style="display:none"><h2>VA IRRRL fee recoupment <span class="hint" style="display:inline;font-size:12px">— banker only, never on the proposal</span></h2><div id="propVaBody"></div></div>
       <div class="panel">
         <div class="grid3">
           <div class="field" style="grid-column:1/-1;max-width:420px"><label>Client</label><select id="propClientPicker" onchange="pickClient(this.value)"></select></div>
@@ -1258,6 +1275,10 @@ Discover 6,100 190 24.9"></textarea>
           </div>
           <div id="toolsDebt"></div>
         </div>
+      </div>
+      <div class="panel" id="toolVaRecoup">
+        <h2>VA IRRRL fee recoupment</h2>
+        <div id="toolVaBody"></div>
       </div>
       <div class="row tgrid">
         <div class="panel">
@@ -1663,7 +1684,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.19.1";
+const TOOLKIT_VERSION = "1.20.0";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2452,6 +2473,95 @@ function lenderPacket(){ const c=cur(); if(!c) return null;
     balance:c.balance??null, value:c.value??null, fico:c.fico??null, currentLoanType:c.loanType||"", currentRate:c.rate??null,
     newRate:a.anRate??null, term:+a.anTerm||30, cashOut:+a.anCashOut||0 }; }
 window.nmcLenderPacket=lenderPacket;
+
+/* ---------- VA IRRRL fee recoupment — banker-only (never on proposals, emails or anything client-facing) ----------
+   Same fields and math as Rocket's Pathfinder gadget:
+     months = (Section A + B + C + E + H − VA funding fee − credit from the rate premium/lender) ÷ (current P&I − new P&I); ≤ 36 passes.
+   A fail only warns — it never blocks a proposal. Every field takes arithmetic ("1476-341", "2*450+75"); it's worked out when you leave the field.
+   VR_FIELDS is the one list of rows, so presets / reading line items off a lender page can fill it by key later. */
+const VR_FIELDS=[
+  ["A","Section A fees","Loan discount, origination fee, borrower-paid compensation. Leave out lender-paid compensation."],
+  ["B","Section B fees","Credit report, appraisal, flood cert, VA funding fee. Leave out non-VA-allowable fees (condo questionnaire, condo insurance, tax cert, subordination)."],
+  ["C","Section C fees","Lender’s title premium, endorsements, title abstract/search. Leave out attorney, deed/doc prep, courier, closing, wire and sub-escrow fees."],
+  ["E","Section E fees","Recording fees, recordation tax, transfer tax."],
+  ["H","Section H fees","Optional owner’s title premium, water/septic. Leave out real estate agent/broker compliance fees."],
+  ["total","Total of the above fees",null],
+  ["ff","VA funding fee","Subtracted from the total — so include it in Section B too, same as Rocket’s calculator."],
+  ["credit","Credit from the rate premium or lender",""],
+  ["curPI","P&I on the current mortgage","From the borrower’s current mortgage statement/coupon — P&I only, no escrow."],
+  ["newPI","P&I on the new mortgage",""],
+  ["diff","P&I differential",null],
+  ["months","Months to recoup costs",null]];
+const VR_LIMIT=36;
+/* arithmetic in a field: + − × ÷ and brackets, $ and commas ignored. null = empty, NaN = not a sum it can read. No eval. */
+function vrEval(src){ const s=String(src==null?"":src).replace(/[$,\s]/g,"").replace(/[−–]/g,"-").replace(/[x×]/gi,"*").replace(/÷/g,"/"); if(s==="") return null; let i=0;
+  const num1=()=>{ const m=/^(\d+\.?\d*|\.\d+)/.exec(s.slice(i)); if(!m) throw 0; i+=m[0].length; return parseFloat(m[0]); };
+  const fac=()=>{ const ch=s[i]; if(ch==="-"){ i++; return -fac(); } if(ch==="+"){ i++; return fac(); } if(ch==="("){ i++; const v=expr(); if(s[i++]!==")") throw 0; return v; } return num1(); };
+  const term=()=>{ let v=fac(); while(s[i]==="*"||s[i]==="/"){ const o=s[i++]; const r=fac(); v = o==="*" ? v*r : v/r; } return v; };
+  const expr=()=>{ let v=term(); while(s[i]==="+"||s[i]==="-"){ const o=s[i++]; const r=term(); v = o==="+" ? v+r : v-r; } return v; };
+  try{ const v=expr(); return (i===s.length && isFinite(v)) ? Math.round(v*100)/100 : NaN; }catch(e){ return NaN; } }
+const vrMoney = v => (v==null||!isFinite(v)) ? "" : (v<0?"-":"")+"$"+Math.abs(v).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+function vrStore(scope){ if(scope==="client"){ const c=cur(); if(!c) return null; return c.vaRecoup=c.vaRecoup||{}; }
+  state.tools=state.tools||{}; return state.tools.vaRecoup=state.tools.vaRecoup||{}; }
+/* d: {A,B,C,E,H,ff,credit,curPI,newPI} numbers (missing = 0, like the gadget's $0.00 defaults; P&I must be filled) */
+function vrCalc(d){ d=d||{}; const n=k=>+(d[k]||0);
+  const total=n("A")+n("B")+n("C")+n("E")+n("H"), net=total-n("ff")-n("credit");
+  const have=d.curPI!=null && d.newPI!=null && d.curPI!=="" && d.newPI!==""; const diff=have? n("curPI")-n("newPI") : null;
+  let status="incomplete", months=null;
+  if(have){ if(diff<=0) status="nosave"; else { months=net/diff; status = months<=0 ? "covered" : months<=VR_LIMIT ? "pass" : "fail"; } }
+  return {total, net, diff, months, status}; }
+function vrStatusOf(c){ return c && c.vaRecoup ? vrCalc(c.vaRecoup) : null; }
+function vrResultHTML(r){
+  if(r.status==="incomplete") return `<div class="hint" style="margin-top:10px">Enter the current and new P&amp;I to see the recoupment.</div>`;
+  if(r.status==="nosave") return `<div class="loancheck warn"><div class="t">No P&amp;I savings to recoup with</div>The new P&amp;I isn’t lower than the current P&amp;I, so the costs can’t be recouped. (Rocket’s calculator gives a misleading answer here.)</div>`;
+  if(r.status==="covered") return `<div class="loancheck ok"><div class="t">Passes — net costs are $0 or less</div>All closing costs must be covered by the rate premium, and borrower-paid compensation must be $0.</div>`;
+  if(r.status==="pass") return `<div class="loancheck ok"><div class="t">Passes recoupment — ${r.months.toFixed(1)} months</div>Limit is ${VR_LIMIT} months.</div>`;
+  return `<div class="loancheck warn"><div class="t">Fails recoupment — ${r.months.toFixed(1)} months</div>Over the ${VR_LIMIT}-month limit. Fewer costs, more lender credit, or a lower rate would bring it in. (This is a warning only — nothing is blocked.)</div>`; }
+function vrMount(scope){ const el=$(scope==="client"?"propVaBody":"toolVaBody"); if(!el) return; const d=vrStore(scope);
+  if(!d){ el.innerHTML=`<div class="empty">Pick a client.</div>`; return; }
+  const c=cur(); const canFill = !!(c && !c.quick);
+  el.innerHTML=`<div class="vr" data-scope="${scope}">
+    <div class="hint" style="margin:0 0 8px">Type the fees from the lender’s fee sheet. Any box takes a sum — e.g. <b>1476-341</b> — and works it out when you leave it.</div>
+    ${VR_FIELDS.map(([k,lab,hint])=> hint===null
+      ? `<div class="vrrow ro"><label>${esc(lab)}</label><div class="v" data-vro="${k}"></div></div>`
+      : `<div class="vrrow"><label for="vr-${scope}-${k}">${esc(lab)}</label><input type="text" inputmode="decimal" autocomplete="off" id="vr-${scope}-${k}" data-vr="${k}" placeholder="$0.00" value="${d[k]!=null?vrMoney(d[k]):""}">${hint?`<div class="hint">${esc(hint)}</div>`:""}</div>`).join("")}
+    <div data-vro="result"></div>
+    <div class="btnrow" style="margin-top:10px">${canFill?`<button class="btn ghost small" data-vra="fill" title="Current P&amp;I from the client, new P&amp;I from the ${scope==="client"?"proposal option":"savings analysis"}">Fill P&amp;I from ${esc(c.name)}</button>`:""}<button class="btn ghost small" data-vra="clear">Clear</button></div>
+  </div>`;
+  const box=el.querySelector(".vr");
+  const live=()=>{ const vals={}; box.querySelectorAll("[data-vr]").forEach(i=>{ const v=vrEval(i.value); i.classList.toggle("bad", Number.isNaN(v)); vals[i.dataset.vr]= (v==null||Number.isNaN(v)) ? null : v; });
+    const r=vrCalc(vals);
+    box.querySelector('[data-vro="total"]').textContent=vrMoney(r.total);
+    box.querySelector('[data-vro="diff"]').textContent= r.diff==null ? "" : vrMoney(r.diff);
+    box.querySelector('[data-vro="months"]').textContent= r.months==null ? (r.status==="nosave"?"—":"") : r.months.toFixed(2);
+    box.querySelector('[data-vro="result"]').innerHTML=vrResultHTML(r);
+    if(scope==="client") renderPropVaTabs(true); };
+  box.addEventListener("input", e=>{ if(e.target.dataset.vr) live(); });
+  box.addEventListener("focusout", e=>{ const i=e.target; if(!i.dataset||!i.dataset.vr) return; const v=vrEval(i.value); if(Number.isNaN(v)) return;   /* leave a sum it can't read so the banker can fix it */
+    const st=vrStore(scope); if(!st) return; if(v==null) delete st[i.dataset.vr]; else st[i.dataset.vr]=v; i.value = v==null ? "" : vrMoney(v); save(); live(); });
+  box.addEventListener("keydown", e=>{ if(e.key==="Enter" && e.target.dataset && e.target.dataset.vr){ e.preventDefault(); e.target.blur(); } });
+  box.addEventListener("click", e=>{ const a=e.target.dataset && e.target.dataset.vra; if(!a) return; const st=vrStore(scope); if(!st) return;
+    if(a==="clear"){ Object.keys(st).forEach(k=>delete st[k]); save(); vrMount(scope); if(scope==="client") renderPropVaTabs(true); return; }
+    if(a==="fill"){ const cc=cur(); if(!cc) return; let r=null;
+      try{ const sel = scope==="client" && typeof propSelected==="function" ? propSelected(cc) : [];
+        r = sel.length ? withAnalysis(cc, sel[0].inputs, ()=>computeAnalysis(cc)) : computeAnalysis(cc); }catch(err){ r=null; }
+      const curPI = r&&r.curPay>0 ? r.curPay : (cc.payment>0 ? cc.payment : null), newPI = r&&r.newPay>0 ? r.newPay : null;
+      if(curPI!=null) st.curPI=Math.round(curPI*100)/100; if(newPI!=null) st.newPI=Math.round(newPI*100)/100; save(); vrMount(scope);
+      toast(newPI==null ? "Current P&I filled — run the savings analysis for the new P&I" : "P&I filled from "+cc.name+" — check them against the statement and the lender quote"); } });
+  live(); }
+/* VA clients get a "VA recoupment" tab on Client proposal; a fail shows a warning beside the tabs (banker area only). */
+let propVaTab="proposal";
+function propIsVA(c){ if(!c) return false; const a=c.analysis||{}; const sel=(typeof propSelected==="function")?propSelected(c):[]; const ai=sel.length?Object.assign({},a,sel[0].inputs):a;
+  return c.loanType==="VA" || ai.anProgram==="va_irrrl"; }
+function renderPropVaTabs(onlyBadge){ const bar=$("propVaTabs"), panel=$("propVaPanel"); if(!bar||!panel) return; const c=cur(); const va=propIsVA(c);
+  if(!va && propVaTab!=="proposal") propVaTab="proposal";
+  bar.style.display = va ? "inline-flex" : "none";
+  const r=vrStatusOf(c); const warn = r && r.status==="fail" ? `Fails VA recoupment — ${r.months.toFixed(1)} mo` : r && r.status==="nosave" ? "VA recoupment: no P&I savings" : "";
+  bar.innerHTML = `<button class="${propVaTab==="proposal"?"on":""}" onclick="setPropVaTab('proposal')">Proposal</button><button class="${propVaTab==="va"?"on":""}" onclick="setPropVaTab('va')">VA recoupment${r&&r.status==="fail"?" ⚠":r&&(r.status==="pass"||r.status==="covered")?" ✓":""}</button>${warn?`<span class="vrwarn">${esc(warn)}</span>`:""}`;
+  if(onlyBadge) return;
+  const sec=$("s-proposal"); sec.querySelectorAll(":scope > .panel").forEach(p=>{ p.style.display = p.id==="propVaPanel" ? (propVaTab==="va"?"":"none") : (propVaTab==="va"?"none":""); });
+  if(propVaTab==="va") vrMount("client"); }
+function setPropVaTab(t){ propVaTab=t; renderPropVaTabs(); if(t==="proposal") renderProposalPreview(); }
 /* ---- pipeline presentation helpers ---- */
 function pipeDate(d){ if(!d) return ""; const t=new Date(d+"T12:00:00"); return isNaN(t)?esc(d):t.toLocaleDateString("en-US",{month:"short",day:"numeric"}); }
 function pipeTime(t){ if(!t) return ""; const d=new Date("2000-01-01T"+t); return isNaN(d)?esc(t):d.toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"}); }
@@ -3673,7 +3783,7 @@ function renderPropSnaps(){ const c=cur(); const el=$("propSnapList"); if(!el) r
 let propNoteFor=null;
 function propNoteInput(){ const c=cur(); if(c){ c.propNote=$("propNote").value; save(); } renderProposalPreview(); }
 function syncPropNote(){ const el=$("propNote"); if(!el) return; const c=cur(); const id=c?c.id:null; if(id!==propNoteFor||el.value!==(c&&c.propNote||"")){ if(document.activeElement===el&&id===propNoteFor) return; el.value=c&&c.propNote?c.propNote:""; propNoteFor=id; } }
-function renderProposalPreview(){ syncPropNote(); renderPropOptionPicker(); renderPropOptions(); renderPropSnaps(); renderLibrary(); const el=$("propPreview"); if(el){ el.innerHTML=proposalHTML(true); el.classList.toggle("customize",propCustomize); } renderHiddenBar();
+function renderProposalPreview(){ try{ renderPropVaTabs(); }catch(e){ console.error(e); } syncPropNote(); renderPropOptionPicker(); renderPropOptions(); renderPropSnaps(); renderLibrary(); const el=$("propPreview"); if(el){ el.innerHTML=proposalHTML(true); el.classList.toggle("customize",propCustomize); } renderHiddenBar();
   const ps=$("propRateSrc"); if(ps){ const t=rateSrcText(cur()); ps.textContent=t; ps.style.color = /ESTIMATE/.test(t)?"var(--warn)":"var(--muted)"; } }
 const APP_TITLE=document.title;
 function printAs(title, html){ /* the browser prints the page title in the header, so give the
@@ -5393,14 +5503,14 @@ function toolsCollapsible(){ const sec=$("s-tools"); if(!sec||sec.dataset.folded
     if(first.tagName==="H2"){ head.appendChild(tgl); head.appendChild(first); } else { head.appendChild(tgl); while(first.firstChild) head.appendChild(first.firstChild); first.remove(); }
     const body=document.createElement("div"); body.className="tbody"; while(p.firstChild) body.appendChild(p.firstChild); p.appendChild(head); p.appendChild(body);
     head.addEventListener("click",e=>{ if(e.target.closest("button,a,input,select,label")) return; p.classList.toggle("open"); const now=[...sec.querySelectorAll(".panel.tool.open")].map(x=>x.id||("tool"+[...sec.querySelectorAll(".panel.tool")].indexOf(x))); try{ localStorage.setItem("nmcToolsOpen",JSON.stringify(now)); }catch(err){} }); }); }
-function toolsInit(){ toolsCollapsible(); const tv=state.tools||{};
+function toolsInit(){ toolsCollapsible(); vrMount("tool"); const tv=state.tools||{};
   document.querySelectorAll("[data-t]").forEach(el=>{ if(tv[el.dataset.t]!=null && el.value==="") el.value=tv[el.dataset.t]; });
   const c=cur();
   if(c && !c.quick && (tv._cid!==c.id || !T("cBal"))) toolsFromClient(true);
   else toolsCalc(); }
 function toolsUsing(){ const el=$("toolsUsing"); if(!el) return; const c=cur(); const cid=(state.tools||{})._cid;
   el.textContent = c&&cid===c.id ? "Using "+c.name+"\u2019s numbers \u2014 edit anything freely." : "Standalone numbers."; }
-function toolsClear(){ document.querySelectorAll("#s-tools [data-t]").forEach(el=>{ if(el.tagName==="INPUT") el.value=""; }); state.tools={}; save(); toolsCalc(); }
+function toolsClear(){ document.querySelectorAll("#s-tools [data-t]").forEach(el=>{ if(el.tagName==="INPUT") el.value=""; }); state.tools={}; save(); toolsCalc(); vrMount("tool"); }
 function toolsFromClient(silent){ const c=cur(); if(!c){ if(!silent) toast("Pick a client first"); return; }
   const set=(id,v)=>{ const el=document.querySelector(`[data-t="${id}"]`); if(el&&v!=null&&v!=="") el.value=v; };
   ["cBal","cRate","cPay","cMo","cExtra","dBal","dPay","dApr","dExtra","nAmt","nRate","nTerm","nCosts","nPay","nExtra"].forEach(id=>{ const el=document.querySelector(`[data-t="${id}"]`); if(el) el.value=""; });
