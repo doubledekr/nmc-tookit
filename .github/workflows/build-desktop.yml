@@ -28,7 +28,8 @@ jobs:
           cache: npm
           cache-dependency-path: nmc-toolkit-desktop/package-lock.json
       - run: npm ci
-      - run: npm run build:win
+      - run: npm run build:win || (sleep 30 && npm run build:win)   # the NSIS/tool downloads from GitHub occasionally 5xx; one retry
+        shell: bash
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"   # unsigned until certificates are added (see README-DESKTOP.md)
       - uses: actions/upload-artifact@v4
@@ -66,7 +67,11 @@ jobs:
             Your data is stored with the app (Settings → Open data folder) and survives updates.
           files: out/**/*
 
+  # Runs only after the Windows release exists: the Mac job must never be the one that creates the release, or a Windows app
+  # that checks for updates finds a "latest" release with no Windows files and falls back to the manual download link.
   build-mac:
+    needs: release
+    if: always() && (needs.release.result == 'success' || github.ref != 'refs/heads/main')
     runs-on: macos-latest
     defaults:
       run:
@@ -79,7 +84,7 @@ jobs:
           cache: npm
           cache-dependency-path: nmc-toolkit-desktop/package-lock.json
       - run: npm ci
-      - run: npm run build:mac
+      - run: npm run build:mac || (sleep 30 && npm run build:mac)
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: "false"
       - uses: actions/upload-artifact@v4
