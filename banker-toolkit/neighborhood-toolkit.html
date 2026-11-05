@@ -866,6 +866,7 @@ body.nmc-band #app{min-height:calc(100vh - 38px)}
 body.nmc-band .clientbar{top:38px}
 body.nmc-band.nmc-mac .nmc-tb .l{padding-left:84px}   /* room for the traffic lights */
 @media print{.nmc-tb{display:none}}
+.clientbar .cb-phone{font-size:12.5px;padding:3px 10px 3px 8px;margin-right:2px;font-weight:600}.clientbar .cb-phone .ic{width:1em;height:1em;margin:0;opacity:.7}
 </style>
 </head>
 <body>
@@ -1650,7 +1651,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.17.5";
+const TOOLKIT_VERSION = "1.17.6";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2032,7 +2033,7 @@ function renderClientBar(){ const bar=$("clientBar"); if(!bar) return; const c=c
     { const e=rdEligibleNow(c); if(e) facts.push(`<span class="tag-good" title="Eligible under today\u2019s rate desk rates">\u2728 eligible since ${pct(e.rate)} (${RD_TIER_LABEL[e.tier]}${e.assumed?", score?":""})</span>`); }
     if(c.hot) facts.push(`<span class="tag-warn">\uD83D\uDD25 hot</span>`); { const fi=futureInfo(c); if(fi) facts.push(`<span class="${fi.tag}">${fi.txt.replace(/ \u2014 .*$/,"")}</span>`); }
     { const t=clientTime(c); const tz=clientTz(c); if(t) facts.push(`<span class="tag-flat" title="${esc(tz)}">\uD83D\uDD52 ${t}${tz!=="America/New_York"?" (their time)":""}</span>`); }
-    bar.innerHTML=`<div class="inner">${card}${bell}<span class="hint" style="margin:0">Working with</span><span class="who">${esc(c.name)}</span>${cbControlsHTML(c)}<div class="facts">${facts.join("")}</div><span style="flex:1"></span><span style="display:inline-flex;gap:6px;align-items:center;white-space:nowrap">${sel}<button class="btn ghost small" onclick="go('client')">Open</button><button class="btn ghost small" onclick="clearClient()" title="Deselect">\u2715</button></span></div>`; }
+    bar.innerHTML=`<div class="inner">${card}${bell}<span class="hint" style="margin:0">Working with</span><span class="who">${esc(c.name)}</span>${c.phone?`<span class="pc-chip cb-phone" data-copy="${esc(c.phone)}" title="Click to copy" onclick="copyChip(event)">${NMC.icon("phone")}${esc(c.phone)}</span>`:""}${cbControlsHTML(c)}<div class="facts">${facts.join("")}</div><span style="flex:1"></span><span style="display:inline-flex;gap:6px;align-items:center;white-space:nowrap">${sel}<button class="btn ghost small" onclick="go('client')">Open</button><button class="btn ghost small" onclick="clearClient()" title="Deselect">\u2715</button></span></div>`; }
   const g=$("gClientPicker"); if(g){ g.innerHTML = state.clients.length ? `<option value="" ${!state.currentId?"selected":""}>\u2014 choose a client \u2014</option>`+state.clients.map(x=>`<option value="${x.id}" ${x.id===state.currentId?"selected":""}>${x.quick?"\u26A1 ":""}${esc(x.name)}</option>`).join("") : `<option value="">\u2014 no clients yet \u2014</option>`; }
 }
 /* P&I vs escrow: bankers usually know the total payment; we split it automatically from balance/rate/term */

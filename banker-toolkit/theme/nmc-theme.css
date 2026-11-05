@@ -445,3 +445,4 @@ body.nmc-band #app{min-height:calc(100vh - 38px)}
 body.nmc-band .clientbar{top:38px}
 body.nmc-band.nmc-mac .nmc-tb .l{padding-left:84px}   /* room for the traffic lights */
 @media print{.nmc-tb{display:none}}
+.clientbar .cb-phone{font-size:12.5px;padding:3px 10px 3px 8px;margin-right:2px;font-weight:600}.clientbar .cb-phone .ic{width:1em;height:1em;margin:0;opacity:.7}
