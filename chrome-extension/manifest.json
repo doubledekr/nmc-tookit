@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "NMC Toolkit — Salesforce send & lender autofill",
   "description": "Sends Salesforce leads to the NMC Toolkit app and fills Rocket Pro / Village pricing pages with the selected client.",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",

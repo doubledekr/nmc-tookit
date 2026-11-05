@@ -23,7 +23,8 @@ shows what it will fill as (the product from the proposal, else the savings anal
 Filled fields are outlined green, ones it couldn't fill amber. It never clicks Price or Submit.
 
 VA Streamline defaults — Rocket: FICO and VantageScore = the credit score, monthly income $15,000, Refinance – Rate/Term, Correspondent,
-VA, prior VA loan Yes, value = balance + $100,000, no second mortgage. Village: base loan = balance + $5,000, purchase price = balance,
+VA, prior VA loan Yes, doesn't rent at present address, value = balance + $100,000, loan amount = balance × 1.025, no second mortgage.
+Village: loan type VA, loan purpose VA Rate Reduction, base loan = balance × 1.025, purchase price = balance (if the form still shows it),
 appraised value = balance + $100,000, DTI 0, lead source VA. Name, credit score, address and ZIP come from the client.
 
 The app only hands client data to a Chrome extension (POST /client, checked by Origin) — a website open in Chrome can't read it.

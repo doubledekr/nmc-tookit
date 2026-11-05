@@ -11,6 +11,7 @@
   const digits = s => String(s == null ? "" : s).replace(/[^\d]/g, "");
   const has = v => v !== null && v !== undefined && v !== "" && !(typeof v === "number" && !isFinite(v));
   const plus = (a, b) => has(a) ? Math.round(+a + b) : null;
+  const times = (a, f) => has(a) ? Math.round(+a * f) : null;
   function visible(el){ if (!el || !el.isConnected) return false; if (el.closest(".sprk-u-Display--none")) return false;
     const r = el.getBoundingClientRect(); return (r.width > 0 || r.height > 0) && getComputedStyle(el).visibility !== "hidden"; }
   async function waitFor(fn, ms = 4000){ const end = Date.now() + ms; let v; while (Date.now() < end){ try { v = fn(); } catch (e) { v = null; } if (v) return v; await sleep(120); } return null; }
@@ -69,6 +70,7 @@
         const type = VA(p) ? ["VA"] : FHA(p) ? ["FHA"] : p.currentLoanType === "VA" ? ["VA"] : p.currentLoanType === "FHA" ? ["FHA"] : ["Conventional", "Conforming"];
         return [
           { label: "FICO score", find: rid("ficoScore"), kind: "text", value: p.fico },
+          { label: "Rents at present address", find: rad("client.isPresentResidenceRented", false), kind: "radio", value: false },
           { label: "VantageScore", find: rid("vantageScore"), kind: "text", value: p.fico },
           { label: "Monthly income", find: rid("client.monthlyIncome"), kind: "text", value: 15000 },
           { label: "Loan purpose", find: rid("loan.purpose"), kind: "native", value: CASH(p) ? ["Refinance - Cash Out"] : ["Refinance - Rate/Term"] },
@@ -78,6 +80,7 @@
           { label: "Previously had a VA loan", find: rad("client.va.hadPriorVALoan", true), kind: "radio", value: true, skip: type[0] !== "VA", wait: 2500 },
           { label: "Refinancing an FHA loan", find: rad("client.hasPriorFHALoan", true), kind: "radio", value: true, skip: !FHA(p), wait: 2500 },
           { label: "Property value", find: rid("property.value"), kind: "text", value: VA(p) ? plus(p.balance, 100000) : p.value, wait: 2500 },
+          { label: "Loan amount", find: rid("loan.amount"), kind: "text", value: VA(p) ? times(p.balance, 1.025) : null, skip: !VA(p), wait: 2500 },
           { label: "Second mortgage / HELOC", find: rad("loan.hasSecondMortgage", false), kind: "radio", value: false, wait: 2500 },
           { label: "ZIP code", find: rid("property.address.zipCode"), kind: "text", value: p.address && p.address.zip },
         ]; },
@@ -87,11 +90,13 @@
       detect: () => document.querySelector('input[name="representativeFico"]') && document.querySelector('p-select[name="leadSource"]'),
       steps: p => { const inp = n => rq(`input[name="${n}"]`), sel = n => rq(`p-select[name="${n}"]`), a = p.address || {};
         return [
-          { label: "Borrower first name", find: inp("firstName"), kind: "text", value: p.first },
+          { label: "Loan type", find: sel("loanType"), kind: "prime", value: ["VA"], skip: !(VA(p) || p.currentLoanType === "VA") },
+          { label: "Loan purpose", find: sel("loanPurpose"), kind: "prime", value: ["VA Rate Reduction", "Rate Reduction"], skip: !VA(p) },
+          { label: "Borrower first name", find: inp("firstName"), kind: "text", value: p.first, wait: 2000 },
           { label: "Borrower last name", find: inp("lastName"), kind: "text", value: p.last },
           { label: "Representative credit score", find: inp("representativeFico"), kind: "number", value: p.fico },
-          { label: "Base loan amount", find: inp("baseLoanAmount"), kind: "number", value: VA(p) ? plus(p.balance, 5000) : null, skip: !VA(p) },
-          { label: "Purchase price", find: inp("salesAmount"), kind: "number", value: VA(p) ? p.balance : null, skip: !VA(p) },
+          { label: "Base loan amount", find: inp("baseLoanAmount"), kind: "number", value: VA(p) ? times(p.balance, 1.025) : null, skip: !VA(p) },
+          { label: "Purchase price", find: inp("salesAmount"), kind: "number", value: VA(p) ? p.balance : null, skip: !VA(p), optional: true },
           { label: "Appraised value", find: inp("appraisedValue"), kind: "number", value: VA(p) ? plus(p.balance, 100000) : p.value },
           { label: "Cash-out amount", find: inp("cashOutAmount"), kind: "number", value: p.cashOut, skip: !CASH(p) || !(p.cashOut > 0) },
           { label: "DTI ratio", find: inp("loanLevelDebtToIncomeRatio"), kind: "number", value: 0, skip: !VA(p) },
@@ -111,7 +116,7 @@
       if (!has(st.value) || (Array.isArray(st.value) && !st.value.length)){ const el = st.find(); if (el && visible(el)) mark(el.closest("p-select") || el, false); need.push(st.label); continue; }
       const shown = e => visible(st.kind === "radio" ? (e.closest(".sprk-b-SelectionContainer") || e.parentElement) : e);   /* styled radios hide the real input */
       const el = await waitFor(() => { const e = st.find(); return e && shown(e) ? e : null; }, st.wait || 1200);
-      if (!el){ need.push(st.label); continue; }
+      if (!el){ if (!st.optional) need.push(st.label); continue; }
       let ok = false;
       try { ok = st.kind === "text" ? await typeText(el, st.value) : st.kind === "number" ? await typeNumber(el, st.value) : st.kind === "native" ? await chooseNative(el, st.value)
         : st.kind === "prime" ? await choosePrime(el, st.value) : st.kind === "radio" ? await clickRadio(el) : false; } catch (e) { ok = false; }
