@@ -176,7 +176,24 @@
     const ids = Object.keys(s.sfRec); if (ids.length > 3000) ids.sort((a, b) => s.sfRec[a].at - s.sfRec[b].at).slice(0, ids.length - 3000).forEach(k => delete s.sfRec[k]);
     const c = (s.clients || []).find(c => !c.quick && em && (c.email || "").toLowerCase() === em) || (s.clients || []).find(c => !c.quick && nm && (c.name || "").toLowerCase() === nm);
     if (c && !c.sfId) c.sfId = rec.id;
-    save(); setTimeout(render, 0); } catch (e) { console.warn("five9 beta: record id", e); } }
+    save(); setTimeout(render, 0);
+    if (p.via === "five9-auto" && it) autoOpen(it, rec); } catch (e) { console.warn("five9 beta: record id", e); } }
+
+  /* ---------- a Five9 call sent this lead automatically: open it (Dave's rules) ----------
+     · already a client → open their workspace. When the read shares their phone or email, the toolkit's own "already in your pipeline —
+       Update their numbers" bar shows (nothing changes until he clicks it), same as Import; otherwise the read waits in the Inbox.
+     · not in the toolkit → stays at the top of the Pipeline Inbox (where the toolkit already put it), one click to Import. Nothing is created.
+     · during follow-up mode the queue isn't hijacked: just a toast */
+  function autoOpen(it, rec){ const s = st(); const F = it.fields || {}; const em = (F.email || "").toLowerCase(), nm = (F.name || "").toLowerCase(), ph = last10(F.phone);
+    const c = (s.clients || []).find(c => !c.quick && c.sfId && id15(c.sfId) === id15(rec.id)) || (s.clients || []).find(c => !c.quick && em && (c.email || "").toLowerCase() === em) || (s.clients || []).find(c => !c.quick && nm && (c.name || "").toLowerCase() === nm);
+    let inFuq = false; try { inFuq = !!fuqLive; } catch (e) {}
+    if (inFuq){ toast("Five9 call: " + (F.name || "lead") + (c ? " — already a client" : " — new, in your Inbox") + ". Follow-up mode left as is."); return; }
+    if (!c){ toast("Five9 call: new lead " + (F.name || "") + " — top of your Pipeline Inbox. Import when you\u2019re ready."); return; }
+    s.currentId = c.id; save(); refreshAll(); go("client");
+    const same = (ph && last10(c.phone) === ph) || (em && (c.email || "").toLowerCase() === em);
+    if (same){ const text = it.text || (typeof recordToSFText === "function" ? recordToSFText(F) : ""); const ta = $("sfPaste"); if (ta) ta.value = text; parseSFText(text); ackInbox(it.id);
+      toast("Five9 call: " + (c.name || "client") + " opened — \u201cUpdate their numbers\u201d applies the Salesforce read; nothing changed yet"); return; }
+    toast("Five9 call: " + (c.name || "client") + " opened — the Salesforce read is in your Inbox if you want to apply it"); }
 
   W.nmcFive9Init = function(o){ F9.events = (o && o.events) || []; if (!F9.hooked){ F9.hooked = true; try { DESK.onSfIncoming(onSf); } catch (e) {}
       setInterval(statusLine, 30000); }
