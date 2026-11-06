@@ -96,7 +96,9 @@ ipcMain.handle("update:check", () => checkUpdates());
 /* ---- local listener for the Chrome extension: http://127.0.0.1:<port>/sf (POST a harvested lead) and /ping ----
    Bound to loopback only, so nothing outside this computer can reach it. */
 const http = require("http");
-const SF_PORT = +(process.env.NMC_SF_PORT || 47831);
+const SF_PORT = +(process.env.NMC_SF_PORT || (IS_BETA ? 47832 : 47831));   /* beta app + beta extension pair on 47832, so both pairs run side by side */
+const five9 = IS_BETA ? require("./beta/five9-main.js")(app, () => mainWin) : null;   /* beta only: Five9 record-only mode */
+if (five9) app.on("before-quit", () => five9.flush());
 let sfServer = null, sfLastAt = 0, sfExtSeen = "";
 function shippedExtVersion(){ try { const p = path.join(process.resourcesPath || __dirname, "chrome-extension", "manifest.json"); const alt = path.join(__dirname, "..", "chrome-extension", "manifest.json"); return JSON.parse(fs.readFileSync(fs.existsSync(p) ? p : alt, "utf8")).version || ""; } catch (e) { return ""; } }
 function startSfListener(){
@@ -116,6 +118,7 @@ function startSfListener(){
     /* Lender autofill: the extension asks for the client selected in the toolkit. This hands OUT client data, so unlike /sf it only
        answers a Chrome extension (websites can't fake the Origin header) on a loopback Host (blocks DNS-rebinding tricks), and only over POST
        (Chrome always sends Origin on POST). No wildcard CORS here. */
+    if (five9 && req.url.startsWith("/five9")) { five9.handle(req, res); return; }
     if (req.url.startsWith("/client")) {
       const origin = String(req.headers.origin || ""), host = String(req.headers.host || "");
       const extOk = /^chrome-extension:\/\/[a-p]{32}$/.test(origin), hostOk = /^(127\.0\.0\.1|localhost):\d+$/.test(host);
@@ -167,6 +170,7 @@ function createWindow(){
     ...(mac ? { trafficLightPosition: { x: 14, y: 12 } } : { titleBarOverlay: { color: "#FBF8F2", symbolColor: "#2B2622", height: 38 } }),
     webPreferences: { preload: path.join(__dirname, "preload.js"), contextIsolation: true, nodeIntegration: false, sandbox: false } });
   win.once("ready-to-show", () => win.show());                                     /* appears painted, never a white flash */
+  if (five9) five9.attach(win);
   win.loadFile(path.join(__dirname, "app", "neighborhood-toolkit.html"));
   /* right-click menu: cut / copy / paste / select all in any field, copy on any selected text */
   win.webContents.on("context-menu", (e, p) => {
@@ -184,7 +188,7 @@ function createWindow(){
   win.on("close", flushWrites);
   return win;
 }
-app.setAppUserModelId("com.neighborhoodmc.toolkit");   /* Windows: lets desktop notifications show the app name */
+app.setAppUserModelId(IS_BETA ? "com.neighborhoodmc.toolkit.beta" : "com.neighborhoodmc.toolkit");   /* beta: its own taskbar group, so the two apps never stack */   /* Windows: lets desktop notifications show the app name */
 /* one running copy at a time — a second launch (double-clicked shortcut, update restart overlap) just focuses the first,
    so two instances never fight over the data file or the extension's port */
 if (!app.requestSingleInstanceLock()) { app.quit(); }
