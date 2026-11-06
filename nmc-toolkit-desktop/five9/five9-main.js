@@ -1,13 +1,12 @@
-/* NMC Toolkit Beta only — Five9 record-only mode, main-process side. main.js loads this file only when IS_BETA, and
-   scripts/beta.js adds beta/ to the packaged files, so the live app neither ships nor runs any of it.
+/* Five9 calls, main-process side (live since v1.21.0; tested first in the beta).
      · POST /five9  — one Open CTI event overheard by the beta extension's five9-watch.js. Same guard as /client: only a
                       chrome-extension:// Origin, only a loopback Host, only POST, no wildcard CORS.
      · keeps the last 200 events in five9-events.json next to the beta's data file
-     · injects beta/five9-panel.js into the toolkit window (the "Five9 calls (beta)" panel) and pushes each new event to it.
-   Record-only: nothing here changes a client, the Inbox or the pipeline, and nothing is ever sent to Five9 or Salesforce. */
+     · injects five9/five9-panel.js into the toolkit window (the "Five9 calls" panel in Settings) and pushes each new event to it.
+   Nothing is ever sent to Five9 or Salesforce. */
 const fs = require("fs"), path = require("path");
 const KEEP = 200;
-module.exports = function five9(app, getWin){
+module.exports = function five9(app, getWin, isBeta){
   const file = path.join(app.getPath("userData"), "five9-events.json");
   let events = [];
   try { const j = JSON.parse(fs.readFileSync(file, "utf8")); if (Array.isArray(j)) events = j.slice(-KEEP); } catch (e) {}
@@ -17,7 +16,7 @@ module.exports = function five9(app, getWin){
   const panelSrc = () => fs.readFileSync(path.join(__dirname, "five9-panel.js"), "utf8");
   function attach(win){
     win.webContents.on("did-finish-load", () => {
-      try { send(panelSrc() + "\n;window.nmcFive9Init && window.nmcFive9Init(" + JSON.stringify({ events, file }) + ");"); } catch (e) { console.error("five9 panel failed: " + e.message); }
+      try { send(panelSrc() + "\n;window.nmcFive9Init && window.nmcFive9Init(" + JSON.stringify({ events, file, beta: !!isBeta }) + ");"); } catch (e) { console.error("five9 panel failed: " + e.message); }
     }); }
   function handle(req, res){
     const origin = String(req.headers.origin || ""), host = String(req.headers.host || "");

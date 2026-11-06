@@ -1,4 +1,5 @@
-/* NMC Toolkit Beta only — "Five9 calls (beta)" panel. Injected into the toolkit window by beta/five9-main.js; the live app never loads it.
+/* "Five9 calls" panel (Settings) + Five9 call handling in the toolkit. Injected into the toolkit window by five9/five9-main.js.
+   Live since v1.21.0; the beta build shows the same panel with beta wording (F9.beta).
    RECORD-ONLY: it lists what Five9 told Salesforce, matches each event to a toolkit client, and says what phase 2 WOULD do.
    It never changes a status, follow-up, log, the Inbox or the pipeline. The one thing it writes is the Salesforce record ID
    (c.sfId / inbox item .sfId) when the extension sends a record, so later Five9 events can be matched to the right client. */
@@ -72,7 +73,8 @@
   function wouldDo(ev, r, m){
     if (ev.methodName === "screenPop" || ev.methodName === "searchAndScreenPop")
       return m ? `Call arriving — would bring up ${esc(m.kind === "client" ? m.c.name : (m.it.fields && m.it.fields.name) || "the Inbox entry")} in the toolkit` : `Call arriving${r.ani ? " from " + esc(r.ani) : ""} — not in the toolkit; would keep the screen-popped record details for the disposition`;
-    if (ev.methodName === "watcher-online") return `Nothing — the beta extension is running on this Salesforce ${ev.popout ? "popout" : "page"} (${esc(ev.host || "")}${esc(ev.page || "")})`;
+    if (ev.methodName === "call-start") return "A Five9 call started";
+    if (ev.methodName === "watcher-online") return `Nothing — the ${F9.beta ? "beta" : "NMC"} extension is running on this Salesforce ${ev.popout ? "popout" : "page"} (${esc(ev.host || "")}${esc(ev.page || "")})`;
     if (ev.methodName === "auto-skip") return `Didn’t auto-send record ${esc(ev.args && ev.args.record)} — ${esc(ev.args && ev.args.reason)}`;
     if (ev.methodName === "other-origin") return `Nothing — heard an Open CTI message <b>${esc(ev.args && ev.args.method)}</b> from <b>${esc(ev.args && ev.args.origin)}</b> (not five9.com, so its contents weren’t kept). Send this to Claude.`;
     if (ev.methodName !== "saveLog") return "Nothing — recorded so we can see what Five9 sends";
@@ -115,19 +117,22 @@
   function install(){
     if (!$("f9Style")){ const s = document.createElement("style"); s.id = "f9Style"; s.textContent = CSS; document.head.appendChild(s); }
     const ext = $("extBox");
-    if (ext && !ext.dataset.f9){ ext.dataset.f9 = "1";
+    if (ext && !ext.dataset.f9 && F9.beta){ ext.dataset.f9 = "1";
       const eb = ext.querySelector(".eyebrow"); if (eb) eb.innerHTML = `NMC Beta extension — Salesforce send, lender autofill &amp; Five9 <span class="f9-tag" style="font-size:10px">BETA</span>`;
       const ol = ext.querySelector("ol"); if (ol) ol.innerHTML = `
         <li>In Chrome open <b>chrome://extensions</b> and switch on <b>Developer mode</b> (top right).</li>
         <li>Click <b>Load unpacked</b> and pick the folder below — it’s the <b>beta</b> extension, inside the NMC Toolkit <b>Beta</b> app. It shows up as <b>“NMC Beta — Salesforce, lender autofill &amp; Five9 (test)”</b> with a purple <b>BETA</b> badge on its toolbar icon.</li>
         <li>Leave the live NMC extension on as well — the live one pairs with the live app (port 47831), this one with the beta (port 47832), so they never cross.</li>
         <li>On a Salesforce lead the beta’s purple <b>BETA · Send to NMC Beta</b> button sits bottom-<b>left</b> (the live red button stays bottom-right). Rocket Pro / Village show <b>BETA · Fill from NMC Beta</b> bottom-left too.</li>
-        <li>Reload any open Salesforce tabs, then make Five9 calls as usual — each one is recorded in <b>Five9 calls (beta)</b> below. Nothing in your pipeline changes.</li>`; }
+        <li>Reload any open Salesforce tabs, then make Five9 calls as usual — the call’s lead comes over by itself and each call is listed in <b>Five9 calls (beta)</b> below.</li>`; }
+    if (ext && !ext.dataset.f9 && !F9.beta){ ext.dataset.f9 = "1";
+      const eb = ext.querySelector(".eyebrow"); if (eb) eb.textContent = "Chrome extension — Salesforce send, lender autofill & Five9";
+      const ol = ext.querySelector("ol"); if (ol){ const li = document.createElement("li"); li.innerHTML = `<b>Five9:</b> when a Five9 call starts, the lead Salesforce opens for it comes over by itself — only if its record or phone matches the call. A client you already have opens; a new lead waits at the top of your Inbox. The disposition you set is saved on the lead (see <b>Five9 calls</b> below).`; ol.appendChild(li); } }
     if (!$("f9Box")){ const host = ext ? ext.parentNode : null; if (!host) return false;
       const box = document.createElement("div"); box.id = "f9Box";
-      box.innerHTML = `<div class="eyebrow" style="font-size:11px">Five9 calls (beta) — record only</div>
+      box.innerHTML = `<div class="eyebrow" style="font-size:11px">Five9 calls${F9.beta ? " (beta)" : ""}</div>
         <div class="hint f9-status" id="f9Status"></div>
-        <p class="hint" style="margin:0 0 8px">What Five9 told Salesforce on each call, the toolkit client it matched, and what the next beta <i>would</i> do. Display only — no status, follow-up, log, Inbox or pipeline changes.</p>
+        <p class="hint" style="margin:0 0 8px">What Five9 told Salesforce on each call and the client it matched. The call’s lead comes over by itself and its disposition is saved on the lead as a note; the “not automatic yet” line is what a later version could do with it — statuses, follow-ups and logs don’t change.</p>
         <div class="btnrow" style="margin-bottom:8px;flex-wrap:wrap;gap:6px">
           <select id="f9Filter" class="btn ghost small" style="padding-right:22px"><option value="all">All events</option><option value="imp">Call events only (screenPop · saveLog)</option><option value="log">Dispositions only (saveLog)</option></select>
           <span style="flex:1"></span><button class="btn small" id="f9CopyAll">Copy raw JSON — all</button></div>
@@ -139,17 +144,18 @@
         if (b.dataset.f9 === "copy" && ev) copy(JSON.stringify(ev, null, 2), "Event #" + n + " copied");
         if (b.dataset.f9 === "raw"){ F9.open[n] = !F9.open[n]; render(); }
         if (b.dataset.f9 === "more"){ F9.shown += 100; render(); } }); }
-    const ub = $("updBanner"); if (ub && !$("f9Banner")){ const s = document.createElement("span"); s.id = "f9Banner"; s.innerHTML = ` <b>Five9 record-only mode is on</b> — calls show in <a href="#" onclick="go('settings');setTimeout(()=>{const b=document.getElementById('f9Box');b&&b.scrollIntoView({behavior:'smooth',block:'start'})},60);return false">Settings → Five9 calls (beta)</a>.`; ub.appendChild(s); }
+    const ub = $("updBanner"); if (F9.beta && ub && !$("f9Banner")){ const s = document.createElement("span"); s.id = "f9Banner"; s.innerHTML = ` <b>Five9 record-only mode is on</b> — calls show in <a href="#" onclick="go('settings');setTimeout(()=>{const b=document.getElementById('f9Box');b&&b.scrollIntoView({behavior:'smooth',block:'start'})},60);return false">Settings → Five9 calls (beta)</a>.`; ub.appendChild(s); }
     return true; }
   function copy(text, msg){ const done = () => { try { toast(msg); } catch (e) {} };
     const fallback = () => { const t = document.createElement("textarea"); t.value = text; t.style.cssText = "position:fixed;left:-9999px"; document.body.appendChild(t); t.select(); try { document.execCommand("copy"); } catch (e) {} t.remove(); done(); };
     try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); } }
-  const DIAG = { "watcher-online": 1, "other-origin": 1, "auto-skip": 1 };
+  const DIAG = { "watcher-online": 1, "other-origin": 1, "auto-skip": 1, "call-start": 1 };
   function statusLine(){ const el = $("f9Status"); if (!el) return; const calls = F9.events.filter(e => !DIAG[e.methodName]); const last = calls[calls.length - 1];
     const w = F9.events.filter(e => e.methodName === "watcher-online"); const lw = w[w.length - 1];
     const hm = iso => new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-    const wline = lw ? `<div style="margin-top:3px">Beta extension last checked in from Salesforce at ${esc(hm(lw.receivedAt || lw.seenAt))}${lw.popout ? " (popout window)" : ""}.</div>`
-      : `<div style="margin-top:3px;color:var(--warn)">The beta extension hasn’t checked in from Salesforce yet — in Chrome, reload <b>NMC Beta</b> on chrome://extensions, then reload your Salesforce tab and the Five9 popout.</div>`;
+    const xn = F9.beta ? "NMC Beta" : "NMC Toolkit";
+    const wline = lw ? `<div style="margin-top:3px">The ${F9.beta ? "beta" : "NMC"} extension last checked in from Salesforce at ${esc(hm(lw.receivedAt || lw.seenAt))}${lw.popout ? " (popout window)" : ""}.</div>`
+      : `<div style="margin-top:3px;color:var(--warn)">The ${F9.beta ? "beta" : "NMC"} extension hasn’t checked in from Salesforce yet — in Chrome, reload <b>${xn}</b> on chrome://extensions, then reload your Salesforce tab and the Five9 popout.</div>`;
     let port = 47832, listening = true; try { const s = DESK.sfStatus(); port = s.port; listening = s.listening; } catch (e) {}
     el.innerHTML = !listening ? `<span class="tag-warn">Listener isn’t running on port ${port}</span> — Five9 events can’t arrive` :
       last ? `<span class="tag-good">Listening for Five9 — last event ${esc(new Date(last.receivedAt || last.seenAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }))}</span> · ${F9.events.length} kept (last 200)` :
@@ -162,9 +168,10 @@
     return `<div class="f9-ev${ev.important ? " imp" : ""}"><div class="f9-top"><span class="f9-t">${esc(fmtT(ev.receivedAt || ev.seenAt))}</span><span class="f9-m">${esc(ev.methodName)}</span>${ev.popout ? '<span class="f9-k">· popped out</span>' : ""}<span style="flex:1"></span>
       <button class="btn ghost small" data-f9="raw" data-n="${ev.n}">${F9.open[ev.n] ? "Hide JSON" : "Show JSON"}</button><button class="btn ghost small" data-f9="copy" data-n="${ev.n}">Copy raw JSON</button></div>
       <div>${bits}</div><div><span class="f9-k">Client</span> ${name}</div>${r.comments ? `<div><span class="f9-k">Comments</span> ${esc(String(r.comments).slice(0, 400))}</div>` : ""}
-      <div class="f9-would"><span class="f9-k">Would do:</span> ${wouldDo(ev, r, m)}</div>${F9.open[ev.n] ? `<pre>${esc(JSON.stringify(ev, null, 2))}</pre>` : ""}</div>`; }
-  function render(){ if (!install()) return; statusLine(); const list = $("f9List"); if (!list) return;
-    if (backfill()) { try { save(); } catch (e) {} }
+      <div class="f9-would"><span class="f9-k">${F9.beta ? "Would do:" : "Not automatic yet:"}</span> ${wouldDo(ev, r, m)}</div>${F9.open[ev.n] ? `<pre>${esc(JSON.stringify(ev, null, 2))}</pre>` : ""}</div>`; }
+  function render(){ if (!install()) return;
+    const scr = $("s-settings"); if (scr && !scr.classList.contains("active")){ F9.dirty = true; return; }   /* drawn when Settings opens */
+    F9.dirty = false; statusLine(); const list = $("f9List"); if (!list) return;
     const evs = F9.events.filter(e => F9.filter === "all" || (F9.filter === "imp" ? e.important : e.methodName === "saveLog")).slice().reverse();
     list.innerHTML = evs.length ? evs.slice(0, F9.shown).map(row).join("") + (evs.length > F9.shown ? `<div class="f9-ev" style="text-align:center"><button class="btn ghost small" data-f9="more">Show older (${evs.length - F9.shown} more)</button></div>` : "")
       : `<div class="f9-ev hint">Nothing yet. Open Salesforce with the Five9 panel (docked or popped out) and make a call — events land here within a second.</div>`; }
@@ -177,11 +184,11 @@
     const ids = Object.keys(s.sfRec); if (ids.length > 3000) ids.sort((a, b) => s.sfRec[a].at - s.sfRec[b].at).slice(0, ids.length - 3000).forEach(k => delete s.sfRec[k]);
     const c = (s.clients || []).find(c => !c.quick && em && (c.email || "").toLowerCase() === em) || (s.clients || []).find(c => !c.quick && nm && (c.name || "").toLowerCase() === nm);
     if (c && !c.sfId) c.sfId = rec.id;
-    save(); setTimeout(render, 0);
+    backfill(); save(); setTimeout(render, 0);
     if (/^five9-auto/.test(p.via || "") && it){ it.f9check = (/check=(\w+)/.exec(p.via) || [])[1] || ""; const call = curCall();
       if (call) call.items.push(it.id);
       else if (F9.call && F9.call.note && Date.now() - F9.call.closedAt < 60000 && !F9.call.items.length){ F9.call.items.push(it.id); it.f9 = (it.f9 || []).concat([F9.call.note]); }   /* dispositioned before the record finished sending */
-      save(); autoOpen(it, rec); } } catch (e) { console.warn("five9 beta: record id", e); } }
+      save(); autoOpen(it, rec); } } catch (e) { console.warn("five9: record id", e); } }
 
   /* ---------- a Five9 call sent this lead automatically: open it (Dave's rules) ----------
      · already a client → open their workspace. When the read shares their phone or email, the toolkit's own "already in your pipeline —
@@ -206,7 +213,7 @@
      On saveLog the disposition goes onto: every Inbox entry the call auto-sent, the client it opened, and any Inbox entry whose phone or
      record ID matches the log. Stored as it.f9 / c.f9 = [{disp, at, type, dur, campaign}] — the Inbox row shows it, and Import carries
      it onto the client. Display only: no status, follow-up or log changes. */
-  const START = { screenPop: 1, searchAndScreenPop: 1, disableClickToDial: 1 };
+  const START = { screenPop: 1, searchAndScreenPop: 1, disableClickToDial: 1, "call-start": 1 };
   function curCall(){ const c = F9.call; return c && !c.closed && Date.now() - c.at < 10 * 60 * 1000 ? c : null; }
   function onCallEvent(ev){ const s = st(); if (!s) return;
     if (START[ev.methodName] && !curCall()) F9.call = { at: Date.now(), items: [], clients: [] };
@@ -245,10 +252,14 @@
       return out; };
     W.importInbox.__f9 = true; }
 
-  W.nmcFive9Init = function(o){ F9.events = (o && o.events) || []; if (!F9.hooked){ F9.hooked = true; try { DESK.onSfIncoming(onSf); } catch (e) {}
-      setInterval(statusLine, 30000); }
+  W.nmcFive9Init = function(o){ F9.events = (o && o.events) || []; F9.beta = !!(o && o.beta);
+    if (!F9.hooked){ F9.hooked = true; try { DESK.onSfIncoming(onSf); } catch (e) {}
+      setInterval(() => { if ($("s-settings") && $("s-settings").classList.contains("active")) statusLine(); }, 30000);
+      document.addEventListener("click", e => { if (e.target.closest && e.target.closest('[data-s="settings"]')) setTimeout(() => { if (F9.dirty) render(); }, 0); }, true);
+      new MutationObserver(() => { if (F9.dirty && $("s-settings") && $("s-settings").classList.contains("active")) render(); }).observe($("s-settings") || document.body, { attributes: true, attributeFilter: ["class"] }); }
+    try { if (backfill()) save(); } catch (e) {}
     render(); };
-  W.nmcFive9Push = function(ev){ F9.events.push(ev); if (F9.events.length > 200) F9.events = F9.events.slice(-200); try { onCallEvent(ev); } catch (e) { console.warn("five9 beta: call note", e); } render();
-    if (ev.methodName === "saveLog"){ const r = read(ev); try { toast("Five9 recorded: " + (r.disp || "call log") + " — nothing changed (beta)"); } catch (e) {} } };
+  W.nmcFive9Push = function(ev){ F9.events.push(ev); if (F9.events.length > 200) F9.events = F9.events.slice(-200); try { onCallEvent(ev); } catch (e) { console.warn("five9: call note", e); } render();
+    if (ev.methodName === "saveLog"){ const r = read(ev); try { toast("Five9: " + (r.disp || "call logged") + " — saved as a note on the lead"); } catch (e) {} } };
   W.nmcFive9Debug = { read, match, box, wouldDo };   /* for tests */
 })();

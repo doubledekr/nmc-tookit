@@ -18,7 +18,6 @@ pkg.build.nsis.shortcutName = "NMC Toolkit Beta";
 pkg.build.mac.artifactName = "NMC-Toolkit-Beta-${version}.${ext}";
 pkg.build.dmg.artifactName = "NMC-Toolkit-Beta-${version}.${ext}";
 pkg.build.publish = { provider: "github", owner: "doubledekr", repo: "nmc-tookit", releaseType: "prerelease", channel: "beta" };
-if (!pkg.build.files.includes("beta/**/*")) pkg.build.files.push("beta/**/*");   /* Five9 record-only mode (main.js loads it only in a beta) */
 fs.writeFileSync(pj, JSON.stringify(pkg, null, 2) + "\n");
 require("./beta-extension.js");   /* ships the "NMC Beta" extension: port 47832, BETA buttons bottom-left, Five9 watcher */
 const check = JSON.parse(fs.readFileSync(pj, "utf8"));

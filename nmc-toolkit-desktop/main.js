@@ -97,7 +97,7 @@ ipcMain.handle("update:check", () => checkUpdates());
    Bound to loopback only, so nothing outside this computer can reach it. */
 const http = require("http");
 const SF_PORT = +(process.env.NMC_SF_PORT || (IS_BETA ? 47832 : 47831));   /* beta app + beta extension pair on 47832, so both pairs run side by side */
-const five9 = IS_BETA ? require("./beta/five9-main.js")(app, () => mainWin) : null;   /* beta only: Five9 record-only mode */
+const five9 = require("./five9/five9-main.js")(app, () => mainWin, IS_BETA);   /* Five9 calls: POST /five9 from the extension + the panel in Settings */
 if (five9) app.on("before-quit", () => five9.flush());
 let sfServer = null, sfLastAt = 0, sfExtSeen = "";
 function shippedExtVersion(){ try { const p = path.join(process.resourcesPath || __dirname, "chrome-extension", "manifest.json"); const alt = path.join(__dirname, "..", "chrome-extension", "manifest.json"); return JSON.parse(fs.readFileSync(fs.existsSync(p) ? p : alt, "utf8")).version || ""; } catch (e) { return ""; } }

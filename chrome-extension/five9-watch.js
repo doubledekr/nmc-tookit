@@ -1,7 +1,7 @@
-/* NMC Beta only — Five9 record-only watcher (copied into the beta extension by scripts/beta-extension.js; the live extension never has it).
+/* Five9 watcher (extension v0.5) — listen-only.
    The Five9 Plus Adapter panel is an iframe from app.five9.com inside Salesforce Lightning. It tells Salesforce what is happening on a call
    through Open CTI: parent.postMessage({methodName, callId, apiVersion, apiType, args, ...}) — or opener.parent.postMessage when the panel is
-   popped out. This script only LISTENS to those messages on the Salesforce page and hands a copy to the NMC Toolkit Beta app on this computer.
+   popped out. This script only LISTENS to those messages on the Salesforce page and hands a copy to the NMC Toolkit app on this computer.
    It never posts anything to Five9, never answers Five9, and never changes anything in Salesforce. Beta 2: runs in every Salesforce frame (the adapter may post to a frame inside the page, not the top window). */
 (function(){
   if (window.__nmcFive9Watch) return; window.__nmcFive9Watch = true;
