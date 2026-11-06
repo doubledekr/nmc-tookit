@@ -419,6 +419,7 @@ nav button{padding:8px 16px 8px 32px;font-size:13.5px;min-height:34px}nav button
 
 </style>
 <style id="nmcTheme">
+/* generated from theme/nmc-theme.css — edit that file, not this block · fe71ee61de877e08 */
 /* ============================================================================
    NMC theme — the shared look for Neighborhood Mortgage tools
    (Toolkit, Rate Desk). Red + glass, quiet tags, drawn icons, and the motion
@@ -894,6 +895,19 @@ body.nmc-band.nmc-mac .nmc-tb .l{padding-left:84px}   /* room for the traffic li
 .vr .vrrow.ro{background:var(--cream-soft);padding:8px 8px;border-radius:8px;border-bottom:0;margin:6px 0}
 .vr .vrrow.ro .v{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
 .vr .loancheck{margin-top:12px}
+/* ===== pipeline columns are fixed: the set widths are the widths, whatever is in the rows =====
+   With automatic layout one wide or unbreakable item (a long tag, a no-wrap rate line, a different font on Windows) made the table
+   ignore its widths and run past the panel. Fixed layout uses the header widths (they add up to 100%) and lines wrap inside their column. */
+#pipeTable table.data{table-layout:fixed;width:100%}
+/* sized from measured needs at the smallest window (1048px of table): status 133, loan line 137, rate gap 180, opportunity pill 160 */
+#pipeTable table.data th.pc{width:23.5%}#pipeTable table.data th.ps{width:13%}#pipeTable table.data th.pl{width:13.5%}#pipeTable table.data th.pf{width:11.5%}
+#pipeTable table.data th.pe{width:17.5%}#pipeTable table.data th.po{width:16%}#pipeTable table.data th.pa{width:5%;min-width:44px}
+@media (max-width:1340px){#pipeTable table.data th.pc{width:27%}#pipeTable table.data th.ps{width:13%}#pipeTable table.data th.pl{width:15%}#pipeTable table.data th.pf{width:13%}#pipeTable table.data th.pe{width:26%}#pipeTable table.data th.pa{width:6%}}
+@media (max-width:1180px){#pipeTable table.data th.pc{width:31%}#pipeTable table.data th.pl{width:18%}#pipeTable table.data th.pf{width:16%}#pipeTable table.data th.pe{width:29%}#pipeTable table.data th.pa{width:6%}}
+#pipeTable table.data td{overflow-wrap:break-word;min-width:0}
+#pipeTable .pl .pl2,#pipeTable .pf{white-space:normal}
+#pipeTable .pf .fud,#pipeTable .ps .tag-flat,#pipeTable .ps .tag-warn,#pipeTable .ps .tag-good{max-width:100%;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:top}
+#pipeTable .po .pot{max-width:100%}
 </style>
 </head>
 <body>
@@ -1571,6 +1585,7 @@ Discover 6,100 190 24.9"></textarea>
 <div id="toast"></div>
 <div id="printSheet"></div>
 <script id="nmcMotion">
+/* generated from theme/nmc-motion.js — edit that file, not this block · a9701dafdafdcc85 */
 /* ============================================================================
    NMC motion — the small library behind the theme's movement.
    Shared by the Toolkit and the Rate Desk. No dependencies.
@@ -1684,7 +1699,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.20.2";
+const TOOLKIT_VERSION = "1.20.3";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
