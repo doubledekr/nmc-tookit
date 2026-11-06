@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "NMC Toolkit — Salesforce send, lender autofill & Five9",
   "description": "Sends Salesforce leads to the NMC Toolkit app, fills Rocket Pro / Village pricing pages with the selected client, brings Five9 calls into the toolkit (listen-only), and takes ownership of Lead Queue leads you import.",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "icons": {
     "16": "icons/icon16.png",
     "32": "icons/icon32.png",

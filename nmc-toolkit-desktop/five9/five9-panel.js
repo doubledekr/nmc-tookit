@@ -301,9 +301,15 @@
   W.nmcSfJobs = {
     take(rid){ const s = st(); if (!rid) return []; if (!s || !s.sfJobs || !s.sfJobs.length) return []; const now = Date.now(), name = (s.settings && s.settings.loName || "").trim();
       s.sfJobs = s.sfJobs.filter(j => now - j.created < 3 * 864e5 && (s.clients || []).some(c => c.id === j.clientId));
-      return s.sfJobs.filter(j => String(j.recordId).slice(0, 15) === String(rid).slice(0, 15) && now - (j.taken || 0) > 60000).map(j => { j.taken = now; return { id: j.id, kind: j.kind, recordId: j.recordId, bankerName: name }; }); },
+      const mine = s.sfJobs.filter(j => String(j.recordId).slice(0, 15) === String(rid).slice(0, 15) && now - (j.taken || 0) > 30000);
+      mine.forEach(j => { j.taken = now; const c = (s.clients || []).find(x => x.id === j.clientId); if (c && (!c.sfOwner || c.sfOwner.state !== "assigning")) { c.sfOwner = Object.assign({}, c.sfOwner, { state: "assigning" }); try { renderClientBar(); } catch (e) {} } });
+      return mine.map(j => ({ id: j.id, kind: j.kind, recordId: j.recordId, bankerName: name })); },
     done(id, r){ const s = st(); if (!s) return; const j = (s.sfJobs || []).find(x => x.id === id); if (!j) return;
-      const c = (s.clients || []).find(x => x.id === j.clientId); s.sfJobs = s.sfJobs.filter(x => x.id !== id);
+      const c = (s.clients || []).find(x => x.id === j.clientId);
+      if (r.state === "retry"){ j.tries = (j.tries || 0) + 1; j.taken = 0;   /* stopped partway (tab hidden, lead switched, box slow) — try again next time the lead is on screen */
+        if (j.tries < 4){ if (c) c.sfOwner = { state: "pending", note: r.error || "", at: new Date().toISOString() }; save(); try { refreshAll(); } catch (e) {} return; }
+        r = { state: "failed", owner: r.owner, error: (r.error || "it kept stopping partway") + " (tried 4 times)" }; }
+      s.sfJobs = s.sfJobs.filter(x => x.id !== id);
       if (c){ c.sfOwner = { state: r.state, name: r.owner || "", error: r.error || "", at: new Date().toISOString() }; }
       save(); try { refreshAll(); if ($("s-pipeline") && $("s-pipeline").classList.contains("active")) renderPipeline(); } catch (e) {}
       const who = c ? c.name : "the lead";

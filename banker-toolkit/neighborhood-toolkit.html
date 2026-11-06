@@ -1728,7 +1728,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.23.0";
+const TOOLKIT_VERSION = "1.23.1";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1773,7 +1773,7 @@ function f9Marks(c){ const f=(c&&c.f9flags)||{}, out=[];
   if(f.wrongNumber) out.push(["warn","Wrong number"]);
   if(f.wrongInfo) out.push(["warn","Wrong info"]);
   if(f.spanish) out.push(["flat","Spanish speaker"]);
-  const o=c&&c.sfOwner; if(o){ if(o.state==="pending") out.push(["flat","Owner change waiting \u2014 open the lead in Salesforce"]); else if(o.state==="assigned") out.push(["flat","Assigned to you in Salesforce"]); else if(o.state==="other") out.push(["warn","Already assigned to "+(o.name||"another banker")]); else if(o.state==="failed") out.push(["warn","Owner not changed: "+(o.error||"see Salesforce")]); }
+  const o=c&&c.sfOwner; if(o){ if(o.state==="pending") out.push(["flat","Owner change waiting \u2014 open the lead in Salesforce"]); else if(o.state==="assigning") out.push(["flat","Assigning in Salesforce\u2026"]); else if(o.state==="assigned") out.push(["flat","Assigned to you in Salesforce"]); else if(o.state==="other") out.push(["warn","Already assigned to "+(o.name||"another banker")]); else if(o.state==="failed") out.push(["warn","Owner not changed: "+(o.error||"see Salesforce")]); }
   return out; }
 function f9MarksHTML(c){ return f9Marks(c).map(([k,t])=>`<span class="f9m ${k}" title="${esc(t)}">${esc(t.length>60?t.slice(0,58)+"\u2026":t)}</span>`).join(""); }
 function nextBizDay(){ const d=new Date(); d.setDate(d.getDate()+1); while(d.getDay()===0||d.getDay()===6) d.setDate(d.getDate()+1); return d.toLocaleDateString("en-CA"); }
