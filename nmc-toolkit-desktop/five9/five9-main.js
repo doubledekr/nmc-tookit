@@ -18,11 +18,25 @@ module.exports = function five9(app, getWin, isBeta){
     win.webContents.on("did-finish-load", () => {
       try { send(panelSrc() + "\n;window.nmcFive9Init && window.nmcFive9Init(" + JSON.stringify({ events, file, beta: !!isBeta }) + ");"); } catch (e) { console.error("five9 panel failed: " + e.message); }
     }); }
+  /* Lead owner jobs: the toolkit queues them at Import (window.nmcSfJobs), the extension's sf-owner.js takes and reports them. */
+  function rendererCall(js){ const w = getWin(); if (!w || w.isDestroyed()) return Promise.resolve(null); return w.webContents.executeJavaScript(js, true).catch(() => null); }
+  function handleJobs(req, res, hdr){
+    let body = ""; req.on("data", c => { body += c; if (body.length > 20000) req.destroy(); });
+    req.on("end", async () => { let j = {}; try { j = JSON.parse(body || "{}"); } catch (e) {}
+      if (req.url.startsWith("/jobs/done")){
+        if (typeof j.id !== "string" || !j.result || typeof j.result !== "object") { res.writeHead(400, hdr); res.end(JSON.stringify({ ok: false })); return; }
+        const r = { state: String(j.result.state || "").slice(0, 20), owner: String(j.result.owner || "").slice(0, 120), error: String(j.result.error || "").slice(0, 300) };
+        await rendererCall("window.nmcSfJobs && window.nmcSfJobs.done(" + JSON.stringify(j.id.slice(0, 40)) + "," + JSON.stringify(r) + ")");
+        res.writeHead(200, hdr); res.end(JSON.stringify({ ok: true })); return; }
+      const rid = /^00Q[A-Za-z0-9]{12,15}$/.test(String(j.recordId || "")) ? j.recordId : "";   /* each Lead tab only claims its own record's job */
+      const t = await rendererCall("JSON.stringify(window.nmcSfJobs ? window.nmcSfJobs.take(" + JSON.stringify(rid) + ") : [])"); let jobs = []; try { jobs = JSON.parse(t || "[]"); } catch (e) {}
+      res.writeHead(200, hdr); res.end(JSON.stringify({ jobs })); }); }
   function handle(req, res){
     const origin = String(req.headers.origin || ""), host = String(req.headers.host || "");
     const extOk = /^chrome-extension:\/\/[a-p]{32}$/.test(origin), hostOk = /^(127\.0\.0\.1|localhost):\d+$/.test(host);
     if (req.method !== "POST" || !extOk || !hostOk) { res.writeHead(403); res.end("forbidden"); return; }
     const hdr = { "Content-Type": "application/json", "Access-Control-Allow-Origin": origin, "Vary": "Origin", "Cache-Control": "no-store" };
+    if (req.url.startsWith("/jobs")) return handleJobs(req, res, hdr);
     let body = ""; req.on("data", c => { body += c; if (body.length > 300000) { res.writeHead(413); res.end(); req.destroy(); } });
     req.on("end", () => { let ev = null; try { ev = JSON.parse(body); } catch (e) {}
       if (!ev || typeof ev !== "object" || typeof ev.methodName !== "string" || !ev.methodName) { res.writeHead(400, hdr); res.end(JSON.stringify({ ok: false, error: "bad payload" })); return; }

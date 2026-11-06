@@ -118,7 +118,7 @@ function startSfListener(){
     /* Lender autofill: the extension asks for the client selected in the toolkit. This hands OUT client data, so unlike /sf it only
        answers a Chrome extension (websites can't fake the Origin header) on a loopback Host (blocks DNS-rebinding tricks), and only over POST
        (Chrome always sends Origin on POST). No wildcard CORS here. */
-    if (five9 && req.url.startsWith("/five9")) { five9.handle(req, res); return; }
+    if (five9 && (req.url.startsWith("/five9") || req.url.startsWith("/jobs"))) { five9.handle(req, res); return; }   /* Five9 events + Lead owner jobs */
     if (req.url.startsWith("/client")) {
       const origin = String(req.headers.origin || ""), host = String(req.headers.host || "");
       const extOk = /^chrome-extension:\/\/[a-p]{32}$/.test(origin), hostOk = /^(127\.0\.0\.1|localhost):\d+$/.test(host);

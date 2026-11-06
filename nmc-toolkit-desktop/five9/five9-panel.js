@@ -156,7 +156,8 @@
         <li>Reload any open Salesforce tabs, then make Five9 calls as usual — the call’s lead comes over by itself and each call is listed in <b>Five9 calls (beta)</b> below.</li>`; }
     if (ext && !ext.dataset.f9 && !F9.beta){ ext.dataset.f9 = "1";
       const eb = ext.querySelector(".eyebrow"); if (eb) eb.textContent = "Chrome extension — Salesforce send, lender autofill & Five9";
-      const ol = ext.querySelector("ol"); if (ol){ const li = document.createElement("li"); li.innerHTML = `<b>Five9:</b> when a Five9 call starts, the lead Salesforce opens for it comes over by itself — only if its record or phone matches the call. A client you already have opens; a new lead waits at the top of your Inbox. The disposition you set is saved on the lead (see <b>Five9 calls</b> below).`; ol.appendChild(li); } }
+      const ol = ext.querySelector("ol"); if (ol){ const li = document.createElement("li"); li.innerHTML = `<b>Five9:</b> when a Five9 call starts, the lead Salesforce opens for it comes over by itself — only if its record or phone matches the call. A client you already have opens; a new lead waits at the top of your Inbox. The disposition you set is saved on the lead (see <b>Five9 calls</b> below).`; ol.appendChild(li);
+        const li2 = document.createElement("li"); li2.innerHTML = `<b>Lead owner:</b> when you Import a lead that sits in <b>Lead Queue</b>, the extension assigns it to you in Salesforce (Change Owner, using your name above — it must match your Salesforce name). A lead owned by another banker is left alone and shows “Already assigned to …”. Keep the lead open in Salesforce for a few seconds after Import.`; ol.appendChild(li2); } }
     if (!$("f9Box")){ const host = ext ? ext.parentNode : null; if (!host) return false;
       const box = document.createElement("div"); box.id = "f9Box";
       box.innerHTML = `<div class="eyebrow" style="font-size:11px">Five9 calls${F9.beta ? " (beta)" : ""}</div>
@@ -277,14 +278,36 @@
     W.importInbox = function(id){ const s = st(); const it = s && (s.inbox || []).find(x => x.id === id); const notes = it && it.f9 ? it.f9.slice() : null;
       const had = new Set((s && s.clients || []).map(c => c.id));
       const out = orig.apply(this, arguments);
+      if (!notes) setTimeout(() => { const c = (st().clients || []).find(c => c.id === st().currentId); if (c && !had.has(c.id)) { queueOwner(c, it); save(); try { refreshAll(); } catch (e) {} } }, 0);
       if (notes) setTimeout(() => { const c = (st().clients || []).find(c => c.id === st().currentId); if (!c) return;
         c.f9 = (c.f9 || []).concat(notes.filter(n => !(c.f9 || []).some(x => x.at === n.at && x.disp === n.disp))).slice(-10);
         const isNew = !had.has(c.id); const rule = isNew ? applyRule(c, notes) : "";
+        if (isNew) queueOwner(c, it);
         save(); try { refreshAll(); } catch (e) {}
         const last = notes[notes.length - 1].disp;
         try { toast(isNew ? "Five9: " + last + " — " + (RULE_TXT[rule] || "no automatic action") : "Five9 on this client: " + notes.map(n => n.disp).join(", ") + " (saved as a note)"); } catch (e) {} }, 0);
       return out; };
     W.importInbox.__f9 = true; }
+
+  /* ---------- Lead owner at Import ----------
+     A new client imported from a Salesforce Lead gets a job: the extension (sf-owner.js) takes ownership if the lead sits in Lead Queue,
+     leaves it if it's already the banker's, and reports "Already assigned to <name>" if another banker owns it. Jobs live in state.sfJobs
+     until done (or 3 days); c.sfOwner = {state, name, error, at} drives the chip on the client bar / pipeline row. */
+  function queueOwner(c, it){ const rid = (it && it.sfId) || c.sfId || ""; if (it && it.sfId && !c.sfId) c.sfId = it.sfId;
+    if (!/^00Q/.test(rid) || (it && it.converted)) return;
+    const s = st(); s.sfJobs = (s.sfJobs || []).filter(j => !(j.kind === "owner" && j.clientId === c.id));
+    s.sfJobs.push({ id: "own" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), kind: "owner", recordId: rid, clientId: c.id, created: Date.now(), taken: 0 });
+    c.sfOwner = { state: "pending", at: new Date().toISOString() }; }
+  W.nmcSfJobs = {
+    take(rid){ const s = st(); if (!rid) return []; if (!s || !s.sfJobs || !s.sfJobs.length) return []; const now = Date.now(), name = (s.settings && s.settings.loName || "").trim();
+      s.sfJobs = s.sfJobs.filter(j => now - j.created < 3 * 864e5 && (s.clients || []).some(c => c.id === j.clientId));
+      return s.sfJobs.filter(j => String(j.recordId).slice(0, 15) === String(rid).slice(0, 15) && now - (j.taken || 0) > 60000).map(j => { j.taken = now; return { id: j.id, kind: j.kind, recordId: j.recordId, bankerName: name }; }); },
+    done(id, r){ const s = st(); if (!s) return; const j = (s.sfJobs || []).find(x => x.id === id); if (!j) return;
+      const c = (s.clients || []).find(x => x.id === j.clientId); s.sfJobs = s.sfJobs.filter(x => x.id !== id);
+      if (c){ c.sfOwner = { state: r.state, name: r.owner || "", error: r.error || "", at: new Date().toISOString() }; }
+      save(); try { refreshAll(); if ($("s-pipeline") && $("s-pipeline").classList.contains("active")) renderPipeline(); } catch (e) {}
+      const who = c ? c.name : "the lead";
+      try { toast(r.state === "assigned" ? "Salesforce: " + who + " is now assigned to you" : r.state === "mine" ? "Salesforce: " + who + " was already yours" : r.state === "other" ? "Salesforce: " + who + " is already assigned to " + (r.owner || "another banker") + " — left as is" : "Salesforce owner not changed for " + who + ": " + (r.error || "unknown problem")); } catch (e) {} } };
 
   W.nmcFive9Init = function(o){ F9.events = (o && o.events) || []; F9.beta = !!(o && o.beta);
     if (!F9.hooked){ F9.hooked = true; try { DESK.onSfIncoming(onSf); } catch (e) {}

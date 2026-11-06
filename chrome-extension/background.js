@@ -134,3 +134,16 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
     if (NOISE[m]) return reply({ ok: true, skipped: true });
     reply({ ok: await relay(ev) }); })();
   return true; });
+
+/* ---- Lead owner jobs (v0.6) ------------------------------------------------------------------------------------------------
+   sf-owner.js (on Lead pages) asks for queued jobs and reports results; the toolkit queues them at Import. POST so the app sees our
+   chrome-extension:// Origin. */
+async function appJobs(path, body){
+  const port = await getPort(); const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 4000);
+  try { const r = await fetch(`http://127.0.0.1:${port}${path}`, { method: "POST", headers: { "Content-Type": "text/plain" }, body: JSON.stringify(body || {}), cache: "no-store", signal: ctl.signal });
+    clearTimeout(t); if (!r.ok) return null; return await r.json(); } catch (e) { clearTimeout(t); return null; } }
+chrome.runtime.onMessage.addListener((msg, sender, reply) => {
+  if (!msg || (msg.type !== "nmc:jobs" && msg.type !== "nmc:jobDone")) return;
+  if (!sender.tab || !/^https:\/\/[^/]*\.lightning\.force\.com\//i.test(sender.url || "")) return;
+  (async () => { reply(msg.type === "nmc:jobs" ? (await appJobs("/jobs", { recordId: String(msg.recordId || "").slice(0, 18) }) || { jobs: [] }) : (await appJobs("/jobs/done", { id: msg.id, result: msg.result }) || { ok: false })); })();
+  return true; });
