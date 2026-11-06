@@ -185,14 +185,14 @@ body.nmc-enter
 @keyframes nmc-tagpop{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:none}}
 body.nmc-enter #pipeTop .btn{animation:nmc-rowin .4s ease both}body.nmc-enter #pipeTop .btn:nth-child(2){animation-delay:.04s}body.nmc-enter #pipeTop .btn:nth-child(3){animation-delay:.08s}body.nmc-enter #pipeTop .btn:nth-child(4){animation-delay:.12s}body.nmc-enter #pipeTop .btn:nth-child(5){animation-delay:.16s}body.nmc-enter #pipeTop .btn:nth-child(6){animation-delay:.2s}body.nmc-enter #pipeTop .btn:nth-child(7){animation-delay:.24s}body.nmc-enter #pipeTop .btn:nth-child(n+8){animation-delay:.28s}
 body.nmc-enter #pipeTable .hotbar{animation:nmc-rowin .4s ease both .2s}
-body.nmc-enter tr.elig-week td{animation:nmc-eligbreathe 2.2s ease-in-out 1 .6s}
+body.nmc-enter tr.elig-week td{animation:nmc-eligbreathe 1.4s ease-in-out 1 .3s}
 @keyframes nmc-eligbreathe{0%,100%{background:transparent}40%{background:#E3F1E7}}
 body.nmc-enter .stat{animation:nmc-rowin .45s var(--nmc-ease) both}body.nmc-enter .stat:nth-child(2){animation-delay:.06s}body.nmc-enter .stat:nth-child(3){animation-delay:.12s}body.nmc-enter .stat:nth-child(4){animation-delay:.18s}
 /* charts draw themselves on entry (nmc-motion sets --len per path) */
-body.nmc-enter svg.chart path[stroke][style*="--len"],body.nmc-enter svg.chart polyline[style*="--len"]{stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:nmc-draw 1.4s cubic-bezier(.3,.7,.3,1) forwards}
+body.nmc-enter svg.chart path[stroke][style*="--len"],body.nmc-enter svg.chart polyline[style*="--len"]{stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:nmc-draw .85s cubic-bezier(.3,.7,.3,1) forwards}
 body.nmc-enter svg.chart path[stroke]:nth-of-type(2){animation-delay:.15s}body.nmc-enter svg.chart path[stroke]:nth-of-type(3){animation-delay:.3s}
 @keyframes nmc-draw{to{stroke-dashoffset:0}}
-body.nmc-enter svg.chart circle{animation:nmc-tagpop .4s cubic-bezier(.2,.9,.3,1.4) both 1.2s}
+body.nmc-enter svg.chart circle{animation:nmc-tagpop .35s cubic-bezier(.2,.9,.3,1.4) both .5s}
 
 /* ---------- market notes: the lighter banner and the lean badge ---------- */
 .mknote .mkhead{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
@@ -448,7 +448,8 @@ body.nmc-band.nmc-mac .nmc-tb .l{padding-left:84px}   /* room for the traffic li
 .clientbar .cb-phone{font-size:12.5px;padding:3px 10px 3px 8px;margin-right:2px;font-weight:600}.clientbar .cb-phone .ic{width:1em;height:1em;margin:0;opacity:.7}
 
 /* ===== follow-up mode strip (top of the client bar) ===== */
-.clientbar .fuq-strip{flex:0 0 100%;display:flex;align-items:center;gap:10px;margin:-2px 0 6px;padding:6px 8px 6px 10px;border-radius:10px;background:linear-gradient(180deg,#FFF6F3,#FDEDE8);border:1px solid #F0CFC5;font-size:12.5px;color:var(--ink);animation:nmc-menuin .2s cubic-bezier(.2,.9,.3,1.2)}
+.clientbar .fuq-strip{flex:0 0 100%;display:flex;align-items:center;gap:10px;margin:-2px 0 6px;padding:6px 8px 6px 10px;border-radius:10px;background:linear-gradient(180deg,#FFF6F3,#FDEDE8);border:1px solid #F0CFC5;font-size:12.5px;color:var(--ink);position:relative;overflow:hidden}
+.clientbar .fuq-strip.pop{animation:nmc-menuin .2s cubic-bezier(.2,.9,.3,1.2)}   /* only when a session starts or resumes, never on a background redraw */
 .clientbar .fuq-strip.off{background:#FBF8F2;border-color:var(--line)}
 .fuq-strip .fq-t{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--brand);letter-spacing:.02em}.fuq-strip .fq-t .ic{width:1em;height:1em;margin:0}
 .fuq-strip .fq-n{color:var(--muted)}.fuq-strip .fq-n b{color:var(--ink);font-variant-numeric:tabular-nums}
@@ -486,3 +487,26 @@ body.nmc-band.nmc-mac .nmc-tb .l{padding-left:84px}   /* room for the traffic li
 #pipeTable .pl .pl2,#pipeTable .pf{white-space:normal}
 #pipeTable .pf .fud,#pipeTable .ps .tag-flat,#pipeTable .ps .tag-warn,#pipeTable .ps .tag-good{max-width:100%;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:top}
 #pipeTable .po .pot{max-width:100%}
+/* follow-up mode: instant confirmation, review state, and a load line that only shows if opening the next lead takes a moment */
+.fuq-strip .fq-flash{font-weight:600;color:#1F4D38;animation:fq-flash .14s ease-out}
+@keyframes fq-flash{from{opacity:0;transform:translateX(-4px)}to{opacity:1;transform:none}}
+.clientbar .fuq-strip.rev{background:#F6F4EE;border-color:var(--line)}
+.fuq-strip .fq-rev{font-size:12px;color:var(--muted)}.fuq-strip .fq-rev b{color:var(--ink)}
+.fuq-strip .fq-b.go{background:linear-gradient(180deg,var(--nmc-red-hi),var(--brand) 60%,var(--nmc-red-lo));color:#fff;border-color:transparent}
+.fuq-strip .fq-b.go:hover{color:#fff;filter:brightness(1.05)}
+.fuq-strip .fq-b[disabled]{opacity:.4;pointer-events:none}
+.fuq-strip .fq-load{position:absolute;left:0;bottom:0;height:2px;width:35%;background:linear-gradient(90deg,transparent,var(--brand),transparent);opacity:0;pointer-events:none;will-change:transform,opacity}
+.fuq-strip.loading .fq-load{opacity:1;transition:opacity .12s ease .3s;animation:fq-sweep .9s cubic-bezier(.45,0,.55,1) infinite}
+@keyframes fq-sweep{from{transform:translateX(-100%)}to{transform:translateX(290%)}}
+/* the next lead arrives with a quick settle instead of the full-page entrance cascade */
+.screen.fq-in{animation:fq-in .16s cubic-bezier(.2,.9,.3,1)}
+@keyframes fq-in{from{opacity:.35;transform:translateY(5px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.fuq-strip.loading .fq-load,.screen.fq-in,.fuq-strip .fq-flash{animation:none}}
+/* graceful redraws: only what changed moves */
+.clientbar .cb-upd{animation:cb-upd .18s ease-out}
+@keyframes cb-upd{from{opacity:.25;transform:translateY(2px)}to{opacity:1;transform:none}}
+.clientbar .cb-pop.still{animation:none}
+#pipeTable tbody tr.row-upd > td{animation:row-upd 1.2s ease-out}
+@keyframes row-upd{0%{background-color:#FFF1CF}100%{background-color:transparent}}
+@media (prefers-reduced-motion:reduce){.clientbar .cb-upd,#pipeTable tbody tr.row-upd > td{animation:none}}
+.fuq-strip .fq-t,.fuq-strip .fq-n,.fuq-strip .fq-b{white-space:nowrap;flex:none}.fuq-strip .fq-rev,.fuq-strip .fq-flash,.fuq-strip .fq-hint{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}

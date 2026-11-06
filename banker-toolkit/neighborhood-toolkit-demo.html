@@ -419,7 +419,7 @@ nav button{padding:8px 16px 8px 32px;font-size:13.5px;min-height:34px}nav button
 
 </style>
 <style id="nmcTheme">
-/* generated from theme/nmc-theme.css — edit that file, not this block · fe71ee61de877e08 */
+/* generated from theme/nmc-theme.css — edit that file, not this block · 3a1b584dc9e87d31 */
 /* ============================================================================
    NMC theme — the shared look for Neighborhood Mortgage tools
    (Toolkit, Rate Desk). Red + glass, quiet tags, drawn icons, and the motion
@@ -607,14 +607,14 @@ body.nmc-enter
 @keyframes nmc-tagpop{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:none}}
 body.nmc-enter #pipeTop .btn{animation:nmc-rowin .4s ease both}body.nmc-enter #pipeTop .btn:nth-child(2){animation-delay:.04s}body.nmc-enter #pipeTop .btn:nth-child(3){animation-delay:.08s}body.nmc-enter #pipeTop .btn:nth-child(4){animation-delay:.12s}body.nmc-enter #pipeTop .btn:nth-child(5){animation-delay:.16s}body.nmc-enter #pipeTop .btn:nth-child(6){animation-delay:.2s}body.nmc-enter #pipeTop .btn:nth-child(7){animation-delay:.24s}body.nmc-enter #pipeTop .btn:nth-child(n+8){animation-delay:.28s}
 body.nmc-enter #pipeTable .hotbar{animation:nmc-rowin .4s ease both .2s}
-body.nmc-enter tr.elig-week td{animation:nmc-eligbreathe 2.2s ease-in-out 1 .6s}
+body.nmc-enter tr.elig-week td{animation:nmc-eligbreathe 1.4s ease-in-out 1 .3s}
 @keyframes nmc-eligbreathe{0%,100%{background:transparent}40%{background:#E3F1E7}}
 body.nmc-enter .stat{animation:nmc-rowin .45s var(--nmc-ease) both}body.nmc-enter .stat:nth-child(2){animation-delay:.06s}body.nmc-enter .stat:nth-child(3){animation-delay:.12s}body.nmc-enter .stat:nth-child(4){animation-delay:.18s}
 /* charts draw themselves on entry (nmc-motion sets --len per path) */
-body.nmc-enter svg.chart path[stroke][style*="--len"],body.nmc-enter svg.chart polyline[style*="--len"]{stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:nmc-draw 1.4s cubic-bezier(.3,.7,.3,1) forwards}
+body.nmc-enter svg.chart path[stroke][style*="--len"],body.nmc-enter svg.chart polyline[style*="--len"]{stroke-dasharray:var(--len);stroke-dashoffset:var(--len);animation:nmc-draw .85s cubic-bezier(.3,.7,.3,1) forwards}
 body.nmc-enter svg.chart path[stroke]:nth-of-type(2){animation-delay:.15s}body.nmc-enter svg.chart path[stroke]:nth-of-type(3){animation-delay:.3s}
 @keyframes nmc-draw{to{stroke-dashoffset:0}}
-body.nmc-enter svg.chart circle{animation:nmc-tagpop .4s cubic-bezier(.2,.9,.3,1.4) both 1.2s}
+body.nmc-enter svg.chart circle{animation:nmc-tagpop .35s cubic-bezier(.2,.9,.3,1.4) both .5s}
 
 /* ---------- market notes: the lighter banner and the lean badge ---------- */
 .mknote .mkhead{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
@@ -870,7 +870,8 @@ body.nmc-band.nmc-mac .nmc-tb .l{padding-left:84px}   /* room for the traffic li
 .clientbar .cb-phone{font-size:12.5px;padding:3px 10px 3px 8px;margin-right:2px;font-weight:600}.clientbar .cb-phone .ic{width:1em;height:1em;margin:0;opacity:.7}
 
 /* ===== follow-up mode strip (top of the client bar) ===== */
-.clientbar .fuq-strip{flex:0 0 100%;display:flex;align-items:center;gap:10px;margin:-2px 0 6px;padding:6px 8px 6px 10px;border-radius:10px;background:linear-gradient(180deg,#FFF6F3,#FDEDE8);border:1px solid #F0CFC5;font-size:12.5px;color:var(--ink);animation:nmc-menuin .2s cubic-bezier(.2,.9,.3,1.2)}
+.clientbar .fuq-strip{flex:0 0 100%;display:flex;align-items:center;gap:10px;margin:-2px 0 6px;padding:6px 8px 6px 10px;border-radius:10px;background:linear-gradient(180deg,#FFF6F3,#FDEDE8);border:1px solid #F0CFC5;font-size:12.5px;color:var(--ink);position:relative;overflow:hidden}
+.clientbar .fuq-strip.pop{animation:nmc-menuin .2s cubic-bezier(.2,.9,.3,1.2)}   /* only when a session starts or resumes, never on a background redraw */
 .clientbar .fuq-strip.off{background:#FBF8F2;border-color:var(--line)}
 .fuq-strip .fq-t{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--brand);letter-spacing:.02em}.fuq-strip .fq-t .ic{width:1em;height:1em;margin:0}
 .fuq-strip .fq-n{color:var(--muted)}.fuq-strip .fq-n b{color:var(--ink);font-variant-numeric:tabular-nums}
@@ -908,6 +909,29 @@ body.nmc-band.nmc-mac .nmc-tb .l{padding-left:84px}   /* room for the traffic li
 #pipeTable .pl .pl2,#pipeTable .pf{white-space:normal}
 #pipeTable .pf .fud,#pipeTable .ps .tag-flat,#pipeTable .ps .tag-warn,#pipeTable .ps .tag-good{max-width:100%;overflow:hidden;text-overflow:ellipsis;display:inline-block;vertical-align:top}
 #pipeTable .po .pot{max-width:100%}
+/* follow-up mode: instant confirmation, review state, and a load line that only shows if opening the next lead takes a moment */
+.fuq-strip .fq-flash{font-weight:600;color:#1F4D38;animation:fq-flash .14s ease-out}
+@keyframes fq-flash{from{opacity:0;transform:translateX(-4px)}to{opacity:1;transform:none}}
+.clientbar .fuq-strip.rev{background:#F6F4EE;border-color:var(--line)}
+.fuq-strip .fq-rev{font-size:12px;color:var(--muted)}.fuq-strip .fq-rev b{color:var(--ink)}
+.fuq-strip .fq-b.go{background:linear-gradient(180deg,var(--nmc-red-hi),var(--brand) 60%,var(--nmc-red-lo));color:#fff;border-color:transparent}
+.fuq-strip .fq-b.go:hover{color:#fff;filter:brightness(1.05)}
+.fuq-strip .fq-b[disabled]{opacity:.4;pointer-events:none}
+.fuq-strip .fq-load{position:absolute;left:0;bottom:0;height:2px;width:35%;background:linear-gradient(90deg,transparent,var(--brand),transparent);opacity:0;pointer-events:none;will-change:transform,opacity}
+.fuq-strip.loading .fq-load{opacity:1;transition:opacity .12s ease .3s;animation:fq-sweep .9s cubic-bezier(.45,0,.55,1) infinite}
+@keyframes fq-sweep{from{transform:translateX(-100%)}to{transform:translateX(290%)}}
+/* the next lead arrives with a quick settle instead of the full-page entrance cascade */
+.screen.fq-in{animation:fq-in .16s cubic-bezier(.2,.9,.3,1)}
+@keyframes fq-in{from{opacity:.35;transform:translateY(5px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.fuq-strip.loading .fq-load,.screen.fq-in,.fuq-strip .fq-flash{animation:none}}
+/* graceful redraws: only what changed moves */
+.clientbar .cb-upd{animation:cb-upd .18s ease-out}
+@keyframes cb-upd{from{opacity:.25;transform:translateY(2px)}to{opacity:1;transform:none}}
+.clientbar .cb-pop.still{animation:none}
+#pipeTable tbody tr.row-upd > td{animation:row-upd 1.2s ease-out}
+@keyframes row-upd{0%{background-color:#FFF1CF}100%{background-color:transparent}}
+@media (prefers-reduced-motion:reduce){.clientbar .cb-upd,#pipeTable tbody tr.row-upd > td{animation:none}}
+.fuq-strip .fq-t,.fuq-strip .fq-n,.fuq-strip .fq-b{white-space:nowrap;flex:none}.fuq-strip .fq-rev,.fuq-strip .fq-flash,.fuq-strip .fq-hint{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 </style>
 </head>
 <body>
@@ -1585,7 +1609,7 @@ Discover 6,100 190 24.9"></textarea>
 <div id="toast"></div>
 <div id="printSheet"></div>
 <script id="nmcMotion">
-/* generated from theme/nmc-motion.js — edit that file, not this block · a9701dafdafdcc85 */
+/* generated from theme/nmc-motion.js — edit that file, not this block · 60a07fbf72ce8d37 */
 /* ============================================================================
    NMC motion — the small library behind the theme's movement.
    Shared by the Toolkit and the Rate Desk. No dependencies.
@@ -1679,7 +1703,7 @@ Discover 6,100 190 24.9"></textarea>
 
   /* ---------- entrance window + charts ---------- */
   let enterT = null;
-  function enter(ms){ if(reduce()) return; document.body.classList.remove("nmc-enter"); void document.body.offsetWidth; document.body.classList.add("nmc-enter"); clearTimeout(enterT); enterT = setTimeout(() => document.body.classList.remove("nmc-enter"), ms || 1800); charts(); }
+  function enter(ms){ if(reduce()) return; document.body.classList.remove("nmc-enter"); void document.body.offsetWidth; document.body.classList.add("nmc-enter"); clearTimeout(enterT); enterT = setTimeout(() => document.body.classList.remove("nmc-enter"), ms || 1000);   /* was 1.8s; the longest entrance now ends by ~0.9s */ charts(); }
   function charts(root){ (root || document).querySelectorAll("svg.chart path[stroke], svg.chart polyline").forEach(p => { if(p.dataset.len || typeof p.getTotalLength !== "function") return; try{ const L = p.getTotalLength(); if(L > 0){ p.dataset.len = "1"; p.style.setProperty("--len", L); } }catch(e){} }); }
 
   /* ---------- small satisfactions ---------- */
@@ -1699,7 +1723,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.20.3";
+const TOOLKIT_VERSION = "1.20.4";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1810,7 +1834,12 @@ const yrsMo = m => { if(m==null||!isFinite(m)) return "\u2014"; if(m>360) return
   return ((y?y+" yr ":"") + (r? r+" mo":"")).trim() || "0 mo"; };
 let _copyBtn=null; document.addEventListener("click",e=>{ const b=e.target&&e.target.closest&&e.target.closest(".btn"); _copyBtn=(b&&/^copy/i.test(b.textContent.trim()))?b:null; },true);
 function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),3200); if(/copied/i.test(msg)&&_copyBtn&&window.NMC){ NMC.copied(_copyBtn); _copyBtn=null; } }
-function save(){ writeStore(JSON.stringify(state)); mirrorSeq++; scheduleAutosave(); }
+/* saves requested during one click/tick are written once at the end of it (a disposition used to write the whole book 6 times) */
+let saveQueued=false;
+function saveNow(){ saveQueued=false; writeStore(JSON.stringify(state)); mirrorSeq++; scheduleAutosave(); }
+function save(){ if(saveQueued) return; saveQueued=true; queueMicrotask(()=>{ if(saveQueued) saveNow(); }); }
+/* closing the window or reloading never waits on a queued save */
+window.addEventListener("pagehide",()=>{ if(saveQueued) saveNow(); }); window.addEventListener("beforeunload",()=>{ if(saveQueued) saveNow(); });
 const DESK = window.nmcDesktop || null;
 /* desktop shell with a hidden title bar: draw the 38px band the window buttons sit in (red over the sidebar, paper over the content) */
 if(DESK&&DESK.titleBand){ document.body.classList.add("nmc-band"); if(DESK.platform==="darwin") document.body.classList.add("nmc-mac");
@@ -2038,7 +2067,7 @@ async function loCardSave(){ try{ const c=await loCardPNG(); const a=document.cr
 /* ---- client bar: disposition + follow-up + firm appointment, always in reach ----
    A follow-up is a DAY (it lands in that day's queue). A time means a firm appointment, and only those go to Outlook (15 min by default). */
 let cbOpen=null;   /* "status" | "fu" | "appt" | null */
-function cbToggle(ev,which){ ev.stopPropagation(); cbOpen=cbOpen===which?null:which; renderClientBar(); }
+function cbToggle(ev,which){ ev.stopPropagation(); cbOpen=cbOpen===which?null:which; cbAnimPop=true; renderClientBar(); }
 document.addEventListener("click",ev=>{ if(cbOpen&&!ev.target.closest(".cb-act")){ cbOpen=null; renderClientBar(); } });
 function cbStatusCls(st){ return st==="New lead"?"s-new":st==="Needs follow-up"?"s-fu":/app|process|docs/i.test(st)?"s-app":st===S_DONE?"s-done":st==="Lost"||st==="Ineligible"?"s-lost":st===S_WATCH?"s-watch":""; }
 function cbSetStatus(ev,st){ ev.stopPropagation(); const c=cur(); if(!c) return; c.status=st; applyDispo(c); cbOpen=null; save(); refreshAll(); toast(st===S_DONE?"Marked complete \u2014 counts toward this month\u2019s goal":"Status: "+st); }
@@ -2087,40 +2116,77 @@ function fuqRemaining(){ const q=state.fuq; if(!q) return []; return q.ids.filte
 function fuqStart(){ const q=state.fuq; const left=q?fuqRemaining():[];
   if(q&&left.length){ fuqResume(); return; }
   const ids=fuqCandidates().map(c=>c.id); if(!ids.length){ toast("No follow-ups due \u2014 you\u2019re clear"); return; }
-  state.fuq={started:Date.now(), day:todayStr(), ids, done:{}, cur:ids[0]}; fuqLive=true; save(); fuqOpen(ids[0]);
+  state.fuq={started:Date.now(), day:todayStr(), ids, done:{}, cur:ids[0]}; fuqLive=true; fuqPop=true; save(); fuqOpen(ids[0]);
   toast(`Follow-up mode \u2014 ${ids.length} to work. Disposition each one and the next opens.`); }
 /* resume: drop whoever was handled while you were away, add anyone newly due, carry on from where you stopped */
 function fuqResume(){ const q=state.fuq; if(!q) return fuqStart(); let dropped=0;
   q.ids.forEach(id=>{ if(q.done[id]) return; const c=state.clients.find(x=>x.id===id); const why=fuqHandled(c,q.started); if(why){ q.done[id]="away:"+why; dropped++; } });
   const have=new Set(q.ids); const fresh=fuqCandidates().filter(c=>!have.has(c.id)&&!fuqHandled(c,q.started)).map(c=>c.id); q.ids.push(...fresh);
   const left=fuqRemaining(); if(!left.length){ fuqFinish(dropped?`Everyone left was handled while you were away (${dropped}).`:""); return; }
-  if(!q.cur||q.done[q.cur]) q.cur=left[0]; fuqLive=true; save(); fuqOpen(q.cur);
+  if(!q.cur||q.done[q.cur]) q.cur=left[0]; q.ret=null; fuqLive=true; fuqPop=true; save(); fuqOpen(q.cur);
   toast(`Resumed \u2014 ${left.length} left`+(dropped?` \u00b7 ${dropped} handled while you were away`:"")+(fresh.length?` \u00b7 ${fresh.length} newly due added`:"")); }
-function fuqOpen(id){ const c=state.clients.find(x=>x.id===id); if(!c){ fuqNext(); return; } state.fuq.cur=id; save(); pickClient(id);
-  let r=null; try{ r=computeAnalysis(c); }catch(e){} go(r&&!r.tooSmall?"proposal":"client"); window.scrollTo(0,0); }
+/* opening a lead in a session: quiet navigation (no full-page entrance cascade), then a quick fade-in of the work area */
+let navQuiet=false, fuqFlash=null, fuqPop=false;
+function fuqOpen(id){ const c=state.clients.find(x=>x.id===id); if(!c){ fuqNext(); return; } state.fuq.cur=id; fuqFlash=null; save(); pickClient(id);
+  let r=null; try{ r=computeAnalysis(c); }catch(e){} navQuiet=true; try{ go(r&&!r.tooSmall?"proposal":"client"); } finally{ navQuiet=false; } window.scrollTo(0,0);
+  const sc=document.querySelector(".screen.active"); if(sc&&!(window.NMC&&window.__nmcNoMotion)){ sc.classList.remove("fq-in"); void sc.offsetWidth; sc.classList.add("fq-in"); setTimeout(()=>sc.classList.remove("fq-in"),220); } }
 function fuqNext(){ const q=state.fuq; if(!q) return; const left=fuqRemaining(); if(!left.length){ fuqFinish(); return; }
   const i=q.ids.indexOf(q.cur); const after=q.ids.slice(i+1).filter(id=>!q.done[id]); fuqOpen(after[0]||left[0]); }
-/* a disposition on the lead you're on: log it on the session and open the next one */
-function fuqAdvance(id,outcome){ const q=state.fuq; if(!fuqLive||!q||q.cur!==id) return; q.done[id]=outcome||"done"; save();
-  const left=fuqRemaining(); const nxt=left.length?state.clients.find(x=>x.id===(q.ids.slice(q.ids.indexOf(id)+1).find(x=>!q.done[x])||left[0])):null;
-  renderClientBar(); setTimeout(()=>{ if(!fuqLive||state.fuq!==q) return; if(nxt) fuqOpen(nxt.id); else fuqFinish(); }, 650); }
-function fuqSkip(ev){ if(ev) ev.stopPropagation(); const q=state.fuq; if(!q) return; if(fuqRemaining().length<2){ toast("That\u2019s the last one"); return; }
-  const i=q.ids.indexOf(q.cur), id=q.cur, open=x=>!q.done[x]; q.ids.splice(i,1); q.ids.push(id); save();   /* skipped leads go to the end */
+/* the next unworked lead after a position, wrapping to the first unworked one (skipped leads sit at the end) */
+function fuqNextOpen(q,fromId){ const i=q.ids.indexOf(fromId); return q.ids.slice(i+1).find(x=>!q.done[x]) || q.ids.find(x=>!q.done[x]) || null; }
+function fuqOutcomeLabel(o){ if(!o) return ""; if(/^away:/.test(o)) return "handled while you were away"; if(/^next:/.test(o)){ const d=o.slice(5); return d&&d!=="none"?"next follow-up "+fuNice(d):"no further follow-up"; } if(o==="none") return "no further follow-up"; return (FU_OUT[o]||o).replace(/ \u2014.*$/,""); }
+/* a disposition on the lead you're on: confirm it at once, then open the next one.
+   Re-dispositioning a lead you went Back to replaces its outcome and returns you to where you were. */
+function fuqAdvance(id,outcome){ const q=state.fuq; if(!fuqLive||!q||q.cur!==id) return; q.done[id]=outcome||"done";
+  const target=(q.ret&&q.ret!==id&&!q.done[q.ret])?q.ret:fuqNextOpen(q,id); q.ret=null; save();
+  const nxt=target&&state.clients.find(x=>x.id===target);
+  fuqFlash={text:"\u2713 "+fuqOutcomeLabel(outcome)+(nxt?" \u00b7 opening "+(nxt.name||"next")+"\u2026":" \u00b7 that was the last one")};
+  renderClientBar(); setTimeout(()=>{ if(!fuqLive||state.fuq!==q) return; if(nxt) fuqOpen(nxt.id); else fuqFinish(); }, 150); }
+function fuqSkip(ev){ if(ev) ev.stopPropagation(); const q=state.fuq; if(!q) return; if(q.done[q.cur]) return; if(fuqRemaining().length<2){ toast("That\u2019s the last one"); return; }
+  const i=q.ids.indexOf(q.cur), id=q.cur, open=x=>!q.done[x]; q.ids.splice(i,1); q.ids.push(id); q.ret=null; save();   /* skipped leads go to the end */
   fuqOpen(q.ids.slice(i,-1).find(open)||q.ids.slice(0,i).find(open)); }
-function fuqBack(ev){ if(ev) ev.stopPropagation(); const q=state.fuq; if(!q) return; const i=q.ids.indexOf(q.cur); const prev=q.ids.slice(0,i).filter(id=>!q.done[id]).pop(); if(prev) fuqOpen(prev); else toast("You\u2019re on the first one"); }
+/* Back walks the session's own order, worked leads included; the lead you left is remembered so Return (or a disposition) brings you back */
+function fuqBack(ev){ if(ev) ev.stopPropagation(); const q=state.fuq; if(!q) return; const i=q.ids.indexOf(q.cur); if(i<=0){ toast("You\u2019re on the first one"); return; }
+  if(!q.ret&&!q.done[q.cur]) q.ret=q.cur; fuqOpen(q.ids[i-1]); }
+function fuqReturn(ev){ if(ev) ev.stopPropagation(); const q=state.fuq; if(!q) return; const t=(q.ret&&!q.done[q.ret])?q.ret:fuqNextOpen(q,q.cur); q.ret=null; if(t) fuqOpen(t); else fuqFinish(); }
 function fuqPause(ev){ if(ev) ev.stopPropagation(); fuqLive=false; save(); renderClientBar(); renderPipeline(); toast(`Paused \u2014 ${fuqRemaining().length} left. Resume from the pipeline whenever you\u2019re back.`); }
 function fuqFinish(note){ const q=state.fuq; const n=q?Object.keys(q.done).filter(k=>!/^away:/.test(q.done[k])).length:0; state.fuq=null; fuqLive=false; save(); renderClientBar(); go("pipeline");
   toast((n?`Follow-ups done \u2014 ${n} worked. `:"Follow-ups done. ")+(note||"")); }
 function fuqEnd(ev){ if(ev) ev.stopPropagation(); fuqFinish("Session ended."); }
 function fuqStripHTML(c){ const q=state.fuq; if(!fuqLive||!q) return ""; const total=q.ids.length; const doneN=q.ids.filter(id=>q.done[id]).length; const onIt=c&&c.id===q.cur;
-  const left=fuqRemaining(); const i=q.ids.indexOf(q.cur); const nextId=q.ids.slice(i+1).find(id=>!q.done[id])||left.find(id=>id!==q.cur); const nx=nextId&&state.clients.find(x=>x.id===nextId);
-  const pct=total?Math.round(doneN/total*100):0;
-  return `<div class="fuq-strip${onIt?"":" off"}"><span class="fq-t">${NMC.icon("clock")}Follow-up mode</span><span class="fq-n"><b>${Math.min(doneN+1,total)}</b> of ${total}</span><span class="fq-bar"><i style="width:${pct}%"></i></span>
-    ${onIt?`<span class="fq-hint">Disposition below to open the next</span>`:`<button type="button" class="fq-b" onclick="fuqOpen(state.fuq.cur)">Back to ${esc((state.clients.find(x=>x.id===q.cur)||{}).name||"current")}</button>`}
-    <span class="sp"></span>${nx?`<span class="fq-next">next: <b>${esc(nx.name||"")}</b></span>`:`<span class="fq-next">last one</span>`}
-    <button type="button" class="fq-b" onclick="fuqBack(event)" title="Previous lead">\u2039 Back</button><button type="button" class="fq-b" onclick="fuqSkip(event)" title="Move to the end of the list">Skip</button><button type="button" class="fq-b" onclick="fuqPause(event)" title="Keep your place and step away">Pause</button><button type="button" class="fq-b x" onclick="fuqEnd(event)" title="End the session">End</button></div>`; }
+  const reviewing=onIt&&!!q.done[q.cur]; const i=q.ids.indexOf(q.cur);
+  const retId=reviewing?((q.ret&&!q.done[q.ret])?q.ret:fuqNextOpen(q,q.cur)):null; const ret=retId&&state.clients.find(x=>x.id===retId);
+  const nextId=reviewing?null:fuqNextOpen(q,q.cur); const nx=nextId&&nextId!==q.cur&&state.clients.find(x=>x.id===nextId);
+  const pct=total?Math.round(doneN/total*100):0; const pop=fuqPop; fuqPop=false;
+  const mid = fuqFlash ? `<span class="fq-flash">${esc(fuqFlash.text)}</span>`
+    : reviewing ? `<span class="fq-rev" title="Disposition again to change it">Already worked: <b>${esc(fuqOutcomeLabel(q.done[q.cur]))}</b></span>`
+    : onIt ? `<span class="fq-hint">Disposition below to open the next</span>`
+    : `<button type="button" class="fq-b" onclick="fuqOpen(state.fuq.cur)">Back to ${esc((state.clients.find(x=>x.id===q.cur)||{}).name||"current")}</button>`;
+  const right = fuqFlash ? "" : reviewing
+    ? `<button type="button" class="fq-b" onclick="fuqBack(event)" title="Previous lead">\u2039 Back</button>${ret?`<button type="button" class="fq-b go" onclick="fuqReturn(event)">Return to ${esc(ret.name||"current")} \u203A</button>`:""}<button type="button" class="fq-b" onclick="fuqPause(event)" title="Keep your place and step away">Pause</button><button type="button" class="fq-b x" onclick="fuqEnd(event)" title="End the session">End</button>`
+    : `${nx?`<span class="fq-next">next: <b>${esc(nx.name||"")}</b></span>`:`<span class="fq-next">last one</span>`}<button type="button" class="fq-b" onclick="fuqBack(event)" title="Previous lead"${i<=0?" disabled":""}>\u2039 Back</button><button type="button" class="fq-b" onclick="fuqSkip(event)" title="Move to the end of the list">Skip</button><button type="button" class="fq-b" onclick="fuqPause(event)" title="Keep your place and step away">Pause</button><button type="button" class="fq-b x" onclick="fuqEnd(event)" title="End the session">End</button>`;
+  return `<div class="fuq-strip${onIt?"":" off"}${pop?" pop":""}${fuqFlash?" loading":""}${reviewing?" rev":""}"><span class="fq-t">${NMC.icon("clock")}Follow-up mode</span><span class="fq-n">${reviewing?`reviewing <b>${i+1}</b>`:`<b>${Math.min(doneN+1,total)}</b>`} of ${total}</span><span class="fq-bar"><i style="width:${pct}%"></i></span>${mid}<span class="sp"></span>${right}<span class="fq-load"></span></div>`; }
 function fmtTime12(t){ if(!t) return ""; const [h,m]=t.split(":").map(Number); const ap=h>=12?"PM":"AM"; return ((h+11)%12+1)+":"+String(m).padStart(2,"0")+" "+ap; }
-function renderClientBar(){ const bar=$("clientBar"); if(!bar) return; const c=cur();
+/* ===== graceful redraws =====
+   guardHTML(el): assigning the same markup again keeps the DOM that's on screen (no blink, hover and open menus survive, idle ticks
+   cost nothing). When the markup did change, before/after hooks let the caller mark only what changed so it can fade or highlight. */
+function guardHTML(el, hooks){ if(!el||el.__guard) return; el.__guard=true; const d=Object.getOwnPropertyDescriptor(Element.prototype,"innerHTML");
+  Object.defineProperty(el,"innerHTML",{configurable:true, get(){ return d.get.call(el); },
+    set(v){ v=String(v); if(v===el.__h) return; const snap=hooks&&hooks.before?hooks.before(el):null; el.__h=v; d.set.call(el,v); if(hooks&&hooks.after) hooks.after(el,snap); }}); }
+/* what each piece of the client bar said, so after a swap only pieces whose text changed fade in */
+function cbPieces(bar){ const m=new Map(), n={}; bar.querySelectorAll(".inner > *:not(.facts):not(.cb-row), .inner .facts > *, .inner .cb-row > *:not(.cb-quick), .inner .cb-quick > *").forEach(e=>{ if(e.closest(".cb-pop")) return; const k=(e.className||e.tagName).toString().split(" ")[0]; n[k]=(n[k]||0)+1; m.set(k+"#"+n[k], e); }); return m; }   /* individual chips and buttons, never the groups that hold them */
+function cbText(e){ const t=e.querySelector(".cbt"); return t?e.textContent.replace(t.textContent,""):e.textContent; }   /* the clock fills in after a swap, so it's left out */
+let cbAnimPop=false;
+const CB_HOOKS={
+  before(bar){ const vals={}; bar.querySelectorAll(".cb-pop input, .cb-pop select").forEach(i=>{ if(i.id) vals[i.id]=i.value; });
+    const txt=new Map(); cbPieces(bar).forEach((e,k)=>txt.set(k,cbText(e))); return {vals, txt, cid:bar.__cid, had:txt.size>0}; },
+  after(bar,snap){ const c=cur(); const cid=c?c.id:null; bar.__cid=cid;
+    bar.querySelectorAll(".cb-pop").forEach(p=>{ if(!cbAnimPop) p.classList.add("still"); }); cbAnimPop=false;
+    if(snap){ Object.entries(snap.vals).forEach(([id,v])=>{ const i=document.getElementById(id); if(i&&bar.contains(i)) i.value=v; });
+      if(snap.had&&snap.cid===cid) cbPieces(bar).forEach((e,k)=>{ if(snap.txt.has(k)&&snap.txt.get(k)!==cbText(e)) e.classList.add("cb-upd"); }); } } };
+/* the client's local time ticks in place; it isn't part of the bar's markup, so the minute timer never rebuilds the bar */
+function cbClockFill(){ const c=cur(); const el=document.querySelector("#clientBar .cbt"); if(!c||!el) return; const t=clientTime(c); if(el.textContent!==t) el.textContent=t; }
+function renderClientBar(){ const bar=$("clientBar"); if(!bar) return; const c=cur(); guardHTML(bar,CB_HOOKS);
   const sel=`<select id="gClientPicker" onchange="this.value?pickClient(this.value):clearClient()"></select>`;
   const card="";; if(!loCardCache.url&&!loCardCache.busy) loCardRender().then(()=>{ const w=$("loCardWidget"); if(w&&loCardCache.url){ w.src=loCardCache.url; w.style.display=""; } });
   const bell=""; renderSideInbox();
@@ -2137,8 +2203,9 @@ function renderClientBar(){ const bar=$("clientBar"); if(!bar) return; const c=c
     if(onSeasonWatch(c)) facts.push(`<span class="tag-flat">\uD83D\uDCC5 seasons ${esc(c.seasonDate)}</span>`);
     { const e=rdEligibleNow(c); if(e) facts.push(`<span class="tag-good" title="Eligible under today\u2019s rate desk rates">\u2728 eligible since ${pct(e.rate)} (${RD_TIER_LABEL[e.tier]}${e.assumed?", score?":""})</span>`); }
     if(c.hot) facts.push(`<span class="tag-warn">\uD83D\uDD25 hot</span>`); { const fi=futureInfo(c); if(fi) facts.push(`<span class="${fi.tag}">${fi.txt.replace(/ \u2014 .*$/,"")}</span>`); }
-    { const t=clientTime(c); const tz=clientTz(c); if(t) facts.push(`<span class="tag-flat" title="${esc(tz)}">\uD83D\uDD52 ${t}${tz!=="America/New_York"?" (their time)":""}</span>`); }
+    { const t=clientTime(c); const tz=clientTz(c); if(t) facts.push(`<span class="tag-flat" title="${esc(tz)}">\uD83D\uDD52 <span class="cbt"></span>${tz!=="America/New_York"?" (their time)":""}</span>`); }
     bar.innerHTML=`<div class="inner">${fuqStripHTML(c)}${card}${bell}<span class="hint" style="margin:0">Working with</span><span class="who">${esc(c.name)}</span>${c.phone?`<span class="pc-chip cb-phone" data-copy="${esc(c.phone)}" title="Click to copy" onclick="copyChip(event)">${NMC.icon("phone")}${esc(c.phone)}</span>`:""}${cbControlsHTML(c)}<div class="facts">${facts.join("")}</div><span style="flex:1"></span><span style="display:inline-flex;gap:6px;align-items:center;white-space:nowrap">${sel}<button class="btn ghost small" onclick="go('client')">Open</button><button class="btn ghost small" onclick="clearClient()" title="Deselect">\u2715</button></span></div>`; }
+  cbClockFill(); const gp=$("gClientPicker"); if(gp) guardHTML(gp);
   const g=$("gClientPicker"); if(g){ g.innerHTML = state.clients.length ? `<option value="" ${!state.currentId?"selected":""}>\u2014 choose a client \u2014</option>`+state.clients.map(x=>`<option value="${x.id}" ${x.id===state.currentId?"selected":""}>${x.quick?"\u26A1 ":""}${esc(x.name)}</option>`).join("") : `<option value="">\u2014 no clients yet \u2014</option>`; }
 }
 /* P&I vs escrow: bankers usually know the total payment; we split it automatically from balance/rate/term */
@@ -2613,7 +2680,16 @@ function pipeRowClick(ev,id){ if(ev.target.closest("button,a,.pc-chip,input,sele
 async function copyChip(ev){ ev.stopPropagation(); const el=ev.currentTarget; const v=el.dataset.copy||""; if(!v) return; try{ await navigator.clipboard.writeText(v); }catch(e){ const ta=document.createElement("textarea"); ta.value=v; document.body.appendChild(ta); ta.select(); try{ document.execCommand("copy"); }catch(e2){} ta.remove(); }
   if(el.classList.contains("pc-chip")){ const h=el.innerHTML; el.classList.add("copied"); el.innerHTML=NMC.icon("check")+"Copied"; setTimeout(()=>{ el.classList.remove("copied"); el.innerHTML=h; },1000); } else toast("Copied "+v); }
 function pipeDensity(v){ state.settings.pipeDense=!!v; save(); renderPipeline(); }
-function renderPipeline(){ const today=todayStr(); document.body.classList.toggle("pipe-dense",!!state.settings.pipeDense);
+/* During a follow-up session the pipeline is hidden; redrawing it on every disposition was the biggest cost (~100ms each at 400 clients).
+   It's marked out of date instead and redrawn once when you go back to it. When it is on screen, rows whose content changed get a soft
+   highlight so a rate push or a disposition is visible without the table blinking. */
+let pipeDirty=false;
+function pipeRowTexts(host){ const m=new Map(); host.querySelectorAll("tbody tr[data-id]").forEach(tr=>m.set(tr.dataset.id,tr.textContent)); return m; }
+const PIPE_HOOKS={ before(host){ return document.body.classList.contains("nmc-enter")?null:pipeRowTexts(host); },
+  after(host,old){ if(!old||!old.size) return; host.querySelectorAll("tbody tr[data-id]").forEach(tr=>{ const t=old.get(tr.dataset.id); if(t!=null&&t!==tr.textContent) tr.classList.add("row-upd"); }); } };
+function renderPipeline(){ const host=$("pipeTable"); if(fuqLive&&!$("s-pipeline").classList.contains("active")){ pipeDirty=true; return; }
+  pipeDirty=false; if(host) guardHTML(host,PIPE_HOOKS); renderPipelineCore(); }
+function renderPipelineCore(){ const today=todayStr(); document.body.classList.toggle("pipe-dense",!!state.settings.pipeDense);
   const filt=$("pipeFilter"); if(filt.options.length<=1)
     STATUSES.forEach(s=>{const o=document.createElement("option");o.textContent=s;filt.appendChild(o);});
   const al=pipeAlerts();
@@ -4662,7 +4738,7 @@ function exportJSON(){ const blob=new Blob([JSON.stringify(state,null,2)],{type:
   const who=(state.settings.loName||"").trim().replace(/[^a-z0-9]+/gi,"-").replace(/^-+|-+$/g,"");
   a.download=(who?who+"-":"")+"nmc-toolkit-"+new Date().toLocaleDateString("en-CA")+".json"; a.click(); URL.revokeObjectURL(a.href); toast("Data exported"); }
 function importText(text){ try{ const s=JSON.parse(text); if(!s.clients||!s.settings) throw 0;
-    state=s; save(); location.reload(); }catch(e){ toast("That file doesn't look like a toolkit export"); } }
+    state=s; saveNow(); location.reload(); }catch(e){ toast("That file doesn't look like a toolkit export"); } }
 function importJSON(input){ const f=input.files[0]; if(!f) return; const rd=new FileReader();
   rd.onload=()=>importText(rd.result); rd.readAsText(f); input.value=""; }
 async function importFromPath(p){ if(!DESK) return; const t=await DESK.readFile(p); if(t) importText(t); }
@@ -6056,8 +6132,8 @@ function toolsToQuote(){ const m=toolsModel(); if(!m.ok){ toast("Fill in today's
 /* one debts panel (table, Add debt, Paste a list) shared by the Client workspace and the Savings analysis: it moves to whichever screen is open */
 function placeDebtPanel(s){ const p=$("debtPanel"); if(!p) return; if(s==="client"){ const h=$("debtHostClient"); if(h&&p.parentNode!==h) h.appendChild(p); }
   else if(s==="analysis"){ const m=$("debtHome"); if(m&&p.previousElementSibling!==m) m.insertAdjacentElement("afterend",p); } }
-function go(s){ if(s!=="present"&&document.body.classList.contains("obj-open")){ presentUI.obj=null; document.body.classList.remove("obj-open"); } setTimeout(renderPlayTabs,0); if(window.NMC) NMC.enter(); document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));
-  $("s-"+s).classList.add("active"); placeDebtPanel(s);
+function go(s){ if(s!=="present"&&document.body.classList.contains("obj-open")){ presentUI.obj=null; document.body.classList.remove("obj-open"); } setTimeout(renderPlayTabs,0); if(window.NMC&&!navQuiet) NMC.enter(); document.querySelectorAll(".screen").forEach(x=>x.classList.remove("active"));
+  $("s-"+s).classList.add("active"); placeDebtPanel(s); if(s==="pipeline"&&pipeDirty) renderPipeline();
   if(s==="tmpl") renderTemplates();
   if(s==="tools") toolsInit();
   const inDesk=["desk","tmpl","settings"].includes(s); document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active", b.dataset.group ? inDesk : b.dataset.s===s)); const ns=$("navDesk"); if(ns) ns.classList.toggle("open",inDesk);

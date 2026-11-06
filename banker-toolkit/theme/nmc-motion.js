@@ -91,7 +91,7 @@
 
   /* ---------- entrance window + charts ---------- */
   let enterT = null;
-  function enter(ms){ if(reduce()) return; document.body.classList.remove("nmc-enter"); void document.body.offsetWidth; document.body.classList.add("nmc-enter"); clearTimeout(enterT); enterT = setTimeout(() => document.body.classList.remove("nmc-enter"), ms || 1800); charts(); }
+  function enter(ms){ if(reduce()) return; document.body.classList.remove("nmc-enter"); void document.body.offsetWidth; document.body.classList.add("nmc-enter"); clearTimeout(enterT); enterT = setTimeout(() => document.body.classList.remove("nmc-enter"), ms || 1000);   /* was 1.8s; the longest entrance now ends by ~0.9s */ charts(); }
   function charts(root){ (root || document).querySelectorAll("svg.chart path[stroke], svg.chart polyline").forEach(p => { if(p.dataset.len || typeof p.getTotalLength !== "function") return; try{ const L = p.getTotalLength(); if(L > 0){ p.dataset.len = "1"; p.style.setProperty("--len", L); } }catch(e){} }); }
 
   /* ---------- small satisfactions ---------- */
