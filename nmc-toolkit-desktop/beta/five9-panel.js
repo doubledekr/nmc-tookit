@@ -66,6 +66,8 @@
   function wouldDo(ev, r, m){
     if (ev.methodName === "screenPop" || ev.methodName === "searchAndScreenPop")
       return m ? `Call arriving — would bring up ${esc(m.kind === "client" ? m.c.name : (m.it.fields && m.it.fields.name) || "the Inbox entry")} in the toolkit` : `Call arriving${r.ani ? " from " + esc(r.ani) : ""} — not in the toolkit; would keep the screen-popped record details for the disposition`;
+    if (ev.methodName === "watcher-online") return `Nothing — the beta extension is running on this Salesforce ${ev.popout ? "popout" : "page"} (${esc(ev.host || "")}${esc(ev.page || "")})`;
+    if (ev.methodName === "other-origin") return `Nothing — heard an Open CTI message <b>${esc(ev.args && ev.args.method)}</b> from <b>${esc(ev.args && ev.args.origin)}</b> (not five9.com, so its contents weren’t kept). Send this to Claude.`;
     if (ev.methodName !== "saveLog") return "Nothing — recorded so we can see what Five9 sends";
     const b = box(r.disp); const flag = b.guessed ? ` <span class="f9-flag">${b.box === "unknown" ? "unknown disposition — Dave to map" : "guessed from the name — confirm"}</span>` : "";
     const lbl = `“${esc(r.disp || "no disposition")}” → ${BOX_NAME[b.box] || "—"} box${flag}: `;
@@ -135,11 +137,17 @@
   function copy(text, msg){ const done = () => { try { toast(msg); } catch (e) {} };
     const fallback = () => { const t = document.createElement("textarea"); t.value = text; t.style.cssText = "position:fixed;left:-9999px"; document.body.appendChild(t); t.select(); try { document.execCommand("copy"); } catch (e) {} t.remove(); done(); };
     try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); } }
-  function statusLine(){ const el = $("f9Status"); if (!el) return; const last = F9.events[F9.events.length - 1];
+  const DIAG = { "watcher-online": 1, "other-origin": 1 };
+  function statusLine(){ const el = $("f9Status"); if (!el) return; const calls = F9.events.filter(e => !DIAG[e.methodName]); const last = calls[calls.length - 1];
+    const w = F9.events.filter(e => e.methodName === "watcher-online"); const lw = w[w.length - 1];
+    const hm = iso => new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    const wline = lw ? `<div style="margin-top:3px">Beta extension last checked in from Salesforce at ${esc(hm(lw.receivedAt || lw.seenAt))}${lw.popout ? " (popout window)" : ""}.</div>`
+      : `<div style="margin-top:3px;color:var(--warn)">The beta extension hasn’t checked in from Salesforce yet — in Chrome, reload <b>NMC Beta</b> on chrome://extensions, then reload your Salesforce tab and the Five9 popout.</div>`;
     let port = 47832, listening = true; try { const s = DESK.sfStatus(); port = s.port; listening = s.listening; } catch (e) {}
     el.innerHTML = !listening ? `<span class="tag-warn">Listener isn’t running on port ${port}</span> — Five9 events can’t arrive` :
       last ? `<span class="tag-good">Listening for Five9 — last event ${esc(new Date(last.receivedAt || last.seenAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }))}</span> · ${F9.events.length} kept (last 200)` :
-      `<span class="tag-good">Listening for Five9</span> — nothing received yet`; }
+      `<span class="tag-good">Listening for Five9</span> — nothing received yet`;
+    if (listening) el.innerHTML += wline; }
   function row(ev){ const r = read(ev); const m = match(r);
     const name = m ? (m.kind === "client" ? `<b>${esc(m.c.name || "client")}</b> <span class="f9-k">(${esc(m.c.status || "")} · matched by ${m.by})</span>` : `<b>${esc((m.it.fields && m.it.fields.name) || "Inbox entry")}</b> <span class="f9-k">(Inbox · matched by ${m.by})</span>`) : `<span class="f9-k">not in toolkit</span>`;
     const bits = [r.disp && `<span class="f9-k">Disposition</span> <b>${esc(r.disp)}</b>`, r.type && `<span class="f9-k">Type</span> ${esc(r.type)}`, r.dur != null && r.dur !== "" && `<span class="f9-k">Duration</span> ${esc(dur(r.dur))}`,

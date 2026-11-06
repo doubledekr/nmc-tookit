@@ -2,7 +2,7 @@
    The Five9 Plus Adapter panel is an iframe from app.five9.com inside Salesforce Lightning. It tells Salesforce what is happening on a call
    through Open CTI: parent.postMessage({methodName, callId, apiVersion, apiType, args, ...}) — or opener.parent.postMessage when the panel is
    popped out. This script only LISTENS to those messages on the Salesforce page and hands a copy to the NMC Toolkit Beta app on this computer.
-   It never posts anything to Five9, never answers Five9, and never changes anything in Salesforce. Top frame only (see manifest). */
+   It never posts anything to Five9, never answers Five9, and never changes anything in Salesforce. Beta 2: runs in every Salesforce frame (the adapter may post to a frame inside the page, not the top window). */
 (function(){
   if (window.__nmcFive9Watch) return; window.__nmcFive9Watch = true;
   const FIVE9 = /^https:\/\/([a-z0-9-]+\.)*five9\.com$/i;
@@ -22,15 +22,23 @@
       return o; }
     return undefined; }   /* functions etc. */
   function alive(){ try { return !!(chrome.runtime && chrome.runtime.id); } catch (e) { return false; } }
+  const TOP = window === window.top;
+  function relay(ev){ try { chrome.runtime.sendMessage({ type: "nmc:five9", ev }, () => { void chrome.runtime.lastError; }); } catch (err) {} }
+  const base = () => ({ page: location.pathname.slice(0, 200), host: location.hostname, frame: TOP ? "top" : "sub", popout: /\/lightning\/popout\//.test(location.pathname), seenAt: new Date().toISOString() });
+  /* diagnostics (beta 2): Dave's first real call recorded nothing, so the beta now says where it is running and what it hears,
+     without the message contents: a "watcher online" note from each Salesforce top window, and the origin + method name of any
+     Open CTI-shaped message that does NOT come from five9.com (in case the adapter is served from another domain). */
+  if (TOP && alive()) setTimeout(() => relay(Object.assign({ methodName: "watcher-online", important: false, args: { five9Frames: document.querySelectorAll('iframe[src*="five9"]').length, frames: window.frames.length } }, base())), 1500);
+  const otherSeen = {};
   window.addEventListener("message", (e) => {
-    if (!FIVE9.test(e.origin || "")) return;
     let d = e.data;
-    if (typeof d === "string"){ if (d.length > 200000) return; try { d = JSON.parse(d); } catch (err) { return; } }
+    if (typeof d === "string"){ if (d.length > 200000 || d.indexOf("methodName") < 0) return; try { d = JSON.parse(d); } catch (err) { return; } }
     if (!d || typeof d !== "object" || typeof d.methodName !== "string" || !d.methodName) return;
     if (!alive()) return;
-    const ev = { methodName: d.methodName.slice(0, 80), important: !!IMPORTANT[d.methodName], callId: d.callId == null ? null : String(d.callId).slice(0, 80),
+    if (!FIVE9.test(e.origin || "")){ const k = (e.origin || "?") + "|" + d.methodName; if (otherSeen[k] || Object.keys(otherSeen).length > 40) return; otherSeen[k] = 1;
+      relay(Object.assign({ methodName: "other-origin", important: false, args: { origin: String(e.origin || "").slice(0, 120), method: d.methodName.slice(0, 80) } }, base())); return; }
+    relay(Object.assign({ methodName: d.methodName.slice(0, 80), important: !!IMPORTANT[d.methodName], callId: d.callId == null ? null : String(d.callId).slice(0, 80),
       apiVersion: d.apiVersion == null ? null : String(d.apiVersion).slice(0, 20), apiType: d.apiType == null ? null : String(d.apiType).slice(0, 40),
-      args: clean(d.args, 0), origin: e.origin, page: location.pathname.slice(0, 200), popout: /\/lightning\/popout\//.test(location.pathname), seenAt: new Date().toISOString() };
-    try { chrome.runtime.sendMessage({ type: "nmc:five9", ev }, () => { void chrome.runtime.lastError; }); } catch (err) {}
+      args: clean(d.args, 0), origin: e.origin }, base()));
   }, false);
 })();

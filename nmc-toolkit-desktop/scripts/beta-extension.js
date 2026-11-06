@@ -21,7 +21,7 @@ if (/^NMC Beta/.test(mf.name)) { console.log("beta-extension: already applied in
 mf.name = NAME;
 mf.description = "BETA test build — pairs with NMC Toolkit Beta only (port " + BETA_PORT + "). Sends Salesforce leads, fills lender pricing pages, and records Five9 call events (listen-only).";
 mf.action = Object.assign({}, mf.action, { default_title: "NMC BETA — send this lead to NMC Toolkit Beta" });
-mf.content_scripts = (mf.content_scripts || []).concat([{ matches: ["https://*.lightning.force.com/*"], js: ["five9-watch.js"], run_at: "document_start", all_frames: false }]);
+mf.content_scripts = (mf.content_scripts || []).concat([{ matches: ["https://*.force.com/*", "https://*.salesforce.com/*"], js: ["five9-watch.js"], run_at: "document_start", all_frames: true }]);
 fs.writeFileSync(path.join(dir, "manifest.json"), JSON.stringify(mf, null, 2) + "\n");
 
 edit("background.js", s => must(s, /const DEFAULT_PORT = 47831;/, "const DEFAULT_PORT = " + BETA_PORT + ";   /* NMC Beta: the beta app's port */", "DEFAULT_PORT")
