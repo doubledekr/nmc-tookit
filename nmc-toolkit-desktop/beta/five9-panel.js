@@ -19,13 +19,19 @@
   function task(ev){ let t = null; walk(ev.args, (v) => { if (!t && v && typeof v === "object" && !Array.isArray(v) && ("CallDisposition" in v || "WhoId" in v || "CallType" in v)) t = v; }, 0); return t || {}; }
   function read(ev){
     const t = task(ev); const r = { disp: t.CallDisposition || "", type: t.CallType || "", dur: t.CallDurationInSeconds, comments: t.Description || t.Comments || t.Five9__Comments__c || "",
-      who: t.WhoId || "", what: t.WhatId || "", subject: t.Subject || "", session: t.Five9__Five9SessionId__c || "", ani: "", ids: [], callback: "" };
+      who: t.WhoId || "", what: t.WhatId || "", subject: t.Subject || "", session: t.Five9__Five9SessionId__c || "", ani: "", ids: [], callback: "", phones: [],
+      campaign: t.Five9Campaign__c || "" };
     walk(ev.args, (v, k) => {
       if (typeof v === "string"){
         if (ID_RE.test(v) && !r.ids.includes(v)) r.ids.push(v);
-        if (!r.ani && /^(ani|dnis|phone|phonenumber|number|from|callerid|caller)$/i.test(k || "") && last10(v)) r.ani = v;
+        if (/^(ani|dnis|phone|phonenumber|number|number\d|from|callerid|caller|five9ani__c|five9dnis__c|callbacknumber)$/i.test(k || "") && last10(v) && !r.phones.includes(last10(v))) r.phones.push(last10(v));
+        if (!r.campaign && /^(campaignname|five9campaign__c)$/i.test(k || "")) r.campaign = v;
         const rec = /lightning\/r\//.test(v) && recordFromUrl(v); if (rec && !r.ids.includes(rec.id)) r.ids.push(rec.id);
         if (!r.callback && /callback|redial|reminder/i.test(k || "") && /\d{4}-\d{2}-\d{2}|\d{1,2}\/\d{1,2}/.test(v)) r.callback = v; } }, 0);
+    /* Five9 puts the client's number in DNIS on an outbound call and in ANI on an inbound one */
+    const dn = last10(t.Five9DNIS__c), an = last10(t.Five9ANI__c), out = /out/i.test(r.type);
+    r.ani = (out ? dn || an : an || dn) || r.phones[0] || "";
+    if (r.ani && !r.phones.includes(r.ani)) r.phones.unshift(r.ani); else if (r.ani) { r.phones = [r.ani].concat(r.phones.filter(x => x !== r.ani)); }
     if (!r.ani){ walk(ev.args, (v) => { if (!r.ani && typeof v === "string" && /^\+?1?[\s.(-]*\d{3}[\s.)-]*\d{3}[\s.-]*\d{4}$/.test(v.trim())) r.ani = v; }, 0); }
     r.record = r.who || r.ids.find(x => /^(00Q|003)/.test(x)) || r.what || r.ids.find(x => !/^00T/.test(x)) || "";
     return r; }
@@ -40,13 +46,13 @@
     if (ids.length){
       const c = (s.clients || []).find(c => !c.quick && c.sfId && ids.includes(id15(c.sfId))); if (c) return { kind: "client", c, by: "record ID" };
       const it = (s.inbox || []).find(x => x.sfId && ids.includes(id15(x.sfId))); if (it) return { kind: "inbox", it, by: "record ID" }; }
-    const p = last10(r.ani);
-    if (p){ const c = (s.clients || []).find(c => !c.quick && last10(c.phone) === p); if (c) return { kind: "client", c, by: "phone" };
+    for (const p of (r.phones && r.phones.length ? r.phones : [last10(r.ani)]).filter(Boolean)){
+      const c = (s.clients || []).find(c => !c.quick && last10(c.phone) === p); if (c) return { kind: "client", c, by: "phone" };
       const it = (s.inbox || []).find(x => x.fields && last10(x.fields.phone) === p); if (it) return { kind: "inbox", it, by: "phone" }; }
     return null; }
 
   /* ---------- phase-2 preview: which toolkit "box" a disposition lands in ---------- */
-  const MAP = { "no answer": "noanswer", "busy": "noanswer", "answering machine": "noanswer", "dead air": "noanswer", "left message": "noanswer", "left voicemail": "noanswer", "voicemail": "noanswer",
+  const MAP = { "no answer": "noanswer", "busy": "noanswer", "answering machine": "noanswer", "dead air": "noanswer", "left message": "noanswer", "left vm - no answer": "noanswer", "left vm": "noanswer", "no answer - left vm": "noanswer", "left voicemail": "noanswer", "voicemail": "noanswer",
     "not interested": "stop", "add to dnc list": "remove", "dnc": "remove", "do not call": "remove",
     "scheduled callback": "appt", "appointment": "appt", "appointment set": "appt", "appointment scheduled": "appt",
     "application": "status", "app taken": "status",
@@ -151,7 +157,7 @@
   function row(ev){ const r = read(ev); const m = match(r);
     const name = m ? (m.kind === "client" ? `<b>${esc(m.c.name || "client")}</b> <span class="f9-k">(${esc(m.c.status || "")} · matched by ${m.by})</span>` : `<b>${esc((m.it.fields && m.it.fields.name) || "Inbox entry")}</b> <span class="f9-k">(Inbox · matched by ${m.by})</span>`) : `<span class="f9-k">not in toolkit</span>`;
     const bits = [r.disp && `<span class="f9-k">Disposition</span> <b>${esc(r.disp)}</b>`, r.type && `<span class="f9-k">Type</span> ${esc(r.type)}`, r.dur != null && r.dur !== "" && `<span class="f9-k">Duration</span> ${esc(dur(r.dur))}`,
-      r.ani && `<span class="f9-k">Number</span> ${esc(r.ani)}`, `<span class="f9-k">Record</span> ${r.record ? esc(r.record) : "—"}`].filter(Boolean).join(" · ");
+      r.ani && `<span class="f9-k">Number</span> ${esc(r.ani)}`, r.campaign && `<span class="f9-k">Campaign</span> ${esc(r.campaign)}`, `<span class="f9-k">Record</span> ${r.record ? esc(r.record) : "—"}`].filter(Boolean).join(" · ");
     return `<div class="f9-ev${ev.important ? " imp" : ""}"><div class="f9-top"><span class="f9-t">${esc(fmtT(ev.receivedAt || ev.seenAt))}</span><span class="f9-m">${esc(ev.methodName)}</span>${ev.popout ? '<span class="f9-k">· popped out</span>' : ""}<span style="flex:1"></span>
       <button class="btn ghost small" data-f9="raw" data-n="${ev.n}">${F9.open[ev.n] ? "Hide JSON" : "Show JSON"}</button><button class="btn ghost small" data-f9="copy" data-n="${ev.n}">Copy raw JSON</button></div>
       <div>${bits}</div><div><span class="f9-k">Client</span> ${name}</div>${r.comments ? `<div><span class="f9-k">Comments</span> ${esc(String(r.comments).slice(0, 400))}</div>` : ""}

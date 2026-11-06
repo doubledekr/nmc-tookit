@@ -17,6 +17,10 @@
     if (v == null || typeof v === "number" || typeof v === "boolean") return v;
     if (typeof v === "string") return scrubText(v.length > 4000 ? v.slice(0, 4000) + "…" : v);
     if (Array.isArray(v)) return v.slice(0, 50).map(x => clean(x, depth + 1));
+    /* Five9 call variables ({name, dataType, value}) can be any field the campaign carries, under unreadable names; keep Five9's own
+       f9_* ones and phone numbers, and drop the value of anything else (it could be a birthdate or other detail we never keep) */
+    if (typeof v === "object" && !Array.isArray(v) && "dataType" in v && "name" in v && "value" in v && !/^f9_|^number\d*$/i.test(String(v.name)) && !/PHONE/i.test(String(v.dataType)))
+      { const rest = Object.assign({}, v); delete rest.value; return Object.assign(clean(rest, depth), { value: "[not kept]" }); }
     if (typeof v === "object"){ const o = {}; let n = 0;
       for (const k of Object.keys(v)){ if (++n > 120) break; if (NEVER_LINE.test(k) && !/^Five9__/.test(k)) { o[k] = "[removed]"; continue; } o[k] = clean(v[k], depth + 1); }
       return o; }
