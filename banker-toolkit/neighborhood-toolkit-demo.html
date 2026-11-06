@@ -879,6 +879,21 @@ body.nmc-band.nmc-mac .nmc-tb .l{padding-left:84px}   /* room for the traffic li
 .fuq-strip .fq-b{all:unset;cursor:pointer;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:#fff;white-space:nowrap;transition:all .14s}
 .fuq-strip .fq-b:hover{border-color:var(--brand);color:var(--brand)}.fuq-strip .fq-b.x{color:var(--muted)}
 .atile.fq .al{font-weight:700}
+
+/* VA IRRRL fee recoupment (banker-only) */
+.vrtabs{display:inline-flex;gap:0;background:rgba(255,255,255,.8);border:1px solid var(--line);border-radius:999px;padding:3px;margin:0 0 12px}
+.vrtabs button{background:transparent;border:0;color:var(--muted);font:600 12.5px var(--sans);padding:0 14px;min-height:28px;border-radius:999px;cursor:pointer}
+.vrtabs button.on{background:var(--brand);color:#fff}
+.vrtabs .vrwarn{align-self:center;margin:0 10px 0 6px;font-size:12px;color:var(--warn);font-weight:600}
+.vr{max-width:760px}
+.vr .vrrow{display:grid;grid-template-columns:1fr 180px;gap:6px 14px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}
+.vr .vrrow label{font-size:13px;font-weight:600;color:var(--ink);text-transform:none;letter-spacing:0;margin:0}
+.vr .vrrow .hint{grid-column:1/2;margin:0;font-size:11.5px}
+.vr .vrrow input{text-align:right;font-variant-numeric:tabular-nums}
+.vr .vrrow input.bad{border-color:#A53222;background:#FBECE9}
+.vr .vrrow.ro{background:var(--cream-soft);padding:8px 8px;border-radius:8px;border-bottom:0;margin:6px 0}
+.vr .vrrow.ro .v{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.vr .loancheck{margin-top:12px}
 </style>
 </head>
 <body>
@@ -1669,7 +1684,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.20.1";
+const TOOLKIT_VERSION = "1.20.2";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
