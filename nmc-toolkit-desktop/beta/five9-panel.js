@@ -73,6 +73,7 @@
     if (ev.methodName === "screenPop" || ev.methodName === "searchAndScreenPop")
       return m ? `Call arriving — would bring up ${esc(m.kind === "client" ? m.c.name : (m.it.fields && m.it.fields.name) || "the Inbox entry")} in the toolkit` : `Call arriving${r.ani ? " from " + esc(r.ani) : ""} — not in the toolkit; would keep the screen-popped record details for the disposition`;
     if (ev.methodName === "watcher-online") return `Nothing — the beta extension is running on this Salesforce ${ev.popout ? "popout" : "page"} (${esc(ev.host || "")}${esc(ev.page || "")})`;
+    if (ev.methodName === "auto-skip") return `Didn’t auto-send record ${esc(ev.args && ev.args.record)} — ${esc(ev.args && ev.args.reason)}`;
     if (ev.methodName === "other-origin") return `Nothing — heard an Open CTI message <b>${esc(ev.args && ev.args.method)}</b> from <b>${esc(ev.args && ev.args.origin)}</b> (not five9.com, so its contents weren’t kept). Send this to Claude.`;
     if (ev.methodName !== "saveLog") return "Nothing — recorded so we can see what Five9 sends";
     const b = box(r.disp); const flag = b.guessed ? ` <span class="f9-flag">${b.box === "unknown" ? "unknown disposition — Dave to map" : "guessed from the name — confirm"}</span>` : "";
@@ -143,7 +144,7 @@
   function copy(text, msg){ const done = () => { try { toast(msg); } catch (e) {} };
     const fallback = () => { const t = document.createElement("textarea"); t.value = text; t.style.cssText = "position:fixed;left:-9999px"; document.body.appendChild(t); t.select(); try { document.execCommand("copy"); } catch (e) {} t.remove(); done(); };
     try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); } }
-  const DIAG = { "watcher-online": 1, "other-origin": 1 };
+  const DIAG = { "watcher-online": 1, "other-origin": 1, "auto-skip": 1 };
   function statusLine(){ const el = $("f9Status"); if (!el) return; const calls = F9.events.filter(e => !DIAG[e.methodName]); const last = calls[calls.length - 1];
     const w = F9.events.filter(e => e.methodName === "watcher-online"); const lw = w[w.length - 1];
     const hm = iso => new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
@@ -177,7 +178,10 @@
     const c = (s.clients || []).find(c => !c.quick && em && (c.email || "").toLowerCase() === em) || (s.clients || []).find(c => !c.quick && nm && (c.name || "").toLowerCase() === nm);
     if (c && !c.sfId) c.sfId = rec.id;
     save(); setTimeout(render, 0);
-    if (p.via === "five9-auto" && it) autoOpen(it, rec); } catch (e) { console.warn("five9 beta: record id", e); } }
+    if (/^five9-auto/.test(p.via || "") && it){ it.f9check = (/check=(\w+)/.exec(p.via) || [])[1] || ""; const call = curCall();
+      if (call) call.items.push(it.id);
+      else if (F9.call && F9.call.note && Date.now() - F9.call.closedAt < 60000 && !F9.call.items.length){ F9.call.items.push(it.id); it.f9 = (it.f9 || []).concat([F9.call.note]); }   /* dispositioned before the record finished sending */
+      save(); autoOpen(it, rec); } } catch (e) { console.warn("five9 beta: record id", e); } }
 
   /* ---------- a Five9 call sent this lead automatically: open it (Dave's rules) ----------
      · already a client → open their workspace. When the read shares their phone or email, the toolkit's own "already in your pipeline —
@@ -188,6 +192,8 @@
     const c = (s.clients || []).find(c => !c.quick && c.sfId && id15(c.sfId) === id15(rec.id)) || (s.clients || []).find(c => !c.quick && em && (c.email || "").toLowerCase() === em) || (s.clients || []).find(c => !c.quick && nm && (c.name || "").toLowerCase() === nm);
     let inFuq = false; try { inFuq = !!fuqLive; } catch (e) {}
     if (inFuq){ toast("Five9 call: " + (F.name || "lead") + (c ? " — already a client" : " — new, in your Inbox") + ". Follow-up mode left as is."); return; }
+    { const call = curCall() || (F9.call && F9.call.note && Date.now() - F9.call.closedAt < 60000 ? F9.call : null);
+      if (call && c && !call.clients.includes(c.id)){ call.clients.push(c.id); if (!curCall() && call.note){ c.f9 = (c.f9 || []).concat([call.note]).slice(-10); save(); } } }
     if (!c){ toast("Five9 call: new lead " + (F.name || "") + " — top of your Pipeline Inbox. Import when you\u2019re ready."); return; }
     s.currentId = c.id; save(); refreshAll(); go("client");
     const same = (ph && last10(c.phone) === ph) || (em && (c.email || "").toLowerCase() === em);
@@ -195,10 +201,54 @@
       toast("Five9 call: " + (c.name || "client") + " opened — \u201cUpdate their numbers\u201d applies the Salesforce read; nothing changed yet"); return; }
     toast("Five9 call: " + (c.name || "client") + " opened — the Salesforce read is in your Inbox if you want to apply it"); }
 
+  /* ---------- the Five9 disposition, written onto the leads that call staged ----------
+     A call opens at screenPop / searchAndScreenPop / disableClickToDial and closes at its saveLog (Set Disposition) or after 10 min.
+     On saveLog the disposition goes onto: every Inbox entry the call auto-sent, the client it opened, and any Inbox entry whose phone or
+     record ID matches the log. Stored as it.f9 / c.f9 = [{disp, at, type, dur, campaign}] — the Inbox row shows it, and Import carries
+     it onto the client. Display only: no status, follow-up or log changes. */
+  const START = { screenPop: 1, searchAndScreenPop: 1, disableClickToDial: 1 };
+  function curCall(){ const c = F9.call; return c && !c.closed && Date.now() - c.at < 10 * 60 * 1000 ? c : null; }
+  function onCallEvent(ev){ const s = st(); if (!s) return;
+    if (START[ev.methodName] && !curCall()) F9.call = { at: Date.now(), items: [], clients: [] };
+    if (ev.methodName !== "saveLog") return;
+    const r = read(ev); if (!r.disp) return;
+    const note = { disp: String(r.disp).slice(0, 80), at: ev.receivedAt || ev.seenAt || new Date().toISOString(), type: r.type || "", dur: r.dur == null ? "" : r.dur, campaign: r.campaign || "" };
+    const call = curCall() || { items: [], clients: [] }; const ids = [r.record].concat(r.ids).filter(Boolean).map(id15);
+    const add = (o) => { o.f9 = (o.f9 || []).filter(x => !(x.at === note.at && x.disp === note.disp)); o.f9.push(note); if (o.f9.length > 10) o.f9 = o.f9.slice(-10); };
+    let n = 0;
+    for (const it of s.inbox || []){ const ph = last10(it.fields && it.fields.phone);
+      if (call.items.includes(it.id) || (it.sfId && ids.includes(id15(it.sfId))) || (ph && r.phones.includes(ph))){ add(it); n++; } }
+    for (const c of s.clients || []){ if (c.quick) continue;
+      if (call.clients.includes(c.id) || (c.sfId && ids.includes(id15(c.sfId))) || (last10(c.phone) && r.phones.includes(last10(c.phone)))){ add(c); n++; } }
+    if (F9.call && !F9.call.closed){ F9.call.closed = true; F9.call.closedAt = Date.now(); F9.call.note = note; }
+    if (n){ save(); try { if (document.getElementById("s-pipeline").classList.contains("active")) renderPipeline(); } catch (e) {} decorate(); } }
+  function f9Label(list){ if (!list || !list.length) return ""; const x = list[list.length - 1];
+    const t = new Date(x.at); const when = t.toDateString() === new Date().toDateString() ? t.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : t.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " " + t.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+    return `Five9: <b>${esc(x.disp)}</b> · ${esc(when)}${list.length > 1 ? ` <span style="opacity:.75">(+${list.length - 1} earlier)</span>` : ""}`; }
+  /* Inbox rows: a small badge next to Import / Ignore. The pipeline redraws its HTML, so this re-applies after every redraw. */
+  let decoQueued = false;
+  function decorate(){ const s = st(); if (!s) return;
+    document.querySelectorAll('button[onclick^="importInbox(\'"]').forEach(b => { const id = (/importInbox\('([^']+)'\)/.exec(b.getAttribute("onclick")) || [])[1];
+      const it = (s.inbox || []).find(x => x.id === id); const row = b.parentElement; if (!row) return; let tag = row.querySelector(".f9-inb");
+      if (!it || !it.f9 || !it.f9.length){ if (tag) tag.remove(); return; }
+      const html = f9Label(it.f9); if (tag && tag.innerHTML === html) return;
+      if (!tag){ tag = document.createElement("span"); tag.className = "f9-inb"; row.insertBefore(tag, row.firstChild); }
+      tag.style.cssText = "font-size:11.5px;background:#EEE9F8;color:#3E2A7A;border-radius:999px;padding:2px 9px;margin-right:6px;white-space:nowrap"; tag.title = it.f9.map(x => x.disp + " — " + new Date(x.at).toLocaleString()).join("\n"); tag.innerHTML = html; }); }
+  new MutationObserver(() => { if (decoQueued) return; decoQueued = true; requestAnimationFrame(() => { decoQueued = false; decorate(); }); }).observe(document.body, { childList: true, subtree: true });
+  /* Import carries the call notes onto the client it creates or opens */
+  if (typeof W.importInbox === "function" && !W.importInbox.__f9){ const orig = W.importInbox;
+    W.importInbox = function(id){ const s = st(); const it = s && (s.inbox || []).find(x => x.id === id); const notes = it && it.f9 ? it.f9.slice() : null;
+      const out = orig.apply(this, arguments);
+      if (notes) setTimeout(() => { const c = (st().clients || []).find(c => c.id === st().currentId); if (!c) return;
+        c.f9 = (c.f9 || []).concat(notes.filter(n => !(c.f9 || []).some(x => x.at === n.at && x.disp === n.disp))).slice(-10); save();
+        try { toast("Five9 on this lead: " + notes.map(n => n.disp).join(", ")); } catch (e) {} }, 0);
+      return out; };
+    W.importInbox.__f9 = true; }
+
   W.nmcFive9Init = function(o){ F9.events = (o && o.events) || []; if (!F9.hooked){ F9.hooked = true; try { DESK.onSfIncoming(onSf); } catch (e) {}
       setInterval(statusLine, 30000); }
     render(); };
-  W.nmcFive9Push = function(ev){ F9.events.push(ev); if (F9.events.length > 200) F9.events = F9.events.slice(-200); render();
+  W.nmcFive9Push = function(ev){ F9.events.push(ev); if (F9.events.length > 200) F9.events = F9.events.slice(-200); try { onCallEvent(ev); } catch (e) { console.warn("five9 beta: call note", e); } render();
     if (ev.methodName === "saveLog"){ const r = read(ev); try { toast("Five9 recorded: " + (r.disp || "call log") + " — nothing changed (beta)"); } catch (e) {} } };
   W.nmcFive9Debug = { read, match, box, wouldDo };   /* for tests */
 })();
