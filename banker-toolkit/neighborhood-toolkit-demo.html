@@ -419,7 +419,7 @@ nav button{padding:8px 16px 8px 32px;font-size:13.5px;min-height:34px}nav button
 
 </style>
 <style id="nmcTheme">
-/* generated from theme/nmc-theme.css — edit that file, not this block · 3a1b584dc9e87d31 */
+/* generated from theme/nmc-theme.css — edit that file, not this block · 98f82845e5152f7b */
 /* ============================================================================
    NMC theme — the shared look for Neighborhood Mortgage tools
    (Toolkit, Rate Desk). Red + glass, quiet tags, drawn icons, and the motion
@@ -932,6 +932,11 @@ body.nmc-band.nmc-mac .nmc-tb .l{padding-left:84px}   /* room for the traffic li
 @keyframes row-upd{0%{background-color:#FFF1CF}100%{background-color:transparent}}
 @media (prefers-reduced-motion:reduce){.clientbar .cb-upd,#pipeTable tbody tr.row-upd > td{animation:none}}
 .fuq-strip .fq-t,.fuq-strip .fq-n,.fuq-strip .fq-b{white-space:nowrap;flex:none}.fuq-strip .fq-rev,.fuq-strip .fq-flash,.fuq-strip .fq-hint{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+/* Five9 marks set at Import (DNC, Not interested as of…, Spanish speaker, wrong number / info) — client bar + pipeline rows */
+.f9m{display:inline-flex;align-items:center;font-size:11px;font-weight:600;border-radius:999px;padding:1px 8px;line-height:1.5;white-space:nowrap;margin-left:6px}
+.f9m.warn{background:#FBE7E3;color:#8F3223}
+.f9m.flat{background:#EEE9F8;color:#3E2A7A}
+.ps .f9m,.pc .f9m{margin-left:0}
 </style>
 </head>
 <body>
@@ -1723,7 +1728,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.21.0";
+const TOOLKIT_VERSION = "1.22.0";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1759,6 +1764,17 @@ const onRateWatch=c=>!c.quick&&!isDone(c)&&isInelig(c)&&!!c.ineligRate&&c.target
 const onSeasonWatch=c=>!c.quick&&!isDone(c)&&isInelig(c)&&!!c.ineligSeason&&!!c.seasonDate;
 const ineligWhy=c=>{ if(!isInelig(c)) return ""; const w=[]; if(c.ineligRate) w.push("rate"); if(c.ineligSeason) w.push("seasoning"); if(c.ineligFull||!w.length) return "fully ineligible"; return w.join(" + "); };
 const isDone=c=>c.status===S_DONE||c.status==="Lost";
+/* Five9 marks, set when a lead is imported (five9/five9-panel.js): DNC, Not interested as of…, Spanish speaker, wrong number / wrong info.
+   A DNC client is never suggested for a call: left out of follow-ups, hot/eligible alerts and the follow-up queue. */
+function isDNC(c){ return !!(c&&c.f9flags&&c.f9flags.dnc); }
+function f9Marks(c){ const f=(c&&c.f9flags)||{}, out=[];
+  if(f.dnc) out.push(["warn","DNC \u2014 do not call"]);
+  if(c&&c.notInt&&c.notInt.at) out.push(["flat","Not interested as of "+pipeDate(c.notInt.at)+(c.notInt.suggested?" \u00b7 Five9 suggested "+pipeDate(c.notInt.suggested):"")]);
+  if(f.wrongNumber) out.push(["warn","Wrong number"]);
+  if(f.wrongInfo) out.push(["warn","Wrong info"]);
+  if(f.spanish) out.push(["flat","Spanish speaker"]);
+  return out; }
+function f9MarksHTML(c){ return f9Marks(c).map(([k,t])=>`<span class="f9m ${k}">${esc(t)}</span>`).join(""); }
 function nextBizDay(){ const d=new Date(); d.setDate(d.getDate()+1); while(d.getDay()===0||d.getDay()===6) d.setDate(d.getDate()+1); return d.toLocaleDateString("en-CA"); }
 /* side effects of a disposition: Complete = loan sold & closed (counts toward the month); Ineligible-rate needs the rate to reach; follow-up needs a date */
 function applyDispo(c){ if(c.status===S_DONE&&!c.closedAt) c.closedAt=new Date().toLocaleDateString("en-CA");
@@ -2103,7 +2119,7 @@ function fuqStampMs(w){ const m=/^(\d{4})-(\d{2})-(\d{2}) (\d{1,2}):(\d{2})\s*([
 function fuqIsAppt(c){ return c.apptLen>0&&!!c.followUpTime; }
 /* who belongs in today's follow-ups: active, due today or overdue, not a firm appointment (those are on the calendar) */
 function fuqCandidates(){ const today=todayStr(); const hs=new Set(eligibleIds());
-  return state.clients.filter(c=>!c.quick&&!isDone(c)&&c.status!=="Lost"&&c.followUp&&c.followUp<=today&&!fuqIsAppt(c))
+  return state.clients.filter(c=>!c.quick&&!isDone(c)&&!isDNC(c)&&c.status!=="Lost"&&c.followUp&&c.followUp<=today&&!fuqIsAppt(c))
     .sort((a,b)=>a.followUp.localeCompare(b.followUp) || (hs.has(b.id)-hs.has(a.id)) || (a.followUpTime||"99").localeCompare(b.followUpTime||"99") || (a.name||"").localeCompare(b.name||"")); }
 /* handled since the session started: any logged contact or sent proposal, an appointment, the follow-up moved out or cleared, closed/lost */
 function fuqHandled(c,started){ if(!c) return "gone"; const today=todayStr(); const from=Math.floor(started/60000)*60000;   /* log stamps are to the minute */
@@ -2204,7 +2220,7 @@ function renderClientBar(){ const bar=$("clientBar"); if(!bar) return; const c=c
     { const e=rdEligibleNow(c); if(e) facts.push(`<span class="tag-good" title="Eligible under today\u2019s rate desk rates">\u2728 eligible since ${pct(e.rate)} (${RD_TIER_LABEL[e.tier]}${e.assumed?", score?":""})</span>`); }
     if(c.hot) facts.push(`<span class="tag-warn">\uD83D\uDD25 hot</span>`); { const fi=futureInfo(c); if(fi) facts.push(`<span class="${fi.tag}">${fi.txt.replace(/ \u2014 .*$/,"")}</span>`); }
     { const t=clientTime(c); const tz=clientTz(c); if(t) facts.push(`<span class="tag-flat" title="${esc(tz)}">\uD83D\uDD52 <span class="cbt"></span>${tz!=="America/New_York"?" (their time)":""}</span>`); }
-    bar.innerHTML=`<div class="inner">${fuqStripHTML(c)}${card}${bell}<span class="hint" style="margin:0">Working with</span><span class="who">${esc(c.name)}</span>${c.phone?`<span class="pc-chip cb-phone" data-copy="${esc(c.phone)}" title="Click to copy" onclick="copyChip(event)">${NMC.icon("phone")}${esc(c.phone)}</span>`:""}${cbControlsHTML(c)}<div class="facts">${facts.join("")}</div><span style="flex:1"></span><span style="display:inline-flex;gap:6px;align-items:center;white-space:nowrap">${sel}<button class="btn ghost small" onclick="go('client')">Open</button><button class="btn ghost small" onclick="clearClient()" title="Deselect">\u2715</button></span></div>`; }
+    bar.innerHTML=`<div class="inner">${fuqStripHTML(c)}${card}${bell}<span class="hint" style="margin:0">Working with</span><span class="who">${esc(c.name)}</span>${f9MarksHTML(c)}${c.phone?`<span class="pc-chip cb-phone" data-copy="${esc(c.phone)}" title="Click to copy" onclick="copyChip(event)">${NMC.icon("phone")}${esc(c.phone)}</span>`:""}${cbControlsHTML(c)}<div class="facts">${facts.join("")}</div><span style="flex:1"></span><span style="display:inline-flex;gap:6px;align-items:center;white-space:nowrap">${sel}<button class="btn ghost small" onclick="go('client')">Open</button><button class="btn ghost small" onclick="clearClient()" title="Deselect">\u2715</button></span></div>`; }
   cbClockFill(); const gp=$("gClientPicker"); if(gp) guardHTML(gp);
   const g=$("gClientPicker"); if(g){ g.innerHTML = state.clients.length ? `<option value="" ${!state.currentId?"selected":""}>\u2014 choose a client \u2014</option>`+state.clients.map(x=>`<option value="${x.id}" ${x.id===state.currentId?"selected":""}>${x.quick?"\u26A1 ":""}${esc(x.name)}</option>`).join("") : `<option value="">\u2014 no clients yet \u2014</option>`; }
 }
@@ -2476,7 +2492,7 @@ function sortVal(c,k){ if(k==="eligible"){ const wi=rdWindowInfo(c); const e=rdE
 function th(k,label,cls){ const on=pipeSort.key===k; return `<th class="${cls||""}" style="cursor:pointer;user-select:none;white-space:nowrap" title="Sort by ${label.replace(/&amp;/g,"&")}" onclick="setPipeSort('${k}')">${label}${on?(pipeSort.dir===1?" \u25b2":" \u25bc"):""}</th>`; }
 function pipeAlerts(){
   const today=new Date().toLocaleDateString("en-CA");
-  const act=c=>!c.quick&&!isDone(c);
+  const act=c=>!c.quick&&!isDone(c)&&!isDNC(c);
   const hotSet=new Set(eligibleIds());
   const hot=state.clients.filter(c=>act(c)&&hotSet.has(c.id));
   const due=state.clients.filter(c=>act(c)&&c.followUp&&c.followUp<=today);
@@ -2669,7 +2685,7 @@ function rateGapHTML(c){ if(!(c.rate>0)||c.freeClear||c.quick) return ""; let tr
 function pipeOppHTML(op){ const full=String(op.txt||"").replace(/<[^>]+>/g,""); const short=full.split(/ \u2014 |: /)[0].replace(/^\u23F3\s?/,""); const cls=op.tag==="tag-warn"?"warn":op.tag==="tag-flat"?"flat":""; const icon=/streamline/i.test(full)?"bolt":/waiting/i.test(full)?"hourglass":/follow-up/i.test(full)?"clock":/future|buyer/i.test(full)?"home":"";
   return `<span class="pot ${cls}" title="${esc(full)}">${icon?NMC.icon(icon):""}${esc(short)}</span>`; }
 /* groups, in the order a banker works them; only when the list isn't explicitly sorted or filtered to one kind */
-function pipeGrouped(rows,hs){ if(pipeSort.key||pipeView!=="all") return rows.map(c=>({c})); const today=todayStr(); const g=c=>{ if(c.followUp&&!isDone(c)&&c.followUp<=today) return 0; if(rdWindowInfo(c)) return 1; if(hs.has(c.id)||c.hot) return 2; return 3; };
+function pipeGrouped(rows,hs){ if(pipeSort.key||pipeView!=="all") return rows.map(c=>({c})); const today=todayStr(); const g=c=>{ if(isDNC(c)) return 3; if(c.followUp&&!isDone(c)&&c.followUp<=today) return 0; if(rdWindowInfo(c)) return 1; if(hs.has(c.id)||c.hot) return 2; return 3; };
   const L=[["now","Needs you today"],["fresh","Newly eligible"],["hot","Hot leads"],["rest","Everyone else"]]; const buckets=[[],[],[],[]]; rows.forEach(c=>buckets[g(c)].push(c)); const out=[]; const nonEmpty=buckets.filter(b=>b.length).length;
   buckets.forEach((b,i)=>{ if(!b.length) return; if(nonEmpty>1) out.push({group:L[i][0],label:L[i][1],n:b.length}); b.forEach(c=>out.push({c})); }); return out; }
 /* compact pop-out: size the hovered row's backdrop to the widest row and the tallest detail overlay (set once per row per render) */
@@ -2697,14 +2713,15 @@ function renderPipelineCore(){ const today=todayStr(); document.body.classList.t
   const chips=$("pipeChips"); if(chips){
     const chip=(v,l,n)=>`<button class="btn small ${pipeView===v?"":"ghost "}" onclick="setPipeView('${v}')">${l}${n!=null?` <span class="cnt" data-tick="pipe.${v}" data-tick-first="no">${n}</span>`:""}</button>`;
     const sentN=state.clients.filter(c=>!c.quick&&c.proposalSent&&!isDone(c)).length;
-    chips.innerHTML=`<span class="dens"><button type="button" class="${state.settings.pipeDense?"":"on"}" onclick="pipeDensity(false)">Comfortable</button><button type="button" class="${state.settings.pipeDense?"on":""}" onclick="pipeDensity(true)">Compact</button></span>`+chip("all","All")+chip("hot","\uD83D\uDD25 Hot now",al.hot.length)+chip("due","Follow-ups due",al.due.length)+chip("flag","\uD83D\uDD25 Hot leads",al.flagged.length)+chip("ratewatch","\u23F3 Rate watch",al.ratewatch.length)+chip("season","\uD83D\uDCC5 Seasoning",al.season.length)+chip("future","\uD83C\uDFE1 Future buyers",al.future.length)+(al.watch.length?chip("watch","Watching",al.watch.length):"")+chip("sent","Proposal sent",sentN)+(rdTiers()?chip("elignow","\u2728 Eligible now",rdEligibleIds().length)+chip("eligible","\u2728 New this week",rdWeekIds().length):""); }
+    chips.innerHTML=`<span class="dens"><button type="button" class="${state.settings.pipeDense?"":"on"}" onclick="pipeDensity(false)">Comfortable</button><button type="button" class="${state.settings.pipeDense?"on":""}" onclick="pipeDensity(true)">Compact</button></span>`+chip("all","All")+chip("hot","\uD83D\uDD25 Hot now",al.hot.length)+chip("due","Follow-ups due",al.due.length)+chip("flag","\uD83D\uDD25 Hot leads",al.flagged.length)+chip("ratewatch","\u23F3 Rate watch",al.ratewatch.length)+chip("season","\uD83D\uDCC5 Seasoning",al.season.length)+chip("future","\uD83C\uDFE1 Future buyers",al.future.length)+(al.watch.length?chip("watch","Watching",al.watch.length):"")+chip("sent","Proposal sent",sentN)+(()=>{ const nd=state.clients.filter(c=>!c.quick&&isDNC(c)).length, ni=state.clients.filter(c=>!c.quick&&c.notInt&&c.notInt.at).length; return (nd?chip("dnc","DNC",nd):"")+(ni?chip("notint","Not interested",ni):""); })()+(rdTiers()?chip("elignow","\u2728 Eligible now",rdEligibleIds().length)+chip("eligible","\u2728 New this week",rdWeekIds().length):""); }
   const f=filt.value; const pf=$("pipeProduct")?$("pipeProduct").value:"";
   const q=($("pipeSearch")?$("pipeSearch").value:"").trim().toLowerCase(); const qd=q.replace(/\D/g,"");
   const hit=c=>{ if(pf && clientProduct(c)!==pf) return false; if(!q) return true; const hay=[c.name,c.email,c.address,c.servicer,c.loanType,c.status,c.notes,c.futureProduct,PRODUCT_LABELS[clientProduct(c)]].map(x=>String(x||"").toLowerCase()).join(" \u2022 ");
     if(hay.includes(q)) return true; if(qd.length>=3 && String(c.phone||"").replace(/\D/g,"").includes(qd)) return true; return false; };
   const rows=state.clients.filter(c=>!c.quick && (!f||c.status===f) && hit(c) &&
-    (pipeView==="all" || (pipeView==="hot"&&hs.has(c.id)) || (pipeView==="due"&&ds.has(c.id)) || (pipeView==="watch"&&ws.has(c.id)) || (pipeView==="ratewatch"&&rs.has(c.id)) || (pipeView==="season"&&ss.has(c.id)) || (pipeView==="sent"&&c.proposalSent&&!isDone(c)) || (pipeView==="flag"&&c.hot) || (pipeView==="future"&&fs_.has(c.id)) || (pipeView==="eligible"&&rdWindowInfo(c)) || (pipeView==="elignow"&&rdEligibleNow(c))))
+    (pipeView==="all" || (pipeView==="hot"&&hs.has(c.id)) || (pipeView==="due"&&ds.has(c.id)) || (pipeView==="watch"&&ws.has(c.id)) || (pipeView==="ratewatch"&&rs.has(c.id)) || (pipeView==="season"&&ss.has(c.id)) || (pipeView==="sent"&&c.proposalSent&&!isDone(c)) || (pipeView==="dnc"&&isDNC(c)) || (pipeView==="notint"&&c.notInt&&c.notInt.at) || (pipeView==="flag"&&c.hot) || (pipeView==="future"&&fs_.has(c.id)) || (pipeView==="eligible"&&rdWindowInfo(c)) || (pipeView==="elignow"&&rdEligibleNow(c))))
     .sort((a,b)=>{ if(pipeSort.key){ const va=sortVal(a,pipeSort.key), vb=sortVal(b,pipeSort.key); const cmp = typeof va==="number"&&typeof vb==="number" ? va-vb : String(va).localeCompare(String(vb)); return pipeSort.dir*cmp; }
+      if(pipeView==="notint") return String((b.notInt||{}).at||"").localeCompare(String((a.notInt||{}).at||""));   /* most recent "not interested" first */
       return pipeView==="ratewatch" ? (rateDrop(a)??9)-(rateDrop(b)??9) : pipeView==="season" ? seasonDays(a)-seasonDays(b) : (pipeView==="eligible"||pipeView==="elignow") ? String(b.eligibleSince||"").localeCompare(String(a.eligibleSince||"")) : 0; });
   pipeRowsShown=rows;
   /* alert tiles: a count and a click, not a list of names (the groups below already name everyone) */
@@ -2732,7 +2749,7 @@ function renderPipelineCore(){ const today=todayStr(); document.body.classList.t
     const statusMeta=[ onRateWatch(c)?`<span class="${targetHit(c)?"good":""}" title="Rate watch">${NMC.icon("hourglass")}needs ${pct(c.targetRate)}${rateDrop(c)!=null?" (\u2212"+pct(rateDrop(c))+")":""}</span>`:"",
       (()=>{ const si=seasonInfo(c); return si?`<span title="${esc(si.txt)}">${NMC.icon("calendar")}${esc(si.txt.replace(/ \u2014 .*$/,"").replace(/^\uD83D\uDCC5\s?/,""))}</span>`:""; })(),
       (()=>{ const fi=futureInfo(c); return fi?`<span title="${esc(fi.txt)}">${NMC.icon("home")}${esc(fi.txt.replace(/ \u2014 .*$/,"").replace(/^\uD83C\uDFE1\s?/,""))}</span>`:""; })(),
-      c.hot&&c.hotNeed?`<span>need: ${esc(c.hotNeed)}</span>`:"",
+      c.hot&&c.hotNeed?`<span>need: ${esc(c.hotNeed)}</span>`:"", f9MarksHTML(c),
       c.proposalSent?`<span title="Proposal sent ${esc(c.proposalSent)}">${NMC.icon("send")}proposal sent ${pipeDate(c.proposalSent)}${c.proposalsSent>1?" \u00b7 \u00d7"+c.proposalsSent:""}</span>`:"" ].filter(Boolean);
     const fu=pipeFollow(c); const cal=calStatus(c); const oppHTML=op&&!(fu.k&&/follow-up due/i.test(op.txt))?pipeOppHTML(op):"";
     const statusTag=`<span class="${c.status===S_DONE?"tag-good":c.status==="Lost"||(isInelig(c)&&ineligWhy(c)==="fully ineligible")?"tag-warn":"tag-flat"}">${isFuture(c)?"\uD83C\uDFE1 ":""}${esc(c.status)}${isInelig(c)&&ineligWhy(c)==="fully ineligible"?" \u00b7 no follow-up":""}</span>`;
@@ -4538,7 +4555,7 @@ function rdTiers(d){ d=d||rdData(); return d&&d.products&&d.products.va_irrrl?rd
 function rdTierFor(score){ const f=+score; if(!(f>0)) return null; return f>=640?"640+":f>=620?"620-639":f>=580?"580-619":"<580"; }
 function rdRateFor(c, tiers){ tiers=tiers||rdTiers(); if(!tiers) return null; const t=rdTierFor(c.fico); const key=t||rdNormTierKey(state.settings.rdTier||"620-639"); return {tier:key, rate:tiers[key], assumed:!t}; }
 /* eligible under the rates that are live now (VA only at launch) */
-function rdEligibleNow(c, tiers){ if(!c||c.quick||isDone(c)) return null; if(!/\bVA\b/i.test(c.loanType||"")) return null; if(!(c.rate>0)) return null;
+function rdEligibleNow(c, tiers){ if(!c||c.quick||isDone(c)||isDNC(c)) return null; if(!/\bVA\b/i.test(c.loanType||"")) return null; if(!(c.rate>0)) return null;
   if(isInelig(c)&&c.ineligFull) return null; const sd=seasonDays(c); if(sd!=null&&sd>0) return null;   /* seasoning in the future: not yet */
   const r=rdRateFor(c,tiers); if(!r||r.rate==null) return null; const drop=+(c.rate-r.rate).toFixed(3); if(drop<(+state.settings.rdDrop||0.5)-1e-9) return null;
   return {tier:r.tier, rate:r.rate, assumed:r.assumed, drop, seasonUnknown:!c.seasonDate&&!c.closeDate}; }
@@ -4678,7 +4695,7 @@ function rdFreshFor(h){ const ids=h.freshIds||state.clients.filter(c=>c.eligible
 function rdFreshLogHTML(pts){ const rows=pts.slice().reverse().map(h=>({h,who:rdFreshFor(h)})).filter(x=>x.who.length).slice(0,8); if(!rows.length) return `<div class="hint" style="margin-top:6px">No one became eligible on these publishes.</div>`;
   return `<div style="margin-top:8px;display:grid;gap:4px">${rows.map(({h,who})=>`<div style="display:flex;gap:8px;align-items:baseline;font-size:12.5px;flex-wrap:wrap"><span class="tag-flat" style="white-space:nowrap">${new Date(h.published).toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})}</span><a href="#" onclick="go('pipeline');setPipeView('eligible');return false" title="Show them in the pipeline" style="background:#FFF3C4;color:#8A6D00;border-radius:10px;padding:1px 8px;font-size:11.5px;font-weight:700;text-decoration:none">${who.length} eligible →</a><span>${who.map(c=>`<a href="#" onclick="pickClient('${c.id}');go('client');return false">${esc(c.name)}</a>`).join(", ")}</span></div>`).join("")}</div>`; }
 function rdToggleTier(k){ let on=(state.rdTiersOn||["640+"]).map(rdNormTierKey).filter((x,i,a)=>a.indexOf(x)===i); if(on.includes(k)){ if(on.length>1) on=on.filter(x=>x!==k); } else on.push(k); state.rdTiersOn=on; save(); renderRdDesk(); }
-function eligibleIds(){ return state.clients.filter(c=>{ if(c.quick||isDone(c)) return false;
+function eligibleIds(){ return state.clients.filter(c=>{ if(c.quick||isDone(c)||isDNC(c)) return false;
   if(isInelig(c)&&!onRateWatch(c)) return false;   /* seasoning or fully ineligible: the market alone doesn't make them hot */
   const fr=feedRateFor(c); return targetHit(c) || (fr!=null && c.rate!=null && c.rate-fr>=0.5); }).map(c=>c.id); }
 function notifyNewEligible(before){

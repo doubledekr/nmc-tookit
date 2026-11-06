@@ -52,6 +52,31 @@
       const it = (s.inbox || []).find(x => x.fields && last10(x.fields.phone) === p); if (it) return { kind: "inbox", it, by: "phone" }; }
     return null; }
 
+  /* ---------- what Import does with the lead's latest Five9 disposition (Dave's list, v1.22) ----------
+     Only for a lead imported from the Inbox as a NEW client; an existing client just keeps the disposition as a note. */
+  const normD = d => String(d || "").toLowerCase().replace(/[\u2010-\u2015]/g, "-").replace(/\s*-\s*/g, " - ").replace(/\s+/g, " ").replace(/[.\u2026\s]+$/, "").trim();
+  const RULES = { "assign to broker - interested": "followCal", "call back": "followCal", "contacted": "follow", "dead air": "none", "do not call": "dnc",
+    "hang up - try again": "none", "hot lead - purchase": "follow", "hot lead - refi": "follow", "left vm - no answer": "follow", "new build construction": "none",
+    "not interested - take me off your list": "dnc", "overacw": "follow", "recycle": "none", "spanish speaker": "spanish", "vm full": "follow",
+    "wrong number - bogus": "wrongNumber", "wrong info": "wrongInfo" };
+  function ruleFor(d){ const k = normD(d); if (!k) return ""; if (RULES[k]) return RULES[k]; if (/^not interested at this time/.test(k)) return "notint"; return "unknown"; }
+  const RULE_TXT = { follow: "follow-up next business day", followCal: "follow-up next business day + book the call", dnc: "marked DNC — no follow-ups",
+    notint: "Watching — not interested as of the call", spanish: "marked Spanish speaker", wrongNumber: "marked wrong number", wrongInfo: "marked wrong info",
+    none: "no automatic action", unknown: "no rule for this disposition yet — no automatic action" };
+  function dayOf(v){ const m = /(\d{4})-(\d{2})-(\d{2})/.exec(String(v || "")); if (m) return m[1] + "-" + m[2] + "-" + m[3];
+    const u = /(\d{1,2})\/(\d{1,2})\/(\d{2,4})/.exec(String(v || "")); if (u){ const y = u[3].length === 2 ? "20" + u[3] : u[3]; return y + "-" + u[1].padStart(2, "0") + "-" + u[2].padStart(2, "0"); }
+    const d = new Date(v); return isNaN(d) ? "" : d.toLocaleDateString("en-CA"); }
+  function applyRule(c, notes){ const last = notes[notes.length - 1]; const rule = ruleFor(last && last.disp); if (!c || !last) return "";
+    c.f9flags = c.f9flags || {};
+    if (rule === "follow" || rule === "followCal"){ if (c.status !== "Needs follow-up" && !isDone(c)) c.status = "Needs follow-up"; c.followUp = nextBizDay(); c.followUpTime = ""; c.apptLen = 0; }
+    if (rule === "dnc"){ c.f9flags.dnc = true; c.followUp = ""; c.followUpTime = ""; c.apptLen = 0; }
+    if (rule === "notint"){ c.status = "Watching"; c.followUp = ""; c.followUpTime = ""; c.apptLen = 0; c.notInt = { at: dayOf(last.at), suggested: dayOf(last.callback) || "" }; }
+    if (rule === "spanish") c.f9flags.spanish = true;
+    if (rule === "wrongNumber") c.f9flags.wrongNumber = true;
+    if (rule === "wrongInfo") c.f9flags.wrongInfo = true;
+    if (rule === "followCal") setTimeout(() => { try { cbOpen = "appt"; cbAnimPop = true; renderClientBar(); } catch (e) {} }, 60);   /* the client bar's 15-min Outlook booking */
+    return rule; }
+
   /* ---------- phase-2 preview: which toolkit "box" a disposition lands in ---------- */
   const MAP = { "no answer": "noanswer", "busy": "noanswer", "answering machine": "noanswer", "dead air": "noanswer", "left message": "noanswer", "left vm - no answer": "noanswer", "left vm": "noanswer", "no answer - left vm": "noanswer", "left voicemail": "noanswer", "voicemail": "noanswer",
     "not interested": "stop", "add to dnc list": "remove", "dnc": "remove", "do not call": "remove",
@@ -78,6 +103,10 @@
     if (ev.methodName === "auto-skip") return `Didn’t auto-send record ${esc(ev.args && ev.args.record)} — ${esc(ev.args && ev.args.reason)}`;
     if (ev.methodName === "other-origin") return `Nothing — heard an Open CTI message <b>${esc(ev.args && ev.args.method)}</b> from <b>${esc(ev.args && ev.args.origin)}</b> (not five9.com, so its contents weren’t kept). Send this to Claude.`;
     if (ev.methodName !== "saveLog") return "Nothing — recorded so we can see what Five9 sends";
+    { const rule = ruleFor(r.disp); if (!rule) return "No disposition on this log";
+      const txt = RULE_TXT[rule] || ""; const flag = rule === "unknown" ? ' <span class="f9-flag">new disposition name — tell Dave</span>' : "";
+      if (m && m.kind === "client") return `Saved as a note on ${esc(m.c.name || "the client")} (already a client — no automatic action)`;
+      return `“${esc(r.disp)}” — when imported: ${esc(txt)}${flag}`; }
     const b = box(r.disp); const flag = b.guessed ? ` <span class="f9-flag">${b.box === "unknown" ? "unknown disposition — Dave to map" : "guessed from the name — confirm"}</span>` : "";
     const lbl = `“${esc(r.disp || "no disposition")}” → ${BOX_NAME[b.box] || "—"} box${flag}: `;
     if (!b.box) return "No disposition on this log — nothing";
@@ -132,7 +161,7 @@
       const box = document.createElement("div"); box.id = "f9Box";
       box.innerHTML = `<div class="eyebrow" style="font-size:11px">Five9 calls${F9.beta ? " (beta)" : ""}</div>
         <div class="hint f9-status" id="f9Status"></div>
-        <p class="hint" style="margin:0 0 8px">What Five9 told Salesforce on each call and the client it matched. The call’s lead comes over by itself and its disposition is saved on the lead as a note; the “not automatic yet” line is what a later version could do with it — statuses, follow-ups and logs don’t change.</p>
+        <p class="hint" style="margin:0 0 8px">What Five9 told Salesforce on each call and the client it matched. The call’s lead comes over by itself and its disposition is saved on the lead as a note; when you Import a new lead, its latest disposition sets the follow-up, DNC / Not interested / Spanish / wrong-number marks (the “Toolkit” line says what). Existing clients just get the note.</p>
         <div class="btnrow" style="margin-bottom:8px;flex-wrap:wrap;gap:6px">
           <select id="f9Filter" class="btn ghost small" style="padding-right:22px"><option value="all">All events</option><option value="imp">Call events only (screenPop · saveLog)</option><option value="log">Dispositions only (saveLog)</option></select>
           <span style="flex:1"></span><button class="btn small" id="f9CopyAll">Copy raw JSON — all</button></div>
@@ -168,7 +197,7 @@
     return `<div class="f9-ev${ev.important ? " imp" : ""}"><div class="f9-top"><span class="f9-t">${esc(fmtT(ev.receivedAt || ev.seenAt))}</span><span class="f9-m">${esc(ev.methodName)}</span>${ev.popout ? '<span class="f9-k">· popped out</span>' : ""}<span style="flex:1"></span>
       <button class="btn ghost small" data-f9="raw" data-n="${ev.n}">${F9.open[ev.n] ? "Hide JSON" : "Show JSON"}</button><button class="btn ghost small" data-f9="copy" data-n="${ev.n}">Copy raw JSON</button></div>
       <div>${bits}</div><div><span class="f9-k">Client</span> ${name}</div>${r.comments ? `<div><span class="f9-k">Comments</span> ${esc(String(r.comments).slice(0, 400))}</div>` : ""}
-      <div class="f9-would"><span class="f9-k">${F9.beta ? "Would do:" : "Not automatic yet:"}</span> ${wouldDo(ev, r, m)}</div>${F9.open[ev.n] ? `<pre>${esc(JSON.stringify(ev, null, 2))}</pre>` : ""}</div>`; }
+      <div class="f9-would"><span class="f9-k">Toolkit:</span> ${wouldDo(ev, r, m)}</div>${F9.open[ev.n] ? `<pre>${esc(JSON.stringify(ev, null, 2))}</pre>` : ""}</div>`; }
   function render(){ if (!install()) return;
     const scr = $("s-settings"); if (scr && !scr.classList.contains("active")){ F9.dirty = true; return; }   /* drawn when Settings opens */
     F9.dirty = false; statusLine(); const list = $("f9List"); if (!list) return;
@@ -219,7 +248,7 @@
     if (START[ev.methodName] && !curCall()) F9.call = { at: Date.now(), items: [], clients: [] };
     if (ev.methodName !== "saveLog") return;
     const r = read(ev); if (!r.disp) return;
-    const note = { disp: String(r.disp).slice(0, 80), at: ev.receivedAt || ev.seenAt || new Date().toISOString(), type: r.type || "", dur: r.dur == null ? "" : r.dur, campaign: r.campaign || "" };
+    const note = { disp: String(r.disp).slice(0, 80), at: ev.receivedAt || ev.seenAt || new Date().toISOString(), type: r.type || "", dur: r.dur == null ? "" : r.dur, campaign: r.campaign || "", callback: r.callback || "" };
     const call = curCall() || { items: [], clients: [] }; const ids = [r.record].concat(r.ids).filter(Boolean).map(id15);
     const add = (o) => { o.f9 = (o.f9 || []).filter(x => !(x.at === note.at && x.disp === note.disp)); o.f9.push(note); if (o.f9.length > 10) o.f9 = o.f9.slice(-10); };
     let n = 0;
@@ -231,7 +260,8 @@
     if (n){ save(); try { if (document.getElementById("s-pipeline").classList.contains("active")) renderPipeline(); } catch (e) {} decorate(); } }
   function f9Label(list){ if (!list || !list.length) return ""; const x = list[list.length - 1];
     const t = new Date(x.at); const when = t.toDateString() === new Date().toDateString() ? t.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : t.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " " + t.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
-    return `Five9: <b>${esc(x.disp)}</b> · ${esc(when)}${list.length > 1 ? ` <span style="opacity:.75">(+${list.length - 1} earlier)</span>` : ""}`; }
+    const rule = ruleFor(x.disp); const act = { follow: "follow-up " + fdate(nextBiz()), followCal: "follow-up " + fdate(nextBiz()) + " + book", dnc: "DNC", notint: "Watching", spanish: "Spanish", wrongNumber: "wrong number", wrongInfo: "wrong info" }[rule];
+    return `Five9: <b>${esc(x.disp)}</b> · ${esc(when)}${list.length > 1 ? ` <span style="opacity:.75">(+${list.length - 1} earlier)</span>` : ""}${act ? ` <span style="opacity:.8">→ ${esc(act)}</span>` : ""}`; }
   /* Inbox rows: a small badge next to Import / Ignore. The pipeline redraws its HTML, so this re-applies after every redraw. */
   let decoQueued = false;
   function decorate(){ const s = st(); if (!s) return;
@@ -245,10 +275,14 @@
   /* Import carries the call notes onto the client it creates or opens */
   if (typeof W.importInbox === "function" && !W.importInbox.__f9){ const orig = W.importInbox;
     W.importInbox = function(id){ const s = st(); const it = s && (s.inbox || []).find(x => x.id === id); const notes = it && it.f9 ? it.f9.slice() : null;
+      const had = new Set((s && s.clients || []).map(c => c.id));
       const out = orig.apply(this, arguments);
       if (notes) setTimeout(() => { const c = (st().clients || []).find(c => c.id === st().currentId); if (!c) return;
-        c.f9 = (c.f9 || []).concat(notes.filter(n => !(c.f9 || []).some(x => x.at === n.at && x.disp === n.disp))).slice(-10); save();
-        try { toast("Five9 on this lead: " + notes.map(n => n.disp).join(", ")); } catch (e) {} }, 0);
+        c.f9 = (c.f9 || []).concat(notes.filter(n => !(c.f9 || []).some(x => x.at === n.at && x.disp === n.disp))).slice(-10);
+        const isNew = !had.has(c.id); const rule = isNew ? applyRule(c, notes) : "";
+        save(); try { refreshAll(); } catch (e) {}
+        const last = notes[notes.length - 1].disp;
+        try { toast(isNew ? "Five9: " + last + " — " + (RULE_TXT[rule] || "no automatic action") : "Five9 on this client: " + notes.map(n => n.disp).join(", ") + " (saved as a note)"); } catch (e) {} }, 0);
       return out; };
     W.importInbox.__f9 = true; }
 
