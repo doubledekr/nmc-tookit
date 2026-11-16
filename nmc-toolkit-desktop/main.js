@@ -121,6 +121,20 @@ function startSfListener(){
     if (five9 && (req.url.startsWith("/five9") || req.url.startsWith("/jobs"))) { five9.handle(req, res); return; }   /* Five9 events + Lead owner jobs */
     /* /quote — the extension sends the rate selected on a lender pricing page (Rocket Pro); it becomes a real quote on the client open
        in the toolkit. Same guard as /client: only a chrome-extension:// Origin, only a loopback Host, only POST, no wildcard CORS. */
+    /* /recipe — what to read / fill on a lender site the banker taught (kept in the toolkit, shared between bankers as codes).
+       The extension only ever asks for, or saves, the recipe of the site the page is on. Same guard as /client. */
+    if (req.url.startsWith("/recipe")) {
+      const origin = String(req.headers.origin || ""), host = String(req.headers.host || "");
+      const extOk = /^chrome-extension:\/\/[a-p]{32}$/.test(origin), hostOk = /^(127\.0\.0\.1|localhost):\d+$/.test(host);
+      if (req.method !== "POST" || !extOk || !hostOk) { res.writeHead(403); res.end("forbidden"); return; }
+      const hdr = { "Content-Type": "application/json", "Access-Control-Allow-Origin": origin, "Vary": "Origin", "Cache-Control": "no-store" };
+      let body = ""; req.on("data", c => { body += c; if (body.length > 30000) req.destroy(); });
+      req.on("end", async () => { let j = null; try { j = JSON.parse(body); } catch (e) {}
+        if (!j || !mainWin || mainWin.isDestroyed()) { res.writeHead(j ? 503 : 400, hdr); res.end(JSON.stringify({ ok: false })); return; }
+        let out = null; try { out = await mainWin.webContents.executeJavaScript("window.nmcRecipes ? window.nmcRecipes.handle(" + JSON.stringify(j) + ") : ({ok:false,error:'Update the NMC Toolkit'})", true); } catch (e) { out = { ok: false }; }
+        res.writeHead(200, hdr); res.end(JSON.stringify(out || { ok: false })); });
+      return;
+    }
     if (req.url.startsWith("/quote")) {
       const origin = String(req.headers.origin || ""), host = String(req.headers.host || "");
       const extOk = /^chrome-extension:\/\/[a-p]{32}$/.test(origin), hostOk = /^(127\.0\.0\.1|localhost):\d+$/.test(host);

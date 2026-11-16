@@ -48,6 +48,11 @@ edit("rate-grab.js", s => {
   s = must(s, /const CSS = "position:fixed;right:18px;bottom:66px;/, 'const CSS = "position:fixed;left:18px;bottom:66px;', "rate button position");
   s = s.replace(/"Send rate to NMC Toolkit"/g, '"BETA \\u00b7 Send rate to NMC Beta"').replace(/background:#2E6B4F/, `background:${PURPLE}`).replace(/right:18px;bottom:116px/, "left:18px;bottom:116px").replace(/"nmc-rg-/g, '"nmc-beta-rg-');
   return s; });
+edit("sensor.js", s => {
+  s = must(s, /const SIDE = "right:18px";/, 'const SIDE = "left:18px";', "sensor side");
+  s = must(s, /btn\.textContent = "NMC";/, 'btn.textContent = "BETA \\u00b7 NMC";', "sensor label");
+  s = s.replace(/background:#A53222;color:#fff;border:0;border-radius:999px;padding:10px 16px;font:700/, `background:${PURPLE};color:#fff;border:0;border-radius:999px;padding:10px 16px;font:700`).replace(/"nmc-sn-/g, '"nmc-beta-sn-').replace(/\.nmc-sn-/g, ".nmc-beta-sn-");
+  return s; });
 const left = ["background.js", "popup.js", "content.js", "lender-fill.js"].filter(f => /\b47831\b/.test(fs.readFileSync(path.join(dir, f), "utf8")));
 if (left.length) throw new Error("beta-extension: live port 47831 still in " + left.join(", "));
 console.log("beta-extension:", mf.name, "→ port", BETA_PORT, "in", dir);

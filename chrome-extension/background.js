@@ -152,9 +152,34 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
    rate-grab.js (Rocket Pro pricing) sends the selected rate; the app puts it on the client open in the toolkit. */
 chrome.runtime.onMessage.addListener((msg, sender, reply) => {
   if (!msg || msg.type !== "nmc:quote" || !msg.quote) return;
-  if (!sender.tab || !/^https:\/\/app\.rocketpro\.com\//i.test(sender.url || "")) return;
+  if (!sender.tab || !/^https:\/\//i.test(sender.url || "")) return;   /* Rocket Pro, or a lender site the banker allowed (sensor.js) */
   (async () => { const port = await getPort(); const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 8000);
     try { const r = await fetch(`http://127.0.0.1:${port}/quote`, { method: "POST", headers: { "Content-Type": "text/plain" }, body: JSON.stringify(msg.quote), cache: "no-store", signal: ctl.signal });
       clearTimeout(t); reply(r.ok ? await r.json() : { ok: false, error: "toolkit answered " + r.status }); }
     catch (e) { clearTimeout(t); reply(null); } })();
+  return true; });
+
+/* ---- Lender sites the banker allows (v0.8) -----------------------------------------------------------------------------------
+   The toolbar popup asks Chrome for permission on ONE site at a time (optional_host_permissions); sensor.js is then registered for
+   exactly the sites granted, and unregistered when a site is turned off. Recipes (what to read / fill on a site) live in the toolkit. */
+const BUILT_IN = /(rocketpro\.com|optimalblue\.com|force\.com|salesforce\.com|salesforce-setup\.com|127\.0\.0\.1)/i;
+async function syncSensors(){
+  try { const all = await chrome.permissions.getAll(); const origins = (all.origins || []).filter(o => /^https:\/\//.test(o) && !BUILT_IN.test(o) && !/^https:\/\/\*\//.test(o));
+    const have = await chrome.scripting.getRegisteredContentScripts({ ids: ["nmc-sensor"] }).catch(() => []);
+    if (!origins.length){ if (have.length) await chrome.scripting.unregisterContentScripts({ ids: ["nmc-sensor"] }); return; }
+    const def = { id: "nmc-sensor", matches: origins, js: ["sensor.js"], runAt: "document_idle", allFrames: false, persistAcrossSessions: true };
+    if (have.length) await chrome.scripting.updateContentScripts([def]); else await chrome.scripting.registerContentScripts([def]);
+  } catch (e) { console.warn("nmc sensor sync", e); } }
+chrome.runtime.onInstalled.addListener(syncSensors); chrome.runtime.onStartup.addListener(syncSensors);
+chrome.permissions.onAdded.addListener(async p => { await syncSensors();   /* the popup may close while Chrome asks — put the NMC button on open tabs of that site now */
+  try { const tabs = await chrome.tabs.query({ url: (p.origins || []).filter(o => /^https:\/\//.test(o)) }); for (const t of tabs) chrome.scripting.executeScript({ target: { tabId: t.id }, files: ["sensor.js"] }).catch(() => {}); } catch (e) {} });
+chrome.permissions.onRemoved.addListener(syncSensors);
+async function appRecipe(body){ const port = await getPort(); const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 4000);
+  try { const r = await fetch(`http://127.0.0.1:${port}/recipe`, { method: "POST", headers: { "Content-Type": "text/plain" }, body: JSON.stringify(body), cache: "no-store", signal: ctl.signal });
+    clearTimeout(t); return r.ok ? await r.json() : null; } catch (e) { clearTimeout(t); return null; } }
+chrome.runtime.onMessage.addListener((msg, sender, reply) => {
+  if (!msg || msg.type !== "nmc:recipe") return;
+  if (!sender.tab || !/^https:\/\//i.test(sender.url || "")) return;
+  const host = new URL(sender.url).hostname.replace(/^www\./, "");   /* a page can only read / save the recipe for its OWN site */
+  (async () => { reply(await appRecipe({ op: msg.op === "save" ? "save" : "get", host, kind: msg.kind === "fill" ? "fill" : "rate", recipe: msg.op === "save" ? msg.recipe : undefined }) || { ok: false }); })();
   return true; });

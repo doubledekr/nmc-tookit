@@ -15,3 +15,18 @@ $("send").onclick=async()=>{ const [tab]=await chrome.tabs.query({active:true,cu
   if(!SF.test(tab.url||"")){ $("status").innerHTML='<span class="tag bad">This isn\u2019t a Salesforce page</span><div class="hint">Open the lead in Salesforce, then click Send.</div>'; return; }
   sendNow(tab.id, true); };
 $("save").onclick=async()=>{ await chrome.storage.local.set({port:+$("port").value||47831}); $("status").textContent="Saved."; };
+
+/* ---- other lender sites: the banker allows NMC per site (Chrome asks once), then Send rate / Fill from here or the page's NMC button ---- */
+const BUILT=/(rocketpro\.com|optimalblue\.com|force\.com|salesforce\.com|salesforce-setup\.com)$/i;
+(async()=>{ const [tab]=await chrome.tabs.query({active:true,currentWindow:true}); const el=$("site"); if(!tab||!el) return;
+  let u; try{ u=new URL(tab.url||""); }catch(e){ return; } if(u.protocol!=="https:"){ el.innerHTML=""; return; }
+  const host=u.hostname.replace(/^www\./,""), origin=u.origin+"/*";
+  if(BUILT.test(u.hostname)){ el.innerHTML=`<div class="hint">${host}: built in — use the buttons on the page.</div>`; return; }
+  const run=async(what)=>{ try{ await chrome.scripting.executeScript({target:{tabId:tab.id}, files:["sensor.js"]}); }catch(e){}
+    setTimeout(()=>chrome.tabs.sendMessage(tab.id,{type:"nmc:sensor", do:what},()=>{ void chrome.runtime.lastError; window.close(); }),250); };
+  const draw=async()=>{ const on=await chrome.permissions.contains({origins:[origin]});
+    el.innerHTML = on ? `<div class="hint"><span class="tag ok">NMC is on for ${host}</span></div><button id="sRate">Send the selected rate</button><button id="sFill" class="ghost">Fill this form from the toolkit</button><button id="sOff" class="ghost">Turn NMC off for ${host}</button>`
+      : `<div class="hint">Lender site <b>${host}</b> — NMC isn’t on here yet.</div><button id="sOn">Use NMC on this site</button><div class="hint">Chrome will ask once. NMC only reads this site when you click Send or Fill.</div>`;
+    if(on){ $("sRate").onclick=()=>run("rate"); $("sFill").onclick=()=>run("fill"); $("sOff").onclick=async()=>{ await chrome.permissions.remove({origins:[origin]}); draw(); }; }
+    else $("sOn").onclick=async()=>{ const ok=await chrome.permissions.request({origins:[origin]}); if(ok){ await run(null); } draw(); }; };
+  draw(); })();
