@@ -147,3 +147,14 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
   if (!sender.tab || !/^https:\/\/[^/]*\.lightning\.force\.com\//i.test(sender.url || "")) return;
   (async () => { reply(msg.type === "nmc:jobs" ? (await appJobs("/jobs", { recordId: String(msg.recordId || "").slice(0, 18) }) || { jobs: [] }) : (await appJobs("/jobs/done", { id: msg.id, result: msg.result }) || { ok: false })); })();
   return true; });
+
+/* ---- Real quote from a lender pricing page (v0.7) ----------------------------------------------------------------------------
+   rate-grab.js (Rocket Pro pricing) sends the selected rate; the app puts it on the client open in the toolkit. */
+chrome.runtime.onMessage.addListener((msg, sender, reply) => {
+  if (!msg || msg.type !== "nmc:quote" || !msg.quote) return;
+  if (!sender.tab || !/^https:\/\/app\.rocketpro\.com\//i.test(sender.url || "")) return;
+  (async () => { const port = await getPort(); const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 8000);
+    try { const r = await fetch(`http://127.0.0.1:${port}/quote`, { method: "POST", headers: { "Content-Type": "text/plain" }, body: JSON.stringify(msg.quote), cache: "no-store", signal: ctl.signal });
+      clearTimeout(t); reply(r.ok ? await r.json() : { ok: false, error: "toolkit answered " + r.status }); }
+    catch (e) { clearTimeout(t); reply(null); } })();
+  return true; });

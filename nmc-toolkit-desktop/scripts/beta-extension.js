@@ -44,6 +44,10 @@ edit("lender-fill.js", s => {
   s = must(s, /className = "nmc-lf-panel"/, 'className = "nmc-beta-lf-panel"', "panel class");
   s = must(s, /className = "nmc-lf-btn"/, 'className = "nmc-beta-lf-btn"', "fill button class");
   return s; });
+edit("rate-grab.js", s => {
+  s = must(s, /const CSS = "position:fixed;right:18px;bottom:66px;/, 'const CSS = "position:fixed;left:18px;bottom:66px;', "rate button position");
+  s = s.replace(/"Send rate to NMC Toolkit"/g, '"BETA \\u00b7 Send rate to NMC Beta"').replace(/background:#2E6B4F/, `background:${PURPLE}`).replace(/right:18px;bottom:116px/, "left:18px;bottom:116px").replace(/"nmc-rg-/g, '"nmc-beta-rg-');
+  return s; });
 const left = ["background.js", "popup.js", "content.js", "lender-fill.js"].filter(f => /\b47831\b/.test(fs.readFileSync(path.join(dir, f), "utf8")));
 if (left.length) throw new Error("beta-extension: live port 47831 still in " + left.join(", "));
 console.log("beta-extension:", mf.name, "→ port", BETA_PORT, "in", dir);

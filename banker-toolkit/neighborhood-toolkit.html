@@ -1178,7 +1178,9 @@ Discover 6,100 190 24.9"></textarea>
       </div>
 
       <div class="btnrow" style="margin:-4px 0 8px;align-items:center;gap:12px"><div class="hint" id="anRateSrc" style="margin:0"></div><span style="flex:1"></span>
-        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;white-space:nowrap"><input type="checkbox" id="anReal" style="width:auto;min-height:0" onchange="setRealQuote(this.checked)"> <b>Real quote</b> <span class="hint" style="display:inline">— priced with the lender today</span></label></div>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;white-space:nowrap"><input type="checkbox" id="anReal" style="width:auto;min-height:0" onchange="setRealQuote(this.checked)"> <b>Real quote</b> <span class="hint" style="display:inline">— priced with the lender today</span></label>
+        <label id="anAprWrap" style="display:none;align-items:center;gap:6px;font-size:13px;white-space:nowrap" title="Type the APR from the lender’s Loan Estimate. It replaces the estimate on the proposal; the payment is still figured on the note rate.">APR from the LE <input type="number" id="anAprTyped" step="0.001" placeholder="est." style="width:84px;min-height:0;padding:4px 6px" oninput="runAnalysis(); renderProposalPreview()"> %</label></div>
+      <div class="hint" id="anLenderQuote" style="display:none;margin:-4px 0 8px"></div>
       <div id="anResults"></div>
     </section>
 
@@ -1728,7 +1730,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.23.1";
+const TOOLKIT_VERSION = "1.24.0";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -3204,14 +3206,18 @@ function readAnalysisInputs(){ const c=cur(); if(!c) return;
   c.analysis={anRate:num($("anRate").value), anTerm:+$("anTerm").value, anCosts:num($("anCosts").value)||0,
     anCashOut:num($("anCashOut").value)||0, anSkip:+$("anSkip").value, anRoll:$("anRoll").value, anLien:$("anLien").value,
     anExtra:num($("anExtra")?$("anExtra").value:0)||0, rateSrc:c.analysis.rateSrc,
-    anReal:!!($("anReal")&&$("anReal").checked), realWhen:c.analysis.realWhen, realSource:c.analysis.realSource, anProgram:$("anProgram")?$("anProgram").value:"standard", anMip:num($("anMip")?$("anMip").value:1.75)??1.75, anPrepay:$("anPrepay")?$("anPrepay").value:"yes",
+    anReal:!!($("anReal")&&$("anReal").checked), realWhen:c.analysis.realWhen, realSource:c.analysis.realSource,
+    anLoanAmt:c.analysis.anLoanAmt, anMiMo:c.analysis.anMiMo, anFinCharge:c.analysis.anFinCharge, lenderPay:c.analysis.lenderPay, lenderQuote:c.analysis.lenderQuote,
+    anAprTyped:$("anAprTyped")?(num($("anAprTyped").value)||null):c.analysis.anAprTyped, anProgram:$("anProgram")?$("anProgram").value:"standard", anMip:num($("anMip")?$("anMip").value:1.75)??1.75, anPrepay:$("anPrepay")?$("anPrepay").value:"yes",
     saved:c.analysis.saved, anEquity:$("anEquity")?$("anEquity").value:"hel", anDraw:num($("anDraw")?$("anDraw").value:10)||10,
     anX1:num($("anX1")?$("anX1").value:100), anX2:num($("anX2")?$("anX2").value:250), anX3:num($("anX3")?$("anX3").value:500),
     anNoCompare:$("anNoCompare")&&$("anNoCompare").checked?"yes":"no", anSecondType:$("anSecondType")?$("anSecondType").value:"hel", anHideFirst:$("anHideFirst")&&$("anHideFirst").checked?"yes":"no", anShowExtra:$("anShowExtra")&&!$("anShowExtra").checked?"no":"yes", anCustom:num($("anCustom")?$("anCustom").value:0)||0}; save();
   document.body.classList.toggle("noc", !!($("anNoCompare")&&$("anNoCompare").checked));
   document.body.classList.toggle("heloc", $("anEquity")&&$("anEquity").value==="heloc"); }
 const todayStr=()=>new Date().toLocaleDateString("en-CA");   /* local calendar day — the UTC date flips at 7-8 PM Eastern and made "today" views go blank in the evening */
-function aprText(c){ try{ const r=c&&computeAnalysis(c); if(!r||r.tooSmall) return ""; return " APR "+pct(r.apr)+(r.aprEst?" (est. \u2014 rate + 0.25% until costs are entered)":" (from "+money((r.a.anCosts||0)+r.mipAmt)+" in costs)")+"."; }catch(e){ return ""; } }
+function aprText(c){ try{ const r=c&&computeAnalysis(c); if(!r||r.tooSmall) return ""; return " APR "+pct(r.apr)+(r.aprSrc==="typed"?" (from the Loan Estimate)":r.aprSrc==="lender"?" (est. from the lender\u2019s fees)":r.aprEst?" (est. \u2014 rate + 0.25% until costs are entered)":" (from "+money((r.a.anCosts||0)+r.mipAmt)+" in costs)")+"."; }catch(e){ return ""; } }
+/* the APR footnote on proposals: what the APR is based on until the Loan Estimate's real APR is typed in */
+function aprDisc(r){ return !r||!r.aprEst ? "" : r.aprSrc==="lender" ? "APR is estimated from the lender\u2019s quoted fees; the exact APR comes with the lender\u2019s Loan Estimate. " : "APR is estimated at the note rate + 0.25% until closing costs are priced; the exact APR comes with the lender\u2019s Loan Estimate. "; }
 function rateSrcText(c){ const s=c&&c.analysis&&c.analysis.rateSrc; if(!c||!c.analysis||c.analysis.anRate==null) return "";
   if(c.analysis.anReal) return "\u2714 Real quote \u2014 "+pct(c.analysis.anRate)+" priced with the lender"+(c.analysis.realWhen?" "+c.analysis.realWhen:"")+(c.analysis.realSource==="presentation"?" \u00b7 saved from the presentation":"")+(s&&s.lender?" ("+s.lender+")":"")+".";
   if(!s) return "Rate: entered earlier (source not recorded).";
@@ -3219,6 +3225,25 @@ function rateSrcText(c){ const s=c&&c.analysis&&c.analysis.rateSrc; if(!c||!c.an
   if(s.type==="feed") return "Rate: ESTIMATE from the rate feed"+(s.when?" ("+s.when+")":"")+" \u2014 replace with actual pricing before this goes to the client.";
   return "Rate: entered by hand"+(s.when?" ("+s.when+")":"")+"."; }
 function setRealQuote(on){ const c=cur(); if(!c) return; readAnalysisInputs(); c.analysis.anReal=!!on; if(on) c.analysis.realWhen=todayStr(); save(); runAnalysis(); renderProposalPreview(); toast(on?"Marked as a real quote \u2014 the proposal says so":"Back to an estimate"); }
+/* A real quote pulled from the lender's pricing page by the Chrome extension (Rocket Pro): the client open in the toolkit gets the
+   selected rate and term, the lender's loan amount (fees already rolled in), payment, monthly MI and fees. APR is estimated from the
+   fees that count toward it until the Loan Estimate's APR is typed in. Compensation never comes across. */
+const APR_EXCLUDE=/apprais|title|record|transfer|tax cert|survey|inspection|credit report|notary|attorney|escrow|homeowner|hazard|insurance premium|\bhoa\b|courier|wire/i;
+function lenderFinanceCharge(fees){ let fc=0; (fees||[]).forEach(f=>{ const amt=+f.amount; if(!isFinite(amt)) return; if(/compensation/i.test(f.name||"")) return; if(/^[E-H]\b/i.test(f.section||"")) return; if(APR_EXCLUDE.test(f.name||"")) return; fc+=amt; }); return Math.round(fc*100)/100; }
+window.nmcRealQuote=function(q){ try{
+  const c=cur(); if(!c) return {ok:false, error:"Open a client in the NMC Toolkit first"};
+  if(!(q && +q.rate>0 && +q.loanAmount>0 && +q.payment>0)) return {ok:false, error:"Couldn\u2019t read the selected rate, payment and loan amount"};
+  const a=c.analysis=c.analysis||{}; const term=+q.term;
+  a.anRate=+q.rate; if([10,15,20,25,30].includes(term)) a.anTerm=term;
+  a.anLoanAmt=+q.loanAmount; a.anCosts=Math.round(+q.totalFees||0); a.anMiMo=+q.mi||0; a.lenderPay=+q.payment; a.anFinCharge=lenderFinanceCharge(q.fees); delete a.anNewPay;
+  a.anAprTyped=null; a.anReal=true; a.realWhen=todayStr(); a.realSource="lender"; a.rateSrc={type:"quote", lender:q.lender||"lender", when:todayStr()};
+  a.lenderQuote={lender:q.lender||"", product:String(q.product||"").slice(0,80), lock:String(q.lock||"").slice(0,40), rate:+q.rate, payment:+q.payment, mi:+q.mi||0, loanAmount:+q.loanAmount, totalFees:+q.totalFees||0, cost:+q.costDollars||0, propertyValue:+q.propertyValue||0, ltv:String(q.ltv||"").slice(0,12), finCharge:a.anFinCharge,
+    when:new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})};
+  save(); refreshAll(); try{ fillAnalysisInputs(); runAnalysis(); renderProposalPreview(); }catch(e){}
+  const r=computeAnalysis(c); const warn=(r&&r.warnings||[]).filter(w=>/lender/.test(w)).map(w=>w.replace(/<[^>]+>/g,""));
+  toast("Real quote from "+(q.lender||"the lender")+" \u2192 "+c.name+": "+pct(+q.rate)+", "+money(+q.payment)+"/mo"+(warn.length?" \u2014 check the analysis":""));
+  return {ok:true, client:c.name, warnings:warn};
+}catch(e){ return {ok:false, error:String(e&&e.message||e)}; } };
 function markRateManual(){ const c=cur(); if(!c) return; const v=num($("anRate").value);
   if(v!=null && v!==c.analysis.anRate){ c.analysis.rateSrc={type:"manual",when:todayStr()}; if(c.analysis.anReal){ c.analysis.anReal=false; const cb=$("anReal"); if(cb) cb.checked=false; toast("Rate changed \u2014 no longer marked as a real quote"); } } }
 function fillAnalysisInputs(){ const c=cur(); const a=c?c.analysis:blankClient().analysis;
@@ -3235,6 +3260,7 @@ function fillAnalysisInputs(){ const c=cur(); const a=c?c.analysis:blankClient()
   if($("anCustom")) $("anCustom").value=a.anCustom||"";
   if($("anEquity")){ $("anEquity").value=a.anEquity||"hel"; $("anDraw").value=a.anDraw||10; document.body.classList.toggle("heloc", (a.anEquity||"hel")==="heloc"); }
   if($("anReal")) $("anReal").checked=!!a.anReal;
+  if($("anAprTyped")) $("anAprTyped").value=a.anAprTyped>0?a.anAprTyped:"";
   if($("anProgram")){ $("anProgram").value=a.anProgram||"standard"; $("anMip").value=a.anMip??1.75; $("anPrepay").value=a.anPrepay||"yes"; programRules(); } applyLienMode(); }
 function setTerm(y){ $("anTerm").value=String(y); runAnalysis(); }
 const MODE_KEYS=["anRate","rateSrc","anReal","anSecondType","anHideFirst","anTerm","anCosts","anCashOut","anSkip","anRoll","anExtra","anMip","anPrepay","anEquity","anDraw","anX1","anX2","anX3","anNoCompare","anShowExtra","anCustom"];
@@ -3332,7 +3358,11 @@ function computeAnalysis(c){
   const costs = fhaS ? 0 : a.anCosts;                                   /* FHA Streamline: lender-paid, no origination */
   const mipAmt = fhaS ? Math.round(c.balance*((a.anMip==null?1.75:a.anMip)/100)) : 0;  /* upfront MIP financed */
   const skipN = (fhaS||fc) ? 0 : (a.anSkip||0);                         /* FHA Streamline / free & clear: no skipped payment */
-  const newP = ((second||fc)?0:c.balance) + costs + mipAmt + cashOut + (roll?dBal:0);
+  const newPcalc = ((second||fc)?0:c.balance) + costs + mipAmt + cashOut + (roll?dBal:0);
+  /* a real quote pulled from the lender (Rocket Pro): the lender's loan amount is the loan — fees are already rolled into it */
+  const lenderAmt = (a.anReal && a.anLoanAmt>0 && !second && !fc) ? +a.anLoanAmt : 0;
+  const newP = lenderAmt || newPcalc;
+  if(lenderAmt && Math.abs(lenderAmt-newPcalc)>100) warnings.push(`The lender priced a <b>${money(lenderAmt)}</b> loan; payoff + fees${roll&&dBal?" + debts":""}${cashOut?" + cash out":""} here come to ${money(newPcalc)} (${lenderAmt>newPcalc?"+":"\u2212"}${money(Math.abs(lenderAmt-newPcalc))}). The proposal uses the lender\u2019s amount \u2014 re-price if the payoff or debts changed.`);
   if(second && newP<=a.anCosts) return {tooSmall:true, second};
   const n = a.anTerm*12;
   const heloc = false;   /* a second is modeled as one fixed amortizing loan: debts paid off + any cash out */
@@ -3350,7 +3380,9 @@ function computeAnalysis(c){
     else warnings.push(`Typed payment ${money(typed)} doesn’t cover the interest on ${money(newP)} at ${pct(a.anRate)} — using the computed ${money(newPay)} instead.`); }
   const dExtra = roll ? (a.anExtra||0)+dExtraPer : 0;   /* global extra from the analysis + per-debt extras */
   const outlayNow = (second?0:curPay) + (roll?dPay:0) + dExtra;
-  const saveMo = outlayNow - newPay;
+  const miMo = (a.anReal && a.anMiMo>0 && !second) ? +a.anMiMo : 0;   /* monthly MI from the lender's quote */
+  const saveMo = outlayNow - newPay - miMo;
+  if(a.anReal && a.lenderPay>0 && !heloc && Math.abs(newPay+miMo-a.lenderPay)>1) warnings.push(`The lender shows <b>${money(a.lenderPay)}/mo</b>${miMo?" (with MI)":""}; the toolkit figures ${money(newPay+miMo)} for ${money(newP)} at ${pct(a.anRate)} over ${a.anTerm} years \u2014 check the loan amount and term before sending.`);
   const known = debts.filter(d=>d.apr!=null && d.apr>0);   /* APR is optional: blend only what we know */
   const kBal = known.reduce((s,d)=>s+d.balance,0), kW = known.reduce((s,d)=>s+d.balance*d.apr,0);
   const dNoApr = debts.length-known.length;
@@ -3379,7 +3411,7 @@ function computeAnalysis(c){
   const escrowEst = (second||fc) ? 0 : (c.escrow>0 ? c.escrow : (c.paymentTotal>0 && curPay>0 ? Math.max(0,Math.round(c.paymentTotal-curPay)) : 0));
   const escrowIsEst = !(second||fc) && !(c.escrow>0) && escrowEst>0;
   const pitiNow = (!fc && (c.paymentTotal>0 || curPay>0)) ? (c.paymentTotal>0 ? c.paymentTotal : curPay+escrowEst) : 0;
-  const pitiNew = second ? pitiNow + newPay : fc ? newPay + newEscrow : newPay + escrowEst;
+  const pitiNew = (second ? pitiNow + newPay : fc ? newPay + newEscrow : newPay + escrowEst) + miMo;
   const skipCash = second ? 0 : skipN * piti;
   if(escrowIsEst && curMonthsSrc==="assumed") warnings.push(`Escrow is estimated as the total minus a P&amp;I that assumes 30 years left (${money(escrowEst)}/mo) \u2014 unreliable until months remaining or the original amount is entered.`);
   if(escrowIsEst && c.paymentTotal>0 && escrowEst > c.paymentTotal*0.4) warnings.push(`Estimated escrow (${money(escrowEst)}) is ${Math.round(escrowEst/c.paymentTotal*100)}% of the total payment \u2014 that usually means today\u2019s P&amp;I is understated (months remaining or P&amp;I missing). Type the escrow or P&amp;I from the statement.`);
@@ -3389,13 +3421,16 @@ function computeAnalysis(c){
   const curPathInterest = (second?0:curSched.interest) + (roll?dInt:0);
   /* APR: the rate that amortizes the amount financed net of prepaid finance charges (closing costs + upfront MIP)
      at the actual payment. With no costs entered we can't compute it, so the proposal shows note rate + 0.25% (estimate). */
-  const finCharges = (costs||0) + mipAmt;
-  let apr=a.anRate+0.25, aprEst=true;
+  const lenderFees = a.anReal && a.anFinCharge!=null;
+  const finCharges = (lenderFees ? Math.max(0,+a.anFinCharge) : (costs||0)) + mipAmt;
+  let apr=a.anRate+0.25, aprEst=true, aprSrc="est";
+  if(lenderFees && finCharges<=0){ apr=a.anRate; aprSrc="lender"; }
   if(finCharges>0 && newP>finCharges && !heloc){ const amt=newP-finCharges; let lo=a.anRate, hi=a.anRate+10;
-    for(let i=0;i<50;i++){ const mid=(lo+hi)/2; if(pmt(amt,mid,n)>newPay) hi=mid; else lo=mid; } apr=(lo+hi)/2; aprEst=false; }
+    for(let i=0;i<50;i++){ const mid=(lo+hi)/2; if(pmt(amt,mid,n)>newPay) hi=mid; else lo=mid; } apr=(lo+hi)/2; aprEst=lenderFees; aprSrc=lenderFees?"lender":"costs"; }
+  if(a.anReal && a.anAprTyped>0){ apr=+a.anAprTyped; aprEst=false; aprSrc="typed"; }   /* the real APR from the Loan Estimate wins; it never changes the payment math */
   const intSavedPW = isFinite(pw.interest) ? curPathInterest - pw.interest : 0;
   const intSavedMin = curPathInterest - newSched.interest;
-  return {secType,secName,hideFirst,warnings,curMonthsSrc,allInNow,allInNew,intSavedPW,intSavedMin,dNeverOff,dStmtMonths,dStmtInt,apr,aprEst,fc,noc,newEscrow,ltv,ladder,cust,escrowEst,escrowIsEst,pitiNow,pitiNew,second,heloc,drawYrs,ioPay,afterDrawPay,curPay,curMonths,curSched,roll,cashOut,streamline,debts,dBal,dPay,dInt,dMonths,dMonthsEst,dMonthsUnknown,dExtra,dNoApr,newP,n,newPay,newSched,outlayNow,saveMo,blended,extra,pw,pwEff,skipCash,skipN,prog,fhaS,mipAmt,escrow,curPathInterest,newPayTyped,dPaths,dPayEst,dMinCards,dMinInt,dMinMonths,dMinBal,todayPath,a};
+  return {secType,secName,hideFirst,warnings,curMonthsSrc,allInNow,allInNew,intSavedPW,intSavedMin,dNeverOff,dStmtMonths,dStmtInt,apr,aprEst,aprSrc,miMo,lenderAmt,newPcalc,fc,noc,newEscrow,ltv,ladder,cust,escrowEst,escrowIsEst,pitiNow,pitiNew,second,heloc,drawYrs,ioPay,afterDrawPay,curPay,curMonths,curSched,roll,cashOut,streamline,debts,dBal,dPay,dInt,dMonths,dMonthsEst,dMonthsUnknown,dExtra,dNoApr,newP,n,newPay,newSched,outlayNow,saveMo,blended,extra,pw,pwEff,skipCash,skipN,prog,fhaS,mipAmt,escrow,curPathInterest,newPayTyped,dPaths,dPayEst,dMinCards,dMinInt,dMinMonths,dMinBal,todayPath,a};
 }
 
 function balanceChart(r){
@@ -3413,6 +3448,9 @@ function balanceChart(r){
 }
 
 function runAnalysis(){ { const n=$("anRateSrc"); if(n){ const t=rateSrcText(cur())+aprText(cur()); n.textContent=t; n.style.color=/ESTIMATE/.test(t)?"var(--warn)":"var(--muted)"; } }
+  { const c0=cur(), a0=c0&&c0.analysis||{}, w=$("anAprWrap"), q=$("anLenderQuote"); if(w) w.style.display=a0.anReal?"inline-flex":"none";
+    if(q){ const L=a0.anReal&&a0.lenderQuote; q.style.display=L?"block":"none";
+      if(L) q.innerHTML=`<b>From ${esc(L.lender||"the lender")}</b> \u00b7 ${esc(L.product||"")}${L.lock?" \u00b7 "+esc(L.lock):""} \u00b7 ${pct(L.rate)} \u00b7 ${money(L.payment)}/mo${L.mi>0?" incl. "+money(L.mi)+" MI":""} \u00b7 loan ${money(L.loanAmount)} \u00b7 fees ${money(L.totalFees)} rolled in${L.cost?" \u00b7 "+(L.cost<0?"lender credit "+money(-L.cost):"cost "+money(L.cost)):""} \u00b7 pulled ${esc(L.when||"")}`; } }
   const c=cur(); const el=$("anResults");
   if(!c){ el.innerHTML=`<div class="panel empty">Pick a client first.</div>`; return; }
   readAnalysisInputs();
@@ -3667,7 +3705,7 @@ function comparisonProposalHTML(c,sel){
   <h2>Side by side</h2>
   ${programMatrix(c,sel,rec)}
   ${(()=>{ const all=[]; items.forEach(x=>(x.r.debts||[]).forEach(d=>{ if(d.aprEst&&d.apr>0&&!all.some(y=>y.name===d.name)) all.push(d); })); return all.length?`<div class="hint" style="margin-top:4px">APR${all.length>1?"s":""} on ${all.map(d=>esc(d.name)).join(", ")} estimated at typical rates for that kind of debt; statements will show the exact figures.</div>`:""; })()}
-  <div class="hint" style="margin-top:4px">${items.some(x=>x.r.escrowIsEst)?"* Taxes &amp; insurance estimated as today\u2019s total payment minus P&amp;I. ":""}${items.some(x=>x.r.aprEst)?"* APR estimated at the note rate + 0.25% until closing costs are priced; the exact APR comes with the lender\u2019s Loan Estimate. ":""}Interest totals include your current debts at today\u2019s minimum payments in every column, so the options are compared apples to apples.${c.escrow>0?" Taxes &amp; insurance escrow (~"+money(c.escrow)+"/mo) continues on any option and is not included above.":""}</div>
+  <div class="hint" style="margin-top:4px">${items.some(x=>x.r.escrowIsEst)?"* Taxes &amp; insurance estimated as today\u2019s total payment minus P&amp;I. ":""}${items.some(x=>x.r.aprEst)?"* "+aprDisc(items.find(x=>x.r.aprEst).r):""}Interest totals include your current debts at today\u2019s minimum payments in every column, so the options are compared apples to apples.${c.escrow>0?" Taxes &amp; insurance escrow (~"+money(c.escrow)+"/mo) continues on any option and is not included above.":""}</div>
   ${recIt?`<div class="recbox"><b>\u2605 Our recommendation: ${esc(recIt.sc.label)}.</b> ${c.cmp&&c.cmp.why?esc(c.cmp.why):""}</div>`:""}
   ${awardsRowHTML(c)}
   <div class="disc">This comparison is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. Figures exclude taxes, insurance, and escrows unless noted. Program eligibility (including FHA Streamline and VA IRRRL) is subject to lender and agency guidelines. ${esc(s.co)} \u00b7 NMLS #2484730${vaLenderNote()} \u00b7 Equal Housing Lender.</div>`;
@@ -3732,7 +3770,7 @@ function fcProposalHTML(c,r){
      return `<tr><td>Year ${y}</td><td class="num">${money(b(r.newSched.rows))}</td>${r.ladder.map(l=>`<td class="num">${b(l.rows)>0?money(b(l.rows)):"Paid in full"}</td>`).join("")}</tr>`;}).join("")}
   </tbody></table>`}
   ${awardsRowHTML(c)}
-  <div class="disc">${r.aprEst?"APR is estimated at the note rate + 0.25% until closing costs are priced; the exact APR comes with the lender\u2019s Loan Estimate. ":""}This proposal is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. ${r.noc?"Figures exclude taxes, insurance, and escrows.":"Taxes and insurance are estimates and will be set by the actual escrow analysis."} Cash-out eligibility and maximum loan-to-value are subject to lender and program guidelines. ${esc(s.co)} \u00b7 NMLS #2484730${vaLenderNote()} \u00b7 Equal Housing Lender.</div>`;
+  <div class="disc">${aprDisc(r)}This proposal is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. ${r.noc?"Figures exclude taxes, insurance, and escrows.":"Taxes and insurance are estimates and will be set by the actual escrow analysis."} Cash-out eligibility and maximum loan-to-value are subject to lender and program guidelines. ${esc(s.co)} \u00b7 NMLS #2484730${vaLenderNote()} \u00b7 Equal Housing Lender.</div>`;
 }
 function proposalSingleHTML(){
   const c=cur(); if(!c) return `<div class="empty">Pick a client.</div>`;
@@ -3845,7 +3883,7 @@ function proposalSingleHTML(){
      return `<tr><td>Year ${y}</td><td class="num">${money(b1)}</td>${r.cust?`<td class="num">${b3>0?money(b3):"Paid in full"}</td>`:""}<td class="num">${b2>0?money(b2):"Paid in full"}</td></tr>`;}).join("")}
   </tbody></table>`}
   ${awardsRowHTML(c)}
-  <div class="disc">${r.aprEst?"APR is estimated at the note rate + 0.25% until closing costs are priced; the exact APR comes with the lender\u2019s Loan Estimate. ":""}This proposal is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. Figures exclude taxes, insurance, and escrows unless noted; skipped-payment amounts reflect standard refinance timing and any escrow refund comes from your current servicer. Consolidating short-term debt into a mortgage or home equity loan may increase the total interest paid on that debt over the life of the loan and converts unsecured debt into debt secured by your home. All loans subject to credit approval. Equal Housing Opportunity. ${esc(s.footer)}${vaLenderNote()}${s.loNmls?` \u00b7 Loan Officer NMLS #${esc(s.loNmls)}`:""}</div>`;
+  <div class="disc">${aprDisc(r)}This proposal is an estimate for discussion purposes only, based on information you provided and current market pricing, which changes daily. It is not a Loan Estimate, an offer or commitment to lend, a rate lock, or an approval. Figures exclude taxes, insurance, and escrows unless noted; skipped-payment amounts reflect standard refinance timing and any escrow refund comes from your current servicer. Consolidating short-term debt into a mortgage or home equity loan may increase the total interest paid on that debt over the life of the loan and converts unsecured debt into debt secured by your home. All loans subject to credit approval. Equal Housing Opportunity. ${esc(s.footer)}${vaLenderNote()}${s.loNmls?` \u00b7 Loan Officer NMLS #${esc(s.loNmls)}`:""}</div>`;
 }
 function toggleInclude(id,on){ const c=cur(); if(!c) return; const P=c.prop;
   P.included=P.included.filter(x=>x!==id); if(on) P.included.push(id);

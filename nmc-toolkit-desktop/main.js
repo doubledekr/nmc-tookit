@@ -119,6 +119,24 @@ function startSfListener(){
        answers a Chrome extension (websites can't fake the Origin header) on a loopback Host (blocks DNS-rebinding tricks), and only over POST
        (Chrome always sends Origin on POST). No wildcard CORS here. */
     if (five9 && (req.url.startsWith("/five9") || req.url.startsWith("/jobs"))) { five9.handle(req, res); return; }   /* Five9 events + Lead owner jobs */
+    /* /quote — the extension sends the rate selected on a lender pricing page (Rocket Pro); it becomes a real quote on the client open
+       in the toolkit. Same guard as /client: only a chrome-extension:// Origin, only a loopback Host, only POST, no wildcard CORS. */
+    if (req.url.startsWith("/quote")) {
+      const origin = String(req.headers.origin || ""), host = String(req.headers.host || "");
+      const extOk = /^chrome-extension:\/\/[a-p]{32}$/.test(origin), hostOk = /^(127\.0\.0\.1|localhost):\d+$/.test(host);
+      if (req.method !== "POST" || !extOk || !hostOk) { res.writeHead(403); res.end("forbidden"); return; }
+      const hdr = { "Content-Type": "application/json", "Access-Control-Allow-Origin": origin, "Vary": "Origin", "Cache-Control": "no-store" };
+      let body = ""; req.on("data", c => { body += c; if (body.length > 100000) req.destroy(); });
+      req.on("end", async () => {
+        let q = null; try { q = JSON.parse(body); } catch (e) {}
+        if (!q || typeof q !== "object" || !mainWin || mainWin.isDestroyed()) { res.writeHead(q ? 503 : 400, hdr); res.end(JSON.stringify({ ok: false, error: q ? "Toolkit window isn’t open" : "bad payload" })); return; }
+        let out = null;
+        try { out = await mainWin.webContents.executeJavaScript("window.nmcRealQuote ? window.nmcRealQuote(" + JSON.stringify(q) + ") : ({ok:false,error:'Update the NMC Toolkit'})", true); } catch (e) { out = { ok: false, error: "the toolkit couldn’t take it" }; }
+        if (out && out.ok) { try { if (mainWin.isMinimized()) mainWin.restore(); mainWin.focus(); } catch (e) {} }
+        res.writeHead(200, hdr); res.end(JSON.stringify(out || { ok: false }));
+      });
+      return;
+    }
     if (req.url.startsWith("/client")) {
       const origin = String(req.headers.origin || ""), host = String(req.headers.host || "");
       const extOk = /^chrome-extension:\/\/[a-p]{32}$/.test(origin), hostOk = /^(127\.0\.0\.1|localhost):\d+$/.test(host);
