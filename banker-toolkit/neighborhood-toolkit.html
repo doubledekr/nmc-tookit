@@ -1730,7 +1730,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.24.0";
+const TOOLKIT_VERSION = "1.24.1";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -3229,19 +3229,23 @@ function setRealQuote(on){ const c=cur(); if(!c) return; readAnalysisInputs(); c
    selected rate and term, the lender's loan amount (fees already rolled in), payment, monthly MI and fees. APR is estimated from the
    fees that count toward it until the Loan Estimate's APR is typed in. Compensation never comes across. */
 const APR_EXCLUDE=/apprais|title|record|transfer|tax cert|survey|inspection|credit report|notary|attorney|escrow|homeowner|hazard|insurance premium|\bhoa\b|courier|wire/i;
-function lenderFinanceCharge(fees){ let fc=0; (fees||[]).forEach(f=>{ const amt=+f.amount; if(!isFinite(amt)) return; if(/compensation/i.test(f.name||"")) return; if(/^[E-H]\b/i.test(f.section||"")) return; if(APR_EXCLUDE.test(f.name||"")) return; fc+=amt; }); return Math.round(fc*100)/100; }
+function lenderFinanceCharge(fees){ let fc=0; (fees||[]).forEach(f=>{ const amt=+f.amount; if(!isFinite(amt)) return;  if(/^[E-H]\b/i.test(f.section||"")) return; if(APR_EXCLUDE.test(f.name||"")) return; fc+=amt; }); return Math.round(fc*100)/100; }
 window.nmcRealQuote=function(q){ try{
   const c=cur(); if(!c) return {ok:false, error:"Open a client in the NMC Toolkit first"};
   if(!(q && +q.rate>0 && +q.loanAmount>0 && +q.payment>0)) return {ok:false, error:"Couldn\u2019t read the selected rate, payment and loan amount"};
   const a=c.analysis=c.analysis||{}; const term=+q.term;
-  a.anRate=+q.rate; if([10,15,20,25,30].includes(term)) a.anTerm=term;
-  a.anLoanAmt=+q.loanAmount; a.anCosts=Math.round(+q.totalFees||0); a.anMiMo=+q.mi||0; a.lenderPay=+q.payment; a.anFinCharge=lenderFinanceCharge(q.fees); delete a.anNewPay;
+  /* Rocket shows a base "Rate" and, on some products (home equity), an "Adjusted rate" — the real note rate. Use whichever one
+     reproduces the lender's payment on the lender's loan amount and term. */
+  let rate=+q.rate; const nT=([10,15,20,25,30].includes(term)?term:(a.anTerm||30))*12;
+  if(+q.adjustedRate>0){ const off=x=>Math.abs(pmt(+q.loanAmount,x,nT)-(+q.payment)); rate = off(+q.adjustedRate)<=off(+q.rate) ? +q.adjustedRate : +q.rate; }
+  a.anRate=rate; if([10,15,20,25,30].includes(term)) a.anTerm=term;
+  a.anLoanAmt=+q.loanAmount; a.anCosts=Math.round((+q.totalFees||0)*100)/100; a.anMiMo=+q.mi||0; a.lenderPay=+q.payment; a.anFinCharge=lenderFinanceCharge(q.fees); delete a.anNewPay;
   a.anAprTyped=null; a.anReal=true; a.realWhen=todayStr(); a.realSource="lender"; a.rateSrc={type:"quote", lender:q.lender||"lender", when:todayStr()};
-  a.lenderQuote={lender:q.lender||"", product:String(q.product||"").slice(0,80), lock:String(q.lock||"").slice(0,40), rate:+q.rate, payment:+q.payment, mi:+q.mi||0, loanAmount:+q.loanAmount, totalFees:+q.totalFees||0, cost:+q.costDollars||0, propertyValue:+q.propertyValue||0, ltv:String(q.ltv||"").slice(0,12), finCharge:a.anFinCharge,
+  a.lenderQuote={lender:q.lender||"", product:String(q.product||"").slice(0,80), lock:String(q.lock||"").slice(0,40), rate:rate, baseRate:+q.rate, payment:+q.payment, mi:+q.mi||0, loanAmount:+q.loanAmount, totalFees:+q.totalFees||0, cost:+q.costDollars||0, propertyValue:+q.propertyValue||0, ltv:String(q.ltv||"").slice(0,12), finCharge:a.anFinCharge,
     when:new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})};
   save(); refreshAll(); try{ fillAnalysisInputs(); runAnalysis(); renderProposalPreview(); }catch(e){}
   const r=computeAnalysis(c); const warn=(r&&r.warnings||[]).filter(w=>/lender/.test(w)).map(w=>w.replace(/<[^>]+>/g,""));
-  toast("Real quote from "+(q.lender||"the lender")+" \u2192 "+c.name+": "+pct(+q.rate)+", "+money(+q.payment)+"/mo"+(warn.length?" \u2014 check the analysis":""));
+  toast("Real quote from "+(q.lender||"the lender")+" \u2192 "+c.name+": "+pct(rate)+", "+money(+q.payment)+"/mo"+(warn.length?" \u2014 check the analysis":""));
   return {ok:true, client:c.name, warnings:warn};
 }catch(e){ return {ok:false, error:String(e&&e.message||e)}; } };
 function markRateManual(){ const c=cur(); if(!c) return; const v=num($("anRate").value);
@@ -3329,7 +3333,7 @@ function computeAnalysis(c){
 
   const prog0=a.anProgram||"standard"; const streamline=(prog0==="fha_streamline"||prog0==="va_irrrl")&&a.anLien!=="second";
   const roll = a.anRoll==="yes" && !streamline;         /* streamlines are rate-and-term only */
-  const cashOut = streamline ? 0 : (a.anCashOut||0);
+  let cashOut = streamline ? 0 : (a.anCashOut||0);   /* with a lender quote: worked out from the lender's loan amount below */
   const noc = second && a.anNoCompare==="yes";                 /* HEL cash-out only: debts untouched, no comparison */
   const secType = second ? (a.anSecondType==="heloc"?"heloc":"hel") : null;    /* wording only: the math is one fixed amortizing second lien */
   const secName = secType==="heloc" ? "HELOC" : "home equity loan";
@@ -3360,9 +3364,13 @@ function computeAnalysis(c){
   const skipN = (fhaS||fc) ? 0 : (a.anSkip||0);                         /* FHA Streamline / free & clear: no skipped payment */
   const newPcalc = ((second||fc)?0:c.balance) + costs + mipAmt + cashOut + (roll?dBal:0);
   /* a real quote pulled from the lender (Rocket Pro): the lender's loan amount is the loan — fees are already rolled into it */
-  const lenderAmt = (a.anReal && a.anLoanAmt>0 && !second && !fc) ? +a.anLoanAmt : 0;
+  const lenderAmt = (a.anReal && a.anLoanAmt>0) ? +a.anLoanAmt : 0;
   const newP = lenderAmt || newPcalc;
-  if(lenderAmt && Math.abs(lenderAmt-newPcalc)>100) warnings.push(`The lender priced a <b>${money(lenderAmt)}</b> loan; payoff + fees${roll&&dBal?" + debts":""}${cashOut?" + cash out":""} here come to ${money(newPcalc)} (${lenderAmt>newPcalc?"+":"\u2212"}${money(Math.abs(lenderAmt-newPcalc))}). The proposal uses the lender\u2019s amount \u2014 re-price if the payoff or debts changed.`);
+  if(lenderAmt && Math.abs(lenderAmt-newPcalc)>1){   /* the proposal follows the lender exactly; the cash to the client is what's left of the lender's loan */
+    const base = ((second||fc)?0:c.balance) + costs + mipAmt + (roll?dBal:0);
+    const cashLeft = Math.round((lenderAmt-base)*100)/100;
+    if(!streamline && cashLeft>=0 && (cashOut>0 || cashLeft>1)){ if(Math.abs(cashLeft-cashOut)>1) warnings.push(`Using the lender\u2019s <b>${money(lenderAmt)}</b> loan: ${second||fc?"":money(c.balance)+" payoff + "}${money(costs+mipAmt)} fees${roll&&dBal?" + "+money(dBal)+" debts":""} rolled in leaves <b>${money(cashLeft)} cash to the client</b>${cashOut>0?" (you had "+money(cashOut)+" typed)":""}.`); cashOut=cashLeft; }
+    else warnings.push(`The lender priced a <b>${money(lenderAmt)}</b> loan; payoff + fees${roll&&dBal?" + debts":""}${cashOut?" + cash out":""} here come to ${money(newPcalc)} (${lenderAmt>newPcalc?"+":"\u2212"}${money(Math.abs(lenderAmt-newPcalc))}). The proposal uses the lender\u2019s amount \u2014 re-price if the payoff or debts changed.`); }
   if(second && newP<=a.anCosts) return {tooSmall:true, second};
   const n = a.anTerm*12;
   const heloc = false;   /* a second is modeled as one fixed amortizing loan: debts paid off + any cash out */
@@ -3372,7 +3380,9 @@ function computeAnalysis(c){
   if(heloc){ const rep_=amort(newP, a.anRate, (a.anTerm-drawYrs)*12); afterDrawPay=rep_.pay; newPay=ioPay;
     newSched={ pay:ioPay, months: drawYrs*12+rep_.months, interest: ioPay*drawYrs*12+rep_.interest,
       points:[[0,newP],[drawYrs*12,newP]].concat(rep_.points.slice(1).map(p=>[p[0]+drawYrs*12,p[1]])), rows:rep_.rows }; }
-  else { newPay = pmt(newP, a.anRate, n); newSched = amort(newP, a.anRate, n); }
+  else { newPay = pmt(newP, a.anRate, n); newSched = amort(newP, a.anRate, n);
+    /* a lender quote: show the lender's own payment to the cent (their rounding), as long as it's within a dollar of the math */
+    if(a.anReal && a.lenderPay>0){ const lp=+a.lenderPay-((a.anMiMo>0&&!second)?+a.anMiMo:0); if(Math.abs(lp-newPay)<=1){ newPay=lp; newSched=amort(newP, a.anRate, n, 0, lp); } } }
   /* a quoted payment typed by the banker (presentation): use it as the real cash flow when it at least amortizes the loan */
   let newPayTyped=false;
   if(!heloc && a.anNewPay>0){ const typed=+a.anNewPay; const sch=amort(newP, a.anRate, n, 0, typed);
@@ -3801,16 +3811,16 @@ function proposalSingleHTML(){
       benefits.push(`Keep paying what you pay now (<b>${money(r.outlayNow)}/mo</b>) and you\u2019re <b>debt-free in ${yrsMo(r.pw.months)}</b>${sooner>0?` \u2014 ${yrsMo(sooner)} sooner than ${r.todayPath}`:""}${intSavedPW>0?`, saving <b>${money(intSavedPW)}</b> in interest vs ${r.todayPath}`:""}`); }
   else if(termCut>0) benefits.push(`Keep paying what you pay now and be <b>debt-free ${yrsMo(termCut)} sooner</b>${intSavedPW>0?`, saving <b>${money(intSavedPW)}</b> in interest vs ${r.todayPath}`:""}`);
   if(r.extra>0 && r.pwEff<r.a.anRate-0.05) benefits.push(`Paying what you pay now makes your <b>effective rate ${pct(r.pwEff)}</b> \u2014 the loan is ${pct(r.a.anRate)} on paper, but the extra going to principal means you pay interest like a ${pct(r.pwEff)} loan${r.roll&&r.blended!=null&&r.pwEff<r.blended?`, down from ${pct(r.blended)} blended today`:""}`);
-  if(r.cashOut>0) benefits.push(`<b>${money(r.a.anCashOut)}</b> cash out for your goals`);
+  if(r.cashOut>0) benefits.push(`<b>${money(r.cashOut)}</b> cash out for your goals`);
   const debtRows=r.roll?r.debts.map(d=>`<tr><td>${esc(d.name)}${d.acct?` <span style="color:#777">${esc(acctTail(d.acct))}</span>`:""}</td><td class="num">${money(d.balance)}</td><td class="num">${pct(d.apr)}</td><td class="num">${money((d.pay||0)+(d.extra||0))}</td><td class="num" style="color:#2E6B4F;font-weight:600">Paid off</td></tr>`).join(""):"";
   const note=$("propNote").value.trim();
   const sideRows = r.second ? `
-   <tr><td>Balances owed</td><td class="num">${money(r.dBal)}</td><td class="num">${money(r.newP)} \u2014 one loan${r.cashOut>0?" (includes "+money(r.cashOut)+" cash to you)":""}</td></tr>
+   <tr><td>Balances owed</td><td class="num">${r.dBal>0?money(r.dBal):"\u2014"}</td><td class="num">${money(r.newP)} \u2014 one loan${r.cashOut>0?" (includes "+money(r.cashOut)+" cash to you)":""}</td></tr>
    <tr><td>Rate</td><td class="num">${r.blended!=null?pct(r.blended)+" blended":"\u2014"}</td><td class="num">${pct(r.a.anRate)} ${r.secType==="heloc"?"variable (today\u2019s rate)":"fixed"}</td></tr>
    <tr><td>APR${r.aprEst?" (estimated)":""}</td><td class="num"></td><td class="num">${pct(r.apr)}</td></tr>
-   <tr><td>Monthly payments</td><td class="num">${money(r.dPay)}${r.dExtra?" + "+money(r.dExtra)+" extra":""}</td><td class="num">${money(r.newPay)}${r.heloc?" interest-only during the "+r.drawYrs+"-yr draw, then ~"+money(r.afterDrawPay):""}</td></tr>
+   <tr><td>Monthly payments</td><td class="num">${r.dPay>0||r.dExtra>0?money(r.dPay)+(r.dExtra?" + "+money(r.dExtra)+" extra":""):"\u2014"}</td><td class="num">${money(r.newPay)}${r.heloc?" interest-only during the "+r.drawYrs+"-yr draw, then ~"+money(r.afterDrawPay):""}</td></tr>
    <tr><td>Paid off in${r.dMinCards?" <span class='hint'>(cards at minimum payments)</span>":""}</td><td class="num">${isFinite(r.dMonths)&&r.dMonths>0?yrsMo(r.dMonths):"\u2014"}</td><td class="num">${yrsMo(r.n)}${r.extra>0?" (or "+yrsMo(r.pw.months)+" paying what you pay now)":""}</td></tr>
-   <tr><td><b>Total monthly</b></td><td class="num"><b>${money(r.outlayNow)}</b></td><td class="num"><b>${money(r.newPay)}</b></td></tr>
+   <tr><td><b>Total monthly</b></td><td class="num"><b>${r.outlayNow>0?money(r.outlayNow):"\u2014"}</b></td><td class="num"><b>${money(r.newPay)}</b></td></tr>
    ${r.pitiNow>0&&!r.hideFirst?`<tr><td><b>All-in each month</b> \u2014 mortgage with taxes &amp; insurance (PITI) + ${r.roll&&r.dPay>0?"today\u2019s debt payments \u2192 PITI + this loan":"this loan"}</td><td class="num"><b>${money(r.pitiNow+(r.roll?r.dPay:0))}</b>${r.roll&&r.dPay>0?`<div class="hint">${money(r.pitiNow)} mortgage + ${money(r.dPay)} debts${r.dMinCards?" (cards at minimums)":""}</div>`:""}</td><td class="num"><b>${money(r.pitiNew)}</b><div class="hint">${money(r.pitiNow)} mortgage + ${money(r.newPay)} this loan</div></td></tr>`:""}` : `
    <tr><td>Loan amount</td><td class="num">${money(c.balance)}</td><td class="num">${money(r.newP)}</td></tr>
    <tr><td>Interest rate</td><td class="num">${pct(c.rate)}${r.roll&&r.debts.length?` (blended with debts: ${pct(r.blended)})`:""}</td><td class="num">${pct(r.a.anRate)}${o?` \u2014 ${esc(o.lender)}${o.lock?", "+esc(o.lock)+" lock":""}`:""}</td></tr>
@@ -3875,7 +3885,10 @@ function proposalSingleHTML(){
    <tr><td>Interest you avoid vs staying where you are</td><td class="num">${r.curPathInterest-r.newSched.interest>0?money(r.curPathInterest-r.newSched.interest):"\u2014"}</td><td class="num" style="color:#2E6B4F;font-weight:600">${money(Math.max(0,r.curPathInterest-r.cust.interest))}</td><td class="num" style="color:#2E6B4F;font-weight:600">${money(Math.max(0,intSavedPW))}</td></tr>
    <tr><td>What the rate works out to</td><td class="num">${pct(r.a.anRate)}</td><td class="num">${pct(r.cust.eff)}</td><td class="num">${pct(r.pwEff)}</td></tr>
   </tbody></table>`:""}
-  ${(c.prop&&c.prop.amort===false)?"":`  <h2>Pay what you pay now \u2014 amortization snapshot</h2>
+  ${(c.prop&&c.prop.amort===false)?"":!(r.outlayNow>0)?`  <h2>Amortization snapshot</h2>
+  <table><thead><tr><th>Year</th><th class="num">Balance</th></tr></thead><tbody>
+   ${[1,2,3,5,7,10,15,20,25,30].filter(y=>y<=r.a.anTerm).map(y=>{ const b1=r.newSched.rows[y*12-1]?r.newSched.rows[y*12-1].bal:0; return `<tr><td>Year ${y}</td><td class="num">${b1>0.5?money(b1):"Paid in full"}</td></tr>`; }).join("")}
+  </tbody></table>`:`  <h2>Pay what you pay now \u2014 amortization snapshot</h2>
   <p style="font-size:11px;color:#555;margin-bottom:4px">Keep your familiar ${money(r.outlayNow)}/month; the extra ${money(r.extra)} attacks principal directly.</p>
   <table><thead><tr><th>Year</th><th class="num">Balance \u2014 minimum payment</th>${r.cust?`<th class="num">Balance \u2014 extra ${money(r.cust.extra)}/mo</th>`:""}<th class="num">Balance \u2014 pay what you pay now</th></tr></thead><tbody>
    ${[1,2,3,5,7,10,15,20,25,30].filter(y=>y<=r.a.anTerm).map(y=>{const m=y*12;

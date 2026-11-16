@@ -26,7 +26,7 @@
     for (const li of scope.querySelectorAll("ul li")){
       /* only the fee lists AFTER "Total Fees" — never the compensation block above it (lender-paid / broker compensation stays internal) */
       if (!(tot.compareDocumentPosition(li) & Node.DOCUMENT_POSITION_FOLLOWING)) continue;
-      if (li.closest("pricing-calc-lender-compensation") || /compensation/i.test(txt(li))) continue;
+      if (li.closest("pricing-calc-lender-compensation")) continue;   /* (a broker fee listed INSIDE section A is a borrower-paid charge — kept) */
       const st = li.querySelector('[aria-label="Section Total"]');
       if (st){ section = txt(li).replace(txt(st), "").trim(); continue; }
       const spans = li.querySelectorAll(":scope > span"); if (spans.length < 2) continue;
@@ -36,13 +36,13 @@
     return { total, items: out }; }
   function readQuote(){
     const tr = selectedRow(); if (!tr) return null;
-    const rate = money(cell(tr, "Rate")), payment = money(cell(tr, "Monthly payment")), mi = money(cell(tr, "MI amount")) || 0;
+    const rate = money(cell(tr, "Rate")), adjustedRate = money(cell(tr, "Adjusted rate")), payment = money(cell(tr, "Monthly payment")), mi = money(cell(tr, "MI amount")) || 0;
     const costPct = money(cell(tr, "% cost to borrower")), costDollars = money(cell(tr, "$ cost to borrower"));
     const prodLi = document.querySelector(".pc-c-List--summaryview li"); const spans = prodLi ? prodLi.querySelectorAll("span") : [];
     const product = spans[0] ? txt(spans[0]) : ""; const lock = spans[1] ? txt(spans[1]) : "";
     const term = (/(\d{2})\s*Year/i.exec(product) || [])[1];
     const f = fees();
-    return { lender: "Rocket Pro", product, lock, term: term ? +term : null, rate, payment, mi, costPct, costDollars,
+    return { lender: "Rocket Pro", product, lock, term: term ? +term : null, rate, adjustedRate, payment, mi, costPct, costDollars,
       eligibility: cell(tr, "Eligibility"), loanAmount: money(val("txt-loan-amount")), propertyValue: money(val("txt-property-value")),
       ltv: val("txt-loan-ltv"), purpose: val("txt-loan-purpose"), loanType: val("txt-loan-type"),
       totalFees: f.total, fees: f.items, pulledAt: new Date().toISOString() }; }
@@ -60,7 +60,7 @@
     btn.textContent = "Send rate to NMC Toolkit";
     if (!r) return toast("Couldn’t reach the NMC Toolkit app — is it open?", false);
     if (!r.ok) return toast("Not sent: " + (r.error || "the toolkit said no"), false);
-    toast(`Sent ${q.rate.toFixed(3)}% · $${q.payment.toFixed(2)}/mo to ${r.client}` + (r.warnings && r.warnings.length ? " — check the analysis: " + r.warnings[0] : ""), true); }
+    toast(`Sent ${(q.adjustedRate || q.rate).toFixed(3)}% · $${q.payment.toFixed(2)}/mo to ${r.client}` + (r.warnings && r.warnings.length ? " — check the analysis: " + r.warnings[0] : ""), true); }
   function ensure(){
     if (!alive()){ if (btn){ btn.textContent = "NMC extension updated — reload page"; btn.onclick = () => location.reload(); } return false; }
     const on = /rocketpro\.com$/.test(location.hostname) && !!document.querySelector('[data-testid="pricing-table-ready"], tr.pro-nova-pricing-table__rate-row');
