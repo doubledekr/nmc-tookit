@@ -69,7 +69,9 @@
     ["value", "Property value", /property value|appraised value|home value|estimated value|^value$/], ["balance", "Current loan balance / payoff", /current (loan |mortgage )?balance|payoff|unpaid principal|first mortgage balance|existing (loan|lien)/],
     ["loanAmount", "New loan amount", /loan amount|base loan|new loan|total loan/], ["cashOut", "Cash out", /cash ?out|cash to borrower/], ["street", "Street", /street|address line ?1|property address|^address$/],
     ["city", "City", /^city|property city/], ["state", "State", /^state|property state/], ["zip", "ZIP code", /zip|postal/], ["term", "Term (years)", /term|amortization/],
-    ["phone", "Phone", /phone|mobile|cell/], ["email", "Email", /e-?mail/]];
+    ["phone", "Phone", /phone|mobile|cell/], ["email", "Email", /e-?mail/],
+    ["currentRate", "Current rate", /current (interest )?rate|existing rate|present rate/], ["newRate", "New rate", /new rate|desired rate|target rate|requested rate/],
+    ["loanType", "Current loan type", /current loan type|existing loan type|mortgage type/]];
   /* boxes the sensor never fills or offers — the banker types these by hand: SSN / tax ID, employer / employment, income */
   const HAND_ONLY = /\bssn\b|social security|tax ?id|\bitin\b|\bein\b|employer|employment|occupation|job title|income|salary|wages/;
   const phoneDigits = v => { let d = String(v || "").replace(/\D/g, ""); if (d.length === 11 && d[0] === "1") d = d.slice(1); return d.length === 10 ? d : null; };
@@ -77,15 +79,26 @@
     if (el.id){ const l = document.querySelector(`label[for="${(window.CSS && CSS.escape) ? CSS.escape(el.id) : el.id}"]`); if (l && T(l)) return T(l); }
     if (el.getAttribute("aria-label")) return el.getAttribute("aria-label").trim();
     const lb = el.getAttribute("aria-labelledby"); if (lb){ const l = document.getElementById(lb.split(/\s+/)[0]); if (l && T(l)) return T(l); }
-    const wrap = el.closest("label"); if (wrap){ const t = T(wrap).replace(T(el), "").trim(); if (t) return t; }
-    if (el.placeholder) return el.placeholder.trim();
-    let p = el.previousElementSibling; if (p && T(p) && T(p).length < 50) return T(p);
-    const par = el.parentElement; if (par && par.previousElementSibling && T(par.previousElementSibling).length < 50 && T(par.previousElementSibling)) return T(par.previousElementSibling);
-    return el.name || ""; }
+    const wrap = el.closest("label"); if (wrap){ const t = T(wrap).replace(T(el), "").trim(); if (t && t.length < 60) return t; }
+    const near = nearText(el); if (near) return near;
+    if (el.name && /[a-z]{2}/i.test(el.name)) return el.name;
+    /* a placeholder is often a sample ("e.g. 350,000", "Enter amount", "mm/dd/yyyy") — only used when nothing else names the box */
+    const ph = String(el.placeholder || "").trim(); if (ph && !/^(e\.?g\.?|ex\b|eg\b|enter|type|select|choose|search|start typing|mm|dd|yy|\$|\d|\(\d|x{2,})/i.test(ph)) return ph;
+    return ""; }
+  /* the nearest short text BEFORE the box: its previous siblings, then its parents' previous siblings (up to 3 levels), stopping at another box */
+  function nearText(el){ let n = el;
+    for (let up = 0; up < 3 && n && n !== document.body; up++, n = n.parentElement){
+      let p = n.previousElementSibling;
+      for (let k = 0; k < 3 && p; k++, p = p.previousElementSibling){
+        if (p.matches("input, select, textarea") || p.querySelector("input, select, textarea")) return "";
+        const t = T(p); if (t) return t.length < 60 ? t : ""; } }
+    return ""; }
   function formFields(){
     return [...document.querySelectorAll("input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]), select, textarea")]
       .filter(el => visible(el) && !el.disabled && !el.readOnly && !el.closest(".nmc-sn-panel"))
-      .map(el => ({ el, label: fieldLabel(el).replace(/[:*]\s*$/, "").slice(0, 60) })).filter(f => f.label && !HAND_ONLY.test(norm(f.label)) && !HAND_ONLY.test(norm(f.el.name || f.el.id || ""))); }
+      .map((el, i) => ({ el, label: (fieldLabel(el) || (el.id && !/[:\d]{4,}|^:|react|ember/i.test(el.id) ? "box #" + el.id : "") || "unnamed box " + (i + 1)).replace(/[:*]\s*$/, "").slice(0, 60) }))
+      .filter(f => !HAND_ONLY.test(norm(f.label)) && !HAND_ONLY.test(norm(f.el.name || f.el.id || "")))
+      .map((f, i, all) => { const n = all.slice(0, i).filter(g => norm(g.label) === norm(f.label)).length; return n ? Object.assign(f, { label: f.label + " (" + (n + 1) + ")" }) : f; }); }
   function setValue(el, v){
     if (el.tagName === "SELECT"){ const want = norm(v); const o = [...el.options].find(o => norm(o.textContent) === want || norm(o.value) === want) || [...el.options].find(o => norm(o.textContent).startsWith(want));
       if (!o) return false; el.value = o.value; el.dispatchEvent(new Event("input", { bubbles: true })); el.dispatchEvent(new Event("change", { bubbles: true })); return true; }
@@ -98,8 +111,8 @@
   let btn = null, menu = null, panel = null, recipe = null, gotRecipe = false;
   function toast(msg, ok){ const t = document.createElement("div"); t.className = "nmc-sn-toast"; t.textContent = msg;
     t.style.cssText = `position:fixed;${SIDE};bottom:72px;z-index:2147483647;max-width:400px;background:${ok ? "#23242B" : "#8F3223"};color:#fff;padding:10px 14px;border-radius:10px;font:13px/1.4 system-ui,sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.25)`;
-    document.body.appendChild(t); setTimeout(() => t.remove(), 7000); }
-  function closeAll(){ if (menu){ menu.remove(); menu = null; } if (panel){ panel.remove(); panel = null; } }
+    document.body.appendChild(t); t.title = "Click to close"; t.onclick = () => t.remove(); setTimeout(() => t.remove(), Math.max(7000, msg.length * 70)); }
+  function closeAll(){ try { stopPick(); } catch (e) {} if (menu){ menu.remove(); menu = null; } if (panel){ panel.remove(); panel = null; } }
   function box(html){ closeAll(); panel = document.createElement("div"); panel.className = "nmc-sn-panel";
     panel.style.cssText = `position:fixed;${SIDE};bottom:66px;z-index:2147483647;width:360px;max-height:70vh;overflow:auto;background:#FBF8F2;border:1px solid #D9D3C6;border-radius:12px;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.25);font:13px/1.45 system-ui,sans-serif;color:#23242B`;
     panel.innerHTML = html; document.body.appendChild(panel); return panel; }
@@ -124,7 +137,7 @@
     if (x.err) return box(`<b style="color:#8F3223">${esc(x.err)}</b><div style="color:#5C616E;margin-top:4px">Price a scenario so the rates show, select one, then click NMC again.</div><div style="margin-top:8px">${BTN("x", "Close", true)}</div>`).onclick = e => { if (e.target.dataset.a) closeAll(); };
     const pl = x.pairs.map(p => p.label);
     const p = box(`<div style="font-weight:700;color:#2E6B4F;font-size:14px">Send this rate to the NMC Toolkit</div>
-      <div style="color:#5C616E;margin:2px 0 8px">${R ? "Using this site’s recipe — change anything that’s off." : "First time on " + esc(HOST) + " — check what I read, fix anything that’s off. It’s remembered for next time."}</div>
+      <div style="color:#5C616E;margin:2px 0 8px">${R ? savedLine() + " Change anything that’s off." : "First time on " + esc(HOST) + " — check what I read, fix anything that’s off. It’s remembered for next time."}</div>
       ${x.tr ? "" : `<div style="color:#8F3223;margin-bottom:6px"><b>Select a rate in the table first</b>, then click NMC again.</div>`}
       ${row("Note rate column", `<select data-k="rate" ${SEL}>${opt(x.tb.heads, x.cols.rate, "—")}</select>`)}
       ${row("Payment column", `<select data-k="payment" ${SEL}>${opt(x.tb.heads, x.cols.payment, "—")}</select>`)}
@@ -148,8 +161,8 @@
     const r = await send({ type: "nmc:quote", quote: q });
     if (!r) return toast("Couldn’t reach the NMC Toolkit app — is it open?", false);
     if (!r.ok) return toast("Not sent: " + (r.error || "the toolkit said no"), false);
-    await send({ type: "nmc:recipe", op: "save", host: HOST, kind: "rate", recipe: rc }); recipe = Object.assign({}, recipe, { rate: rc });
-    closeAll(); toast(`Sent ${q.rate.toFixed(3)}% · ${money(q.payment)}/mo to ${r.client}` + (r.warnings && r.warnings.length ? " — check the analysis: " + r.warnings[0] : ""), true); }
+    const sv = await send({ type: "nmc:recipe", op: "save", host: HOST, kind: "rate", recipe: rc }); if (sv && sv.ok) recipe = Object.assign({}, recipe, { rate: rc, updated: recipe.updated || "today" });
+    closeAll(); toast(`Sent ${q.rate.toFixed(3)}% · ${money(q.payment)}/mo to ${r.client}` + (r.warnings && r.warnings.length ? " — check the analysis: " + r.warnings[0] : "") + (sv && sv.ok ? ` ✓ Recipe saved for ${HOST}.` : " (Recipe not saved.)"), true); }
   async function quickRate(){ await loadRecipe(); const R = recipe && recipe.rate;
     if (!R) return ratePanel();
     const y = readRate(R); if (y.err || !y.tr || !(y.q.rate > 0) || !(y.q.payment > 0) || !(y.q.loanAmount > 0)) return ratePanel();   /* something moved: show the panel */
@@ -160,20 +173,67 @@
     await loadRecipe(); const F = (recipe && recipe.fill) || {};
     const c = await send({ type: "nmc:client" }); if (!c || !c.ok || !c.client) return toast("Open a client in the NMC Toolkit first" + (c && c.error ? " (" + c.error + ")" : ""), false);
     const p0 = c.client, addr = p0.address || {};
-    const vals = { first: p0.first, last: p0.last, fico: p0.fico, value: p0.value, balance: p0.balance, loanAmount: null, cashOut: p0.cashOut || null, street: addr.street, city: addr.city, state: addr.state, zip: addr.zip, term: p0.term, phone: phoneDigits(p0.phone), email: p0.email || null };
+    const vals = { first: p0.first, last: p0.last, fico: p0.fico, value: p0.value, balance: p0.balance, loanAmount: null, cashOut: p0.cashOut || null, currentRate: p0.currentRate, newRate: p0.newRate, loanType: p0.currentLoanType || null, street: addr.street, city: addr.city, state: addr.state, zip: addr.zip, term: p0.term, phone: phoneDigits(p0.phone), email: p0.email || null };
     const fields = formFields(); if (fields.length < 2) return toast("No form boxes found on this page.", false);
     const labels = [...new Set(fields.map(f => f.label))];
     const guess = k => { if (F[k] !== undefined) return F[k]; const re = (FILL_KEYS.find(x => x[0] === k) || [])[2]; const f = re && fields.find(f => re.test(norm(f.label))); return f ? f.label : ""; };
     const p = box(`<div style="font-weight:700;color:#2E6B4F;font-size:14px">Fill from ${esc(p0.name || "the open client")}</div>
-      <div style="color:#5C616E;margin:2px 0 8px">${Object.keys(F).length ? "Using this site’s recipe — change anything that’s off." : "First time on " + esc(HOST) + " — match each value to a box (leave blank to skip). It’s remembered for next time."}</div>
-      ${FILL_KEYS.filter(([k]) => vals[k] != null && vals[k] !== "").map(([k, name]) => row(`${esc(name)}<br><span style="font-size:11px">${esc(String(vals[k]))}</span>`, `<select data-k="${k}" ${SEL}>${opt(labels, guess(k), "— skip —")}</select>`)).join("")}
+      <div style="color:#5C616E;margin:2px 0 8px">${Object.keys(F).length ? savedLine() + " Change anything that’s off — or click <b>Pick</b>, then the box on the page." : "First time on " + esc(HOST) + " — match each value to a box (leave blank to skip), or click <b>Pick</b> and then the box on the page. It’s saved for next time."}</div>
+      <label style="display:flex;gap:6px;align-items:center;margin:0 0 6px;color:#5C616E;font-size:12px"><input type="checkbox" data-keep ${Object.keys(F).length ? "checked" : ""}> Leave boxes that already have something in them</label>
+      ${FILL_KEYS.filter(([k]) => vals[k] != null && vals[k] !== "").map(([k, name]) => row(`${esc(name)}<br><span style="font-size:11px">${esc(String(vals[k]))}</span>`, `<div style="display:flex;gap:4px"><select data-k="${k}" ${SEL}>${opt(labels, guess(k), "— skip —")}</select><button data-pick="${k}" title="Click here, then click the box on the page" style="border:1px solid #D9D3C6;background:#fff;border-radius:6px;padding:0 8px;font:600 11.5px system-ui;cursor:pointer;white-space:nowrap">Pick</button></div>`)).join("")}
       <div style="margin-top:8px">${BTN("fill", "Fill these boxes")}${BTN("x", "Cancel", true)}</div>`);
-    p.onclick = e => { const a = e.target.dataset.a; if (!a) return; if (a === "x") return closeAll();
-      const rc = {}; let n = 0; const missed = [];
+    p.onclick = e => { const pk = e.target.dataset.pick; if (pk) return startPick(p, pk, e.target);
+      const a = e.target.dataset.a; if (!a) return; if (a === "x") { stopPick(); return closeAll(); }
+      stopPick(); const rc = {}; const jobs = [], missed = []; const keep = !!(p.querySelector("[data-keep]") || {}).checked;
       for (const sel of p.querySelectorAll("select[data-k]")){ const k = sel.dataset.k; rc[k] = sel.value; if (!sel.value) continue;
-        const f = formFields().find(f => norm(f.label) === norm(sel.value)); if (f && setValue(f.el, vals[k])){ n++; f.el.style.outline = "2px solid #2E6B4F"; } else missed.push(sel.value); }
-      send({ type: "nmc:recipe", op: "save", host: HOST, kind: "fill", recipe: rc }); recipe = Object.assign({}, recipe, { fill: rc });
-      closeAll(); toast(`Filled ${n} box${n === 1 ? "" : "es"} from ${p0.name}${missed.length ? " — couldn’t fill: " + missed.join(", ") : ""}. Check it over before you continue.`, !missed.length); }; }
+        const f = formFields().find(f => norm(f.label) === norm(sel.value)); if (f) jobs.push({ k, f, v: vals[k] }); else missed.push(sel.value); }
+      closeAll(); doFill(jobs, missed, keep, rc, p0.name); }; }
+  /* Lender pages often run their own autofill (address lookup lists, formatting, "did you mean"). So: boxes with a suggestion list go
+     LAST; each box gets a moment and a closed popup before the next; after a pause anything the page wiped is put back once; the
+     address box is left focused so the banker can pick from its list — then NMC → Fill again only fills what's still empty. */
+  const isAuto = el => el.getAttribute("role") === "combobox" || !!el.getAttribute("aria-autocomplete") || el.getAttribute("aria-haspopup") === "listbox" || el.hasAttribute("list") || /autocomplete|typeahead|places|pac-target/i.test(el.className || "");
+  const hasValue = el => el.tagName === "SELECT" ? (el.selectedIndex > 0 && el.value !== "") : String(el.value || "").trim() !== "";
+  const sameVal = (el, v) => { if (el.tagName === "SELECT"){ const o = el.options[el.selectedIndex]; return !!o && (norm(o.value) === norm(v) || norm(o.textContent).startsWith(norm(v))); }
+    const s = String(v); if (/^-?\d+(\.\d+)?$/.test(s)) return num(el.value) === +s; return norm(el.value) === norm(s); };
+  const pause = ms => new Promise(r => setTimeout(r, ms));
+  async function doFill(jobs, missed, keep, rc, who){
+    jobs.sort((a, b) => isAuto(a.f.el) - isAuto(b.f.el));
+    let n = 0; const kept = [];
+    for (const j of jobs){
+      if (!j.f.el.isConnected){ missed.push(j.f.label); continue; }
+      if (keep && hasValue(j.f.el)){ kept.push(j.f.label); continue; }
+      if (setValue(j.f.el, j.v)){ n++; j.done = true; j.f.el.style.outline = "2px solid #2E6B4F"; } else missed.push(j.f.label);
+      if (!isAuto(j.f.el)) try { j.f.el.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); } catch (e) {}
+      await pause(90); }
+    await pause(700);
+    let fixed = 0;
+    for (const j of jobs) if (j.done && !isAuto(j.f.el) && j.f.el.isConnected && !sameVal(j.f.el, j.v)){ if (setValue(j.f.el, j.v)) fixed++; await pause(90); }
+    const auto = jobs.find(j => j.done && isAuto(j.f.el));
+    if (auto){ try { auto.f.el.focus(); auto.f.el.dispatchEvent(new Event("input", { bubbles: true })); } catch (e) {} }
+    const sv = await send({ type: "nmc:recipe", op: "save", host: HOST, kind: "fill", recipe: rc }); if (sv && sv.ok) recipe = Object.assign({}, recipe, { fill: rc });
+    toast(`Filled ${n} box${n === 1 ? "" : "es"} from ${who}.` + (fixed ? ` The page cleared ${fixed} — put back.` : "") + (kept.length ? ` Left ${kept.length} that already had something.` : "")
+      + (auto ? ` If “${auto.f.label}” shows a list, pick the right one — then NMC → Fill again fills only what’s still empty.` : "")
+      + (missed.length ? ` Couldn’t fill: ${missed.join(", ")}.` : "")
+      + (sv && sv.ok ? ` ✓ Recipe saved for ${HOST} (NMC Settings → Recipes).` : " Recipe not saved — is the NMC Toolkit open?") + " Check it over before you continue.", !missed.length); }
+  function savedLine(){ return recipe && recipe.updated ? `✓ Recipe saved ${esc(recipe.updated)}${recipe.from ? " (" + esc(recipe.from) + ")" : ""}.` : "Using this site’s recipe."; }
+
+  /* Pick: the banker clicks "Pick" next to an NMC value, then clicks the box on the page it belongs in — for boxes whose name
+     the sensor can't match on its own. The box is saved in the recipe by the same name the dropdown uses. */
+  let picking = null;
+  function stopPick(){ if (!picking) return; document.removeEventListener("mousedown", picking.h, true); document.removeEventListener("click", picking.c, true);
+    document.documentElement.style.cursor = ""; if (picking.b) { picking.b.textContent = "Pick"; picking.b.style.background = "#fff"; picking.b.style.color = ""; } picking = null; }
+  function startPick(p, k, b){ const again = picking && picking.k === k; stopPick(); if (again) return;
+    b.textContent = "Click a box…"; b.style.background = "#2E6B4F"; b.style.color = "#fff"; document.documentElement.style.cursor = "crosshair";
+    const h = e => { const el = e.target && e.target.closest && e.target.closest("input, select, textarea"); if (e.target.closest && e.target.closest(".nmc-sn-panel")) return;
+      e.preventDefault(); e.stopPropagation();
+      if (!el){ toast("That isn’t a box you can type in — click the box itself.", false); return; }
+      const f = formFields().find(f => f.el === el);
+      if (!f){ toast(HAND_ONLY.test(norm(fieldLabel(el) + " " + (el.name || ""))) ? "That box is hand-filled only (SSN, employer, income)." : "NMC can’t fill that box (it’s read-only or hidden).", false); stopPick(); return; }
+      const sel = p.querySelector(`select[data-k="${k}"]`);
+      if (![...sel.options].some(o => o.textContent === f.label)){ const o = document.createElement("option"); o.textContent = f.label; sel.appendChild(o); }
+      sel.value = f.label; el.style.outline = "2px dashed #2E6B4F"; setTimeout(() => { el.style.outline = ""; }, 1500); stopPick(); };
+    const c = e => { if (!(e.target.closest && e.target.closest(".nmc-sn-panel"))) { e.preventDefault(); e.stopPropagation(); } };
+    picking = { k, b, h, c }; document.addEventListener("mousedown", h, true); document.addEventListener("click", c, true); }
 
   /* the NMC button: shows only when this page has a rate table or a form */
   function ensure(){

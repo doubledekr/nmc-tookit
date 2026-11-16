@@ -515,3 +515,4 @@ body.nmc-band.nmc-mac .nmc-tb .l{padding-left:84px}   /* room for the traffic li
 .f9m.warn{background:#FBE7E3;color:#8F3223}
 .f9m.flat{background:#EEE9F8;color:#3E2A7A}
 .ps .f9m,.pc .f9m{margin-left:0}
+#pipeTable .f9m{white-space:normal;max-width:100%;line-height:1.35;padding:2px 8px;border-radius:8px}   /* wrap inside the narrow Status column instead of running over Loan */
