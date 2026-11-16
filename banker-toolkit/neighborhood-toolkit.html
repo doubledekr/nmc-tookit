@@ -1736,7 +1736,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.25.0";
+const TOOLKIT_VERSION = "1.25.1";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2583,7 +2583,8 @@ function lenderPacket(){ const c=cur(); if(!c) return null;
   return { v:1, id:c.id, name:c.name||"", first:nm.join(" "), last, address:lenderAddr(c.address),
     product, productLabel:PRODUCT_LABELS[product]||"", productFrom: sel.length?"proposal":"analysis",
     balance:c.balance??null, value:c.value??null, fico:c.fico??null, currentLoanType:c.loanType||"", currentRate:c.rate??null,
-    newRate:a.anRate??null, term:+a.anTerm||30, cashOut:+a.anCashOut||0 }; }
+    newRate:a.anRate??null, term:+a.anTerm||30, cashOut:+a.anCashOut||0,
+    phone:c.phone||"", email:c.email||"" }; }   /* phone/email: filled only when the banker clicks Fill on a site they allowed */
 window.nmcLenderPacket=lenderPacket;
 
 /* ---------- VA IRRRL fee recoupment — banker-only (never on proposals, emails or anything client-facing) ----------
@@ -3265,7 +3266,7 @@ window.nmcRealQuote=function(q){ try{
 const RECIPE_PREFIX="NMC-RECIPE-1:";
 const recTxt=v=>String(v==null?"":v).replace(/[<>\u0000-\u001f]/g,"").replace(/\s+/g," ").trim().slice(0,80);
 const recHost=h=>{ h=String(h||"").toLowerCase().replace(/^www\./,"").trim(); return /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(h)&&h.length<=120?h:""; };
-const FILL_RECIPE_KEYS=["first","last","fico","value","balance","loanAmount","cashOut","street","city","state","zip","term"];
+const FILL_RECIPE_KEYS=["first","last","fico","value","balance","loanAmount","cashOut","street","city","state","zip","term","phone","email"];
 function cleanRecipe(kind, r){ if(!r||typeof r!=="object") return null;
   if(kind==="rate"){ const c=r.cols&&typeof r.cols==="object"?r.cols:{}; const term=+r.term;
     const o={ cols:{rate:recTxt(c.rate), payment:recTxt(c.payment), apr:recTxt(c.apr), cost:recTxt(c.cost)}, loanLabel:recTxt(r.loanLabel), feesLabel:recTxt(r.feesLabel), table:String(r.table||"").replace(/[<>]/g,"").slice(0,400), name:recTxt(r.name), term:[10,15,20,25,30].includes(term)?term:30 };

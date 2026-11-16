@@ -68,7 +68,11 @@
   const FILL_KEYS = [["first", "First name", /first name|borrower first|^first$/], ["last", "Last name", /last name|borrower last|^last$|surname/], ["fico", "Credit score / FICO", /fico|credit score|qualifying score|representative score|^score$/],
     ["value", "Property value", /property value|appraised value|home value|estimated value|^value$/], ["balance", "Current loan balance / payoff", /current (loan |mortgage )?balance|payoff|unpaid principal|first mortgage balance|existing (loan|lien)/],
     ["loanAmount", "New loan amount", /loan amount|base loan|new loan|total loan/], ["cashOut", "Cash out", /cash ?out|cash to borrower/], ["street", "Street", /street|address line ?1|property address|^address$/],
-    ["city", "City", /^city|property city/], ["state", "State", /^state|property state/], ["zip", "ZIP code", /zip|postal/], ["term", "Term (years)", /term|amortization/]];
+    ["city", "City", /^city|property city/], ["state", "State", /^state|property state/], ["zip", "ZIP code", /zip|postal/], ["term", "Term (years)", /term|amortization/],
+    ["phone", "Phone", /phone|mobile|cell/], ["email", "Email", /e-?mail/]];
+  /* boxes the sensor never fills or offers — the banker types these by hand: SSN / tax ID, employer / employment, income */
+  const HAND_ONLY = /\bssn\b|social security|tax ?id|\bitin\b|\bein\b|employer|employment|occupation|job title|income|salary|wages/;
+  const phoneDigits = v => { let d = String(v || "").replace(/\D/g, ""); if (d.length === 11 && d[0] === "1") d = d.slice(1); return d.length === 10 ? d : null; };
   function fieldLabel(el){
     if (el.id){ const l = document.querySelector(`label[for="${(window.CSS && CSS.escape) ? CSS.escape(el.id) : el.id}"]`); if (l && T(l)) return T(l); }
     if (el.getAttribute("aria-label")) return el.getAttribute("aria-label").trim();
@@ -81,7 +85,7 @@
   function formFields(){
     return [...document.querySelectorAll("input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]), select, textarea")]
       .filter(el => visible(el) && !el.disabled && !el.readOnly && !el.closest(".nmc-sn-panel"))
-      .map(el => ({ el, label: fieldLabel(el).replace(/[:*]\s*$/, "").slice(0, 60) })).filter(f => f.label); }
+      .map(el => ({ el, label: fieldLabel(el).replace(/[:*]\s*$/, "").slice(0, 60) })).filter(f => f.label && !HAND_ONLY.test(norm(f.label)) && !HAND_ONLY.test(norm(f.el.name || f.el.id || ""))); }
   function setValue(el, v){
     if (el.tagName === "SELECT"){ const want = norm(v); const o = [...el.options].find(o => norm(o.textContent) === want || norm(o.value) === want) || [...el.options].find(o => norm(o.textContent).startsWith(want));
       if (!o) return false; el.value = o.value; el.dispatchEvent(new Event("input", { bubbles: true })); el.dispatchEvent(new Event("change", { bubbles: true })); return true; }
@@ -156,7 +160,7 @@
     await loadRecipe(); const F = (recipe && recipe.fill) || {};
     const c = await send({ type: "nmc:client" }); if (!c || !c.ok || !c.client) return toast("Open a client in the NMC Toolkit first" + (c && c.error ? " (" + c.error + ")" : ""), false);
     const p0 = c.client, addr = p0.address || {};
-    const vals = { first: p0.first, last: p0.last, fico: p0.fico, value: p0.value, balance: p0.balance, loanAmount: null, cashOut: p0.cashOut || null, street: addr.street, city: addr.city, state: addr.state, zip: addr.zip, term: p0.term };
+    const vals = { first: p0.first, last: p0.last, fico: p0.fico, value: p0.value, balance: p0.balance, loanAmount: null, cashOut: p0.cashOut || null, street: addr.street, city: addr.city, state: addr.state, zip: addr.zip, term: p0.term, phone: phoneDigits(p0.phone), email: p0.email || null };
     const fields = formFields(); if (fields.length < 2) return toast("No form boxes found on this page.", false);
     const labels = [...new Set(fields.map(f => f.label))];
     const guess = k => { if (F[k] !== undefined) return F[k]; const re = (FILL_KEYS.find(x => x[0] === k) || [])[2]; const f = re && fields.find(f => re.test(norm(f.label))); return f ? f.label : ""; };
