@@ -34,15 +34,35 @@
       const amount = money(txt(spans[spans.length - 1])); if (amount == null || !name) continue;
       out.push({ section: section.slice(0, 60), name: name.slice(0, 80), amount }); }
     return { total, items: out }; }
+  /* Rocket's "Rate adjustments" box (home equity): Base rate, Adjusted rate, Undiscounted all-in rate, then each adjustment
+     (e.g. CLTV/FICO +1.750, loan amount −0.100). Read as label/number pairs. Only this box — the "Pricing adjustments" box on other
+     products lists compensation, and anything labelled compensation is skipped regardless. */
+  function rateAdjustments(){
+    const head = [...document.querySelectorAll("h1,h2,h3,h4,h5,h6,div,span,p")].find(el => el.children.length === 0 && /^\s*rate adjustments\s*$/i.test(el.textContent || "") && visible(el));
+    if (!head) return null;
+    let box = head.parentElement; for (let i = 0; i < 4 && box && !/base rate/i.test(box.innerText || ""); i++) box = box.parentElement;
+    if (!box) return null;
+    const lines = String(box.innerText || "").split(/\n+/).map(l => l.trim()).filter(Boolean);
+    const out = []; let label = null;
+    for (const l of lines){
+      if (/^rate adjustments$/i.test(l)) continue;
+      const m = /^(.*?)[\s\t]+(-?\d{1,2}\.\d{2,4})$/.exec(l);
+      if (m && m[1]) { out.push([m[1].trim(), +m[2]]); label = null; continue; }
+      if (/^-?\d{1,2}\.\d{2,4}$/.test(l) && label) { out.push([label, +l]); label = null; continue; }
+      label = l; }
+    const rows = out.filter(([k]) => !/compensation/i.test(k)).slice(0, 20).map(([label, value]) => ({ label: label.slice(0, 60), value }));
+    const get = re => { const r = rows.find(x => re.test(x.label)); return r ? r.value : null; };
+    return rows.length ? { base: get(/^base rate/i), adjusted: get(/^adjusted rate/i), allIn: get(/undiscounted/i), total: get(/^adjustments$/i), items: rows.filter(x => !/^(base rate|adjusted rate|undiscounted|adjustments$|base price)/i.test(x.label)) } : null; }
   function readQuote(){
     const tr = selectedRow(); if (!tr) return null;
-    const rate = money(cell(tr, "Rate")), adjustedRate = money(cell(tr, "Adjusted rate")), payment = money(cell(tr, "Monthly payment")), mi = money(cell(tr, "MI amount")) || 0;
+    const adj = rateAdjustments();
+    const rate = money(cell(tr, "Rate")), adjustedRate = money(cell(tr, "Adjusted rate")) || (adj && adj.adjusted) || null, payment = money(cell(tr, "Monthly payment")), mi = money(cell(tr, "MI amount")) || 0;
     const costPct = money(cell(tr, "% cost to borrower")), costDollars = money(cell(tr, "$ cost to borrower"));
     const prodLi = document.querySelector(".pc-c-List--summaryview li"); const spans = prodLi ? prodLi.querySelectorAll("span") : [];
     const product = spans[0] ? txt(spans[0]) : ""; const lock = spans[1] ? txt(spans[1]) : "";
     const term = (/(\d{2})\s*Year/i.exec(product) || [])[1];
     const f = fees();
-    return { lender: "Rocket Pro", product, lock, term: term ? +term : null, rate, adjustedRate, payment, mi, costPct, costDollars,
+    return { lender: "Rocket Pro", product, lock, term: term ? +term : null, rate, adjustedRate, rateAdjustments: adj, payment, mi, costPct, costDollars,
       eligibility: cell(tr, "Eligibility"), loanAmount: money(val("txt-loan-amount")), propertyValue: money(val("txt-property-value")),
       ltv: val("txt-loan-ltv"), purpose: val("txt-loan-purpose"), loanType: val("txt-loan-type"),
       totalFees: f.total, fees: f.items, pulledAt: new Date().toISOString() }; }

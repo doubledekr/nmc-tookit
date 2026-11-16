@@ -1730,7 +1730,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.24.1";
+const TOOLKIT_VERSION = "1.24.2";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -3241,7 +3241,9 @@ window.nmcRealQuote=function(q){ try{
   a.anRate=rate; if([10,15,20,25,30].includes(term)) a.anTerm=term;
   a.anLoanAmt=+q.loanAmount; a.anCosts=Math.round((+q.totalFees||0)*100)/100; a.anMiMo=+q.mi||0; a.lenderPay=+q.payment; a.anFinCharge=lenderFinanceCharge(q.fees); delete a.anNewPay;
   a.anAprTyped=null; a.anReal=true; a.realWhen=todayStr(); a.realSource="lender"; a.rateSrc={type:"quote", lender:q.lender||"lender", when:todayStr()};
-  a.lenderQuote={lender:q.lender||"", product:String(q.product||"").slice(0,80), lock:String(q.lock||"").slice(0,40), rate:rate, baseRate:+q.rate, payment:+q.payment, mi:+q.mi||0, loanAmount:+q.loanAmount, totalFees:+q.totalFees||0, cost:+q.costDollars||0, propertyValue:+q.propertyValue||0, ltv:String(q.ltv||"").slice(0,12), finCharge:a.anFinCharge,
+  const ra=q.rateAdjustments&&typeof q.rateAdjustments==="object"?q.rateAdjustments:null;
+  a.lenderQuote={lender:q.lender||"", product:String(q.product||"").slice(0,80), lock:String(q.lock||"").slice(0,40), rate:rate, baseRate:+q.rate,
+    adj: ra ? {base:+ra.base||null, adjusted:+ra.adjusted||null, total:+ra.total||null, items:(ra.items||[]).slice(0,12).map(x=>({label:String(x.label||"").slice(0,60), value:+x.value})).filter(x=>isFinite(x.value)&&!/compensation/i.test(x.label))} : null, payment:+q.payment, mi:+q.mi||0, loanAmount:+q.loanAmount, totalFees:+q.totalFees||0, cost:+q.costDollars||0, propertyValue:+q.propertyValue||0, ltv:String(q.ltv||"").slice(0,12), finCharge:a.anFinCharge,
     when:new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})};
   save(); refreshAll(); try{ fillAnalysisInputs(); runAnalysis(); renderProposalPreview(); }catch(e){}
   const r=computeAnalysis(c); const warn=(r&&r.warnings||[]).filter(w=>/lender/.test(w)).map(w=>w.replace(/<[^>]+>/g,""));
@@ -3460,7 +3462,9 @@ function balanceChart(r){
 function runAnalysis(){ { const n=$("anRateSrc"); if(n){ const t=rateSrcText(cur())+aprText(cur()); n.textContent=t; n.style.color=/ESTIMATE/.test(t)?"var(--warn)":"var(--muted)"; } }
   { const c0=cur(), a0=c0&&c0.analysis||{}, w=$("anAprWrap"), q=$("anLenderQuote"); if(w) w.style.display=a0.anReal?"inline-flex":"none";
     if(q){ const L=a0.anReal&&a0.lenderQuote; q.style.display=L?"block":"none";
-      if(L) q.innerHTML=`<b>From ${esc(L.lender||"the lender")}</b> \u00b7 ${esc(L.product||"")}${L.lock?" \u00b7 "+esc(L.lock):""} \u00b7 ${pct(L.rate)} \u00b7 ${money(L.payment)}/mo${L.mi>0?" incl. "+money(L.mi)+" MI":""} \u00b7 loan ${money(L.loanAmount)} \u00b7 fees ${money(L.totalFees)} rolled in${L.cost?" \u00b7 "+(L.cost<0?"lender credit "+money(-L.cost):"cost "+money(L.cost)):""} \u00b7 pulled ${esc(L.when||"")}`; } }
+      if(L){ const A=L.adj, base=(A&&A.base)||L.baseRate, adjBy=base&&L.rate&&Math.abs(L.rate-base)>0.0005?L.rate-base:0;
+        var rb = adjBy ? `<div style="margin-top:3px">Note rate <b>${pct(L.rate)}</b> = ${esc(L.lender||"lender")} base ${pct(base)} ${adjBy>0?"+":"\u2212"} ${Math.abs(adjBy).toFixed(3)}% adjustments${A&&A.items&&A.items.length?" ("+A.items.map(x=>esc(x.label)+" "+(x.value>0?"+":"")+x.value.toFixed(3)).join(", ")+")":""} <span class="hint" style="display:inline">\u2014 for you; the proposal shows the note rate</span></div>` : ""; }
+      if(L) q.innerHTML=`<b>From ${esc(L.lender||"the lender")}</b> \u00b7 ${esc(L.product||"")}${L.lock?" \u00b7 "+esc(L.lock):""} \u00b7 ${pct(L.rate)} \u00b7 ${money(L.payment)}/mo${L.mi>0?" incl. "+money(L.mi)+" MI":""} \u00b7 loan ${money(L.loanAmount)} \u00b7 fees ${money(L.totalFees)} rolled in${L.cost?" \u00b7 "+(L.cost<0?"lender credit "+money(-L.cost):"cost "+money(L.cost)):""} \u00b7 pulled ${esc(L.when||"")}${rb}`; } }
   const c=cur(); const el=$("anResults");
   if(!c){ el.innerHTML=`<div class="panel empty">Pick a client first.</div>`; return; }
   readAnalysisInputs();
