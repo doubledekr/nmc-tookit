@@ -4,6 +4,11 @@
 const DEFAULT_PORT = 47831;
 
 async function getPort(){ const s = await chrome.storage.local.get("port"); return +(s.port) || DEFAULT_PORT; }
+/* hello to the app on every start: our version, and whether Chrome loaded us from the toolkit's stable folder (it holds nmc-home.json)
+   or from the install folder that updates replace — so the toolkit can say "move it, one time" */
+async function hello(){ let home = "shipped"; try { const r = await fetch(chrome.runtime.getURL("nmc-home.json"), { cache: "no-store" }); if (r.ok && (await r.json()).home === "stable") home = "stable"; } catch (e) {}
+  try { const port = await getPort(); await fetch(`http://127.0.0.1:${port}/ping?ev=${encodeURIComponent(chrome.runtime.getManifest().version)}&eh=${home}`, { method: "POST", headers: { "Content-Type": "text/plain" }, body: "{}", cache: "no-store" });   /* POST: Chrome sends the extension Origin the app checks */ } catch (e) {} }
+hello();
 
 async function postToApp(payload){
   const port = await getPort();

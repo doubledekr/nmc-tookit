@@ -99,14 +99,27 @@ const http = require("http");
 const SF_PORT = +(process.env.NMC_SF_PORT || (IS_BETA ? 47832 : 47831));   /* beta app + beta extension pair on 47832, so both pairs run side by side */
 const five9 = require("./five9/five9-main.js")(app, () => mainWin, IS_BETA);   /* Five9 calls: POST /five9 from the extension + the panel in Settings */
 if (five9) app.on("before-quit", () => five9.flush());
-let sfServer = null, sfLastAt = 0, sfExtSeen = "";
-function shippedExtVersion(){ try { const p = path.join(process.resourcesPath || __dirname, "chrome-extension", "manifest.json"); const alt = path.join(__dirname, "..", "chrome-extension", "manifest.json"); return JSON.parse(fs.readFileSync(fs.existsSync(p) ? p : alt, "utf8")).version || ""; } catch (e) { return ""; } }
+let sfServer = null, sfLastAt = 0, sfExtSeen = "", sfExtHome = "";
+function shippedExtDir(){ const p = path.join(process.resourcesPath || __dirname, "chrome-extension"); return fs.existsSync(p) ? p : path.join(__dirname, "..", "chrome-extension"); }
+/* Chrome loads the extension from a folder of OUR data folder (<userData>/chrome-extension), never from the install folder:
+   an update deletes and rewrites the install folder, and Chrome switches an unpacked extension off ("path not found") the moment
+   its folder disappears. This copy is refreshed in place on every start — files overwritten, the folder itself never removed.
+   nmc-home.json marks it, so the extension can tell the app which folder Chrome loaded it from. */
+let EXT_DIR = null;
+function extDir(){ if (EXT_DIR) return EXT_DIR; const src = shippedExtDir(), dst = path.join(app.getPath("userData"), "chrome-extension");
+  try { fs.mkdirSync(dst, { recursive: true }); fs.cpSync(src, dst, { recursive: true, force: true }); fs.writeFileSync(path.join(dst, "nmc-home.json"), JSON.stringify({ home: "stable" })); EXT_DIR = dst; }
+  catch (e) { console.error("extension copy failed:", e && e.message); EXT_DIR = src; }
+  return EXT_DIR; }
+function shippedExtVersion(){ try { return JSON.parse(fs.readFileSync(path.join(shippedExtDir(), "manifest.json"), "utf8")).version || ""; } catch (e) { return ""; } }
 function startSfListener(){
   if (sfServer) return;
   sfServer = http.createServer((req, res) => {
     const cors = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "Content-Type", "Access-Control-Allow-Methods": "POST, GET, OPTIONS" };
     if (req.method === "OPTIONS") { res.writeHead(204, cors); res.end(); return; }
-    if (req.method === "GET" && req.url.startsWith("/ping")) { res.writeHead(200, Object.assign({ "Content-Type": "application/json" }, cors)); res.end(JSON.stringify({ ok: true, app: "nmc-toolkit", version: app.getVersion(), lastAt: sfLastAt })); return; }
+    if ((req.method === "GET" || req.method === "POST") && req.url.startsWith("/ping")) {
+      /* the extension says hello on start: its version and whether Chrome loaded it from the stable folder */
+      if (/^chrome-extension:\/\/[a-p]{32}$/.test(String(req.headers.origin || ""))) { try { const q = new URL(req.url, "http://x").searchParams; if (q.get("ev")) sfExtSeen = q.get("ev").slice(0, 20); if (q.get("eh")) sfExtHome = /^(stable|shipped)$/.test(q.get("eh")) ? q.get("eh") : ""; } catch (e) {} }
+      res.writeHead(200, Object.assign({ "Content-Type": "application/json" }, cors)); res.end(JSON.stringify({ ok: true, app: "nmc-toolkit", version: app.getVersion(), lastAt: sfLastAt })); return; }
     if (req.method === "POST" && req.url.startsWith("/sf")) {
       let body = ""; req.on("data", c => { body += c; if (body.length > 2e6) req.destroy(); });
       req.on("end", () => { let j = null; try { j = JSON.parse(body); } catch (e) {}
@@ -174,9 +187,9 @@ function startSfListener(){
   sfServer.listen(SF_PORT, "127.0.0.1");
 }
 let sfRetries = 0;
-ipcMain.on("sf:statusSync", e => { e.returnValue = { listening: !!sfServer && sfServer.listening, port: SF_PORT, lastAt: sfLastAt, extSeen: sfExtSeen, extShipped: shippedExtVersion() }; });
-ipcMain.handle("sf:openExtensionFolder", () => { const p = path.join(process.resourcesPath || __dirname, "chrome-extension"); const alt = path.join(__dirname, "..", "chrome-extension"); return shell.openPath(fs.existsSync(p) ? p : alt); });
-ipcMain.on("sf:extensionPathSync", e => { const p = path.join(process.resourcesPath || __dirname, "chrome-extension"); const alt = path.join(__dirname, "..", "chrome-extension"); e.returnValue = fs.existsSync(p) ? p : alt; });
+ipcMain.on("sf:statusSync", e => { e.returnValue = { listening: !!sfServer && sfServer.listening, port: SF_PORT, lastAt: sfLastAt, extSeen: sfExtSeen, extShipped: shippedExtVersion(), extHome: sfExtHome, extDir: extDir() }; });
+ipcMain.handle("sf:openExtensionFolder", () => shell.openPath(extDir()));
+ipcMain.on("sf:extensionPathSync", e => { e.returnValue = extDir(); });
 /* brand images for proposals: download in the main process (no CORS), hand back data URLs; only neighborhoodmc.com */
 ipcMain.handle("brand:fetch", async (e, urls) => {
   const https = require("https"); const out = {};
@@ -225,6 +238,7 @@ app.setAppUserModelId(IS_BETA ? "com.neighborhoodmc.toolkit.beta" : "com.neighbo
    so two instances never fight over the data file or the extension's port */
 if (!app.requestSingleInstanceLock()) { app.quit(); }
 app.whenReady().then(() => {
+  extDir();   /* refresh the stable extension folder before Chrome next reloads it */
   Menu.setApplicationMenu(Menu.buildFromTemplate([
     { label: "NMC Toolkit", submenu: [{ role: "reload" }, { role: "toggleDevTools" }, { type: "separator" }, { role: "quit" }] },
     { role: "editMenu" }, { role: "viewMenu" }, { role: "windowMenu" } ]));

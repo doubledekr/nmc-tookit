@@ -1516,8 +1516,11 @@ Discover 6,100 190 24.9"></textarea>
                   <li>Click <b>Load unpacked</b> and pick the folder below.</li>
                   <li>Open any Salesforce lead — a red <b>Send to NMC toolkit</b> button appears bottom-right. Click it; the lead lands at the top of your Pipeline.</li>
                 </ol>
-                <div class="btnrow"><code id="extPath" class="hint" style="flex:1;word-break:break-all"></code><button class="btn ghost small" onclick="DESK.openExtensionFolder()">Open extension folder</button></div>
-                <p class="hint" style="margin:6px 0 0">Updates: the folder is replaced with each toolkit update — restart Chrome to pick it up. Nothing leaves this computer; the extension talks to the app on 127.0.0.1 only.</p>
+                <div id="extMove" style="display:none;margin:0 0 10px;padding:10px 12px;border-radius:10px;background:var(--cream-soft);border:1px solid var(--warn)">
+                  <b>One-time move.</b> Chrome is loading the extension from the toolkit’s install folder, which every update replaces \u2014 that’s what switches it off. Point Chrome at the folder below instead; updates never delete it.
+                  <ol class="hint" style="margin:6px 0 0 18px;line-height:1.7"><li>In <b>chrome://extensions</b>, click <b>Remove</b> on the NMC extension.</li><li>Click <b>Load unpacked</b> and pick the folder below (<b>Copy path</b>, then paste it in the folder box).</li><li>Sites you allowed with \u201cUse NMC on this site\u201d (Bonzo, lenders) need allowing once more. Your recipes are safe \u2014 they live in the toolkit.</li></ol></div>
+                <div class="btnrow"><code id="extPath" class="hint" style="flex:1;word-break:break-all"></code><button class="btn ghost small" onclick="navigator.clipboard.writeText($('extPath').textContent).then(()=>toast('Folder path copied'))">Copy path</button><button class="btn ghost small" onclick="DESK.openExtensionFolder()">Open extension folder</button></div>
+                <p class="hint" style="margin:6px 0 0">Updates: the toolkit refreshes this folder in place (it’s never deleted) \u2014 after an update, click <b>Reload</b> on the NMC extension in chrome://extensions or restart Chrome. Nothing leaves this computer; the extension talks to the app on 127.0.0.1 only.</p>
                 <div id="recipeBox" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">
                   <div class="eyebrow" style="font-size:11px">Lender page recipes</div>
                   <p class="hint" style="margin:4px 0 6px">For lender sites other than Rocket Pro: click the NMC toolbar button on the site → <b>Use NMC on this site</b> (Chrome asks once), then <b>Send rate</b> or <b>Fill</b>. The first time, you match the columns and boxes; that “recipe” is kept here. Share it with a teammate as a code — they paste it below and adjust on the page if their screen differs a little.</p>
@@ -1737,7 +1740,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.25.5";
+const TOOLKIT_VERSION = "1.25.6";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -5169,7 +5172,10 @@ function renderExtStatus(){ try{ renderRecipes(); }catch(e){} const el=$("extSta
   const seen=st&&(st.extSeen||state.extSeen); const stale = seen && st.extShipped && seen!==st.extShipped;
   const staleMsg = stale ? `<div class="hint" style="color:var(--warn);margin-top:4px"><b>Chrome is still running extension v${esc(seen)}</b> \u2014 this app ships v${esc(st.extShipped)}. Restart Chrome, or open chrome://extensions and click Reload on the NMC extension, to pick up the new one.</div>` : "";
   el.innerHTML = !st ? "" : st.listening ? `<span class="tag-good">Listening for the extension on 127.0.0.1:${st.port}</span>${st.lastAt?` \u00b7 last lead received ${new Date(st.lastAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}`:" \u00b7 nothing received yet"}${seen?` \u00b7 extension v${esc(seen)}`:""}${staleMsg}` : `<span class="tag-warn">Listener couldn\u2019t start on port ${st.port}</span> \u2014 another program may be using it`;
-  if(ep){ let p=""; try{ p=DESK.extensionPath()||""; }catch(e){} ep.textContent=p; } }
+  if(ep){ let p=""; try{ p=DESK.extensionPath()||""; }catch(e){} ep.textContent=p; }
+  /* Chrome still loads the extension from the install folder that updates replace (that's what switches it off) */
+  const mv=$("extMove"); if(mv) mv.style.display = st&&st.extHome==="shipped" ? "" : "none";
+  if(st&&st.extHome==="shipped"&&!window.__extMoveToasted){ window.__extMoveToasted=1; toast("One-time step: point Chrome at the NMC extension’s new folder — see Settings \u2192 Chrome extension",8000); } }
 async function fetchBrandAssets(force){ const s=state.settings; s.assets=s.assets||{};
   const urls=[BRAND_ASSETS.badge].concat(BRAND_ASSETS.awards).filter(u=>force||!s.assets[u]); if(!urls.length) return s.assets;
   let got={};
