@@ -1737,7 +1737,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.25.4";
+const TOOLKIT_VERSION = "1.25.5";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -3275,7 +3275,7 @@ window.nmcRealQuote=function(q){ try{
 const RECIPE_PREFIX="NMC-RECIPE-1:";
 const recTxt=v=>String(v==null?"":v).replace(/[<>\u0000-\u001f]/g,"").replace(/\s+/g," ").trim().slice(0,80);
 const recHost=h=>{ h=String(h||"").toLowerCase().replace(/^www\./,"").trim(); return /^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(h)&&h.length<=120?h:""; };
-const FILL_RECIPE_KEYS=["first","last","fico","value","balance","loanAmount","cashOut","street","city","state","zip","term","phone","email","currentRate","newRate","loanType"];
+const FILL_RECIPE_KEYS=["first","last","fico","value","balance","loanAmount","cashOut","street","city","state","zip","term","phone","email","currentRate","newRate","loanType","pause"];
 function cleanRecipe(kind, r){ if(!r||typeof r!=="object") return null;
   if(kind==="rate"){ const c=r.cols&&typeof r.cols==="object"?r.cols:{}; const term=+r.term;
     const o={ cols:{rate:recTxt(c.rate), payment:recTxt(c.payment), apr:recTxt(c.apr), cost:recTxt(c.cost)}, loanLabel:recTxt(r.loanLabel), feesLabel:recTxt(r.feesLabel), table:String(r.table||"").replace(/[<>]/g,"").slice(0,400), name:recTxt(r.name), term:[10,15,20,25,30].includes(term)?term:30 };
@@ -3300,7 +3300,7 @@ function pasteRecipe(){ const ta=$("recipePaste"); const raw=String(ta&&ta.value
   toast((had?"Updated":"Added")+" the recipe for "+host+(rate&&fill?" (rates + form)":rate?" (rates)":" (form)")+" \u2014 adjust it on the page if yours looks a little different"); }
 function deleteRecipe(host){ if(!confirm("Remove the recipe for "+host+"? The page will ask you to match things again next time.")) return; delete state.recipes[host]; save(); renderRecipes(); }
 function renderRecipes(){ const el=$("recipeList"); if(!el) return; const R=state.recipes||{}; const hosts=Object.keys(R).sort();
-  el.innerHTML = hosts.length ? `<table class="data" style="margin:4px 0 8px"><tbody>${hosts.map(h=>{ const r=R[h]; return `<tr><td><b>${esc(h)}</b><div class="hint" style="margin:0">${[r.rate?"rates: "+esc(r.rate.cols.rate)+" / "+esc(r.rate.cols.payment)+(r.rate.loanLabel?" \u00b7 loan \u201c"+esc(r.rate.loanLabel)+"\u201d":""):"",r.fill?"form: "+Object.keys(r.fill).filter(k=>r.fill[k]).length+" boxes":""].filter(Boolean).join(" \u00b7 ")} \u00b7 ${esc(r.from||"")} ${esc(r.updated||"")}</div></td><td style="white-space:nowrap;text-align:right"><button class="btn ghost small" onclick="copyRecipe('${esc(h)}')">Copy code</button> <button class="btn ghost small" onclick="deleteRecipe('${esc(h)}')">Remove</button></td></tr>`; }).join("")}</tbody></table>`
+  el.innerHTML = hosts.length ? `<table class="data" style="margin:4px 0 8px"><tbody>${hosts.map(h=>{ const r=R[h]; return `<tr><td><b>${esc(h)}</b><div class="hint" style="margin:0">${[r.rate?"rates: "+esc(r.rate.cols.rate)+" / "+esc(r.rate.cols.payment)+(r.rate.loanLabel?" \u00b7 loan \u201c"+esc(r.rate.loanLabel)+"\u201d":""):"",r.fill?"form: "+Object.keys(r.fill).filter(k=>k!=="pause"&&r.fill[k]).length+" boxes"+(r.fill.pause?" \u00b7 pauses after "+r.fill.pause.split(",").length:""):""].filter(Boolean).join(" \u00b7 ")} \u00b7 ${esc(r.from||"")} ${esc(r.updated||"")}</div></td><td style="white-space:nowrap;text-align:right"><button class="btn ghost small" onclick="copyRecipe('${esc(h)}')">Copy code</button> <button class="btn ghost small" onclick="deleteRecipe('${esc(h)}')">Remove</button></td></tr>`; }).join("")}</tbody></table>`
     : `<div class="hint" style="margin:4px 0 8px">None yet. On a lender site, click the NMC toolbar button \u2192 <b>Use NMC on this site</b>, then Send rate or Fill once \u2014 what you match is saved here.</div>`; }
 
 function markRateManual(){ const c=cur(); if(!c) return; const v=num($("anRate").value);

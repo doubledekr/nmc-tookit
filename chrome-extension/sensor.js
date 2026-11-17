@@ -177,44 +177,98 @@
     const fields = formFields(); if (fields.length < 2) return toast("No form boxes found on this page.", false);
     const labels = [...new Set(fields.map(f => f.label))];
     const guess = k => { if (F[k] !== undefined) return F[k]; const re = (FILL_KEYS.find(x => x[0] === k) || [])[2]; const f = re && fields.find(f => re.test(norm(f.label))); return f ? f.label : ""; };
+    const paused = new Set(String(F.pause || "").split(",").filter(Boolean));
+    const SMALL = 'border:1px solid #D9D3C6;background:#fff;border-radius:6px;padding:0 7px;font:600 11.5px system-ui;cursor:pointer;white-space:nowrap';
+    const chip = (k, name) => `<span data-drag="${k}" title="Drag onto a box on the page to fill it" style="display:block;cursor:grab;user-select:none;background:#fff;border:1px solid #D9D3C6;border-radius:8px;padding:3px 7px;line-height:1.25"><b style="color:#2E6B4F;font-weight:700">⠿</b> ${esc(name)}<br><span style="font-size:11px;color:#5C616E">${esc(String(vals[k]))}</span></span>`;
     const p = box(`<div style="font-weight:700;color:#2E6B4F;font-size:14px">Fill from ${esc(p0.name || "the open client")}</div>
-      <div style="color:#5C616E;margin:2px 0 8px">${Object.keys(F).length ? savedLine() + " Change anything that’s off — or click <b>Pick</b>, then the box on the page." : "First time on " + esc(HOST) + " — match each value to a box (leave blank to skip), or click <b>Pick</b> and then the box on the page. It’s saved for next time."}</div>
+      <div style="color:#5C616E;margin:2px 0 8px">${Object.keys(F).length ? savedLine() + " Change anything that’s off." : "First time on " + esc(HOST) + " — match each value to a box (leave blank to skip). It’s saved for next time."}
+        <br><span style="font-size:12px">Box not found? <b>Drag</b> a value onto it, or click <b>Pick</b> then the box. <b>⏸</b> = stop after that box so you can choose the page’s suggestion (e.g. an official address), then <b>Finish fill</b>.</span></div>
       <label style="display:flex;gap:6px;align-items:center;margin:0 0 6px;color:#5C616E;font-size:12px"><input type="checkbox" data-keep ${Object.keys(F).length ? "checked" : ""}> Leave boxes that already have something in them</label>
-      ${FILL_KEYS.filter(([k]) => vals[k] != null && vals[k] !== "").map(([k, name]) => row(`${esc(name)}<br><span style="font-size:11px">${esc(String(vals[k]))}</span>`, `<div style="display:flex;gap:4px"><select data-k="${k}" ${SEL}>${opt(labels, guess(k), "— skip —")}</select><button data-pick="${k}" title="Click here, then click the box on the page" style="border:1px solid #D9D3C6;background:#fff;border-radius:6px;padding:0 8px;font:600 11.5px system-ui;cursor:pointer;white-space:nowrap">Pick</button></div>`)).join("")}
+      ${FILL_KEYS.filter(([k]) => vals[k] != null && vals[k] !== "").map(([k, name]) => row(chip(k, name), `<div style="display:flex;gap:4px"><select data-k="${k}" ${SEL}>${opt(labels, guess(k), "— skip —")}</select><button data-pick="${k}" title="Click here, then click the box on the page" style="${SMALL}">Pick</button><button data-ps="${k}" aria-pressed="${paused.has(k)}" title="Pause after this box — choose the page’s suggestion, then Finish fill" style="${SMALL};${paused.has(k) ? "background:#2E6B4F;color:#fff;border-color:#2E6B4F" : ""}">⏸</button></div>`)).join("")}
       <div style="margin-top:8px">${BTN("fill", "Fill these boxes")}${BTN("x", "Cancel", true)}</div>`);
+    const recipeNow = () => { const rc = {}; p.querySelectorAll("select[data-k]").forEach(sel => rc[sel.dataset.k] = sel.value);
+      rc.pause = [...p.querySelectorAll("[data-ps]")].filter(b => b.getAttribute("aria-pressed") === "true").map(b => b.dataset.ps).join(","); return rc; };
+    p.addEventListener("mousedown", e => { const d = e.target.closest && e.target.closest("[data-drag]"); if (d) startDrag(e, p, d.dataset.drag, vals, recipeNow); });
     p.onclick = e => { const pk = e.target.dataset.pick; if (pk) return startPick(p, pk, e.target);
+      const ps = e.target.dataset.ps; if (ps){ const on = e.target.getAttribute("aria-pressed") !== "true"; e.target.setAttribute("aria-pressed", on);
+        e.target.style.background = on ? "#2E6B4F" : "#fff"; e.target.style.color = on ? "#fff" : ""; e.target.style.borderColor = on ? "#2E6B4F" : "#D9D3C6"; return; }
       const a = e.target.dataset.a; if (!a) return; if (a === "x") { stopPick(); return closeAll(); }
-      stopPick(); const rc = {}; const jobs = [], missed = []; const keep = !!(p.querySelector("[data-keep]") || {}).checked;
-      for (const sel of p.querySelectorAll("select[data-k]")){ const k = sel.dataset.k; rc[k] = sel.value; if (!sel.value) continue;
-        const f = formFields().find(f => norm(f.label) === norm(sel.value)); if (f) jobs.push({ k, f, v: vals[k] }); else missed.push(sel.value); }
-      closeAll(); doFill(jobs, missed, keep, rc, p0.name); }; }
-  /* Lender pages often run their own autofill (address lookup lists, formatting, "did you mean"). So: boxes with a suggestion list go
-     LAST; each box gets a moment and a closed popup before the next; after a pause anything the page wiped is put back once; the
-     address box is left focused so the banker can pick from its list — then NMC → Fill again only fills what's still empty. */
+      stopPick(); const rc = recipeNow(); const pauseKeys = new Set(rc.pause.split(",").filter(Boolean));
+      const jobs = [], missed = []; const keep = !!(p.querySelector("[data-keep]") || {}).checked;
+      for (const sel of p.querySelectorAll("select[data-k]")){ const k = sel.dataset.k; if (!sel.value) continue;
+        const f = formFields().find(f => norm(f.label) === norm(sel.value)); if (f) jobs.push({ k, label: f.label, v: vals[k], stop: pauseKeys.has(k) || isAuto(f.el) }); else missed.push(sel.value); }
+      /* boxes that pause (address lookups) go FIRST: the page's suggestion usually fills city / state / ZIP, and Finish leaves those */
+      jobs.sort((a, b) => b.stop - a.stop);
+      closeAll(); startFill({ jobs, missed, keep, rc, who: p0.name || "the client", n: 0, kept: [], done: [] }); }; }
+
+  /* Lender pages run their own autofill (address lookups with an "official" address, formatting, "did you mean"). The fill runs one
+     box at a time and STOPS — with a Finish fill bar — after a box marked ⏸, after a box with a suggestion list, or whenever the page
+     pops up a list or changes other boxes on its own. Finish carries on and leaves every box that already has something in it. */
   const isAuto = el => el.getAttribute("role") === "combobox" || !!el.getAttribute("aria-autocomplete") || el.getAttribute("aria-haspopup") === "listbox" || el.hasAttribute("list") || /autocomplete|typeahead|places|pac-target/i.test(el.className || "");
   const hasValue = el => el.tagName === "SELECT" ? (el.selectedIndex > 0 && el.value !== "") : String(el.value || "").trim() !== "";
   const sameVal = (el, v) => { if (el.tagName === "SELECT"){ const o = el.options[el.selectedIndex]; return !!o && (norm(o.value) === norm(v) || norm(o.textContent).startsWith(norm(v))); }
     const s = String(v); if (/^-?\d+(\.\d+)?$/.test(s)) return num(el.value) === +s; return norm(el.value) === norm(s); };
   const pause = ms => new Promise(r => setTimeout(r, ms));
-  async function doFill(jobs, missed, keep, rc, who){
-    jobs.sort((a, b) => isAuto(a.f.el) - isAuto(b.f.el));
-    let n = 0; const kept = [];
-    for (const j of jobs){
-      if (!j.f.el.isConnected){ missed.push(j.f.label); continue; }
-      if (keep && hasValue(j.f.el)){ kept.push(j.f.label); continue; }
-      if (setValue(j.f.el, j.v)){ n++; j.done = true; j.f.el.style.outline = "2px solid #2E6B4F"; } else missed.push(j.f.label);
-      if (!isAuto(j.f.el)) try { j.f.el.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); } catch (e) {}
-      await pause(90); }
+  const POPUP = '[role=listbox], [role=option], .pac-container, [class*="suggest" i], [class*="autocomplete" i] li, [class*="dropdown-menu" i], [class*="menu-list" i]';
+  /* a suggestion list: anything marked as one, or any floating (absolute / fixed) list with items — most dropdowns are built that way */
+  const floating = el => { for (let n = el, i = 0; n && i < 3; n = n.parentElement, i++){ const pos = getComputedStyle(n).position; if (pos === "absolute" || pos === "fixed") return true; } return false; };
+  const popups = () => [...new Set([...document.querySelectorAll(POPUP)].concat([...document.querySelectorAll("ul, ol, [role=menu]")].filter(l => l.querySelector("li, [role=menuitem], [role=option]") && floating(l))))]
+    .filter(el => visible(el) && el.getBoundingClientRect().height > 4 && !el.closest(".nmc-sn-panel, .nmc-sn-bar"));
+  const boxValues = () => new Map(formFields().map(f => [f.el, f.el.value]));
+  const findBox = label => formFields().find(f => norm(f.label) === norm(label));
+  let bar = null;
+  function endBar(){ if (bar){ bar.remove(); bar = null; } }
+  async function startFill(job){
+    endBar();
+    while (job.jobs.length){
+      const j = job.jobs.shift(); const f = findBox(j.label);
+      if (!f){ job.missed.push(j.label); continue; }
+      if ((job.keep || job.resumed) && hasValue(f.el)){ job.kept.push(j.label); continue; }
+      const before = boxValues(), popBefore = popups().length;
+      if (!setValue(f.el, j.v)){ job.missed.push(j.label); continue; }
+      job.n++; job.done.push(j); f.el.style.outline = "2px solid #2E6B4F";
+      if (j.stop){ try { f.el.focus(); f.el.dispatchEvent(new Event("input", { bubbles: true })); f.el.dispatchEvent(new KeyboardEvent("keyup", { key: "a", bubbles: true })); } catch (e) {} }
+      await pause(j.stop || j.k === "street" ? 900 : 350);   /* address lookups take a moment to answer */
+      const changed = [...boxValues()].some(([el, v]) => el !== f.el && before.has(el) && before.get(el) !== v);
+      const popped = popups().length > popBefore;
+      if ((j.stop || changed || popped) && job.jobs.length){ return pauseBar(job, j, f, j.stop ? "" : changed ? "the page changed other boxes" : "the page showed a list"); }
+      if (!j.stop && !popped) try { f.el.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); } catch (e) {} }
     await pause(700);
-    let fixed = 0;
-    for (const j of jobs) if (j.done && !isAuto(j.f.el) && j.f.el.isConnected && !sameVal(j.f.el, j.v)){ if (setValue(j.f.el, j.v)) fixed++; await pause(90); }
-    const auto = jobs.find(j => j.done && isAuto(j.f.el));
-    if (auto){ try { auto.f.el.focus(); auto.f.el.dispatchEvent(new Event("input", { bubbles: true })); } catch (e) {} }
-    const sv = await send({ type: "nmc:recipe", op: "save", host: HOST, kind: "fill", recipe: rc }); if (sv && sv.ok) recipe = Object.assign({}, recipe, { fill: rc });
-    toast(`Filled ${n} box${n === 1 ? "" : "es"} from ${who}.` + (fixed ? ` The page cleared ${fixed} — put back.` : "") + (kept.length ? ` Left ${kept.length} that already had something.` : "")
-      + (auto ? ` If “${auto.f.label}” shows a list, pick the right one — then NMC → Fill again fills only what’s still empty.` : "")
-      + (missed.length ? ` Couldn’t fill: ${missed.join(", ")}.` : "")
-      + (sv && sv.ok ? ` ✓ Recipe saved for ${HOST} (NMC Settings → Recipes).` : " Recipe not saved — is the NMC Toolkit open?") + " Check it over before you continue.", !missed.length); }
+    let fixed = 0;   /* put back once whatever the page wiped (not the boxes it was allowed to change from a suggestion) */
+    for (const j of job.done){ const f = findBox(j.label); if (f && !j.stop && !sameVal(f.el, j.v) && !hasValue(f.el)){ if (setValue(f.el, j.v)) fixed++; await pause(90); } }
+    const sv = await send({ type: "nmc:recipe", op: "save", host: HOST, kind: "fill", recipe: job.rc }); if (sv && sv.ok) recipe = Object.assign({}, recipe, { fill: job.rc });
+    toast(`Filled ${job.n} box${job.n === 1 ? "" : "es"} from ${job.who}.` + (fixed ? ` The page cleared ${fixed} — put back.` : "") + (job.kept.length ? ` Left ${job.kept.length} that already had something.` : "")
+      + (job.missed.length ? ` Couldn’t fill: ${job.missed.join(", ")} — drag the value onto the box.` : "")
+      + (sv && sv.ok ? ` ✓ Recipe saved for ${HOST} (NMC Settings → Recipes).` : " Recipe not saved — is the NMC Toolkit open?") + " Check it over before you continue.", !job.missed.length); }
+  function pauseBar(job, j, f, why){
+    endBar(); bar = document.createElement("div"); bar.className = "nmc-sn-bar";
+    bar.style.cssText = "position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:2147483647;display:flex;gap:10px;align-items:center;max-width:640px;background:#23242B;color:#fff;padding:10px 12px 10px 16px;border-radius:12px;font:13px/1.4 system-ui,sans-serif;box-shadow:0 8px 26px rgba(0,0,0,.3)";
+    bar.innerHTML = `<span><b>NMC paused after “${esc(j.label)}”</b>${why ? " (" + esc(why) + ")" : ""}. If the page suggests an address or option, pick it — then finish. ${job.jobs.length} box${job.jobs.length === 1 ? "" : "es"} left; anything the page filled is left alone.</span>
+      <button data-a="go" style="border:0;background:#2E6B4F;color:#fff;border-radius:8px;padding:8px 12px;font:600 12.5px system-ui;cursor:pointer;white-space:nowrap">Finish fill</button>
+      <button data-a="stop" style="border:1px solid #5C616E;background:transparent;color:#fff;border-radius:8px;padding:8px 10px;font:600 12.5px system-ui;cursor:pointer">Stop</button>`;
+    bar.onclick = e => { const a = e.target.dataset.a; if (a === "go"){ job.resumed = true; job.pagePicked = true; startFill(job); } else if (a === "stop"){ endBar(); toast(`Stopped — filled ${job.n} so far. ${job.jobs.length} left unfilled.`, true); } };
+    document.body.appendChild(bar); }
+
+  /* Drag: grab a value in the panel and drop it on any box on the page — it fills that box now and the recipe remembers the match.
+     Hand-rolled with the mouse (not the browser's drag-and-drop), so the lender page's own drop handling can't get in the way. */
+  function startDrag(e, p, k, vals, recipeNow){
+    if (e.button !== 0) return; e.preventDefault(); stopPick();
+    const ghost = document.createElement("div"); ghost.className = "nmc-sn-ghost";
+    ghost.textContent = (FILL_KEYS.find(x => x[0] === k) || [k, k])[1] + " · " + vals[k];
+    ghost.style.cssText = "position:fixed;z-index:2147483647;pointer-events:none;background:#2E6B4F;color:#fff;padding:5px 10px;border-radius:999px;font:600 12px system-ui;box-shadow:0 4px 14px rgba(0,0,0,.3);left:0;top:0";
+    document.body.appendChild(ghost); let over = null; const mark = el => { if (over && over !== el) over.style.outline = over.__nmcOl || ""; if (el && el !== over){ el.__nmcOl = el.style.outline; el.style.outline = "3px solid #2E6B4F"; } over = el; };
+    const target = (x, y) => { const el = document.elementFromPoint(x, y); const b = el && el.closest && el.closest("input, select, textarea"); return b && !b.closest(".nmc-sn-panel, .nmc-sn-bar") ? b : null; };
+    const move = ev => { ghost.style.transform = `translate(${ev.clientX + 12}px, ${ev.clientY + 10}px)`; mark(target(ev.clientX, ev.clientY)); };
+    const up = ev => { document.removeEventListener("mousemove", move, true); document.removeEventListener("mouseup", up, true); ghost.remove();
+      const el = target(ev.clientX, ev.clientY); mark(null); if (!el) return;
+      const f = formFields().find(f => f.el === el);
+      if (!f) return toast(HAND_ONLY.test(norm(fieldLabel(el) + " " + (el.name || ""))) ? "That box is hand-filled only (SSN, employer, income)." : "NMC can’t fill that box (it’s read-only or hidden).", false);
+      if (!setValue(el, vals[k])) return toast("That list doesn’t have “" + vals[k] + "” — pick it by hand.", false);
+      el.style.outline = "2px solid #2E6B4F";
+      const sel = p.querySelector(`select[data-k="${k}"]`);
+      if (sel){ if (![...sel.options].some(o => o.textContent === f.label)){ const o = document.createElement("option"); o.textContent = f.label; sel.appendChild(o); } sel.value = f.label; }
+      send({ type: "nmc:recipe", op: "save", host: HOST, kind: "fill", recipe: recipeNow() }).then(sv => { if (sv && sv.ok) toast(`Filled “${f.label}” — ✓ saved in the recipe.`, true); }); };
+    move(e); document.addEventListener("mousemove", move, true); document.addEventListener("mouseup", up, true); }
   function savedLine(){ return recipe && recipe.updated ? `✓ Recipe saved ${esc(recipe.updated)}${recipe.from ? " (" + esc(recipe.from) + ")" : ""}.` : "Using this site’s recipe."; }
 
   /* Pick: the banker clicks "Pick" next to an NMC value, then clicks the box on the page it belongs in — for boxes whose name
