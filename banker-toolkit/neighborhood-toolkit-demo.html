@@ -1737,7 +1737,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.25.3";
+const TOOLKIT_VERSION = "1.25.4";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2983,7 +2983,7 @@ function savePricing(){
 function removeOption(id){ const c=cur(); if(!c) return; c.options=c.options.filter(o=>o.id!==id); save(); renderSavedOptions(); renderProposalPreview(); }
 function useOptionRate(id){ const c=cur(); if(!c) return; const o=c.options.find(x=>x.id===id); if(!o) return;
   c.analysis.anRate=o.rate; c.analysis.rateSrc={type:"quote",lender:o.lender,when:todayStr()}; c.selectedOption=id; save(); $("anRate").value=o.rate; go("analysis"); runAnalysis(); }
-function optionLoanAmt(c){ const a=c.analysis||{}; const roll=a.anRoll==="yes"; const dSum=(c.debts||[]).reduce((s,d)=>s+(d.balance||0),0);
+function optionLoanAmt(c){ const a=c.analysis||{}; const roll=a.anRoll==="yes"; const dSum=paidDebts(c).reduce((s,d)=>s+(d.balance||0),0);
   return Math.round((c.balance||0)+(a.anCosts||0)+(a.anCashOut||0)+(roll?dSum:0)); }
 function renderSavedOptions(){
   const c=cur(); const el=$("priceSaved"); if(!el) return;
@@ -3021,7 +3021,10 @@ function addDebt(){ const c=cur(); if(!c){ toast("Pick a client first"); return;
   c.debts.push({name:"Credit card", type:"card", acct:"", balance:5000, apr:24.99, aprEst:true, pay:150, extra:0}); save(); renderDebts(); runAnalysis(); }
 function delDebt(i){ const c=cur(); if(!c) return; const d=c.debts.splice(i,1)[0]; if(d){ c.debtsTrash=c.debtsTrash||[]; c.debtsTrash.push(d); } save(); renderDebts(); runAnalysis(); }
 function restoreDebts(){ const c=cur(); if(!c||!(c.debtsTrash||[]).length) return; c.debtsTrash.forEach(d=>{ if(!c.debts.some(x=>x.name===d.name&&x.balance===d.balance)) c.debts.push(d); }); c.debtsTrash=[]; save(); renderDebts(); runAnalysis(); toast("Debts restored"); }
+/* debts this option pays off: every debt with a balance unless its "Pay off" box is unchecked (d.keep) — a kept debt stays on both sides */
+const paidDebts=c=>(c&&c.debts||[]).filter(d=>d.balance>0&&!d.keep);
 function updDebt(i,k,v){ const c=cur(); if(!c) return; const d=c.debts[i];
+  if(k==="keep"){ d.keep=!!v; save(); renderDebts(); runAnalysis(); return; }
   if(k==="type"){ const wasDefault = d.apr==null || d.aprEst || Object.values(DEBT_TYPES).some(t=>t.apr===d.apr); d.type=v; if(wasDefault&&DEBT_TYPES[v]){ d.apr=DEBT_TYPES[v].apr; d.aprEst=true; } save(); renderDebts(); runAnalysis(); return; }
   if(k==="payMode"){ d.payMode=v||""; save(); renderDebts(); runAnalysis(); return; }
   d[k]=(k==="name"||k==="acct")?v:(String(v).trim()===""?null:num(v));
@@ -3196,8 +3199,9 @@ function renderDebts(){
   const c=cur(); const el=$("debtTable"); if(!el) return;
   const tr=c&&(c.debtsTrash||[]).length ? `<div class="hint" style="margin:6px 0">${c.debtsTrash.length} removed debt${c.debtsTrash.length>1?"s":""} \u2014 <a href="#" onclick="restoreDebts();return false" style="color:var(--brand);font-weight:600">put back</a>. (On a streamline you don\u2019t need to remove debts \u2014 they\u2019re simply left out.)</div>` : "";
   el.innerHTML = tr + ((!c||!c.debts.length) ? `<div class="empty">No debts entered. Add the client's cards, autos, and personal loans to model consolidation.</div>` :
-  `<table class="data"><thead><tr><th>Debt</th><th>Type</th><th>Acct #</th><th class="num">Balance ($)</th><th class="num">APR (%)</th><th class="num">Payment / mo ($)</th><th class="num">Extra paid / mo ($)</th><th></th></tr></thead><tbody>`+
-  c.debts.map((d,i)=>`<tr>
+  `<table class="data"><thead><tr><th title="Uncheck to keep this debt (not paid off) — for an option that pays off only some debts">Pay off</th><th>Debt</th><th>Type</th><th>Acct #</th><th class="num">Balance ($)</th><th class="num">APR (%)</th><th class="num">Payment / mo ($)</th><th class="num">Extra paid / mo ($)</th><th></th></tr></thead><tbody>`+
+  c.debts.map((d,i)=>`<tr style="${d.keep?"opacity:.55":""}">
+   <td style="text-align:center"><input type="checkbox" ${d.keep?"":"checked"} onchange="updDebt(${i},'keep',!this.checked)" title="Pay this debt off in this option" style="width:auto;min-height:0"></td>
    <td><input type="text" value="${esc(d.name)}" oninput="updDebt(${i},'name',this.value)"></td>
    <td><select onchange="updDebt(${i},'type',this.value)">${Object.keys(DEBT_TYPES).map(k=>`<option value="${k}" ${(d.type||"other")===k?"selected":""}>${DEBT_TYPES[k].label}</option>`).join("")}</select></td>
    <td><input type="text" value="${esc(d.acct||"")}" placeholder="optional" style="width:110px" oninput="updDebt(${i},'acct',this.value)"></td>
@@ -3209,9 +3213,9 @@ function renderDebts(){
   renderDebtTotals(); if($("clientLtv")) ltvHint();
 }
 function renderDebtTotals(){ const c=cur(); const tf=$("debtTotals"); if(!tf||!c) return;
-  const L=c.debts.filter(d=>d.balance>0); const bal=L.reduce((t,d)=>t+d.balance,0), min=L.reduce((t,d)=>t+(d.pay||0),0), ex=L.reduce((t,d)=>t+(d.extra||0),0);
-  tf.innerHTML=`<tr style="background:var(--cream-soft);font-weight:700"><td colspan="3">${L.length} debt${L.length===1?"":"s"} included</td><td class="num">${money(bal)}</td><td></td><td class="num">${money(min)}</td><td class="num">${ex?money(ex):"\u2014"}</td><td></td></tr>
-  <tr><td colspan="5" class="hint">Total going out on these debts each month</td><td colspan="2" class="num"><b>${money(min+ex)}</b>${ex?` <span class="hint">(${money(min)} minimums + ${money(ex)} extra)</span>`:""}</td><td></td></tr>`; }
+  const L=paidDebts(c); const kept=c.debts.filter(d=>d.balance>0&&d.keep).length; const bal=L.reduce((t,d)=>t+d.balance,0), min=L.reduce((t,d)=>t+(d.pay||0),0), ex=L.reduce((t,d)=>t+(d.extra||0),0);
+  tf.innerHTML=`<tr style="background:var(--cream-soft);font-weight:700"><td></td><td colspan="3">${L.length} debt${L.length===1?"":"s"} paid off${kept?` <span class="hint" style="font-weight:400">(${kept} kept)</span>`:""}</td><td class="num">${money(bal)}</td><td></td><td class="num">${money(min)}</td><td class="num">${ex?money(ex):"\u2014"}</td><td></td></tr>
+  <tr><td></td><td colspan="5" class="hint">Total going out on these debts each month</td><td colspan="2" class="num"><b>${money(min+ex)}</b>${ex?` <span class="hint">(${money(min)} minimums + ${money(ex)} extra)</span>`:""}</td><td></td></tr>`; }
 
 /* ---------- analysis ---------- */
 function readAnalysisInputs(){ const c=cur(); if(!c) return;
@@ -3342,14 +3346,14 @@ function setMode(m){ const c=cur(); if(!c){ toast("Pick a client first"); return
   save(); fillAnalysisInputs(); applyMode(); runAnalysis(); }
 function setLienMode(m){ setMode(m==="second"?"second":"refi"); }   /* back-compat */
 function fcMaxCash(){ const c=cur(); if(!c||!(c.value>0)){ toast("Enter the home value on the Client workspace first"); return; } readAnalysisInputs(); const a=c.analysis;
-  const dBal=a.anRoll==="yes"?c.debts.reduce((t,d)=>t+(d.balance>0?d.balance:0),0):0; const mx=Math.floor((c.value*0.8-(a.anCosts||0)-dBal)/1000)*1000;
+  const dBal=a.anRoll==="yes"?paidDebts(c).reduce((t,d)=>t+d.balance,0):0; const mx=Math.floor((c.value*0.8-(a.anCosts||0)-dBal)/1000)*1000;
   if(mx<=0){ toast("At 80% LTV there\u2019s no room for cash after costs and debts"); return; } $("anCashOut").value=mx; runAnalysis(); toast("Cash set to "+money(mx)+" \u2014 80% LTV"); }
 function heRateFromFeed(){ const r=state.rates&&state.rates.rates; if(!r) return null;
   const k=Object.keys(r).find(x=>/hel|equity|second|heloan|heloc/i.test(x)); return k? r[k] : null; }
 function applyMode(){ const c=cur(); const m=c?modeOf(c.analysis):"refi";
   ["refi","fha","va","second","fc"].forEach(x=>{ document.body.classList.toggle("mode-"+x, x===m); const b=$("mode-"+x); if(b) b.classList.toggle("on", x===m); });
   const n=$("modeNote"); if(!n) return;
-  const nd=c?(c.debts||[]).filter(d=>d.balance>0).length:0;
+  const nd=c?paidDebts(c).length:0;
   if(m==="second") n.innerHTML = c&&c.balance&&c.rate
       ? `First mortgage untouched: <b>${money(c.balance)} at ${pct(c.rate)}</b>${c.payment?", "+money(c.payment)+"/mo P&amp;I":""}. Debts paid off plus any cash out vs one new second mortgage. ${nd?"":"<b>Add the debts to consolidate in the table below.</b>"}${(c.analysis.anRate==null)?" <b>Enter the home equity rate.</b>":""}`
       : `No first mortgage entered — fine for a consolidation-only look. ${nd?"":"<b>Add the debts to consolidate in the table below.</b>"}${(c&&c.analysis.anRate==null)?" <b>Enter the home equity rate.</b>":""}`;
@@ -3389,7 +3393,7 @@ function computeAnalysis(c){
   const secType = second ? (a.anSecondType==="heloc"?"heloc":"hel") : null;    /* wording only: the math is one fixed amortizing second lien */
   const secName = secType==="heloc" ? "HELOC" : "home equity loan";
   const hideFirst = second && a.anHideFirst==="yes";             /* proposal shows just the new loan, no first-mortgage rows */
-  const debts = noc ? [] : c.debts.filter(d=>d.balance>0);
+  const debts = noc ? [] : paidDebts(c);
   const dBal = debts.reduce((s,d)=>s+(d.balance||0),0);
   const dPaths = debts.map(d=>Object.assign({d}, debtPath(d)));
   /* today's cash out the door: the typed payment, or this month's card minimum when none was typed */
@@ -3477,8 +3481,10 @@ function computeAnalysis(c){
   if(escrowIsEst && curMonthsSrc==="assumed") warnings.push(`Escrow is estimated as the total minus a P&amp;I that assumes 30 years left (${money(escrowEst)}/mo) \u2014 unreliable until months remaining or the original amount is entered.`);
   if(escrowIsEst && c.paymentTotal>0 && escrowEst > c.paymentTotal*0.4) warnings.push(`Estimated escrow (${money(escrowEst)}) is ${Math.round(escrowEst/c.paymentTotal*100)}% of the total payment \u2014 that usually means today\u2019s P&amp;I is understated (months remaining or P&amp;I missing). Type the escrow or P&amp;I from the statement.`);
   /* all-in monthly: mortgage PITI plus the debts that get rolled in, today vs proposed (debts gone) */
-  const allInNow = pitiNow>0 ? pitiNow + (roll?dPay+dExtra:0) : 0;
-  const allInNew = pitiNow>0 ? pitiNew : 0;
+  /* debts left off this option ("Pay off" unchecked) are still paid every month — on both sides of the all-in */
+  const keptPay = roll&&!noc ? (c.debts||[]).filter(d=>d.balance>0&&d.keep).reduce((s,d)=>s+(d.pay||0)+(d.extra||0),0) : 0;
+  const allInNow = pitiNow>0 ? pitiNow + (roll?dPay+dExtra:0) + keptPay : 0;
+  const allInNew = pitiNow>0 ? pitiNew + keptPay : 0;
   const curPathInterest = (second?0:curSched.interest) + (roll?dInt:0);
   /* APR: the rate that amortizes the amount financed net of prepaid finance charges (closing costs + upfront MIP)
      at the actual payment. With no costs entered we can't compute it, so the proposal shows note rate + 0.25% (estimate). */
@@ -4900,33 +4906,49 @@ function setupPolling(){ clearInterval(pollTimer);
 /* ---------- option comparison ---------- */
 const KIND_LBL={hel:"Fixed home equity loan",heloc:"HELOC (interest-only draw)",refi:"Cash-out refinance",snap:"From savings analysis"};
 /* ---- program snapshots: a full Savings-analysis set-up saved as one Compare column ---- */
-const SNAP_KEYS=MODE_KEYS.concat(["anLien","anProgram"]);
-function snapLabel(inp,r){ const m=modeOf(inp); if(m==="va") return "VA IRRRL"; if(m==="fha") return "FHA Streamline"; if(m==="fc") return "Free & clear cash-out"+(r&&r.roll&&r.dBal>0?" \u2014 debts paid off":"");
+const SNAP_KEYS=MODE_KEYS.concat(["anLien","anProgram","anLoanAmt","anMiMo","anFinCharge","lenderPay","lenderQuote","anAprTyped","anNewPay","realWhen","realSource"]);
+const snapDebts=c=>(c.debts||[]).filter(d=>d.balance>0).map(d=>JSON.parse(JSON.stringify(d)));
+function snapLabel(inp,r){ let l=snapLabel0(inp,r);
+  /* only some debts paid off: say which */
+  const all=(Array.isArray(inp.debts)?inp.debts:(r&&r.allDebts)||[]).filter(d=>d.balance>0), paid=(r&&r.debts)||[];
+  if(r&&r.roll&&paid.length&&paid.length<all.length) l=l.replace(/debts paid off/, paid.every(d=>isRevolving(d))?"cards paid off":paid.length+" of "+all.length+" debts paid off");
+  return l; }
+function snapLabel0(inp,r){ const m=modeOf(inp); if(m==="va") return "VA IRRRL"; if(m==="fha") return "FHA Streamline"; if(m==="fc") return "Free & clear cash-out"+(r&&r.roll&&r.dBal>0?" \u2014 debts paid off":"");
   if(m==="second"){ const nm=inp.anSecondType==="heloc"?"HELOC":"Home equity loan"; return (r&&r.noc)?nm+" \u2014 cash out":(r&&r.cashOut>0)?nm+" \u2014 debts paid off + cash":nm+" \u2014 debts paid off"; }
   return r&&r.roll ? (r.cashOut>0?"Cash-out refi \u2014 debts paid off + cash":"Refi \u2014 debts paid off") : (inp.anCashOut>0? "Cash-out refi":"Rate & term refi"); }
-function computeSnap(c,sc){ if(!sc||sc.kind!=="snap"||!sc.inputs) return null; const t=Object.assign({},c,{analysis:Object.assign({},c.analysis,sc.inputs)}); const r=computeAnalysis(t); return r&&!r.tooSmall?r:null; }
-function applySnap(c,sc){ const a=c.analysis; SNAP_KEYS.forEach(k=>a[k]=sc.inputs[k]); a.saved=a.saved||{}; const m=modeOf(a); a.saved[m]={}; MODE_KEYS.forEach(k=>a.saved[m][k]=a[k]); }
+/* an option saved with its own debt list is computed on THAT list (older saves use the client's current debts) */
+function computeSnap(c,sc){ if(!sc||sc.kind!=="snap"||!sc.inputs) return null; const inp=Object.assign({},sc.inputs); const debts=inp.debts; delete inp.debts;
+  const t=Object.assign({},c,{analysis:Object.assign({},c.analysis,inp)}, Array.isArray(debts)?{debts}:{}); const r=computeAnalysis(t); if(!r||r.tooSmall) return null; r.allDebts=t.debts||[]; return r; }
+function applySnap(c,sc){ const a=c.analysis; SNAP_KEYS.forEach(k=>a[k]=sc.inputs[k]);
+  if(Array.isArray(sc.inputs.debts)){ const inSnap=sc.inputs.debts.map(d=>JSON.parse(JSON.stringify(d))); const key=d=>(d.name||"")+"|"+(d.acct||"");
+    /* debts added since that option was saved stay on the list, unchecked */
+    (c.debts||[]).forEach(d=>{ if(d.balance>0&&!inSnap.some(x=>key(x)===key(d))) inSnap.push(Object.assign({},d,{keep:true})); }); c.debts=inSnap; } a.saved=a.saved||{}; const m=modeOf(a); a.saved[m]={}; MODE_KEYS.forEach(k=>a.saved[m][k]=a[k]); }
 function addSnapScenario(){ const c=cur(); if(!c){ toast("Pick a client first"); return; } readAnalysisInputs(); const r=computeAnalysis(c);
   if(!r||r.tooSmall){ toast("Finish the analysis first \u2014 rate, term and the client\u2019s numbers"); return; }
   c.scenarios=c.scenarios||[]; if(c.scenarios.length>=5){ toast("Five scenarios max \u2014 remove one on Compare first"); return; }
-  const inputs={}; SNAP_KEYS.forEach(k=>inputs[k]=c.analysis[k]);
-  const strip=o=>{ const t=Object.assign({},o); delete t.rateSrc; return JSON.stringify(t); };
+  const inputs={}; SNAP_KEYS.forEach(k=>inputs[k]=c.analysis[k]); inputs.debts=snapDebts(c);
+  /* same option = every number the same, including the debt list; change anything (costs by $1, one debt left off) and it's a new option */
+  const strip=o=>{ const t=Object.assign({},o); delete t.rateSrc; delete t.lenderQuote; delete t.realWhen; delete t.realSource; if(!Array.isArray(t.debts)) t.debts=snapDebts(c); return JSON.stringify(t); };
   const dup=c.scenarios.find(x=>x.kind==="snap"&&strip(x.inputs)===strip(inputs)); if(dup){ dup.onProp=true; save(); renderProposalPreview(); toast("That exact option is already saved \u2014 it\u2019s checked on the proposal"); return; }
   let label=snapLabel(inputs,r);
   /* same product saved twice (a HEL at 20 and at 15 years): tell them apart by term, and by rate if the terms match too */
   const twins=c.scenarios.filter(x=>x.kind==="snap"&&(x.label===label||x.label.replace(/ \((?:[\d.]+% \u00b7 )?\d+ yr\)$/,"")===label));
-  if(twins.length){ const tag=x=>{ const t=x.anTerm+" yr"; return twins.some(y=>y.inputs.anTerm===inputs.anTerm)&&twins.some(y=>y.inputs.anRate!==inputs.anRate) ? pct(x.anRate)+" \u00b7 "+t : t; };
+  if(twins.some(y=>y.inputs.anTerm!==inputs.anTerm||y.inputs.anRate!==inputs.anRate)){ const tag=x=>{ const t=x.anTerm+" yr"; return twins.some(y=>y.inputs.anTerm===inputs.anTerm)&&twins.some(y=>y.inputs.anRate!==inputs.anRate) ? pct(x.anRate)+" \u00b7 "+t : t; };
     twins.forEach(y=>{ if(!/ \(.*\d+ yr\)$/.test(y.label)) y.label=y.label+" ("+tag(y.inputs)+")"; }); label=label+" ("+tag(inputs)+")"; }
+  /* still the same name (same product, term and rate — only costs or something small differs): number it */
+  if(c.scenarios.some(x=>x.kind==="snap"&&x.label===label)){ let n=2; while(c.scenarios.some(x=>x.kind==="snap"&&x.label===label+" \u00b7 option "+n)) n++; label=label+" \u00b7 option "+n; }
   c.scenarios.push({id:"s"+Date.now()+Math.random().toString(36).slice(2,5), kind:"snap", label, inputs, onProp:true});
   save(); toast("Saved \u201c"+label+"\u201d \u2014 pick it on Client proposal. Change the set-up and save again for another path."); }
 function loadSnap(id){ const c=cur(); const sc=c&&(c.scenarios||[]).find(x=>x.id===id); if(!sc||sc.kind!=="snap") return;
   applySnap(c,sc); save(); fillAnalysisInputs(); applyMode(); go("analysis"); runAnalysis(); toast("Loaded \u201c"+sc.label+"\u201d into the analysis \u2014 edit, then save it again"); }
-function snapHousehold(c,r){ const live=(c.debts||[]).filter(d=>d.balance>0); const dPay=live.reduce((s,d)=>s+(d.pay||0)+(d.extra||0),0); const first=(r.second&&r.hideFirst)?0:(r.curPay||0); const firstInt=(r.second&&r.hideFirst)?0:(r.curSched?r.curSched.interest:0);
+function snapHousehold(c,r){ const live=((r&&r.allDebts)||c.debts||[]).filter(d=>d.balance>0); const dPay=live.reduce((s,d)=>s+(d.pay||0)+(d.extra||0),0);
+  const stay=live.filter(d=>d.keep); const sPay=stay.reduce((s,d)=>s+(d.pay||0)+(d.extra||0),0); const first=(r.second&&r.hideFirst)?0:(r.curPay||0); const firstInt=(r.second&&r.hideFirst)?0:(r.curSched?r.curSched.interest:0);
   /* debts that stay (not rolled, or a cash-out-only HEL) cost the same on both sides */
   const dIntAll = live.reduce((s,d)=>{ const p=(d.pay||0)+(d.extra||0); const x=debtInterest(d.balance,d.apr||0,p); return s+(isFinite(x)?x:p*(r.n||360)); },0);
-  const today=first+dPay; const now = r.second ? first+r.newPay+(r.noc?dPay:0) : r.newPay+(r.roll?0:dPay);
+  const sIntAll = stay.reduce((s,d)=>{ const p=(d.pay||0)+(d.extra||0); const x=debtInterest(d.balance,d.apr||0,p); return s+(isFinite(x)?x:p*(r.n||360)); },0);
+  const today=first+dPay; const now = r.second ? first+r.newPay+(r.noc?dPay:sPay) : r.newPay+(r.roll?sPay:dPay);
   const todayInt=firstInt+dIntAll;
-  const newInt = r.second ? firstInt+r.newSched.interest+(r.noc?dIntAll:0) : r.newSched.interest+(r.roll?0:dIntAll);
+  const newInt = r.second ? firstInt+r.newSched.interest+(r.noc?dIntAll:sIntAll) : r.newSched.interest+(r.roll?sIntAll:dIntAll);
   return {today,now,save:today-now,dPay,todayInt,newInt}; }
 /* pay-what-you-pay-now on the household view: keep today's total outlay, the difference attacks the new loan */
 function snapPW(c,r,h){ if(!(r.extra>0)||!r.pw||!isFinite(r.pw.months)) return null;
