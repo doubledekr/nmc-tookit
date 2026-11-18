@@ -12,6 +12,10 @@
   const ID_RE = /^(00Q|003|001|006|00T)[A-Za-z0-9]{12}(?:[A-Za-z0-9]{3})?$/;      /* Lead, Contact, Account, Opportunity, Task */
   const id15 = s => String(s || "").slice(0, 15);
   const last10 = s => { const d = String(s || "").replace(/\D/g, ""); return d.length >= 10 ? d.slice(-10) : ""; };
+  /* a couple's file holds more than one phone / email / Salesforce lead — match on any of them */
+  const phonesOf = c => ((window.clientPhones ? window.clientPhones(c) : [c.phone]) || []).map(last10).filter(Boolean);
+  const emailsOf = c => ((window.clientEmails ? window.clientEmails(c) : [c.email]) || []).map(x => String(x || "").toLowerCase()).filter(Boolean);
+  const sfIdsOf = c => [c.sfId].concat(c.sfIds || []).filter(Boolean);
   function recordFromUrl(u){ const m = /\/lightning\/r\/(\w+)\/([A-Za-z0-9]{15,18})(?:\/|$|\?)/.exec(String(u || "")); return m ? { obj: m[1], id: m[2] } : null; }
 
   /* ---------- reading an Open CTI event ---------- */
@@ -45,10 +49,10 @@
   function match(r){ const s = st(); if (!s) return null;
     const ids = [r.record].concat(r.ids).filter(Boolean).map(id15);
     if (ids.length){
-      const c = (s.clients || []).find(c => !c.quick && c.sfId && ids.includes(id15(c.sfId))); if (c) return { kind: "client", c, by: "record ID" };
+      const c = (s.clients || []).find(c => !c.quick && sfIdsOf(c).some(x => ids.includes(id15(x)))); if (c) return { kind: "client", c, by: "record ID" };
       const it = (s.inbox || []).find(x => x.sfId && ids.includes(id15(x.sfId))); if (it) return { kind: "inbox", it, by: "record ID" }; }
     for (const p of (r.phones && r.phones.length ? r.phones : [last10(r.ani)]).filter(Boolean)){
-      const c = (s.clients || []).find(c => !c.quick && last10(c.phone) === p); if (c) return { kind: "client", c, by: "phone" };
+      const c = (s.clients || []).find(c => !c.quick && phonesOf(c).includes(p)); if (c) return { kind: "client", c, by: "phone" };
       const it = (s.inbox || []).find(x => x.fields && last10(x.fields.phone) === p); if (it) return { kind: "inbox", it, by: "phone" }; }
     return null; }
 
@@ -226,14 +230,14 @@
      · not in the toolkit → stays at the top of the Pipeline Inbox (where the toolkit already put it), one click to Import. Nothing is created.
      · during follow-up mode the queue isn't hijacked: just a toast */
   function autoOpen(it, rec){ const s = st(); const F = it.fields || {}; const em = (F.email || "").toLowerCase(), nm = (F.name || "").toLowerCase(), ph = last10(F.phone);
-    const c = (s.clients || []).find(c => !c.quick && c.sfId && id15(c.sfId) === id15(rec.id)) || (s.clients || []).find(c => !c.quick && em && (c.email || "").toLowerCase() === em) || (s.clients || []).find(c => !c.quick && nm && (c.name || "").toLowerCase() === nm);
+    const c = (s.clients || []).find(c => !c.quick && sfIdsOf(c).some(x => id15(x) === id15(rec.id))) || (s.clients || []).find(c => !c.quick && em && emailsOf(c).includes(em)) || (s.clients || []).find(c => !c.quick && nm && (c.name || "").toLowerCase() === nm);
     let inFuq = false; try { inFuq = !!fuqLive; } catch (e) {}
     if (inFuq){ toast("Five9 call: " + (F.name || "lead") + (c ? " — already a client" : " — new, in your Inbox") + ". Follow-up mode left as is."); return; }
     { const call = curCall() || (F9.call && F9.call.note && Date.now() - F9.call.closedAt < 60000 ? F9.call : null);
       if (call && c && !call.clients.includes(c.id)){ call.clients.push(c.id); if (!curCall() && call.note){ c.f9 = (c.f9 || []).concat([call.note]).slice(-10); save(); } } }
     if (!c){ toast("Five9 call: new lead " + (F.name || "") + " — top of your Pipeline Inbox. Import when you\u2019re ready."); return; }
     s.currentId = c.id; save(); refreshAll(); go("client");
-    const same = (ph && last10(c.phone) === ph) || (em && (c.email || "").toLowerCase() === em);
+    const same = (ph && phonesOf(c).includes(ph)) || (em && emailsOf(c).includes(em));
     if (same){ const text = it.text || (typeof recordToSFText === "function" ? recordToSFText(F) : ""); const ta = $("sfPaste"); if (ta) ta.value = text; parseSFText(text); ackInbox(it.id);
       toast("Five9 call: " + (c.name || "client") + " opened — \u201cUpdate their numbers\u201d applies the Salesforce read; nothing changed yet"); return; }
     toast("Five9 call: " + (c.name || "client") + " opened — the Salesforce read is in your Inbox if you want to apply it"); }
@@ -256,7 +260,7 @@
     for (const it of s.inbox || []){ const ph = last10(it.fields && it.fields.phone);
       if (call.items.includes(it.id) || (it.sfId && ids.includes(id15(it.sfId))) || (ph && r.phones.includes(ph))){ add(it); n++; } }
     for (const c of s.clients || []){ if (c.quick) continue;
-      if (call.clients.includes(c.id) || (c.sfId && ids.includes(id15(c.sfId))) || (last10(c.phone) && r.phones.includes(last10(c.phone)))){ add(c); n++; } }
+      if (call.clients.includes(c.id) || sfIdsOf(c).some(x => ids.includes(id15(x))) || phonesOf(c).some(p => r.phones.includes(p))){ add(c); n++; } }
     if (F9.call && !F9.call.closed){ F9.call.closed = true; F9.call.closedAt = Date.now(); F9.call.note = note; }
     if (n){ save(); try { if (document.getElementById("s-pipeline").classList.contains("active")) renderPipeline(); } catch (e) {} decorate(); } }
   function f9Label(list){ if (!list || !list.length) return ""; const x = list[list.length - 1];
