@@ -2,7 +2,8 @@
    Lead record page (top frame), picks up the job for the lead it's showing and works the Change Owner box the way a person would —
    Salesforce refuses direct API writes from the page (401), but reads work, so:
      1. read the owner (UI API):  a queue ("Lead Queue", id 00G…) → go on · already the banker → done · another banker → leave it, report the name
-     2. click Change Owner → click into the search box → the first suggestion must be the banker's own name (Settings → name), else STOP
+     2. click Change Owner → click into the search box → pick the suggestion that is EXACTLY the banker's own name (Settings → name),
+        typing the name to search if it isn't listed; no exact match → STOP (other people in the list are never picked)
      3. click that name → click "Change Owner" → re-read the owner until it's the banker (or report that it didn't change)
    It never picks anyone but the banker, never touches a lead owned by a person, and only acts on the record that's on screen. */
 (function(){
@@ -29,9 +30,13 @@
     return cands[0] || null; }
   function ownerDialog(){ return [...document.querySelectorAll(".forceChangeOwnerContent")].find(visible) || null; }
   function searchBox(dlg){ return dlg && ([...dlg.querySelectorAll('input[type="text"], input:not([type]), input[role="combobox"], input.uiInput')].find(visible) || null); }
-  function firstSuggestion(dlg){ const scope = (dlg && dlg.closest(".uiModal, .forceModal, .modal-container, section[role=dialog]")) || document;
-    const lis = [...scope.querySelectorAll(".listContent ul li, .lookup__menu li, ul[role=listbox] li, .forceSearchInputLookupDesktop li")].filter(visible).filter(li => (li.innerText || "").trim());
-    return lis[0] || null; }
+  function suggestions(dlg){ const scope = (dlg && dlg.closest(".uiModal, .forceModal, .modal-container, section[role=dialog]")) || document;
+    return [...scope.querySelectorAll(".listContent ul li, .lookup__menu li, ul[role=listbox] li, .forceSearchInputLookupDesktop li")].filter(visible).filter(li => (li.innerText || "").trim()); }
+  /* the banker's OWN entry in the list — exact name match only (the list can also hold other people, e.g. recent owners) */
+  function mySuggestion(dlg, me){ const lis = suggestions(dlg); const exact = lis.filter(li => norm(suggestionName(li)) === me);
+    return exact.length === 1 ? exact[0] : null; }
+  function typeInto(box, text){ const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set; box.focus(); set.call(box, text);
+    box.dispatchEvent(new Event("input", { bubbles: true })); box.dispatchEvent(new KeyboardEvent("keyup", { key: text.slice(-1), bubbles: true })); }
   /* the person's name in a suggestion: Salesforce's title/primary label, else the first piece of text (not the job title under it) */
   function suggestionName(li){ const el = li.querySelector(".primaryLabel, [title]"); if (el) return String(el.getAttribute("title") || el.textContent || "").trim();
     const w = document.createTreeWalker(li, NodeFilter.SHOW_TEXT); let n; while ((n = w.nextNode())) { const t = n.nodeValue.trim(); if (t) return t; } return ""; }
@@ -68,11 +73,12 @@
       dlg = await waitFor(ownerDialog, 6000); same(); if (!dlg) return { state: "retry", error: "the Change Owner box didn’t open", owner: before.name };
       const box = await waitFor(() => searchBox(dlg), 4000); same(); if (!box) { await closeDialog(dlg); return { state: "retry", error: "couldn’t find the search box in Change Owner", owner: before.name }; }
       box.focus(); press(box);
-      const li = await waitFor(() => firstSuggestion(dlg), 5000); same();
-      const liLabel = li ? suggestionName(li) : ""; const liName = norm(liLabel);
-      if (!li){ await closeDialog(dlg); return { state: "retry", error: "no suggestion appeared in the search box — nothing changed", owner: before.name }; }
-      if (!(liName === me || liName.startsWith(me))){ await closeDialog(dlg);
-        return { state: "failed", error: `the first suggestion was “${liLabel}”, not “${job.bankerName}” — stopped, nothing changed`, owner: before.name }; }
+      /* pick the banker's own name from the list Salesforce shows on click; if it isn't there, type the name to search for it */
+      await waitFor(() => suggestions(dlg).length ? true : null, 5000); same();
+      let li = mySuggestion(dlg, me);
+      if (!li){ typeInto(box, job.bankerName); li = await waitFor(() => mySuggestion(dlg, me), 6000); same(); }
+      if (!li){ const seen = suggestions(dlg).map(suggestionName).filter(Boolean).slice(0, 3); await closeDialog(dlg);
+        return { state: "failed", error: `couldn’t find exactly “${job.bankerName}” in the owner list${seen.length ? " (saw: " + seen.join(", ") + ")" : ""} — stopped, nothing changed. Check the name in toolkit Settings matches Salesforce.`, owner: before.name }; }
       press(li.querySelector("a, [role=option], .slds-media") || li);
       await sleep(500); same();
       const ok = await waitFor(() => confirmButton(dlg), 4000); same(); if (!ok) { await closeDialog(dlg); return { state: "retry", error: "couldn’t find the Change Owner button in the box", owner: before.name }; }
