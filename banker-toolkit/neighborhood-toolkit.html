@@ -129,7 +129,7 @@ body.present-mode #s-present .sub,body.present-mode #s-present .eyebrow{display:
 .inelig .row input[type=checkbox]{width:auto;min-height:0}.inelig .row input[type=number],.inelig .row input[type=date]{min-height:34px}
 #s-client input.flagged{border-color:#D9A441;box-shadow:0 0 0 3px #F6E7C4;background:#FFFDF7}
 body.mode-fc .m-skip,body.mode-fc .m-refi{display:none}.m-fc{display:none}body.mode-fc .m-fc{display:block}body.mode-fc span.m-fc{display:inline}body.mode-fc button.m-fc{display:inline-flex}body.mode-fc .not-fc{display:none}
-#debtTable table{table-layout:auto}#debtTable td:first-child input{min-width:170px}#debtTable select{min-width:120px}#debtTable input.num{width:96px;min-width:96px}#debtTable td:nth-child(3) input{width:120px}
+#debtTable table{table-layout:auto}#debtTable td.dname input{min-width:170px}#debtTable th.dkeep,#debtTable td.dkeep{width:56px;min-width:56px;padding-left:6px;padding-right:6px;text-align:center}#debtTable td.dkeep input{width:18px;min-width:0;height:18px;min-height:0;padding:0;margin:0;accent-color:var(--red,#A53222);cursor:pointer}#debtTable select{min-width:120px}#debtTable input.num{width:96px;min-width:96px}#debtTable td:nth-child(3) input{width:120px}
 .m-noc{display:none}body.mode-second .m-noc{display:block}body.mode-second.noc .m-noc-x{display:block}body.mode-second.noc #debtPanel{display:none}
 #mode-fc{display:none}body.fc-client #mode-fc{display:inline-flex}body.fc-client #mode-fha,body.fc-client #mode-va{opacity:.4;pointer-events:none}
 body.mode-fha .m-skip,body.mode-second .m-skip,body.mode-fha .m-refi,body.mode-va .m-refi,body.mode-second .m-refi,body.mode-fha .m-cash,body.mode-va .m-cash{display:none}
@@ -1517,8 +1517,9 @@ Discover 6,100 190 24.9"></textarea>
                   <li>Open any Salesforce lead — a red <b>Send to NMC toolkit</b> button appears bottom-right. Click it; the lead lands at the top of your Pipeline.</li>
                 </ol>
                 <div id="extMove" style="display:none;margin:0 0 10px;padding:10px 12px;border-radius:10px;background:var(--cream-soft);border:1px solid var(--warn)">
-                  <b>One-time move.</b> Chrome is loading the extension from the toolkit’s install folder, which every update replaces \u2014 that’s what switches it off. Point Chrome at the folder below instead; updates never delete it.
-                  <ol class="hint" style="margin:6px 0 0 18px;line-height:1.7"><li>In <b>chrome://extensions</b>, click <b>Remove</b> on the NMC extension.</li><li>Click <b>Load unpacked</b> and pick the folder below (<b>Copy path</b>, then paste it in the folder box).</li><li>Sites you allowed with \u201cUse NMC on this site\u201d (Bonzo, lenders) need allowing once more. Your recipes are safe \u2014 they live in the toolkit.</li></ol></div>
+                  <b>Optional tip:</b> Chrome is loading the extension from the toolkit’s install folder, which updates replace \u2014 so an update can switch it off (fix: <b>Reload</b> it in chrome://extensions). To stop that for good, point Chrome at the folder below once:
+                  <ol class="hint" style="margin:6px 0 0 18px;line-height:1.7"><li>In <b>chrome://extensions</b>, click <b>Remove</b> on the NMC extension.</li><li>Click <b>Load unpacked</b> and pick the folder below (<b>Copy path</b>, then paste it in the folder box).</li><li>Sites you allowed with \u201cUse NMC on this site\u201d (Bonzo, lenders) need allowing once more. Your recipes are safe \u2014 they live in the toolkit.</li></ol>
+                  <div style="margin-top:6px"><button class="btn ghost small" onclick="state.settings.extMoveHide=true;save();renderExtStatus()">Don’t show again</button></div></div>
                 <div class="btnrow"><code id="extPath" class="hint" style="flex:1;word-break:break-all"></code><button class="btn ghost small" onclick="navigator.clipboard.writeText($('extPath').textContent).then(()=>toast('Folder path copied'))">Copy path</button><button class="btn ghost small" onclick="DESK.openExtensionFolder()">Open extension folder</button></div>
                 <p class="hint" style="margin:6px 0 0">Updates: the toolkit refreshes this folder in place (it’s never deleted) \u2014 after an update, click <b>Reload</b> on the NMC extension in chrome://extensions or restart Chrome. Nothing leaves this computer; the extension talks to the app on 127.0.0.1 only.</p>
                 <div id="recipeBox" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">
@@ -1740,7 +1741,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.25.6";
+const TOOLKIT_VERSION = "1.25.7";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -3202,10 +3203,10 @@ function renderDebts(){
   const c=cur(); const el=$("debtTable"); if(!el) return;
   const tr=c&&(c.debtsTrash||[]).length ? `<div class="hint" style="margin:6px 0">${c.debtsTrash.length} removed debt${c.debtsTrash.length>1?"s":""} \u2014 <a href="#" onclick="restoreDebts();return false" style="color:var(--brand);font-weight:600">put back</a>. (On a streamline you don\u2019t need to remove debts \u2014 they\u2019re simply left out.)</div>` : "";
   el.innerHTML = tr + ((!c||!c.debts.length) ? `<div class="empty">No debts entered. Add the client's cards, autos, and personal loans to model consolidation.</div>` :
-  `<table class="data"><thead><tr><th title="Uncheck to keep this debt (not paid off) — for an option that pays off only some debts">Pay off</th><th>Debt</th><th>Type</th><th>Acct #</th><th class="num">Balance ($)</th><th class="num">APR (%)</th><th class="num">Payment / mo ($)</th><th class="num">Extra paid / mo ($)</th><th></th></tr></thead><tbody>`+
+  `<table class="data"><thead><tr><th class="dkeep" title="Uncheck to keep this debt (not paid off) — for an option that pays off only some debts">Pay off</th><th>Debt</th><th>Type</th><th>Acct #</th><th class="num">Balance ($)</th><th class="num">APR (%)</th><th class="num">Payment / mo ($)</th><th class="num">Extra paid / mo ($)</th><th></th></tr></thead><tbody>`+
   c.debts.map((d,i)=>`<tr style="${d.keep?"opacity:.55":""}">
-   <td style="text-align:center"><input type="checkbox" ${d.keep?"":"checked"} onchange="updDebt(${i},'keep',!this.checked)" title="Pay this debt off in this option" style="width:auto;min-height:0"></td>
-   <td><input type="text" value="${esc(d.name)}" oninput="updDebt(${i},'name',this.value)"></td>
+   <td class="dkeep"><input type="checkbox" ${d.keep?"":"checked"} onchange="updDebt(${i},'keep',!this.checked)" title="Pay this debt off in this option"></td>
+   <td class="dname"><input type="text" value="${esc(d.name)}" oninput="updDebt(${i},'name',this.value)"></td>
    <td><select onchange="updDebt(${i},'type',this.value)">${Object.keys(DEBT_TYPES).map(k=>`<option value="${k}" ${(d.type||"other")===k?"selected":""}>${DEBT_TYPES[k].label}</option>`).join("")}</select></td>
    <td><input type="text" value="${esc(d.acct||"")}" placeholder="optional" style="width:110px" oninput="updDebt(${i},'acct',this.value)"></td>
    <td><input type="number" class="num" value="${d.balance??""}" oninput="updDebt(${i},'balance',this.value)"></td>
@@ -5174,8 +5175,8 @@ function renderExtStatus(){ try{ renderRecipes(); }catch(e){} const el=$("extSta
   el.innerHTML = !st ? "" : st.listening ? `<span class="tag-good">Listening for the extension on 127.0.0.1:${st.port}</span>${st.lastAt?` \u00b7 last lead received ${new Date(st.lastAt).toLocaleTimeString("en-US",{hour:"numeric",minute:"2-digit"})}`:" \u00b7 nothing received yet"}${seen?` \u00b7 extension v${esc(seen)}`:""}${staleMsg}` : `<span class="tag-warn">Listener couldn\u2019t start on port ${st.port}</span> \u2014 another program may be using it`;
   if(ep){ let p=""; try{ p=DESK.extensionPath()||""; }catch(e){} ep.textContent=p; }
   /* Chrome still loads the extension from the install folder that updates replace (that's what switches it off) */
-  const mv=$("extMove"); if(mv) mv.style.display = st&&st.extHome==="shipped" ? "" : "none";
-  if(st&&st.extHome==="shipped"&&!window.__extMoveToasted){ window.__extMoveToasted=1; toast("One-time step: point Chrome at the NMC extension’s new folder — see Settings \u2192 Chrome extension",8000); } }
+  /* optional tip only — no pop-ups; "Don't show again" hides it for good */
+  const mv=$("extMove"); if(mv) mv.style.display = st&&st.extHome==="shipped"&&!state.settings.extMoveHide ? "" : "none"; }
 async function fetchBrandAssets(force){ const s=state.settings; s.assets=s.assets||{};
   const urls=[BRAND_ASSETS.badge].concat(BRAND_ASSETS.awards).filter(u=>force||!s.assets[u]); if(!urls.length) return s.assets;
   let got={};

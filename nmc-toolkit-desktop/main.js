@@ -202,7 +202,7 @@ ipcMain.handle("brand:fetch", async (e, urls) => {
   return out;
 });
 ipcMain.handle("update:openReleases", () => { shell.openExternal(IS_BETA ? "https://github.com/doubledekr/nmc-tookit/releases" : RELEASES_URL); return true; });
-ipcMain.handle("update:install", () => { if (!updater) return false; flushWrites(); setTimeout(() => updater.quitAndInstall(false, true), 300); return true; });
+ipcMain.handle("update:install", () => { if (!updater) return false; flushWrites(); setTimeout(() => updater.quitAndInstall(true, true), 300)   /* silent: no installer window to close halfway (a half-finished install removes the old files, Chrome extension folder included) */; return true; });
 
 function createWindow(){
   /* Our own title band instead of the stock one: the page draws a 38px strip (red over the sidebar, paper over the content) and the OS
