@@ -289,24 +289,149 @@
     const c = e => { if (!(e.target.closest && e.target.closest(".nmc-sn-panel"))) { e.preventDefault(); e.stopPropagation(); } };
     picking = { k, b, h, c }; document.addEventListener("mousedown", h, true); document.addEventListener("click", c, true); }
 
+
+  /* ---------- Grab: what's on this page (any allowed site — e.g. Bonzo conversations) ----------
+     Finds names, phones, emails, addresses and "label: value" details on the page and in same-site frames. The banker ticks what
+     they want and copies it, sends it to NMC (lands in the Inbox like a Salesforce lead), or searches Salesforce for it.
+     Never read: anything labelled SSN / social / birth / DOB / age / marital / income / employer, or shaped like an SSN.
+     What the banker picked is remembered for the site (kind + label + a short page path — text only, no client data). */
+  const NEVER = /\b(ssn|social security|soc ?sec|tax ?id|itin|birth|dob|d\.o\.b|age|marital|income|salary|wages|employer|employment)\b/i;
+  const SSN = /\b\d{3}-\d{2}-\d{4}\b/;
+  const RX = { email: /[\w.+-]+@[\w-]+(\.[\w-]+)+/g, phone: /(?:\+?1[\s.-]?)?\(?\b\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}\b/g,
+    address: /\b\d{1,6}\s+(?:[NSEW]\.?\s+)?[A-Za-z0-9.'-]+(?:\s+[A-Za-z0-9.'-]+){0,4}\s+(?:St|Street|Ave|Avenue|Rd|Road|Dr|Drive|Ln|Lane|Blvd|Boulevard|Ct|Court|Way|Pl|Place|Cir|Circle|Pkwy|Parkway|Ter|Terrace|Trl|Trail|Hwy|Highway)\b\.?(?:,?\s+(?:Apt|Unit|Ste|Suite|#)\s*[\w-]+)?(?:,?\s+[A-Za-z .'-]{2,30})?(?:,?\s+[A-Z]{2})?(?:\s+\d{5}(?:-\d{4})?)?/g };
+  const NAME = /^(?:[A-Z][a-z'’.-]+|[A-Z]{2,})(?:\s+(?:[A-Z][a-z'’.-]*|[A-Z]{2,})){1,3}$/;
+  const GRAB_FIELDS = [["", "—"], ["name", "Name"], ["phone", "Phone"], ["phone2", "Other phone"], ["email", "Email"], ["address", "Address"], ["notes", "Notes"]];
+  const fmtPhone = v => { const d = String(v).replace(/\D/g, "").replace(/^1(?=\d{10}$)/, ""); return d.length === 10 ? `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}` : v; };
+  /* a short, stable path to an element (tag + steady class names), so the same spot can be found next time */
+  function pathOf(el){ const segs = []; for (let n = el, i = 0; n && n.nodeType === 1 && n !== document.body && i < 6; n = n.parentElement, i++){
+      const cls = [...n.classList].filter(c => /^[a-zA-Z][\w-]{2,40}$/.test(c) && !/\d{3,}|^(css|sc|jsx|emotion|ng|svelte)-|[a-z]{1,3}[0-9a-f]{5,}$/i.test(c)).slice(0, 2);
+      segs.unshift(n.tagName.toLowerCase() + cls.map(c => "." + CSS.escape(c)).join("")); if (n.id && /^[a-zA-Z][\w-]{2,40}$/.test(n.id) && !/\d{3,}/.test(n.id)){ segs[0] = "#" + CSS.escape(n.id); break; } }
+    return segs.join(" "); }
+  function docs(){ const out = [{ doc: document, where: "" }]; let blocked = 0;
+    for (const f of document.querySelectorAll("iframe, frame")){ if (!visible(f)) continue; try { const d = f.contentDocument; if (d && d.body) out.push({ doc: d, where: "frame" }); else blocked++; } catch (e) { blocked++; } }
+    return { list: out, blocked }; }
+  /* a real LABEL for this value — "Label: value", a dt / th, an aria-label, or a short "Label:" just before it. Never just any nearby
+     text: that could be another person's name, and labels go into the shareable recipe. */
+  const looksLabel = t => t && t.length <= 30 && !/\d{3}|@/.test(t) && !NAME.test(t.replace(/:$/, ""));
+  function labelFor(el){
+    const own = T(el); const m = /^([^:]{2,40}):\s*\S/.exec(own); if (m && looksLabel(m[1].trim())) return m[1].trim();
+    const dd = el.closest("dd"); if (dd && dd.previousElementSibling && dd.previousElementSibling.tagName === "DT" && looksLabel(T(dd.previousElementSibling))) return T(dd.previousElementSibling);
+    const td = el.closest("td"); if (td && td.previousElementSibling && td.previousElementSibling.tagName === "TH" && looksLabel(T(td.previousElementSibling))) return T(td.previousElementSibling);
+    const al = el.getAttribute && el.getAttribute("aria-label"); if (looksLabel(al)) return al;
+    const nt = nearText(el); return /:$/.test(nt) && looksLabel(nt.replace(/:$/, "")) ? nt.replace(/:$/, "") : ""; }
+  function detect(){
+    const { list, blocked } = docs(); const items = [], seen = new Set();
+    const add = (kind, value, el, label) => { value = String(value || "").replace(/\s+/g, " ").trim(); if (!value || value.length > 160) return;
+      label = String(label || "").replace(/\s+/g, " ").trim().slice(0, 40);
+      if (NEVER.test(label) || SSN.test(value)) return;
+      const key = kind + "|" + (kind === "phone" ? value.replace(/\D/g, "").slice(-10) : value.toLowerCase()); if (seen.has(key)) return;
+      if (kind === "detail" && items.some(o => o.value.toLowerCase() === value.toLowerCase())) return;   /* already listed as an address / phone / email */
+      seen.add(key);
+      items.push({ id: "g" + items.length, kind, value: kind === "phone" ? fmtPhone(value) : value, label, el, path: pathOf(el) }); };
+    for (const { doc } of list){
+      const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, { acceptNode: n => n.nodeValue.trim() && n.parentElement && !n.parentElement.closest("script, style, noscript, .nmc-sn-panel, .nmc-sn-btn, .nmc-sn-toast, .nmc-sn-bar") && visible(n.parentElement) ? 1 : 3 });
+      let n, count = 0;
+      while ((n = walker.nextNode()) && count++ < 6000){
+        const el = n.parentElement, txt = n.nodeValue.replace(/\s+/g, " ").trim(); if (txt.length > 400) continue;
+        const lab = labelFor(el); if (NEVER.test(lab) || SSN.test(txt)) continue;
+        for (const m of txt.matchAll(RX.email)) add("email", m[0], el, lab);
+        for (const m of txt.matchAll(RX.phone)){ const d = m[0].replace(/\D/g, ""); if (d.length === 10 || (d.length === 11 && d[0] === "1")) add("phone", m[0], el, lab); }
+        for (const m of txt.matchAll(RX.address)) add("address", m[0], el, lab);
+        const lv = /^([A-Za-z][A-Za-z /&#'’-]{1,38}):\s*(.{1,120})$/.exec(txt);
+        if (lv && !RX.email.test(lv[2]) && !/^\(?\d{3}\)?[\s.-]?\d{3}/.test(lv[2])) add(/name|contact|borrower|lead|client|customer/i.test(lv[1]) && NAME.test(lv[2].trim()) ? "name" : "detail", lv[2], el, lv[1]);
+        RX.email.lastIndex = 0;
+        if (NAME.test(txt) && txt.length <= 40 && !/^(Hi|Hello|Dear|Thanks|Thank|Good|Call|Text|Send|New|Open|Close|Save|Cancel|Today|Yesterday|Conversations?|Contacts?|Messages?|Settings|Inbox|Notes?)\b/.test(txt)) add("name", txt, el, lab);
+      }
+      for (const f of doc.querySelectorAll("input:not([type=hidden]):not([type=password]):not([type=checkbox]):not([type=radio]), textarea, select")){
+        if (!visible(f)) continue; const v = f.tagName === "SELECT" ? T(f.options[f.selectedIndex]) : String(f.value || ""); if (!v.trim() || v.length > 160) continue;
+        const lab = fieldLabel(f); if (NEVER.test(lab + " " + (f.name || ""))) continue;
+        const kind = RX.email.test(v) ? "email" : /^\D*(\d\D*){10,11}$/.test(v) && /phone|cell|mobile/i.test(lab + f.name) ? "phone" : /name/i.test(lab + f.name) && NAME.test(v.trim()) ? "name" : "detail"; RX.email.lastIndex = 0;
+        add(kind, v, f, lab); } }
+    /* most likely contact first: a name in a heading / "name" box sitting next to a phone or email (a contact header) beats a name
+       in a list (e.g. the conversation list down the side); for phones / emails, the ones in that same header first */
+    const contactEls = items.filter(o => o.kind === "phone" || o.kind === "email").map(o => o.el);
+    const nearContact = el => { for (let a = el, i = 0; a && i < 3; a = a.parentElement, i++){ if (contactEls.some(c => c !== el && a.contains(c))) return true; } return false; };
+    const inList = el => !!el.closest("aside, nav, li, [role=listitem], [role=option], [class*=list i], [class*=sidebar i]");
+    const score = it => { const el = it.el; if (!el) return 0; let sc = 0;
+      if (it.kind === "name"){ if (el.closest("h1, h2, h3, h4, [class*=name i], [class*=title i]")) sc += 3; if (nearContact(el)) sc += 4; if (/name|contact|borrower|client/i.test(it.label)) sc += 5; }
+      else if (it.kind === "phone" || it.kind === "email"){ if (el.closest("header, [class*=contact i], [class*=profile i], [class*=header i]")) sc += 3; if (el.closest("p, [class*=message i], [class*=thread i], [class*=bubble i]")) sc -= 3; }
+      if (inList(el)) sc -= 3; return sc; };
+    const rank = { name: 0, phone: 1, email: 2, address: 3, detail: 4 };
+    items.forEach(it => it.sc = score(it));
+    items.sort((a, b) => rank[a.kind] - rank[b.kind] || b.sc - a.sc);
+    const cap = { name: 8, phone: 10, email: 8, address: 6, detail: 40 }, cnt = {};
+    return { items: items.filter(it => (cnt[it.kind] = (cnt[it.kind] || 0) + 1) <= cap[it.kind]), frames: list.length - 1, blocked }; }
+  const valueAt = (it, kind) => { if (kind === "phone"){ const m = T(it).match(RX.phone); return m ? fmtPhone(m[0]) : ""; } if (kind === "email"){ const m = T(it).match(RX.email); RX.email.lastIndex = 0; return m ? m[0] : ""; }
+    if (kind === "address"){ const m = T(it).match(RX.address); return m ? m[0] : ""; } const t = it.matches && it.matches("input, textarea") ? it.value : T(it); const lv = /^[^:]{2,40}:\s*(.+)$/.exec(t); return (lv ? lv[1] : t).trim().slice(0, 160); };
+  let hiEl = null; const hi = el => { if (hiEl){ hiEl.style.outline = hiEl.__nmcO || ""; hiEl = null; } if (el){ hiEl = el; el.__nmcO = el.style.outline; el.style.outline = "3px solid #2E6B4F"; try { el.scrollIntoView({ block: "nearest", behavior: "smooth" }); } catch (e) {} } };
+  const copyText = async t => { try { await navigator.clipboard.writeText(t); return true; } catch (e) { const ta = document.createElement("textarea"); ta.value = t; ta.style.cssText = "position:fixed;left:-9999px"; document.body.appendChild(ta); ta.select(); let ok = false; try { ok = document.execCommand("copy"); } catch (x) {} ta.remove(); return ok; } };
+  async function grabPanel(){
+    await loadRecipe(); const G = (recipe && recipe.grab) || {};
+    const { items, frames, blocked } = detect();
+    if (!items.length) return toast("Didn’t find names, phones, emails or labelled details on this page" + (blocked ? ` (${blocked} embedded frame${blocked > 1 ? "s" : ""} from another site can’t be read)` : "") + ".", false);
+    /* what this site's recipe remembers: put those first and tick them */
+    const assign = {};
+    for (const [k, loc] of Object.entries(G)){ let hit = null;
+      if (loc.path){ try { const el = document.querySelector(loc.path); if (el){ const v = valueAt(el, loc.kind); hit = items.find(it => it.el === el || (v && it.value === (loc.kind === "phone" ? fmtPhone(v) : v))) || (v ? (items.push({ id: "g" + items.length, kind: loc.kind, value: v, label: loc.label, el, path: loc.path }), items[items.length - 1]) : null); } } catch (e) {} }
+      if (!hit && loc.label) hit = items.find(it => it.kind === loc.kind && norm(it.label) === norm(loc.label));
+      if (hit && !Object.values(assign).includes(hit.id)) assign[k] = hit.id; }
+    if (!Object.keys(assign).length){ for (const [k, kd] of [["name", "name"], ["phone", "phone"], ["email", "email"], ["address", "address"]]){ const it = items.find(x => x.kind === kd); if (it) assign[k] = it.id; } }
+    const fieldOf = id => (Object.entries(assign).find(([, v]) => v === id) || [""])[0];
+    const KIND = { name: "Name", phone: "Phone", email: "Email", address: "Address", detail: "Detail" };
+    const rows = items.map(it => `<div class="nmc-sn-row" data-id="${it.id}" style="display:grid;grid-template-columns:22px 1fr 112px 30px;gap:6px;align-items:center;padding:5px 0;border-bottom:1px solid #EFE9DD">
+        <input type="checkbox" data-ck ${fieldOf(it.id) ? "checked" : ""} style="width:16px;height:16px;margin:0">
+        <div style="min-width:0"><div style="font-weight:600;overflow-wrap:anywhere">${esc(it.value)}</div><div style="font-size:11px;color:#5C616E">${KIND[it.kind]}${it.label ? " · " + esc(it.label) : ""}</div></div>
+        <select data-as style="font:12px system-ui;padding:3px;border:1px solid #D9D3C6;border-radius:6px">${GRAB_FIELDS.map(([v, n]) => `<option value="${v}"${fieldOf(it.id) === v ? " selected" : ""}>${n}</option>`).join("")}</select>
+        <button data-cp title="Copy this" style="border:1px solid #D9D3C6;background:#fff;border-radius:6px;cursor:pointer;padding:3px 0">⧉</button></div>`).join("");
+    const p = box(`<div style="font-weight:700;color:#2E6B4F;font-size:14px">What NMC sees on ${esc(HOST)}</div>
+      <div style="color:#5C616E;margin:2px 0 8px;font-size:12px">${G && Object.keys(G).length ? "✓ Using this site’s recipe — picks are ticked. " : ""}Tick what you want, set what each one is, then copy it or send it. Hover a row to see it on the page.${frames ? ` Read ${frames} frame${frames > 1 ? "s" : ""} too.` : ""}${blocked ? ` ${blocked} frame${blocked > 1 ? "s" : ""} from another site can’t be read.` : ""}</div>
+      <div data-list style="max-height:46vh;overflow:auto;margin-bottom:8px">${rows}</div>
+      <div>${BTN("send", "Send to NMC")}${BTN("copy", "Copy ticked", true)}${BTN("sf", "Find in Salesforce", true)}${BTN("x", "Close", true)}</div>`);
+    p.style.width = "430px";
+    const byId = id => items.find(it => it.id === id);
+    p.addEventListener("mouseover", e => { const r = e.target.closest && e.target.closest(".nmc-sn-row"); hi(r ? byId(r.dataset.id).el : null); });
+    p.addEventListener("mouseleave", () => hi(null));
+    p.addEventListener("change", e => { const r = e.target.closest(".nmc-sn-row"); if (!r) return;
+      if (e.target.matches("[data-as]")){ const v = e.target.value; if (v) p.querySelectorAll("[data-as]").forEach(s => { if (s !== e.target && s.value === v) s.value = ""; }); r.querySelector("[data-ck]").checked = !!v; } });
+    const picked = () => [...p.querySelectorAll(".nmc-sn-row")].filter(r => r.querySelector("[data-ck]").checked).map(r => ({ it: byId(r.dataset.id), as: r.querySelector("[data-as]").value }));
+    const remember = async sel => { const rc = {}; sel.filter(x => x.as && x.as !== "notes").forEach(x => { rc[x.as] = { kind: x.it.kind === "detail" ? "detail" : x.it.kind, label: x.it.label, path: x.it.path }; });
+      if (!Object.keys(rc).length) return null; const sv = await send({ type: "nmc:recipe", op: "save", host: HOST, kind: "grab", recipe: rc }); if (sv && sv.ok) recipe = Object.assign({}, recipe, { grab: rc }); return sv && sv.ok; };
+    const LABEL = { name: "Name", phone: "Phone", phone2: "Mobile phone", email: "Email", address: "Address", notes: "Note" };
+    p.onclick = async e => {
+      if (e.target.matches("[data-cp]")){ const it = byId(e.target.closest(".nmc-sn-row").dataset.id); const ok = await copyText(it.value); e.target.textContent = ok ? "✓" : "✕"; setTimeout(() => { e.target.textContent = "⧉"; }, 1200); return; }
+      const a = e.target.dataset.a; if (!a) return; if (a === "x"){ hi(null); return closeAll(); }
+      const sel = picked(); if (!sel.length) return toast("Tick something first.", false);
+      if (a === "copy"){ const txt = sel.map(x => (x.as && LABEL[x.as] ? LABEL[x.as] + ": " : "") + x.it.value).join("\n"); const ok = await copyText(txt); const sv = await remember(sel);
+        return toast((ok ? `Copied ${sel.length} item${sel.length > 1 ? "s" : ""}.` : "Couldn’t copy — Chrome blocked the clipboard.") + (sv ? ` ✓ Recipe saved for ${HOST}.` : ""), ok); }
+      if (a === "sf"){ const ph = sel.find(x => x.as === "phone" || x.it.kind === "phone"), nm = sel.find(x => x.as === "name" || x.it.kind === "name"); const term = (ph || nm || sel[0]).it.value;
+        await copyText(term); const r = await send({ type: "nmc:sfsearch", term }); await remember(sel);
+        return toast(r && r.ok ? `Searching Salesforce for ${term} (also copied).` : `Copied ${term} — ${r && r.error ? r.error : "open Salesforce"} to search it.`, !!(r && r.ok)); }
+      if (a === "send"){ const named = sel.filter(x => x.as); if (!named.length) return toast("Set at least one row to Name, Phone, Email or Address.", false);
+        const notes = sel.filter(x => !x.as || x.as === "notes").map(x => (x.it.label ? x.it.label + ": " : "") + x.it.value);
+        const lines = []; named.filter(x => x.as !== "notes").forEach(x => lines.push(LABEL[x.as], x.as === "phone" || x.as === "phone2" ? fmtPhone(x.it.value) : x.it.value));
+        if (notes.length) lines.push("Notes", notes.join(" · ").slice(0, 900));
+        const title = HOST + " — " + (document.title || "").slice(0, 80);
+        const r = await send({ type: "nmc:send", text: lines.join("\n"), url: location.href, title, pairs: lines.length / 2, via: "grab" }); const sv = await remember(sel);
+        if (r && r.ok){ hi(null); closeAll(); return toast(`Sent to NMC — it’s at the top of your Pipeline Inbox.` + (sv ? ` ✓ Recipe saved for ${HOST}.` : ""), true); }
+        return toast(r && r.copied ? "The toolkit isn’t answering — copied the details instead." : "Couldn’t reach the NMC Toolkit app — is it open?", false); } }; }
+
   /* the NMC button: shows only when this page has a rate table or a form */
   function ensure(){
     if (!alive()){ if (btn) btn.remove(); return false; }
-    const hasRates = tables().length > 0, hasForm = formFields().length >= 3;
-    if (!hasRates && !hasForm){ if (btn){ btn.remove(); btn = null; closeAll(); } return true; }
+    /* on every site the banker allowed: Grab is always there; rate / fill show when the page has a rate table / a form */
     if (!btn || !btn.isConnected){ btn = document.createElement("button"); btn.type = "button"; btn.className = "nmc-sn-btn"; btn.textContent = "NMC";
-      btn.title = "NMC Toolkit — send the selected rate or fill this form";
+      btn.title = "NMC Toolkit — grab info from this page, send a rate, or fill a form";
       btn.style.cssText = `position:fixed;${SIDE};bottom:18px;z-index:2147483646;background:#A53222;color:#fff;border:0;border-radius:999px;padding:10px 16px;font:700 13px system-ui,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer`;
       btn.onclick = () => { if (menu || panel) return closeAll();
         const r = tables().length > 0, f = formFields().length >= 3;
-        if (r && !f) return quickRate(); if (f && !r) return fillPanel();
         menu = document.createElement("div"); menu.className = "nmc-sn-panel";
         menu.style.cssText = `position:fixed;${SIDE};bottom:66px;z-index:2147483647;background:#fff;border:1px solid #D9D3C6;border-radius:10px;padding:6px;box-shadow:0 10px 30px rgba(0,0,0,.2);font:13px system-ui`;
-        menu.innerHTML = `<div data-a="rate" style="padding:8px 12px;cursor:pointer">Send the selected rate</div><div data-a="fill" style="padding:8px 12px;cursor:pointer">Fill this form from the toolkit</div>`;
-        menu.onclick = e => { const a = e.target.dataset.a; if (a === "rate") { closeAll(); quickRate(); } if (a === "fill") { closeAll(); fillPanel(); } };
+        const it = (a, t) => `<div data-a="${a}" style="padding:8px 12px;cursor:pointer;border-radius:6px" onmouseover="this.style.background='#F4EFE4'" onmouseout="this.style.background=''">${t}</div>`;
+        menu.innerHTML = it("grab", "Grab info from this page…") + (r ? it("rate", "Send the selected rate") : "") + (f ? it("fill", "Fill this form from the toolkit") : "");
+        menu.onclick = e => { const a = e.target.dataset.a; if (a === "grab") { closeAll(); grabPanel(); } if (a === "rate") { closeAll(); quickRate(); } if (a === "fill") { closeAll(); fillPanel(); } };
         document.body.appendChild(menu); };
       document.body.appendChild(btn); }
     return true; }
   const timer = setInterval(() => { if (document.body && ensure() === false) clearInterval(timer); }, 1500); setTimeout(ensure, 500);
-  try { chrome.runtime.onMessage.addListener((m, s, reply) => { if (m && m.type === "nmc:sensor"){ ensure(); if (m.do === "rate") quickRate(); if (m.do === "fill") fillPanel(); reply({ ok: true }); } }); } catch (e) {}
+  try { chrome.runtime.onMessage.addListener((m, s, reply) => { if (m && m.type === "nmc:sensor"){ ensure(); if (m.do === "rate") quickRate(); if (m.do === "fill") fillPanel(); if (m.do === "grab") grabPanel(); reply({ ok: true }); } }); } catch (e) {}
 })();

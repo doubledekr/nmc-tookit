@@ -56,6 +56,17 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
     return true;
   }
   if(msg && msg.type === "nmc:ping"){ ping().then(j => reply(j)); return true; }
+  /* "Find in Salesforce" from the page inspector: point the banker's open Salesforce tab at a search for the picked phone / name.
+     Only navigates a Salesforce tab that's already open; nothing is changed in Salesforce. */
+  if(msg && msg.type === "nmc:sfsearch"){ (async () => {
+    const term = String(msg.term || "").replace(/[<>]/g, "").trim().slice(0, 80); if(!term) return reply({ ok:false, error:"nothing to search for" });
+    let tabs = []; try { tabs = await chrome.tabs.query({ url: ["https://*.lightning.force.com/*", "https://*.my.salesforce.com/*"] }); } catch(e){}
+    const t = tabs.find(x => /lightning\.force\.com/.test(x.url || "")) || tabs[0];
+    if(!t) return reply({ ok:false, error:"no Salesforce tab is open" });
+    const base = new URL(t.url).origin.replace(/\.my\.salesforce\.com$/, ".lightning.force.com");
+    const def = { componentDef: "forceSearch:searchPage", attributes: { term, scopeMap: { type: "TOP_RESULTS" }, context: { disableSpellCorrection: false, disableIntentQuery: false, permsAndPrefs: {}, FILTERS: {}, searchSource: "ASSISTANT_DIALOG" } } };
+    try { await chrome.tabs.update(t.id, { url: base + "/one/one.app#" + btoa(unescape(encodeURIComponent(JSON.stringify(def)))), active: true }); await chrome.windows.update(t.windowId, { focused: true }); reply({ ok:true }); }
+    catch(e){ reply({ ok:false, error:"couldn’t switch the Salesforce tab" }); } })(); return true; }
   if(msg && msg.type === "nmc:client"){ getClient().then(j => reply(j)); return true; }   /* lender autofill: the client selected in the toolkit */
 });
 
@@ -186,5 +197,5 @@ chrome.runtime.onMessage.addListener((msg, sender, reply) => {
   if (!msg || msg.type !== "nmc:recipe") return;
   if (!sender.tab || !/^https:\/\//i.test(sender.url || "")) return;
   const host = new URL(sender.url).hostname.replace(/^www\./, "");   /* a page can only read / save the recipe for its OWN site */
-  (async () => { reply(await appRecipe({ op: msg.op === "save" ? "save" : "get", host, kind: msg.kind === "fill" ? "fill" : "rate", recipe: msg.op === "save" ? msg.recipe : undefined }) || { ok: false }); })();
+  (async () => { reply(await appRecipe({ op: msg.op === "save" ? "save" : "get", host, kind: msg.kind === "fill" ? "fill" : msg.kind === "grab" ? "grab" : "rate", recipe: msg.op === "save" ? msg.recipe : undefined }) || { ok: false }); })();
   return true; });

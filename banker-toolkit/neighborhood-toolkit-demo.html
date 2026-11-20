@@ -1743,7 +1743,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.26.0";
+const TOOLKIT_VERSION = "1.27.0";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -3385,26 +3385,30 @@ function cleanRecipe(kind, r){ if(!r||typeof r!=="object") return null;
     const o={ cols:{rate:recTxt(c.rate), payment:recTxt(c.payment), apr:recTxt(c.apr), cost:recTxt(c.cost)}, loanLabel:recTxt(r.loanLabel), feesLabel:recTxt(r.feesLabel), table:String(r.table||"").replace(/[<>]/g,"").slice(0,400), name:recTxt(r.name), term:[10,15,20,25,30].includes(term)?term:30 };
     return o.cols.rate&&o.cols.payment ? o : null; }
   if(kind==="fill"){ const o={}; FILL_RECIPE_KEYS.forEach(k=>{ if(r[k]!=null) o[k]=recTxt(r[k]); }); return Object.keys(o).length?o:null; }
+  /* grab: where the banker's picks sat on the page — for each NMC field, the kind of value, its label and a short page path (text only) */
+  if(kind==="grab"){ const o={}; GRAB_KEYS.forEach(k=>{ const x=r[k]; if(x&&typeof x==="object"){ const kd=String(x.kind||"").replace(/[^a-z]/g,"").slice(0,12);
+      const y={kind:kd, label:recTxt(x.label), path:String(x.path||"").replace(/[<>"'`]/g,"").slice(0,300)}; if(y.kind&&(y.label||y.path)) o[k]=y; } }); return Object.keys(o).length?o:null; }
   return null; }
+const GRAB_KEYS=["name","phone","phone2","email","address","notes"];
 window.nmcRecipes={ handle(j){ try{ const host=recHost(j&&j.host); if(!host) return {ok:false, error:"bad site"}; state.recipes=state.recipes||{};
     if(j.op==="get") return {ok:true, recipe:state.recipes[host]||null};
-    if(j.op==="save"){ const kind=j.kind==="fill"?"fill":"rate"; const r=cleanRecipe(kind, j.recipe); if(!r) return {ok:false, error:"incomplete recipe"};
+    if(j.op==="save"){ const kind=j.kind==="fill"?"fill":j.kind==="grab"?"grab":"rate"; const r=cleanRecipe(kind, j.recipe); if(!r) return {ok:false, error:"incomplete recipe"};
       const cur=state.recipes[host]||{}; state.recipes[host]=Object.assign({}, cur, {[kind]:r, updated:todayStr(), from:cur.from==="pasted"?"pasted, adjusted":"taught here"}); save(); try{ renderRecipes(); }catch(e){} return {ok:true}; }
     return {ok:false}; }catch(e){ return {ok:false, error:String(e.message||e)}; } } };
-function recipeCode(host){ const r=(state.recipes||{})[host]; if(!r) return ""; const body={h:host, rate:r.rate||null, fill:r.fill||null, at:r.updated||todayStr()};
+function recipeCode(host){ const r=(state.recipes||{})[host]; if(!r) return ""; const body={h:host, rate:r.rate||null, fill:r.fill||null, grab:r.grab||null, at:r.updated||todayStr()};
   return RECIPE_PREFIX+btoa(unescape(encodeURIComponent(JSON.stringify(body)))); }
 function copyRecipe(host){ const code=recipeCode(host); if(!code) return; navigator.clipboard.writeText(code).then(()=>toast("Recipe for "+host+" copied \u2014 paste it to a teammate in Teams"),()=>{ prompt("Copy this recipe code:", code); }); }
 function pasteRecipe(){ const ta=$("recipePaste"); const raw=String(ta&&ta.value||"").trim(); if(!raw) return toast("Paste a recipe code first");
   const m=raw.match(/NMC-RECIPE-1:\s*([A-Za-z0-9+/]+=*)/);   /* the code is one unbroken token — stop at the first space, so words after it in a Teams message aren’t read as part of it */ if(!m) return toast("That isn\u2019t an NMC recipe code");
   let j=null; try{ j=JSON.parse(decodeURIComponent(escape(atob(m[1])))); }catch(e){} if(!j||typeof j!=="object") return toast("That recipe code is damaged \u2014 ask for it again");
-  const host=recHost(j.h); const rate=cleanRecipe("rate", j.rate), fill=cleanRecipe("fill", j.fill);
-  if(!host||(!rate&&!fill)) return toast("That recipe code is incomplete");
+  const host=recHost(j.h); const rate=cleanRecipe("rate", j.rate), fill=cleanRecipe("fill", j.fill), grab=cleanRecipe("grab", j.grab);
+  if(!host||(!rate&&!fill&&!grab)) return toast("That recipe code is incomplete");
   state.recipes=state.recipes||{}; const had=!!state.recipes[host];
-  state.recipes[host]=Object.assign({}, state.recipes[host]||{}, rate?{rate}:{}, fill?{fill}:{}, {updated:todayStr(), from:"pasted"}); save(); ta.value=""; renderRecipes();
-  toast((had?"Updated":"Added")+" the recipe for "+host+(rate&&fill?" (rates + form)":rate?" (rates)":" (form)")+" \u2014 adjust it on the page if yours looks a little different"); }
+  state.recipes[host]=Object.assign({}, state.recipes[host]||{}, rate?{rate}:{}, fill?{fill}:{}, grab?{grab}:{}, {updated:todayStr(), from:"pasted"}); save(); ta.value=""; renderRecipes();
+  toast((had?"Updated":"Added")+" the recipe for "+host+(" ("+[rate?"rates":"",fill?"form":"",grab?"grab":""].filter(Boolean).join(" + ")+")")+" \u2014 adjust it on the page if yours looks a little different"); }
 function deleteRecipe(host){ if(!confirm("Remove the recipe for "+host+"? The page will ask you to match things again next time.")) return; delete state.recipes[host]; save(); renderRecipes(); }
 function renderRecipes(){ const el=$("recipeList"); if(!el) return; const R=state.recipes||{}; const hosts=Object.keys(R).sort();
-  el.innerHTML = hosts.length ? `<table class="data" style="margin:4px 0 8px"><tbody>${hosts.map(h=>{ const r=R[h]; return `<tr><td><b>${esc(h)}</b><div class="hint" style="margin:0">${[r.rate?"rates: "+esc(r.rate.cols.rate)+" / "+esc(r.rate.cols.payment)+(r.rate.loanLabel?" \u00b7 loan \u201c"+esc(r.rate.loanLabel)+"\u201d":""):"",r.fill?"form: "+Object.keys(r.fill).filter(k=>k!=="pause"&&r.fill[k]).length+" boxes"+(r.fill.pause?" \u00b7 pauses after "+r.fill.pause.split(",").length:""):""].filter(Boolean).join(" \u00b7 ")} \u00b7 ${esc(r.from||"")} ${esc(r.updated||"")}</div></td><td style="white-space:nowrap;text-align:right"><button class="btn ghost small" onclick="copyRecipe('${esc(h)}')">Copy code</button> <button class="btn ghost small" onclick="deleteRecipe('${esc(h)}')">Remove</button></td></tr>`; }).join("")}</tbody></table>`
+  el.innerHTML = hosts.length ? `<table class="data" style="margin:4px 0 8px"><tbody>${hosts.map(h=>{ const r=R[h]; return `<tr><td><b>${esc(h)}</b><div class="hint" style="margin:0">${[r.rate?"rates: "+esc(r.rate.cols.rate)+" / "+esc(r.rate.cols.payment)+(r.rate.loanLabel?" \u00b7 loan \u201c"+esc(r.rate.loanLabel)+"\u201d":""):"",r.fill?"form: "+Object.keys(r.fill).filter(k=>k!=="pause"&&r.fill[k]).length+" boxes"+(r.fill.pause?" \u00b7 pauses after "+r.fill.pause.split(",").length:""):"",r.grab?"grab: "+Object.keys(r.grab).map(esc).join(", "):""].filter(Boolean).join(" \u00b7 ")} \u00b7 ${esc(r.from||"")} ${esc(r.updated||"")}</div></td><td style="white-space:nowrap;text-align:right"><button class="btn ghost small" onclick="copyRecipe('${esc(h)}')">Copy code</button> <button class="btn ghost small" onclick="deleteRecipe('${esc(h)}')">Remove</button></td></tr>`; }).join("")}</tbody></table>`
     : `<div class="hint" style="margin:4px 0 8px">None yet. On a lender site, click the NMC toolbar button \u2192 <b>Use NMC on this site</b>, then Send rate or Fill once \u2014 what you match is saved here.</div>`; }
 
 function markRateManual(){ const c=cur(); if(!c) return; const v=num($("anRate").value);
@@ -5267,7 +5271,7 @@ function sfIncoming(p){ if(!p||!p.text) return; p.text=scrubSF(p.text); if(p.ext
   const converted = p.obj==="Opportunity" || /\/Opportunity\/006/.test(p.url||"");
   state.inbox.unshift({id, fields:F, debts, text:p.text, pairs, when:p.when||new Date().toISOString(), source:"chrome-extension", url:p.url||"", converted});
   save(); go("pipeline"); renderPipeline(); renderExtStatus();
-  toast("From Salesforce: "+(F.name||"lead")+(converted?" (converted loan)":"")+" \u2014 "+pairs+" fields read, "+Object.keys(F).length+" recognized. Top of your Pipeline."); }
+  toast((p.via==="grab"?"From "+(String(p.title||"").split(" \u2014 ")[0]||"a web page")+": ":"From Salesforce: ")+(F.name||"lead")+(converted?" (converted loan)":"")+" \u2014 "+pairs+" fields read, "+Object.keys(F).length+" recognized. Top of your Pipeline."); }
 function renderExtStatus(){ try{ renderRecipes(); }catch(e){} const el=$("extStatus"), ep=$("extPath"); if(!el||!DESK||!DESK.sfStatus) return;
   let st=null; try{ st=DESK.sfStatus(); }catch(e){}
   const seen=st&&(st.extSeen||state.extSeen); const stale = seen && st.extShipped && seen!==st.extShipped;

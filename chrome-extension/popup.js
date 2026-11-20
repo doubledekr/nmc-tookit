@@ -25,8 +25,8 @@ const BUILT=/(rocketpro\.com|optimalblue\.com|force\.com|salesforce\.com|salesfo
   const run=async(what)=>{ try{ await chrome.scripting.executeScript({target:{tabId:tab.id}, files:["sensor.js"]}); }catch(e){}
     setTimeout(()=>chrome.tabs.sendMessage(tab.id,{type:"nmc:sensor", do:what},()=>{ void chrome.runtime.lastError; window.close(); }),250); };
   const draw=async()=>{ const on=await chrome.permissions.contains({origins:[origin]});
-    el.innerHTML = on ? `<div class="hint"><span class="tag ok">NMC is on for ${host}</span></div><button id="sRate">Send the selected rate</button><button id="sFill" class="ghost">Fill this form from the toolkit</button><button id="sOff" class="ghost">Turn NMC off for ${host}</button>`
+    el.innerHTML = on ? `<div class="hint"><span class="tag ok">NMC is on for ${host}</span></div><button id="sGrab">Grab info from this page</button><button id="sRate" class="ghost">Send the selected rate</button><button id="sFill" class="ghost">Fill this form from the toolkit</button><button id="sOff" class="ghost">Turn NMC off for ${host}</button>`
       : `<div class="hint">Lender site <b>${host}</b> — NMC isn’t on here yet.</div><button id="sOn">Use NMC on this site</button><div class="hint">Chrome will ask once. NMC only reads this site when you click Send or Fill.</div>`;
-    if(on){ $("sRate").onclick=()=>run("rate"); $("sFill").onclick=()=>run("fill"); $("sOff").onclick=async()=>{ await chrome.permissions.remove({origins:[origin]}); draw(); }; }
+    if(on){ $("sGrab").onclick=()=>run("grab"); $("sRate").onclick=()=>run("rate"); $("sFill").onclick=()=>run("fill"); $("sOff").onclick=async()=>{ await chrome.permissions.remove({origins:[origin]}); draw(); }; }
     else $("sOn").onclick=async()=>{ const ok=await chrome.permissions.request({origins:[origin]}); if(ok){ await run(null); } draw(); }; };
   draw(); })();
