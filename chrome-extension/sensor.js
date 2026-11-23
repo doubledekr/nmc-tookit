@@ -200,8 +200,8 @@
   /* ---- Village (Optimal Blue PPE inside Encompass TPO Connect): built-in reader, no teaching ----
      Results table: Rate | Price | QM | P&I | Discount/Rebate | Fees | LO Comp, the chosen rate marked by a ticked checkbox.
      If the pricing details drawer is open it adds Base / Total Loan Amount (the total includes a financed VA funding fee),
-     Amount Financed (→ the exact APR) and Prepaid Finance Charge. The LO comp goes to the toolkit ONLY for the banker's
-     lender comparison — never onto anything the client sees. */
+     Amount Financed (→ the exact APR) and Prepaid Finance Charge. What NMC earns (the premium over a price of 100) goes to the
+     toolkit ONLY for the banker's lender comparison — never onto anything the client sees. */
   /* the table's OWN header and rows (Village nests the rate tables inside the product list) */
   const ownHeads = t => { const r = t.tHead && t.tHead.rows[0]; return r ? [...r.cells].map(h => norm(T(h))) : []; };
   const ownRows = t => [...t.tBodies].flatMap(b => [...b.rows]);
@@ -218,22 +218,31 @@
     if (!tr) return { err: "Tick the rate you want in the Village results first." };
     const td = [...tr.children].filter(c => c.tagName === "TD"); const col = re => { const i = x.hs.findIndex(h => re.test(h)); return i >= 0 && td[i] ? T(td[i]) : ""; };
     const dollars = t => { const m = /\((-?\$[\d,]+(?:\.\d+)?)\)|(-?\$[\d,]+(?:\.\d+)?)/.exec(t || ""); return m ? num(m[1] || m[2]) : null; };
-    const rate = num(col(/^rate$/)), pay = num(col(/p ?& ?i/)), disc = dollars(col(/discount|rebate/)), fees = dollars(col(/^fees$/)) || 0, comp = dollars(col(/lo comp|compensation/));
+    const rate = num(col(/^rate$/)), price = num(col(/^price$/)), pay = num(col(/p ?& ?i/)), disc = dollars(col(/discount|rebate/)), fees = dollars(col(/^fees$/)) || 0;
+    /* Village pricing: Price above 100 is the premium Village pays NMC — (price − 100)% of the total loan amount, which is the
+       Discount/Rebate dollars shown as a negative ("-0.379% (-$1,073)"). Below 100 it's discount points the CLIENT pays.
+       So: negative Discount/Rebate → what NMC earns (never a client credit); positive → the client's cost. */
+    const earn = disc != null ? Math.max(0, -disc) : null, clientCost = disc != null ? Math.max(0, disc) : 0;
     const P = {}; labelledNumbers().forEach(p => { const k = norm(p.label); if (!(k in P)) P[k] = p.value; });
-    const base = P["base loan amount"] || P["loan amount"] || null, total = P["total loan amount"] || null, af = P["amount financed"] || null, pfc = P["prepaid finance charge"] || null;
+    /* the pricing-details drawer counts only if it's for the SAME rate as the ticked row */
+    const drawerOk = !(P["rate"] > 0) || Math.abs(P["rate"] - rate) < 0.0005;
+    let base = drawerOk ? (P["base loan amount"] || P["loan amount"] || null) : null, total = drawerOk ? (P["total loan amount"] || null) : null;
+    const af = drawerOk ? (P["amount financed"] || null) : null, pfc = drawerOk ? (P["prepaid finance charge"] || null) : null;
     const scen = [...document.querySelectorAll("*")].filter(e => /^Loan Scenario - /.test(T(e))).sort((a, b) => T(a).length - T(b).length)[0];
     const product = scen ? String(scen.innerText || scen.textContent || "").split("\n")[0].replace(/^\s*Loan Scenario - /, "").replace(/\s+(Lock Period|Lock Expiration)\b[\s\S]*$/, "").trim().slice(0, 80) : ""; const term = +((/(\d{2})\s*Yr/i.exec(product) || [])[1]) || 30;
     /* the lender's APR: the rate at which Amount Financed is repaid by the P&I over the term (only when the drawer is open) */
+    /* no drawer: the total loan amount is what the P&I repays at this rate over the term (to the dollar) */
+    let fromPay = false; if (!(total || base) && rate > 0 && pay > 0){ const i = rate / 1200, n = term * 12; total = Math.round(pay * (1 - Math.pow(1 + i, -n)) / i); fromPay = true; }
     let apr = null; if (af > 0 && pay > 0){ let lo = 0, hi = 30; for (let i = 0; i < 60; i++){ const mid = (lo + hi) / 2; if (pmtOf(af, mid, term * 12) > pay) hi = mid; else lo = mid; } apr = Math.round(((lo + hi) / 2) * 1000) / 1000; }
-    return { q: { lender: "Village", product, term, rate, payment: pay, loanAmount: total || base, baseLoan: base, costDollars: disc, totalFees: Math.max(0, (fees || 0) + Math.max(0, disc || 0)),
-        aprTyped: apr, prepaidFinanceCharge: pfc, comp: comp != null ? { lenderPaid: Math.abs(comp) } : null, fees: [], source: "village" }, drawer: !!(total || af) }; }
+    return { q: { lender: "Village", product, term, rate, price, payment: pay, loanAmount: total || base, baseLoan: base, costDollars: clientCost, totalFees: (fees || 0) + clientCost,
+        aprTyped: apr, prepaidFinanceCharge: pfc, comp: earn != null ? { lenderPaid: earn, basis: "price" } : null, fees: [], source: "village" }, drawer: !!af, fromPay, drawerOther: !drawerOk }; }
   async function obSend(){ const y = obRead(); if (!y) return false; if (y.err){ toast(y.err, false); return true; }
     const q = y.q; if (!(q.rate > 0) || !(q.payment > 0) || !(q.loanAmount > 0)) { toast("Couldn’t read the rate, P&I and loan amount — tick a rate (and open its pricing details for the exact amounts).", false); return true; }
     q.pulledAt = new Date().toISOString();
     const r = await send({ type: "nmc:quote", quote: q });
     if (!r) { toast("Couldn’t reach the NMC Toolkit app — is it open?", false); return true; }
     if (!r.ok) { toast("Not sent: " + (r.error || "the toolkit said no"), false); return true; }
-    closeAll(); toast(`Sent Village ${q.rate.toFixed(3)}% · ${money(q.payment)}/mo on ${money(q.loanAmount)} to ${r.client}` + (y.drawer ? "" : " — open the rate’s pricing details first next time for the exact APR") + (r.warnings && r.warnings.length ? " · check the analysis" : ""), true); return true; }
+    closeAll(); toast(`Sent Village ${q.rate.toFixed(3)}% · ${money(q.payment)}/mo on ${money(q.loanAmount)} to ${r.client}` + (y.drawerOther ? " — the open pricing details were for another rate, so they were skipped" : "") + (y.fromPay ? " (loan amount worked out from the P&I)" : "") + (y.drawer ? "" : " — open this rate’s pricing details (ⓘ) first for the exact APR") + (r.warnings && r.warnings.length ? " · check the analysis" : ""), true); return true; }
   async function sendQuote(q, rc){
     q.term = rc.term || q.term || 30; q.lender = rc.name || (OB ? "Village (Optimal Blue)" : HOST); q.fees = []; q.pulledAt = new Date().toISOString(); q.source = "recipe";
     const r = await send({ type: "nmc:quote", quote: q });
