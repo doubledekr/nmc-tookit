@@ -1141,6 +1141,7 @@ body.nmc-band.nmc-mac .nmc-tb .l{padding-left:84px}   /* room for the traffic li
           <div class="field" style="display:none"><label>Program</label><select id="anProgram" onchange="programRules(); runAnalysis()">
             <option value="standard" selected>Standard refinance</option><option value="fha_streamline">FHA Streamline</option><option value="va_irrrl">VA IRRRL</option></select></div>
           <div class="field" id="anMipWrap" style="display:none"><label>Upfront MIP % (financed)</label><input type="number" id="anMip" step="0.01" value="1.75" oninput="runAnalysis()"></div>
+          <div class="field" id="anVaWrap" style="display:none"><label>VA funding fee</label><select id="anVaExempt" onchange="runAnalysis()"><option value="no">0.5% \u2014 financed into the loan</option><option value="yes">Exempt (VA disability benefits) \u2014 no fee</option></select></div>
           <div class="field m-second"><label>Second mortgage type <span class="hint" style="display:inline">(changes the wording on proposals)</span></label><select id="anSecondType" onchange="runAnalysis();renderProposalPreview()"><option value="hel">Home equity loan (fixed)</option><option value="heloc">HELOC (line of credit)</option></select></div>
           <div class="field m-second"><label style="display:block;cursor:pointer;line-height:1.5;margin-top:22px"><input type="checkbox" id="anHideFirst" style="width:auto;vertical-align:middle;margin-right:6px" onchange="runAnalysis();renderProposalPreview()">Leave the first mortgage out of the proposal <span class="hint" style="display:inline">(client only sees the new loan)</span></label></div>
           <div class="field m-noc" style="grid-column:1/-1"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="anNoCompare" style="width:auto" onchange="runAnalysis()"> <b>Cash-out only</b> — leave the debts alone and skip the comparison; the proposal just shows what the new loan looks like <span class="hint" style="display:inline">(for clients borrowing for savings or a project, not to pay off debt)</span></label></div>
@@ -1744,7 +1745,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.28.0";
+const TOOLKIT_VERSION = "1.28.1";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -3331,7 +3332,7 @@ function readAnalysisInputs(){ const c=cur(); if(!c) return;
     anExtra:num($("anExtra")?$("anExtra").value:0)||0, rateSrc:c.analysis.rateSrc,
     anReal:!!($("anReal")&&$("anReal").checked), realWhen:c.analysis.realWhen, realSource:c.analysis.realSource,
     anLoanAmt:c.analysis.anLoanAmt, anMiMo:c.analysis.anMiMo, anFinCharge:c.analysis.anFinCharge, lenderPay:c.analysis.lenderPay, lenderQuote:c.analysis.lenderQuote,
-    anAprTyped:$("anAprTyped")?(num($("anAprTyped").value)||null):c.analysis.anAprTyped, anProgram:$("anProgram")?$("anProgram").value:"standard", anMip:num($("anMip")?$("anMip").value:1.75)??1.75, anPrepay:$("anPrepay")?$("anPrepay").value:"yes",
+    anAprTyped:$("anAprTyped")?(num($("anAprTyped").value)||null):c.analysis.anAprTyped, anProgram:$("anProgram")?$("anProgram").value:"standard", anMip:num($("anMip")?$("anMip").value:1.75)??1.75, anVaExempt:$("anVaExempt")?$("anVaExempt").value:(c.analysis.anVaExempt||"no"), anPrepay:$("anPrepay")?$("anPrepay").value:"yes",
     saved:c.analysis.saved, anEquity:$("anEquity")?$("anEquity").value:"hel", anDraw:num($("anDraw")?$("anDraw").value:10)||10,
     anX1:num($("anX1")?$("anX1").value:100), anX2:num($("anX2")?$("anX2").value:250), anX3:num($("anX3")?$("anX3").value:500),
     anNoCompare:$("anNoCompare")&&$("anNoCompare").checked?"yes":"no", anSecondType:$("anSecondType")?$("anSecondType").value:"hel", anHideFirst:$("anHideFirst")&&$("anHideFirst").checked?"yes":"no", anShowExtra:$("anShowExtra")&&!$("anShowExtra").checked?"no":"yes", anCustom:num($("anCustom")?$("anCustom").value:0)||0}; save();
@@ -3464,9 +3465,9 @@ function fillAnalysisInputs(){ const c=cur(); const a=c?c.analysis:blankClient()
   if($("anEquity")){ $("anEquity").value=a.anEquity||"hel"; $("anDraw").value=a.anDraw||10; document.body.classList.toggle("heloc", (a.anEquity||"hel")==="heloc"); }
   if($("anReal")) $("anReal").checked=!!a.anReal;
   if($("anAprTyped")) $("anAprTyped").value=a.anAprTyped>0?a.anAprTyped:"";
-  if($("anProgram")){ $("anProgram").value=a.anProgram||"standard"; $("anMip").value=a.anMip??1.75; $("anPrepay").value=a.anPrepay||"yes"; programRules(); } applyLienMode(); }
+  if($("anProgram")){ $("anProgram").value=a.anProgram||"standard"; $("anMip").value=a.anMip??1.75; if($("anVaExempt")) $("anVaExempt").value=a.anVaExempt==="yes"?"yes":"no"; $("anPrepay").value=a.anPrepay||"yes"; programRules(); } applyLienMode(); }
 function setTerm(y){ $("anTerm").value=String(y); runAnalysis(); }
-const MODE_KEYS=["anRate","rateSrc","anReal","anSecondType","anHideFirst","anTerm","anCosts","anCashOut","anSkip","anRoll","anExtra","anMip","anPrepay","anEquity","anDraw","anX1","anX2","anX3","anNoCompare","anShowExtra","anCustom"];
+const MODE_KEYS=["anRate","rateSrc","anReal","anSecondType","anHideFirst","anTerm","anCosts","anCashOut","anSkip","anRoll","anExtra","anMip","anPrepay","anEquity","anDraw","anX1","anX2","anX3","anNoCompare","anShowExtra","anCustom","anVaExempt"];
 function modeOf(a){ if(a.anLien==="second") return "second"; if(a.anLien==="fc") return "fc"; if(a.anProgram==="fha_streamline") return "fha"; if(a.anProgram==="va_irrrl") return "va"; return "refi"; }
 function setMode(m){ const c=cur(); if(!c){ toast("Pick a client first"); return; } const from=modeOf(c.analysis);
   if(from===m){ applyMode(); return; }
@@ -3511,7 +3512,7 @@ function programRules(){ const p=$("anProgram")?$("anProgram").value:"standard";
   const sk=$("anSkip"), co=$("anCosts");
   if(fha){ sk.value="0"; sk.disabled=true; sk.title="FHA Streamlines don't skip a payment"; co.value="0"; co.disabled=true; co.placeholder="lender-paid"; }
   else { sk.disabled=false; sk.title=""; co.disabled=false; co.placeholder=""; }
-  $("anMipWrap").style.display = fha? "block":"none"; }
+  $("anMipWrap").style.display = fha? "block":"none"; if($("anVaWrap")) $("anVaWrap").style.display = p==="va_irrrl"? "block":"none"; }
 
 function computeAnalysis(c){
   const a=c.analysis; if(!a.anRate) return null;
@@ -3562,7 +3563,10 @@ function computeAnalysis(c){
   const costs = fhaS ? 0 : a.anCosts;                                   /* FHA Streamline: lender-paid, no origination */
   const mipAmt = fhaS ? Math.round(c.balance*((a.anMip==null?1.75:a.anMip)/100)) : 0;  /* upfront MIP financed */
   const skipN = (fhaS||fc) ? 0 : (a.anSkip||0);                         /* FHA Streamline / free & clear: no skipped payment */
-  const newPcalc = ((second||fc)?0:c.balance) + costs + mipAmt + cashOut + (roll?dBal:0);
+  /* VA IRRRL: 0.5% funding fee financed on top of the base loan — none for a veteran exempt through VA disability benefits */
+  const vaIrrrl = prog==="va_irrrl"&&!second&&!fc, vaExempt = a.anVaExempt==="yes";
+  const vaFF = vaIrrrl&&!vaExempt ? Math.round((c.balance + costs + (roll?dBal:0))*0.005) : 0;
+  const newPcalc = ((second||fc)?0:c.balance) + costs + mipAmt + vaFF + cashOut + (roll?dBal:0);
   /* a real quote pulled from the lender (Rocket Pro): the lender's loan amount is the loan — fees are already rolled into it */
   let lenderAmt = (a.anReal && a.anLoanAmt>0) ? +a.anLoanAmt : 0, lenderFee = 0;
   /* the lender's payment can include a funding fee / upfront MIP financed ON TOP of the loan amount it shows (Rocket: VA IRRRL 0.5%).
@@ -3573,11 +3577,11 @@ function computeAnalysis(c){
   const newP = lenderAmt || newPcalc;
   if(lenderAmt && !lenderFee && a.anLoanBase>0 && a.anLoanBase<lenderAmt) lenderFee=Math.round((lenderAmt-a.anLoanBase)*100)/100;   /* the lender gave both amounts */
   const LB = lenderAmt - lenderFee;   /* the lender's loan BEFORE a financed funding fee / MIP — that's what pays off the old loan */
-  if(LB && Math.abs(LB-newPcalc)>1){   /* the proposal follows the lender exactly; the cash to the client is what's left of the lender's loan */
+  if(LB && Math.abs(LB-(newPcalc-vaFF))>1){   /* the lender's base loan vs payoff + costs (the funding fee sits on top of both) */   /* the proposal follows the lender exactly; the cash to the client is what's left of the lender's loan */
     const base = ((second||fc)?0:c.balance) + costs + mipAmt + (roll?dBal:0);
     const cashLeft = Math.round((LB-base)*100)/100;
     if(!streamline && cashLeft>=0 && (cashOut>0 || cashLeft>1)){ if(Math.abs(cashLeft-cashOut)>1) warnings.push(`Using the lender\u2019s <b>${money(LB)}</b> loan: ${second||fc?"":money(c.balance)+" payoff + "}${money(costs+mipAmt)} fees${roll&&dBal?" + "+money(dBal)+" debts":""} rolled in leaves <b>${money(cashLeft)} cash to the client</b>${cashOut>0?" (you had "+money(cashOut)+" typed)":""}.`); cashOut=cashLeft; }
-    else warnings.push(`The lender priced a <b>${money(LB)}</b> loan; payoff + fees${roll&&dBal?" + debts":""}${cashOut?" + cash out":""} here come to ${money(newPcalc)} (${LB>newPcalc?"+":"\u2212"}${money(Math.abs(LB-newPcalc))}). The proposal uses the lender\u2019s amount \u2014 re-price if the payoff or debts changed.`); }
+    else warnings.push(`The lender priced a <b>${money(LB)}</b> loan; payoff + fees${roll&&dBal?" + debts":""}${cashOut?" + cash out":""} here come to ${money(newPcalc-vaFF)} (${LB>newPcalc-vaFF?"+":"\u2212"}${money(Math.abs(LB-(newPcalc-vaFF)))}). The proposal uses the lender\u2019s amount \u2014 re-price if the payoff or debts changed.`); }
   if(second && newP<=a.anCosts) return {tooSmall:true, second};
   const n = a.anTerm*12;
   const heloc = false;   /* a second is modeled as one fixed amortizing loan: debts paid off + any cash out */
@@ -3599,6 +3603,7 @@ function computeAnalysis(c){
   const outlayNow = (second?0:curPay) + (roll?dPay:0) + dExtra;
   const miMo = (a.anReal && a.anMiMo>0 && !second) ? +a.anMiMo : 0;   /* monthly MI from the lender's quote */
   const saveMo = outlayNow - newPay - miMo;
+  if(lenderFee>0 && vaIrrrl && vaExempt) warnings.push(`This veteran is marked <b>exempt from the funding fee</b>, but the lender\u2019s payment includes ${money(lenderFee)} on top of the loan \u2014 set the exemption in the lender\u2019s scenario and re-price.`);
   if(lenderFee>0) warnings.push(`The lender’s payment includes a ${money(lenderFee)} funding fee / upfront MIP financed on top of its ${money(+a.anLoanAmt)} loan amount \u2014 the proposal shows the full ${money(newP)}.`);
   if(a.anReal && a.lenderPay>0 && !heloc && Math.abs(newPay+miMo-a.lenderPay)>1) warnings.push(`The lender shows <b>${money(a.lenderPay)}/mo</b>${miMo?" (with MI)":""}; the toolkit figures ${money(newPay+miMo)} for ${money(newP)} at ${pct(a.anRate)} over ${a.anTerm} years \u2014 check the loan amount and term before sending.`);
   const known = debts.filter(d=>d.apr!=null && d.apr>0);   /* APR is optional: blend only what we know */
@@ -3650,7 +3655,7 @@ function computeAnalysis(c){
   if(a.anReal && a.anAprTyped>0){ apr=+a.anAprTyped; aprEst=false; aprSrc="typed"; }   /* the real APR from the Loan Estimate wins; it never changes the payment math */
   const intSavedPW = isFinite(pw.interest) ? curPathInterest - pw.interest : 0;
   const intSavedMin = curPathInterest - newSched.interest;
-  return {dMinEst,dMinPay,secType,secName,hideFirst,warnings,curMonthsSrc,allInNow,allInNew,intSavedPW,intSavedMin,dNeverOff,dStmtMonths,dStmtInt,apr,aprEst,aprSrc,miMo,lenderAmt,newPcalc,fc,noc,newEscrow,ltv,ladder,cust,escrowEst,escrowIsEst,pitiNow,pitiNew,second,heloc,drawYrs,ioPay,afterDrawPay,curPay,curMonths,curSched,roll,cashOut,streamline,debts,dBal,dPay,dInt,dMonths,dMonthsEst,dMonthsUnknown,dExtra,dNoApr,newP,n,newPay,newSched,outlayNow,saveMo,blended,extra,pw,pwEff,skipCash,skipN,prog,fhaS,mipAmt,escrow,curPathInterest,newPayTyped,dPaths,dPayEst,dMinCards,dMinInt,dMinMonths,dMinBal,todayPath,a};
+  return {vaFF,vaExempt:vaIrrrl&&vaExempt,dMinEst,dMinPay,secType,secName,hideFirst,warnings,curMonthsSrc,allInNow,allInNew,intSavedPW,intSavedMin,dNeverOff,dStmtMonths,dStmtInt,apr,aprEst,aprSrc,miMo,lenderAmt,newPcalc,fc,noc,newEscrow,ltv,ladder,cust,escrowEst,escrowIsEst,pitiNow,pitiNew,second,heloc,drawYrs,ioPay,afterDrawPay,curPay,curMonths,curSched,roll,cashOut,streamline,debts,dBal,dPay,dInt,dMonths,dMonthsEst,dMonthsUnknown,dExtra,dNoApr,newP,n,newPay,newSched,outlayNow,saveMo,blended,extra,pw,pwEff,skipCash,skipN,prog,fhaS,mipAmt,escrow,curPathInterest,newPayTyped,dPaths,dPayEst,dMinCards,dMinInt,dMinMonths,dMinBal,todayPath,a};
 }
 
 function balanceChart(r){
@@ -3887,7 +3892,7 @@ function optionWins(c,r,h){ /* benefits only, for the side-by-side proposal */
   if(r.cashOut>0) w.push(`<b>${money(r.cashOut)}</b> cash in hand at closing`);
   if(r.skipCash>0) w.push(`Skip ${r.skipN===1?"a payment":r.skipN+" payments"} \u2014 about <b>${money(r.skipCash)}</b> stays in your account`);
   if(r.fhaS) w.push(`No appraisal, no income re-verification, and closing costs are lender-paid`);
-  if(r.prog==="va_irrrl"&&!r.second) w.push(`VA IRRRL \u2014 typically no appraisal or income re-verification, reduced funding fee`);
+  if(r.prog==="va_irrrl"&&!r.second) w.push(r.vaExempt?`VA IRRRL \u2014 typically no appraisal or income re-verification, no funding fee (exempt)`:`VA IRRRL \u2014 typically no appraisal or income re-verification, 0.5% funding fee`);
   if(h.newInt<h.todayInt) w.push(`Saves <b>${money(h.todayInt-h.newInt)}</b> in total interest versus staying on today\u2019s path`);
   const p=snapPW(c,r,h);
   if(p) w.push(`<b>Keep paying what you pay today</b> (${money(h.today)}/mo) and put the difference toward the loan: ${r.second?"the new loan is paid off":"you\u2019re mortgage-free"} in <b>${yrsMo(p.months)}</b>${p.cut>0?" \u2014 "+yrsMo(p.cut)+" sooner":""}${p.saved>0?`, and you pay <b>${money(p.saved)}</b> less interest than staying where you are`:""}`);
@@ -4009,7 +4014,7 @@ function proposalSingleHTML(){
   if(r.saveMo>0) benefits.push(`Free up <b>${money(r.saveMo)}/month</b> in cash flow from day one`);
   if(r.fhaS) benefits.push(`<b>No origination fee and no closing costs out of pocket</b> \u2014 on an FHA Streamline the lender covers the costs; the only charge is FHA's upfront mortgage insurance premium (${money(r.mipAmt)}), financed into the loan`);
   if(r.fhaS) benefits.push(`<b>No appraisal and no income re-verification</b> \u2014 the FHA Streamline is built to be simple`);
-  if(r.prog==="va_irrrl"&&!r.second) benefits.push(`<b>VA IRRRL</b> \u2014 typically no appraisal or income re-verification, and the VA funding fee drops to 0.5% (waived for exempt veterans)`);
+  if(r.prog==="va_irrrl"&&!r.second) benefits.push(r.vaExempt ? `<b>VA IRRRL</b> \u2014 typically no appraisal or income re-verification, and <b>no VA funding fee</b> \u2014 you\u2019re exempt` : `<b>VA IRRRL</b> \u2014 typically no appraisal or income re-verification, and the VA funding fee is just 0.5%${r.vaFF?" ("+money(r.vaFF)+", financed)":""}`);
   if((r.a.anPrepay||"yes")==="yes") benefits.push(`<b>No prepayment penalty</b> \u2014 pay extra, pay it off early, or refinance again whenever it makes sense, with no fee`);
   if(r.roll&&r.debts.length) benefits.push(`Pay off <b>${debtsPhrase(r.debts)} (${money(r.dBal)})</b> \u2014 balances paid to zero at closing`);
   if(r.roll&&r.dMinCards&&isFinite(r.dMinMonths)&&(r.dMinMonths>r.n||r.dMinInt>r.dMinBal*0.3)) benefits.push(`Paying today\u2019s minimum (${r.dMinEst?"about ":""}${money(r.dMinPay)} a month) every month, ${r.dMinCards===1?"that card":"those "+r.dMinCards+" cards"} (${money(r.dMinBal)}) would take <b>${yrsMo(r.dMinMonths)}</b> and cost <b>${money(r.dMinInt)}</b> in interest${r.dStmtMonths>r.dMinMonths+24?` \u2014 and on the statement\u2019s shrinking minimum, <b>${yrsMo(r.dStmtMonths)}</b>`:""}. This loan puts an end date on it`);
