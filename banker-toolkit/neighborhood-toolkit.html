@@ -1743,7 +1743,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.27.3";
+const TOOLKIT_VERSION = "1.27.4";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -3534,13 +3534,19 @@ function computeAnalysis(c){
   const skipN = (fhaS||fc) ? 0 : (a.anSkip||0);                         /* FHA Streamline / free & clear: no skipped payment */
   const newPcalc = ((second||fc)?0:c.balance) + costs + mipAmt + cashOut + (roll?dBal:0);
   /* a real quote pulled from the lender (Rocket Pro): the lender's loan amount is the loan — fees are already rolled into it */
-  const lenderAmt = (a.anReal && a.anLoanAmt>0) ? +a.anLoanAmt : 0;
+  let lenderAmt = (a.anReal && a.anLoanAmt>0) ? +a.anLoanAmt : 0, lenderFee = 0;
+  /* the lender's payment can include a funding fee / upfront MIP financed ON TOP of the loan amount it shows (Rocket: VA IRRRL 0.5%).
+     If one of the standard fees reproduces the lender's payment to within a dollar, the financed amount is the loan. */
+  if(lenderAmt && a.lenderPay>0 && !second){ const target=+a.lenderPay-((a.anMiMo>0)?+a.anMiMo:0), nn=(a.anTerm||30)*12;
+    if(Math.abs(pmt(lenderAmt,a.anRate,nn)-target)>1){ for(const f of [0.005,0.0175,0.0215,0.0125,0.033,0.0365,0.0225,0.01]){ const amt=lenderAmt*(1+f);
+        if(Math.abs(pmt(amt,a.anRate,nn)-target)<=1){ lenderFee=Math.round(lenderAmt*f*100)/100; lenderAmt=Math.round(amt*100)/100; break; } } } }
   const newP = lenderAmt || newPcalc;
-  if(lenderAmt && Math.abs(lenderAmt-newPcalc)>1){   /* the proposal follows the lender exactly; the cash to the client is what's left of the lender's loan */
+  const LB = lenderAmt - lenderFee;   /* the lender's loan BEFORE a financed funding fee / MIP — that's what pays off the old loan */
+  if(LB && Math.abs(LB-newPcalc)>1){   /* the proposal follows the lender exactly; the cash to the client is what's left of the lender's loan */
     const base = ((second||fc)?0:c.balance) + costs + mipAmt + (roll?dBal:0);
-    const cashLeft = Math.round((lenderAmt-base)*100)/100;
-    if(!streamline && cashLeft>=0 && (cashOut>0 || cashLeft>1)){ if(Math.abs(cashLeft-cashOut)>1) warnings.push(`Using the lender\u2019s <b>${money(lenderAmt)}</b> loan: ${second||fc?"":money(c.balance)+" payoff + "}${money(costs+mipAmt)} fees${roll&&dBal?" + "+money(dBal)+" debts":""} rolled in leaves <b>${money(cashLeft)} cash to the client</b>${cashOut>0?" (you had "+money(cashOut)+" typed)":""}.`); cashOut=cashLeft; }
-    else warnings.push(`The lender priced a <b>${money(lenderAmt)}</b> loan; payoff + fees${roll&&dBal?" + debts":""}${cashOut?" + cash out":""} here come to ${money(newPcalc)} (${lenderAmt>newPcalc?"+":"\u2212"}${money(Math.abs(lenderAmt-newPcalc))}). The proposal uses the lender\u2019s amount \u2014 re-price if the payoff or debts changed.`); }
+    const cashLeft = Math.round((LB-base)*100)/100;
+    if(!streamline && cashLeft>=0 && (cashOut>0 || cashLeft>1)){ if(Math.abs(cashLeft-cashOut)>1) warnings.push(`Using the lender\u2019s <b>${money(LB)}</b> loan: ${second||fc?"":money(c.balance)+" payoff + "}${money(costs+mipAmt)} fees${roll&&dBal?" + "+money(dBal)+" debts":""} rolled in leaves <b>${money(cashLeft)} cash to the client</b>${cashOut>0?" (you had "+money(cashOut)+" typed)":""}.`); cashOut=cashLeft; }
+    else warnings.push(`The lender priced a <b>${money(LB)}</b> loan; payoff + fees${roll&&dBal?" + debts":""}${cashOut?" + cash out":""} here come to ${money(newPcalc)} (${LB>newPcalc?"+":"\u2212"}${money(Math.abs(LB-newPcalc))}). The proposal uses the lender\u2019s amount \u2014 re-price if the payoff or debts changed.`); }
   if(second && newP<=a.anCosts) return {tooSmall:true, second};
   const n = a.anTerm*12;
   const heloc = false;   /* a second is modeled as one fixed amortizing loan: debts paid off + any cash out */
@@ -3562,6 +3568,7 @@ function computeAnalysis(c){
   const outlayNow = (second?0:curPay) + (roll?dPay:0) + dExtra;
   const miMo = (a.anReal && a.anMiMo>0 && !second) ? +a.anMiMo : 0;   /* monthly MI from the lender's quote */
   const saveMo = outlayNow - newPay - miMo;
+  if(lenderFee>0) warnings.push(`The lender’s payment includes a ${money(lenderFee)} funding fee / upfront MIP financed on top of its ${money(+a.anLoanAmt)} loan amount \u2014 the proposal shows the full ${money(newP)}.`);
   if(a.anReal && a.lenderPay>0 && !heloc && Math.abs(newPay+miMo-a.lenderPay)>1) warnings.push(`The lender shows <b>${money(a.lenderPay)}/mo</b>${miMo?" (with MI)":""}; the toolkit figures ${money(newPay+miMo)} for ${money(newP)} at ${pct(a.anRate)} over ${a.anTerm} years \u2014 check the loan amount and term before sending.`);
   const known = debts.filter(d=>d.apr!=null && d.apr>0);   /* APR is optional: blend only what we know */
   const kBal = known.reduce((s,d)=>s+d.balance,0), kW = known.reduce((s,d)=>s+d.balance*d.apr,0);
