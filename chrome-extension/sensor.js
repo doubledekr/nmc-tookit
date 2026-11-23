@@ -62,7 +62,7 @@
       out.push({ label: t.replace(/[:*]\s*$/, ""), value: v }); if (out.length > 60) break; }
     return out; }
   function valueNear(el){
-    const pick = s => { const m = String(s || "").match(/-?\$\s?-?[\d,]+(\.\d+)?|-?\b\d{1,3}(,\d{3})+(\.\d+)?\b|\b\d{4,7}(\.\d+)?\b/); return m ? num(m[0]) : null; };
+    const pick = s => { const m = String(s || "").match(/-?\$\s?-?[\d,]+(\.\d+)?|-?\b\d{1,3}(,\d{3})+(\.\d+)?\b|\b\d{4,7}(\.\d+)?\b|\b\d{1,2}\.\d{1,4}\s?%/); return m ? num(m[0]) : null; };
     if (el.tagName === "LABEL" && el.htmlFor){ const i = el.ownerDocument.getElementById(el.htmlFor); if (i && "value" in i) return pick(i.value); }
     const own = el.querySelector && el.querySelector("input, select"); if (own && "value" in own) return pick(own.value);
     let n = el.nextElementSibling; for (let k = 0; k < 2 && n; k++, n = n.nextElementSibling){ const i = n.matches("input, select") ? n : n.querySelector && n.querySelector("input"); const v = i && "value" in i ? pick(i.value) : pick(T(n)); if (v != null) return v; }
@@ -163,15 +163,49 @@
       const rc = cur(); const y = preview(); if (!y.tr) return toast("Select a rate in the table first.", false);
       if (!(y.q.rate > 0) || !(y.q.payment > 0) || !(y.q.loanAmount > 0)) return toast("Need a rate, a payment and a loan amount — pick the right column / label.", false);
       await sendQuote(y.q, rc); }; }
+
+  /* ---- Send rate from a rate DETAIL page (label / value pairs, no rate table — e.g. Village's rate details) ----
+     Reads the labels the banker confirms: Rate, Loan Amount, and if the page has them Payment / APR / fees. No payment on the page:
+     P&I is worked out from the rate, loan amount and term (and said so). Compensation, LLPA / SRP and price lines are never offered. */
+  const NOT_CLIENT = /comp|compensation|llpa|srp|price|par\b|apor|points and fees|hpml|dti|qm\b/i;
+  const pmtOf = (P, r, n) => { const i = r / 1200; return i ? P * i / (1 - Math.pow(1 + i, -n)) : P / n; };
+  function labelPairs(){ return labelledNumbers().filter(x => !NOT_CLIENT.test(x.label)); }
+  function labelRate(){ const L = labelPairs(); const f = re => L.find(x => re.test(norm(x.label)));
+    const rate = f(/^(note |interest )?rate$/), loan = f(/^loan amount$/) || f(/loan amount/); return rate && loan && rate.value > 0 && rate.value < 25 && loan.value > 1000 ? { L, rate, loan } : null; }
+  function readLabels(R){ const L = labelPairs(); const v = lab => { const x = lab && L.find(p => norm(p.label) === norm(lab)); return x ? x.value : null; };
+    const term = R.term || 30, rate = v(R.rateLabel), loan = v(R.loanLabel); let pay = v(R.payLabel), calc = false;
+    if (!(pay > 0) && rate > 0 && loan > 0){ pay = Math.round(pmtOf(loan, rate, term * 12) * 100) / 100; calc = true; }
+    return { q: { rate, loanAmount: loan, payment: pay, aprTyped: v(R.aprLabel), totalFees: v(R.feesLabel), term }, calc }; }
+  async function detailRate(){ await loadRecipe(); const R0 = recipe && recipe.rateDetail && recipe.rateDetail.mode === "labels" ? recipe.rateDetail : null;
+    const L = labelPairs(); if (!L.length) return toast("No labelled numbers found on this page.", false);
+    const labels = [...new Set(L.map(x => x.label))]; const g = re => (L.find(x => re.test(norm(x.label))) || {}).label || "";
+    const R = R0 || { rateLabel: g(/^(note |interest )?rate$/), loanLabel: g(/^loan amount$/) || g(/loan amount/), payLabel: g(/payment|p ?& ?i/), aprLabel: g(/^apr\b/), feesLabel: g(/total (closing )?(costs|fees)|closing costs/), term: 30 };
+    const p = box(`<div style="font-weight:700;color:#2E6B4F;font-size:14px">Send this rate to the NMC Toolkit</div>
+      <div style="color:#5C616E;margin:2px 0 8px">${R0 ? savedLine() + " Change anything that’s off." : "First time on this page — check what I read, fix anything that’s off. It’s remembered for next time."}</div>
+      ${row("Rate", `<select data-k="rateLabel" ${SEL}>${opt(labels, R.rateLabel, "—")}</select>`)}
+      ${row("Loan amount", `<select data-k="loanLabel" ${SEL}>${opt(labels, R.loanLabel, "—")}</select>`)}
+      ${row("Monthly payment", `<select data-k="payLabel" ${SEL}>${opt(labels, R.payLabel, "— work it out from rate + loan amount")}</select>`)}
+      ${row("APR", `<select data-k="aprLabel" ${SEL}>${opt(labels, R.aprLabel, "none on this page")}</select>`)}
+      ${row("Closing costs", `<select data-k="feesLabel" ${SEL}>${opt(labels, R.feesLabel, "none on this page")}</select>`)}
+      ${row("Term", `<select data-k="term" ${SEL}>${[30, 25, 20, 15, 10].map(t => `<option value="${t}"${+R.term === t ? " selected" : ""}>${t} years</option>`).join("")}</select>`)}
+      <div data-k="preview" style="margin:8px 0;padding:8px 10px;background:#F4EFE4;border-radius:8px"></div>
+      <div>${BTN("send", "Send to toolkit")}${BTN("x", "Cancel", true)}</div>`);
+    const cur = () => { const o = { mode: "labels", name: (R0 && R0.name) || (OB ? "Village (Optimal Blue)" : HOST) }; p.querySelectorAll("select[data-k]").forEach(s => o[s.dataset.k] = s.dataset.k === "term" ? +s.value : s.value); return o; };
+    const preview = () => { const y = readLabels(cur()), q = y.q; p.querySelector('[data-k="preview"]').innerHTML = `Rate <b>${q.rate > 0 ? q.rate.toFixed(3) + "%" : "—"}</b> · Loan <b>${q.loanAmount > 0 ? money(q.loanAmount) : "—"}</b> · Payment <b>${q.payment > 0 ? money(q.payment) : "—"}</b>${y.calc ? " <span style=\"color:#8F3223\">(worked out — P&amp;I on the loan amount shown)</span>" : ""}${q.aprTyped ? ` · APR <b>${q.aprTyped}%</b>` : ""}${q.totalFees ? ` · Costs <b>${money(q.totalFees)}</b>` : ""}`; };
+    p.addEventListener("change", preview); preview();
+    p.onclick = async e => { const a = e.target.dataset.a; if (!a) return; if (a === "x") return closeAll();
+      const rc = cur(), y = readLabels(rc); if (!(y.q.rate > 0) || !(y.q.loanAmount > 0) || !(y.q.payment > 0)) return toast("Need a rate and a loan amount — pick the right labels.", false);
+      await sendQuote(Object.assign(y.q, { payCalc: y.calc }), rc); }; }
   async function sendQuote(q, rc){
     q.term = rc.term || q.term || 30; q.lender = rc.name || (OB ? "Village (Optimal Blue)" : HOST); q.fees = []; q.pulledAt = new Date().toISOString(); q.source = "recipe";
     const r = await send({ type: "nmc:quote", quote: q });
     if (!r) return toast("Couldn’t reach the NMC Toolkit app — is it open?", false);
     if (!r.ok) return toast("Not sent: " + (r.error || "the toolkit said no"), false);
-    const sv = await send({ type: "nmc:recipe", op: "save", host: HOST, kind: "rate", recipe: rc }); if (sv && sv.ok) recipe = Object.assign({}, recipe, { rate: rc, updated: recipe.updated || "today" });
-    closeAll(); toast(`Sent ${q.rate.toFixed(3)}% · ${money(q.payment)}/mo to ${r.client}` + (r.warnings && r.warnings.length ? " — check the analysis: " + r.warnings[0] : "") + (sv && sv.ok ? ` ✓ Recipe saved for ${HOST}.` : " (Recipe not saved.)"), true); }
+    const sv = await send({ type: "nmc:recipe", op: "save", host: HOST, kind: "rate", recipe: rc }); if (sv && sv.ok) recipe = Object.assign({}, recipe, { [rc.mode === "labels" ? "rateDetail" : "rate"]: rc, updated: (recipe && recipe.updated) || "today" });
+    closeAll(); toast(`Sent ${q.rate.toFixed(3)}% · ${money(q.payment)}/mo${q.payCalc ? " (P&I worked out from the rate and loan amount — if a funding fee is financed on top, the payment will be a little higher)" : ""} to ${r.client}` + (r.warnings && r.warnings.length ? " — check the analysis: " + r.warnings[0] : "") + (sv && sv.ok ? ` ✓ Recipe saved for ${HOST}.` : " (Recipe not saved.)"), true); }
   async function quickRate(){ await loadRecipe(); const R = recipe && recipe.rate;
-    if (!R) return ratePanel();
+    if (!tables().length && labelRate()){ const RD = recipe && recipe.rateDetail; if (RD){ const y = readLabels(RD); if (y.q.rate > 0 && y.q.loanAmount > 0 && y.q.payment > 0) return sendQuote(Object.assign(y.q, { payCalc: y.calc }), RD); } return detailRate(); }
+    if (!R || R.mode === "labels") return ratePanel();
     const y = readRate(R); if (y.err || !y.tr || !(y.q.rate > 0) || !(y.q.payment > 0) || !(y.q.loanAmount > 0)) return ratePanel();   /* something moved: show the panel */
     await sendQuote(y.q, R); }
 
@@ -425,13 +459,13 @@
   /* the NMC button: shows only when this page has a rate table or a form */
   function ensure(){
     if (!alive()){ if (btn) btn.remove(); return false; }
-    if (window !== window.top && !tables().length){ if (btn){ btn.remove(); btn = null; } return true; }   /* Optimal Blue frame without rates */
+    if (window !== window.top && !tables().length && !labelRate()){ if (btn){ btn.remove(); btn = null; } return true; }   /* Optimal Blue frame without rates */
     /* on every site the banker allowed: Grab is always there; rate / fill show when the page has a rate table / a form */
     if (!btn || !btn.isConnected){ btn = document.createElement("button"); btn.type = "button"; btn.className = "nmc-sn-btn"; btn.textContent = "NMC";
       btn.title = "NMC Toolkit — grab info from this page, send a rate, or fill a form";
       btn.style.cssText = `position:fixed;${SIDE};bottom:18px;z-index:2147483646;background:#A53222;color:#fff;border:0;border-radius:999px;padding:10px 16px;font:700 13px system-ui,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer`;
       btn.onclick = () => { if (menu || panel) return closeAll();
-        const r = tables().length > 0, f = !OB && formFields().length >= 3;   /* Village already has its own Fill button */
+        const r = tables().length > 0 || !!labelRate(), f = !OB && formFields().length >= 3;   /* Village already has its own Fill button */
         menu = document.createElement("div"); menu.className = "nmc-sn-panel";
         menu.style.cssText = `position:fixed;${SIDE};bottom:66px;z-index:2147483647;background:#fff;border:1px solid #D9D3C6;border-radius:10px;padding:6px;box-shadow:0 10px 30px rgba(0,0,0,.2);font:13px system-ui`;
         const it = (a, t) => `<div data-a="${a}" style="padding:8px 12px;cursor:pointer;border-radius:6px" onmouseover="this.style.background='#F4EFE4'" onmouseout="this.style.background=''">${t}</div>`;
