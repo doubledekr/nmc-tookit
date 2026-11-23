@@ -196,6 +196,44 @@
     p.onclick = async e => { const a = e.target.dataset.a; if (!a) return; if (a === "x") return closeAll();
       const rc = cur(), y = readLabels(rc); if (!(y.q.rate > 0) || !(y.q.loanAmount > 0) || !(y.q.payment > 0)) return toast("Need a rate and a loan amount — pick the right labels.", false);
       await sendQuote(Object.assign(y.q, { payCalc: y.calc }), rc); }; }
+
+  /* ---- Village (Optimal Blue PPE inside Encompass TPO Connect): built-in reader, no teaching ----
+     Results table: Rate | Price | QM | P&I | Discount/Rebate | Fees | LO Comp, the chosen rate marked by a ticked checkbox.
+     If the pricing details drawer is open it adds Base / Total Loan Amount (the total includes a financed VA funding fee),
+     Amount Financed (→ the exact APR) and Prepaid Finance Charge. The LO comp goes to the toolkit ONLY for the banker's
+     lender comparison — never onto anything the client sees. */
+  /* the table's OWN header and rows (Village nests the rate tables inside the product list) */
+  const ownHeads = t => { const r = t.tHead && t.tHead.rows[0]; return r ? [...r.cells].map(h => norm(T(h))) : []; };
+  const ownRows = t => [...t.tBodies].flatMap(b => [...b.rows]);
+  const ticked = r => [...r.querySelectorAll(".p-checkbox-checked, .p-highlight, [aria-checked=true], input[type=checkbox]:checked, input[type=radio]:checked")].some(b => b.closest("tr") === r);   /* the row's OWN box, not one in a nested table */
+  /* the rate table holding the ticked rate — a visible one first (the same table also sits in the pricing-details drawer) */
+  function obTable(){ let first = null, hidden = null;
+    for (const t of document.querySelectorAll("table")){ const hs = ownHeads(t);
+      if (!(hs.includes("rate") && hs.some(h => /p ?& ?i/.test(h)) && hs.some(h => /discount|rebate/.test(h)))) continue;
+      const x = { t, hs }, tk = ownRows(t).some(ticked);
+      if (tk && visible(t)) return x; if (tk) hidden = hidden || x; first = first || x; }
+    return hidden || first; }
+  function obRead(){ const x = obTable(); if (!x) return null;
+    const tr = ownRows(x.t).find(ticked);
+    if (!tr) return { err: "Tick the rate you want in the Village results first." };
+    const td = [...tr.children].filter(c => c.tagName === "TD"); const col = re => { const i = x.hs.findIndex(h => re.test(h)); return i >= 0 && td[i] ? T(td[i]) : ""; };
+    const dollars = t => { const m = /\((-?\$[\d,]+(?:\.\d+)?)\)|(-?\$[\d,]+(?:\.\d+)?)/.exec(t || ""); return m ? num(m[1] || m[2]) : null; };
+    const rate = num(col(/^rate$/)), pay = num(col(/p ?& ?i/)), disc = dollars(col(/discount|rebate/)), fees = dollars(col(/^fees$/)) || 0, comp = dollars(col(/lo comp|compensation/));
+    const P = {}; labelledNumbers().forEach(p => { const k = norm(p.label); if (!(k in P)) P[k] = p.value; });
+    const base = P["base loan amount"] || P["loan amount"] || null, total = P["total loan amount"] || null, af = P["amount financed"] || null, pfc = P["prepaid finance charge"] || null;
+    const scen = [...document.querySelectorAll("*")].filter(e => /^Loan Scenario - /.test(T(e))).sort((a, b) => T(a).length - T(b).length)[0];
+    const product = scen ? String(scen.innerText || scen.textContent || "").split("\n")[0].replace(/^\s*Loan Scenario - /, "").replace(/\s+(Lock Period|Lock Expiration)\b[\s\S]*$/, "").trim().slice(0, 80) : ""; const term = +((/(\d{2})\s*Yr/i.exec(product) || [])[1]) || 30;
+    /* the lender's APR: the rate at which Amount Financed is repaid by the P&I over the term (only when the drawer is open) */
+    let apr = null; if (af > 0 && pay > 0){ let lo = 0, hi = 30; for (let i = 0; i < 60; i++){ const mid = (lo + hi) / 2; if (pmtOf(af, mid, term * 12) > pay) hi = mid; else lo = mid; } apr = Math.round(((lo + hi) / 2) * 1000) / 1000; }
+    return { q: { lender: "Village", product, term, rate, payment: pay, loanAmount: total || base, baseLoan: base, costDollars: disc, totalFees: Math.max(0, (fees || 0) + Math.max(0, disc || 0)),
+        aprTyped: apr, prepaidFinanceCharge: pfc, comp: comp != null ? { lenderPaid: Math.abs(comp) } : null, fees: [], source: "village" }, drawer: !!(total || af) }; }
+  async function obSend(){ const y = obRead(); if (!y) return false; if (y.err){ toast(y.err, false); return true; }
+    const q = y.q; if (!(q.rate > 0) || !(q.payment > 0) || !(q.loanAmount > 0)) { toast("Couldn’t read the rate, P&I and loan amount — tick a rate (and open its pricing details for the exact amounts).", false); return true; }
+    q.pulledAt = new Date().toISOString();
+    const r = await send({ type: "nmc:quote", quote: q });
+    if (!r) { toast("Couldn’t reach the NMC Toolkit app — is it open?", false); return true; }
+    if (!r.ok) { toast("Not sent: " + (r.error || "the toolkit said no"), false); return true; }
+    closeAll(); toast(`Sent Village ${q.rate.toFixed(3)}% · ${money(q.payment)}/mo on ${money(q.loanAmount)} to ${r.client}` + (y.drawer ? "" : " — open the rate’s pricing details first next time for the exact APR") + (r.warnings && r.warnings.length ? " · check the analysis" : ""), true); return true; }
   async function sendQuote(q, rc){
     q.term = rc.term || q.term || 30; q.lender = rc.name || (OB ? "Village (Optimal Blue)" : HOST); q.fees = []; q.pulledAt = new Date().toISOString(); q.source = "recipe";
     const r = await send({ type: "nmc:quote", quote: q });
@@ -203,7 +241,8 @@
     if (!r.ok) return toast("Not sent: " + (r.error || "the toolkit said no"), false);
     const sv = await send({ type: "nmc:recipe", op: "save", host: HOST, kind: "rate", recipe: rc }); if (sv && sv.ok) recipe = Object.assign({}, recipe, { [rc.mode === "labels" ? "rateDetail" : "rate"]: rc, updated: (recipe && recipe.updated) || "today" });
     closeAll(); toast(`Sent ${q.rate.toFixed(3)}% · ${money(q.payment)}/mo${q.payCalc ? " (P&I worked out from the rate and loan amount — if a funding fee is financed on top, the payment will be a little higher)" : ""} to ${r.client}` + (r.warnings && r.warnings.length ? " — check the analysis: " + r.warnings[0] : "") + (sv && sv.ok ? ` ✓ Recipe saved for ${HOST}.` : " (Recipe not saved.)"), true); }
-  async function quickRate(){ await loadRecipe(); const R = recipe && recipe.rate;
+  async function quickRate(){ if (OB && obTable() && await obSend()) return;   /* Village results: built-in reader */
+    await loadRecipe(); const R = recipe && recipe.rate;
     if (!tables().length && labelRate()){ const RD = recipe && recipe.rateDetail; if (RD){ const y = readLabels(RD); if (y.q.rate > 0 && y.q.loanAmount > 0 && y.q.payment > 0) return sendQuote(Object.assign(y.q, { payCalc: y.calc }), RD); } return detailRate(); }
     if (!R || R.mode === "labels") return ratePanel();
     const y = readRate(R); if (y.err || !y.tr || !(y.q.rate > 0) || !(y.q.payment > 0) || !(y.q.loanAmount > 0)) return ratePanel();   /* something moved: show the panel */

@@ -65,7 +65,12 @@
     return { lender: "Rocket Pro", product, lock, term: term ? +term : null, rate, adjustedRate, rateAdjustments: adj, payment, mi, costPct, costDollars,
       eligibility: cell(tr, "Eligibility"), loanAmount: money(val("txt-loan-amount")), propertyValue: money(val("txt-property-value")),
       ltv: val("txt-loan-ltv"), purpose: val("txt-loan-purpose"), loanType: val("txt-loan-type"),
-      totalFees: f.total, fees: f.items, pulledAt: new Date().toISOString() }; }
+      totalFees: f.total, fees: f.items, comp: comp(), pulledAt: new Date().toISOString() }; }
+  /* what NMC earns on this rate — "Lender Paid Compensation" in Rocket's compensation box. Sent ONLY for the banker's lender
+     comparison in the toolkit; it never goes into fees, the proposal or anything the client sees. */
+  function comp(){ const box = document.querySelector("pricing-calc-lender-compensation"); if (!box) return null;
+    const t = String(box.innerText || box.textContent || ""); const m = /Lender Paid Compensation\s*\$?\s*([\d,]+(?:\.\d+)?)/i.exec(t.replace(/\s+/g, " "));
+    return m ? { lenderPaid: money(m[1]) } : null; }
   let btn = null, toastEl = null;
   function toast(msg, ok){ if (toastEl) toastEl.remove(); toastEl = document.createElement("div"); toastEl.className = "nmc-rg-toast";
     toastEl.textContent = msg; toastEl.style.cssText = "position:fixed;right:18px;bottom:116px;z-index:2147483647;max-width:380px;background:" + (ok ? "#23242B" : "#8F3223") + ";color:#fff;padding:10px 14px;border-radius:10px;font:13px/1.4 system-ui,sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.25)";

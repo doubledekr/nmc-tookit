@@ -1184,6 +1184,7 @@ Discover 6,100 190 24.9"></textarea>
         <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:13px;white-space:nowrap"><input type="checkbox" id="anReal" style="width:auto;min-height:0" onchange="setRealQuote(this.checked)"> <b>Real quote</b> <span class="hint" style="display:inline">— priced with the lender today</span></label>
         <label id="anAprWrap" style="display:none;align-items:center;gap:6px;font-size:13px;white-space:nowrap" title="Type the APR from the lender’s Loan Estimate. It replaces the estimate on the proposal; the payment is still figured on the note rate.">APR from the LE <input type="number" id="anAprTyped" step="0.001" placeholder="est." style="width:84px;min-height:0;padding:4px 6px" oninput="runAnalysis(); renderProposalPreview()"> %</label></div>
       <div class="hint" id="anLenderQuote" style="display:none;margin:-4px 0 8px"></div>
+      <div id="anLenderCompare" style="display:none;margin:0 0 10px"></div>
       <div id="anResults"></div>
     </section>
 
@@ -1743,7 +1744,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.27.4";
+const TOOLKIT_VERSION = "1.28.0";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -3352,16 +3353,45 @@ function setRealQuote(on){ const c=cur(); if(!c) return; readAnalysisInputs(); c
    fees that count toward it until the Loan Estimate's APR is typed in. Compensation never comes across. */
 const APR_EXCLUDE=/apprais|title|record|transfer|tax cert|survey|inspection|credit report|notary|attorney|escrow|homeowner|hazard|insurance premium|\bhoa\b|courier|wire/i;
 function lenderFinanceCharge(fees){ let fc=0; (fees||[]).forEach(f=>{ const amt=+f.amount; if(!isFinite(amt)) return;  if(/^[E-H]\b/i.test(f.section||"")) return; if(APR_EXCLUDE.test(f.name||"")) return; fc+=amt; }); return Math.round(fc*100)/100; }
-window.nmcRealQuote=function(q){ try{
+/* ---- Lender comparison (banker only) ----
+   Every real quote sent for this client (Rocket, Village, taught sites): rate, P&I, the client's cost or credit, and what NMC earns.
+   Shown only on the Savings analysis screen — never in proposals, emails, saved options or anything the client sees. */
+function renderLenderCompare(){ const box=$("anLenderCompare"); if(!box) return; const c=cur(); const L=(c&&c.lenderQuotes)||[];
+  if(!L.length){ box.style.display="none"; box.innerHTML=""; return; } box.style.display="block";
+  const withComp=L.filter(x=>x.comp>0); const topComp=withComp.length?Math.max(...withComp.map(x=>x.comp)):0; const lowPay=Math.min(...L.map(x=>x.payment));
+  const cur_=c.analysis&&c.analysis.anReal&&c.analysis.lenderQuote;
+  const isCur=x=>cur_&&cur_.lender===x.lender&&Math.abs(cur_.rate-x.rate)<0.0005&&Math.abs(cur_.loanAmount-x.loanAmount)<1;
+  const tag=(t,bg,fg)=>`<span style="display:inline-block;background:${bg};color:${fg};border-radius:999px;padding:1px 8px;font-size:10.5px;font-weight:700;margin-left:4px">${t}</span>`;
+  box.innerHTML=`<div style="border:1px solid var(--line,#E6E0D4);border-radius:10px;padding:8px 10px;background:var(--cream-soft,#FBF8F2)">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="font-size:13px">Lender comparison</b><span class="hint" style="display:inline">for you only \u2014 never on proposals or emails</span></div>
+    <div style="overflow:auto"><table class="data" style="margin-top:4px;font-size:12.5px"><thead><tr><th>Lender</th><th>Rate</th><th>P&amp;I</th><th>Loan</th><th>Client cost / credit</th><th>NMC earns</th><th></th></tr></thead><tbody>
+    ${L.map(x=>`<tr${isCur(x)?' style="background:#E3F1E7"':""}><td><b>${esc(x.lender)}</b><div class="hint" style="display:block">${esc(x.product||"")}</div></td><td>${pct(x.rate)}</td>
+      <td>${money(x.payment)}${x.payment===lowPay&&L.length>1?tag("lowest payment","#E3F1E7","#2E6B4F"):""}</td><td>${money(x.loanAmount)}</td>
+      <td>${x.cost==null?"\u2014":x.cost<0?"credit "+money(-x.cost):"cost "+money(x.cost)}</td>
+      <td>${x.comp>0?"<b>"+money(x.comp)+"</b>"+(x.comp===topComp&&withComp.length>1?tag("most for NMC","#F6E7D8","#8F4A12"):""):'<span class="hint" style="display:inline">not shown</span>'}</td>
+      <td style="white-space:nowrap">${isCur(x)?'<span class="hint" style="display:inline">in use</span>':`<button class="btn ghost small" onclick="useLenderQuote('${x.id}')">Use this</button>`} <button class="btn ghost small" title="Remove" onclick="dropLenderQuote('${x.id}')">\u2715</button></td></tr>`).join("")}
+    </tbody></table></div></div>`; }
+function useLenderQuote(id){ const c=cur(); const x=c&&(c.lenderQuotes||[]).find(y=>y.id===id); if(!x||!x.q) return; const r=window.nmcRealQuote(Object.assign({},x.q,{__replay:true})); if(r&&!r.ok) toast(r.error||"Couldn\u2019t use that quote"); }
+function dropLenderQuote(id){ const c=cur(); if(!c) return; c.lenderQuotes=(c.lenderQuotes||[]).filter(y=>y.id!==id); save(); renderLenderCompare(); }
+window.nmcRealQuote=function(q){ try{ q=q||{};
   const c=cur(); if(!c) return {ok:false, error:"Open a client in the NMC Toolkit first"};
   if(!(q && +q.rate>0 && +q.loanAmount>0 && +q.payment>0)) return {ok:false, error:"Couldn\u2019t read the selected rate, payment and loan amount"};
+  /* what NMC earns on this rate (Rocket "Lender Paid Compensation", Village "LO Comp") — split off HERE so it never reaches the
+     analysis, the proposal, emails or saved options; it lives only in the banker's lender comparison (c.lenderQuotes) */
+  const comp = q.comp && +q.comp.lenderPaid>0 ? Math.round(+q.comp.lenderPaid*100)/100 : null; q = Object.assign({}, q); delete q.comp;
+  if(!q.__replay){ const L=c.lenderQuotes=(c.lenderQuotes||[]).filter(x=>!(x.lender===(q.lender||"")&&Math.abs(x.rate-(+q.rate))<0.0005&&Math.abs(x.loanAmount-(+q.loanAmount))<1));
+    L.unshift({id:"lq"+Date.now().toString(36), lender:String(q.lender||"Lender").slice(0,40), product:String(q.product||"").slice(0,80), rate:+q.rate, payment:+q.payment, loanAmount:+q.loanAmount,
+      cost:(q.costDollars!=null&&isFinite(+q.costDollars))?+q.costDollars:null, apr:(+q.aprTyped>0?+q.aprTyped:null), comp, when:new Date().toISOString(), q:JSON.parse(JSON.stringify(q))});
+    c.lenderQuotes=L.slice(0,12); }
+  delete q.__replay;
   const a=c.analysis=c.analysis||{}; const term=+q.term;
   /* Rocket shows a base "Rate" and, on some products (home equity), an "Adjusted rate" — the real note rate. Use whichever one
      reproduces the lender's payment on the lender's loan amount and term. */
   let rate=+q.rate; const nT=([10,15,20,25,30].includes(term)?term:(a.anTerm||30))*12;
   if(+q.adjustedRate>0){ const off=x=>Math.abs(pmt(+q.loanAmount,x,nT)-(+q.payment)); rate = off(+q.adjustedRate)<=off(+q.rate) ? +q.adjustedRate : +q.rate; }
   a.anRate=rate; if([10,15,20,25,30].includes(term)) a.anTerm=term;
-  a.anLoanAmt=+q.loanAmount; a.anCosts=Math.round((+q.totalFees||0)*100)/100; a.anMiMo=+q.mi||0; a.lenderPay=+q.payment; delete a.anNewPay;
+  a.anLoanAmt=+q.loanAmount; a.anLoanBase=(+q.baseLoan>0&&+q.baseLoan<+q.loanAmount)?+q.baseLoan:null;   /* Village: base loan before a financed funding fee */
+  a.anCosts=Math.round((+q.totalFees||0)*100)/100; a.anMiMo=+q.mi||0; a.lenderPay=+q.payment; delete a.anNewPay;
   a.anFinCharge = (q.fees&&q.fees.length) ? lenderFinanceCharge(q.fees) : null;   /* no itemized fees (a taught site): APR comes from the page or the usual estimate */
   a.anAprTyped = (+q.aprTyped>0 && +q.aprTyped<30) ? +q.aprTyped : null; a.anReal=true; a.realWhen=todayStr(); a.realSource="lender"; a.rateSrc={type:"quote", lender:q.lender||"lender", when:todayStr()};
   const ra=q.rateAdjustments&&typeof q.rateAdjustments==="object"?q.rateAdjustments:null;
@@ -3541,6 +3571,7 @@ function computeAnalysis(c){
     if(Math.abs(pmt(lenderAmt,a.anRate,nn)-target)>1){ for(const f of [0.005,0.0175,0.0215,0.0125,0.033,0.0365,0.0225,0.01]){ const amt=lenderAmt*(1+f);
         if(Math.abs(pmt(amt,a.anRate,nn)-target)<=1){ lenderFee=Math.round(lenderAmt*f*100)/100; lenderAmt=Math.round(amt*100)/100; break; } } } }
   const newP = lenderAmt || newPcalc;
+  if(lenderAmt && !lenderFee && a.anLoanBase>0 && a.anLoanBase<lenderAmt) lenderFee=Math.round((lenderAmt-a.anLoanBase)*100)/100;   /* the lender gave both amounts */
   const LB = lenderAmt - lenderFee;   /* the lender's loan BEFORE a financed funding fee / MIP — that's what pays off the old loan */
   if(LB && Math.abs(LB-newPcalc)>1){   /* the proposal follows the lender exactly; the cash to the client is what's left of the lender's loan */
     const base = ((second||fc)?0:c.balance) + costs + mipAmt + (roll?dBal:0);
@@ -3642,6 +3673,7 @@ function runAnalysis(){ { const n=$("anRateSrc"); if(n){ const t=rateSrcText(cur
       if(L){ const A=L.adj, base=(A&&A.base)||L.baseRate, adjBy=base&&L.rate&&Math.abs(L.rate-base)>0.0005?L.rate-base:0;
         var rb = adjBy ? `<div style="margin-top:3px">Note rate <b>${pct(L.rate)}</b> = ${esc(L.lender||"lender")} base ${pct(base)} ${adjBy>0?"+":"\u2212"} ${Math.abs(adjBy).toFixed(3)}% adjustments${A&&A.items&&A.items.length?" ("+A.items.map(x=>esc(x.label)+" "+(x.value>0?"+":"")+x.value.toFixed(3)).join(", ")+")":""} <span class="hint" style="display:inline">\u2014 for you; the proposal shows the note rate</span></div>` : ""; }
       if(L) q.innerHTML=`<b>From ${esc(L.lender||"the lender")}</b> \u00b7 ${esc(L.product||"")}${L.lock?" \u00b7 "+esc(L.lock):""} \u00b7 ${pct(L.rate)} \u00b7 ${money(L.payment)}/mo${L.mi>0?" incl. "+money(L.mi)+" MI":""} \u00b7 loan ${money(L.loanAmount)} \u00b7 fees ${money(L.totalFees)} rolled in${L.cost?" \u00b7 "+(L.cost<0?"lender credit "+money(-L.cost):"cost "+money(L.cost)):""} \u00b7 pulled ${esc(L.when||"")}${rb}`; } }
+  renderLenderCompare();
   const c=cur(); const el=$("anResults");
   if(!c){ el.innerHTML=`<div class="panel empty">Pick a client first.</div>`; return; }
   readAnalysisInputs();
@@ -5028,7 +5060,7 @@ function setupPolling(){ clearInterval(pollTimer);
 /* ---------- option comparison ---------- */
 const KIND_LBL={hel:"Fixed home equity loan",heloc:"HELOC (interest-only draw)",refi:"Cash-out refinance",snap:"From savings analysis"};
 /* ---- program snapshots: a full Savings-analysis set-up saved as one Compare column ---- */
-const SNAP_KEYS=MODE_KEYS.concat(["anLien","anProgram","anLoanAmt","anMiMo","anFinCharge","lenderPay","lenderQuote","anAprTyped","anNewPay","realWhen","realSource"]);
+const SNAP_KEYS=MODE_KEYS.concat(["anLien","anProgram","anLoanAmt","anLoanBase","anMiMo","anFinCharge","lenderPay","lenderQuote","anAprTyped","anNewPay","realWhen","realSource"]);
 const snapDebts=c=>(c.debts||[]).filter(d=>d.balance>0).map(d=>JSON.parse(JSON.stringify(d)));
 function snapLabel(inp,r){ let l=snapLabel0(inp,r);
   /* only some debts paid off: say which */
