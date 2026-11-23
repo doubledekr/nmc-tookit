@@ -21,7 +21,7 @@ const BUILT=/(rocketpro\.com|optimalblue\.com|force\.com|salesforce\.com|salesfo
 (async()=>{ const [tab]=await chrome.tabs.query({active:true,currentWindow:true}); const el=$("site"); if(!tab||!el) return;
   let u; try{ u=new URL(tab.url||""); }catch(e){ return; } if(u.protocol!=="https:"){ el.innerHTML=""; return; }
   const host=u.hostname.replace(/^www\./,""), origin=u.origin+"/*";
-  if(BUILT.test(u.hostname)){ el.innerHTML=`<div class="hint">${host}: built in — use the buttons on the page.</div>`; return; }
+  if(BUILT.test(u.hostname)){ el.innerHTML=`<div class="hint">${host}: built in — use the buttons on the page${/optimalblue\.com$/.test(u.hostname)?" (Fill from NMC Toolkit, and NMC → Send the selected rate on the pricing results)":""}.</div>`; return; }
   const run=async(what)=>{ try{ await chrome.scripting.executeScript({target:{tabId:tab.id}, files:["sensor.js"]}); }catch(e){}
     setTimeout(()=>chrome.tabs.sendMessage(tab.id,{type:"nmc:sensor", do:what},()=>{ void chrome.runtime.lastError; window.close(); }),250); };
   const draw=async()=>{ const on=await chrome.permissions.contains({origins:[origin]});

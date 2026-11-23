@@ -8,8 +8,11 @@
    Recipes live in the toolkit (Settings → Lender page recipes), where a banker can copy one as a code and paste a teammate's.
    A recipe is just header / label TEXT to look for — never page code, selectors or client data. Read-only except when the banker fills. */
 (function(){
-  if (window !== window.top || window.__nmcSensor) return; window.__nmcSensor = true;
-  const KNOWN = /(^|\.)(rocketpro\.com|optimalblue\.com|force\.com|salesforce\.com|salesforce-setup\.com)$/i;   /* built-in handling there */
+  /* Village (Optimal Blue) shows its pricing inside frames — there the sensor also runs in frames, and a frame only gets a button
+     when it holds a rate table */
+  const OB = /(^|\.)optimalblue\.com$/i.test(location.hostname);
+  if ((window !== window.top && !OB) || window.__nmcSensor) return; window.__nmcSensor = true;
+  const KNOWN = /(^|\.)(rocketpro\.com|force\.com|salesforce\.com|salesforce-setup\.com)$/i;   /* built-in handling there (Village / Optimal Blue: built-in Fill, sensor for rates) */
   if (KNOWN.test(location.hostname)) return;
   const HOST = location.hostname.replace(/^www\./, "");
   const alive = () => { try { return !!(chrome.runtime && chrome.runtime.id); } catch (e) { return false; } };
@@ -46,9 +49,13 @@
       payment: find(/payment|p ?& ?i|pmt/) || "", apr: find(/^apr\b|\bapr$/) || "", cost: find(/\$ ?cost|price \$|credit|points \$|^\$/) || "" }; }
 
   /* ---------- labelled numbers on the page (loan amount, fees …) ---------- */
+  /* the page's documents to read labels from: this one, and on Village (rates in a frame) the search page around it too */
+  function labelDocs(){ const d = [document]; if (OB && window !== window.top){ try { if (window.top.document) d.push(window.top.document); } catch (e) {} } return d; }
   function labelledNumbers(){
     const out = [], seen = new Set();
-    for (const el of document.querySelectorAll("label, dt, th, span, div, p, td, strong, b, h4, h5, h6")){
+    for (const doc of labelDocs()) for (const el of doc.querySelectorAll("label, dt, th, span, div, p, td, strong, b, h4, h5, h6")){
+      /* "Loan Amount: $384,375.00" in one line */
+      if (el.children.length === 0){ const m = /^([A-Za-z][A-Za-z &/#().'-]{2,38}):\s*(-?\$?\s?-?[\d,]+(?:\.\d+)?)\s*$/.exec(T(el)); if (m){ const k = norm(m[1]); if (!seen.has(k)){ seen.add(k); out.push({ label: m[1].trim(), value: num(m[2]) }); } continue; } }
       if (el.children.length > 2) continue; const t = T(el); if (t.length < 3 || t.length > 40 || /\d{3}/.test(t) || !/[a-z]/i.test(t)) continue;
       if (el.closest(".nmc-sn-panel, .nmc-sn-btn")) continue;
       const v = valueNear(el); if (v == null) continue; const k = norm(t); if (seen.has(k)) continue; seen.add(k);
@@ -56,7 +63,7 @@
     return out; }
   function valueNear(el){
     const pick = s => { const m = String(s || "").match(/-?\$\s?-?[\d,]+(\.\d+)?|-?\b\d{1,3}(,\d{3})+(\.\d+)?\b|\b\d{4,7}(\.\d+)?\b/); return m ? num(m[0]) : null; };
-    if (el.tagName === "LABEL" && el.htmlFor){ const i = document.getElementById(el.htmlFor); if (i && "value" in i) return pick(i.value); }
+    if (el.tagName === "LABEL" && el.htmlFor){ const i = el.ownerDocument.getElementById(el.htmlFor); if (i && "value" in i) return pick(i.value); }
     const own = el.querySelector && el.querySelector("input, select"); if (own && "value" in own) return pick(own.value);
     let n = el.nextElementSibling; for (let k = 0; k < 2 && n; k++, n = n.nextElementSibling){ const i = n.matches("input, select") ? n : n.querySelector && n.querySelector("input"); const v = i && "value" in i ? pick(i.value) : pick(T(n)); if (v != null) return v; }
     const p = el.parentElement; if (p && T(p).length < 80){ const rest = T(p).slice(T(el).length); const v = pick(rest); if (v != null) return v; }
@@ -149,7 +156,7 @@
       <div data-k="preview" style="background:#fff;border:1px solid #E5E0D5;border-radius:8px;padding:8px;margin:8px 0;font-size:12.5px"></div>
       <div>${BTN("send", "Send to toolkit")}${BTN("x", "Cancel", true)}</div>`);
     const cur = () => { const s = k => p.querySelector(`[data-k="${k}"]`).value;
-      return { table: x.tb.sig, cols: { rate: s("rate"), payment: s("payment"), apr: s("apr"), cost: s("cost") }, loanLabel: s("loanLabel"), feesLabel: s("feesLabel"), term: +s("term"), name: (R && R.name) || HOST }; };
+      return { table: x.tb.sig, cols: { rate: s("rate"), payment: s("payment"), apr: s("apr"), cost: s("cost") }, loanLabel: s("loanLabel"), feesLabel: s("feesLabel"), term: +s("term"), name: (R && R.name) || (OB ? "Village (Optimal Blue)" : HOST) }; };
     const preview = () => { const y = readRate(cur()); const q = y.q; p.querySelector('[data-k="preview"]').innerHTML = y.tr ? `Rate <b>${q.rate != null ? q.rate.toFixed(3) + "%" : "—"}</b> · Payment <b>${money(q.payment)}</b>${q.aprTyped != null ? " · APR " + q.aprTyped.toFixed(3) + "%" : ""}<br>Loan <b>${money(q.loanAmount)}</b> · Fees ${money(q.totalFees)}${q.costDollars != null ? " · Cost/credit " + money(q.costDollars) : ""} · ${q.term || ""} yrs` : "No row selected."; return y; };
     p.addEventListener("change", preview); preview();
     p.onclick = async e => { const a = e.target.dataset.a; if (!a) return; if (a === "x") return closeAll();
@@ -157,7 +164,7 @@
       if (!(y.q.rate > 0) || !(y.q.payment > 0) || !(y.q.loanAmount > 0)) return toast("Need a rate, a payment and a loan amount — pick the right column / label.", false);
       await sendQuote(y.q, rc); }; }
   async function sendQuote(q, rc){
-    q.term = rc.term || q.term || 30; q.lender = rc.name || HOST; q.fees = []; q.pulledAt = new Date().toISOString(); q.source = "recipe";
+    q.term = rc.term || q.term || 30; q.lender = rc.name || (OB ? "Village (Optimal Blue)" : HOST); q.fees = []; q.pulledAt = new Date().toISOString(); q.source = "recipe";
     const r = await send({ type: "nmc:quote", quote: q });
     if (!r) return toast("Couldn’t reach the NMC Toolkit app — is it open?", false);
     if (!r.ok) return toast("Not sent: " + (r.error || "the toolkit said no"), false);
@@ -418,12 +425,13 @@
   /* the NMC button: shows only when this page has a rate table or a form */
   function ensure(){
     if (!alive()){ if (btn) btn.remove(); return false; }
+    if (window !== window.top && !tables().length){ if (btn){ btn.remove(); btn = null; } return true; }   /* Optimal Blue frame without rates */
     /* on every site the banker allowed: Grab is always there; rate / fill show when the page has a rate table / a form */
     if (!btn || !btn.isConnected){ btn = document.createElement("button"); btn.type = "button"; btn.className = "nmc-sn-btn"; btn.textContent = "NMC";
       btn.title = "NMC Toolkit — grab info from this page, send a rate, or fill a form";
       btn.style.cssText = `position:fixed;${SIDE};bottom:18px;z-index:2147483646;background:#A53222;color:#fff;border:0;border-radius:999px;padding:10px 16px;font:700 13px system-ui,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer`;
       btn.onclick = () => { if (menu || panel) return closeAll();
-        const r = tables().length > 0, f = formFields().length >= 3;
+        const r = tables().length > 0, f = !OB && formFields().length >= 3;   /* Village already has its own Fill button */
         menu = document.createElement("div"); menu.className = "nmc-sn-panel";
         menu.style.cssText = `position:fixed;${SIDE};bottom:66px;z-index:2147483647;background:#fff;border:1px solid #D9D3C6;border-radius:10px;padding:6px;box-shadow:0 10px 30px rgba(0,0,0,.2);font:13px system-ui`;
         const it = (a, t) => `<div data-a="${a}" style="padding:8px 12px;cursor:pointer;border-radius:6px" onmouseover="this.style.background='#F4EFE4'" onmouseout="this.style.background=''">${t}</div>`;
