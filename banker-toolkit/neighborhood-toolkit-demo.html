@@ -1743,7 +1743,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.27.0";
+const TOOLKIT_VERSION = "1.27.1";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -1866,7 +1866,7 @@ const money = v => (v==null||isNaN(v)||!isFinite(v)) ? "\u2014" : "$" + Math.rou
 const pct = v => (v==null||isNaN(v)) ? "\u2014" : Number(v).toFixed(3).replace(/0+$/,"").replace(/\.$/,"") + "%";
 const num = v => { const n = parseFloat(String(v).replace(/[$,%\s]/g,"")); return isNaN(n)?null:n; };
 const yrsMo = m => { if(m==null||!isFinite(m)) return "\u2014"; if(m>360) return "30+ yr";   /* debts that never pay down at the typed payment are shown as 30+ years, never "never" */
-  const y=Math.floor(m/12), r=Math.round(m%12);
+  const t=Math.round(m), y=Math.floor(t/12), r=t%12;   /* round the total first — 47.6 months is "4 yr", not "3 yr 12 mo" */
   return ((y?y+" yr ":"") + (r? r+" mo":"")).trim() || "0 mo"; };
 let _copyBtn=null; document.addEventListener("click",e=>{ const b=e.target&&e.target.closest&&e.target.closest(".btn"); _copyBtn=(b&&/^copy/i.test(b.textContent.trim()))?b:null; },true);
 function toast(msg){ const t=$("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),3200); if(/copied/i.test(msg)&&_copyBtn&&window.NMC){ NMC.copied(_copyBtn); _copyBtn=null; } }
@@ -1950,8 +1950,10 @@ function isRevolving(d){ return (d.type||"")==="card"; }
 /* how a debt's "today" is modeled: cards default to minimums-only unless the typed payment is clearly above the minimum (or the banker says fixed) */
 function debtPayMode(d){ if(!isRevolving(d)) return "fixed"; if(d.payMode==="fixed"||d.payMode==="min") return d.payMode; const mn=cardMinNow(d.balance,d.apr); const p=+d.pay||0; return (p>0 && mn>0 && p>mn*1.25) ? "fixed" : "min"; }
 function debtPath(d){ const bal=+d.balance||0; const extra=+d.extra||0; const mode=debtPayMode(d);
-  if(mode==="min"){ const apr=d.apr>0?+d.apr:(DEBT_TYPES.card.apr); const minNow=cardMinNow(bal,apr); const p=minNow+extra; const m=Math.min(361,debtMonths(bal,apr,p)); const stmt=cardMinPath(bal,apr,extra);
-    return {mode, months:m, interest:isFinite(m)&&m<=360?p*m-bal:p*360, minNow, payUsed:p, stmt}; }
+  /* today's minimum: the one typed from the statement when there is one; otherwise estimated as interest + 1% of the balance.
+     (Held level, that estimate pays off in the same time whatever the balance — 4 yr 7 mo at 24.99% — so it's flagged as an estimate.) */
+  if(mode==="min"){ const apr=d.apr>0?+d.apr:(DEBT_TYPES.card.apr); const typed=+d.pay>0?+d.pay:0; const minNow=typed||cardMinNow(bal,apr); const p=minNow+extra; const m=Math.min(361,debtMonths(bal,apr,p)); const stmt=cardMinPath(bal,apr,extra);
+    return {mode, months:m, interest:isFinite(m)&&m<=360?p*m-bal:p*360, minNow, payUsed:p, stmt, minEst:!typed}; }
   const p=(+d.pay||0)+extra; if(!(p>0)) return {mode:"unknown", months:0, interest:0, payUsed:0};
   if(!(d.apr>0)) return {mode, months:Math.ceil(bal/p), interest:0, payUsed:p};
   const m=debtMonths(bal,+d.apr,p); if(!isFinite(m)||m>360) return {mode:"never", months:361, interest:p*360, payUsed:p, capped:true};   /* 30+ years: people who pay only the minimum usually keep using the card */
@@ -3518,6 +3520,7 @@ function computeAnalysis(c){
   const dMonthsEst = dPaths.some(p=>p.mode==="fixed"&&!(p.d.apr>0)&&p.d.pay>0), dMonthsUnknown = dPaths.some(p=>p.mode==="unknown");
   const dMin = dPaths.filter(p=>p.mode==="min");
   const dMinCards = dMin.length, dMinInt = dMin.reduce((s,p)=>s+p.interest,0), dMinMonths = dMin.length?Math.max(...dMin.map(p=>p.months)):0, dMinBal = dMin.reduce((s,p)=>s+(+p.d.balance||0),0);
+  const dMinEst = dMin.some(p=>p.minEst), dMinPay = dMin.reduce((s,p)=>s+(p.payUsed||0),0);
   const dStmtMonths = dMin.length?Math.max(...dMin.map(p=>p.stmt?p.stmt.months:0)):0, dStmtInt = dMin.reduce((s,p)=>s+(p.stmt?p.stmt.interest:0),0);   /* the statement's shrinking-minimum path, for the footnote */
   const todayPath = dMinCards ? "minimum payments" : "today\u2019s path";
   if((second||fc) && !debts.length && !(cashOut>0)) return null;
@@ -3605,7 +3608,7 @@ function computeAnalysis(c){
   if(a.anReal && a.anAprTyped>0){ apr=+a.anAprTyped; aprEst=false; aprSrc="typed"; }   /* the real APR from the Loan Estimate wins; it never changes the payment math */
   const intSavedPW = isFinite(pw.interest) ? curPathInterest - pw.interest : 0;
   const intSavedMin = curPathInterest - newSched.interest;
-  return {secType,secName,hideFirst,warnings,curMonthsSrc,allInNow,allInNew,intSavedPW,intSavedMin,dNeverOff,dStmtMonths,dStmtInt,apr,aprEst,aprSrc,miMo,lenderAmt,newPcalc,fc,noc,newEscrow,ltv,ladder,cust,escrowEst,escrowIsEst,pitiNow,pitiNew,second,heloc,drawYrs,ioPay,afterDrawPay,curPay,curMonths,curSched,roll,cashOut,streamline,debts,dBal,dPay,dInt,dMonths,dMonthsEst,dMonthsUnknown,dExtra,dNoApr,newP,n,newPay,newSched,outlayNow,saveMo,blended,extra,pw,pwEff,skipCash,skipN,prog,fhaS,mipAmt,escrow,curPathInterest,newPayTyped,dPaths,dPayEst,dMinCards,dMinInt,dMinMonths,dMinBal,todayPath,a};
+  return {dMinEst,dMinPay,secType,secName,hideFirst,warnings,curMonthsSrc,allInNow,allInNew,intSavedPW,intSavedMin,dNeverOff,dStmtMonths,dStmtInt,apr,aprEst,aprSrc,miMo,lenderAmt,newPcalc,fc,noc,newEscrow,ltv,ladder,cust,escrowEst,escrowIsEst,pitiNow,pitiNew,second,heloc,drawYrs,ioPay,afterDrawPay,curPay,curMonths,curSched,roll,cashOut,streamline,debts,dBal,dPay,dInt,dMonths,dMonthsEst,dMonthsUnknown,dExtra,dNoApr,newP,n,newPay,newSched,outlayNow,saveMo,blended,extra,pw,pwEff,skipCash,skipN,prog,fhaS,mipAmt,escrow,curPathInterest,newPayTyped,dPaths,dPayEst,dMinCards,dMinInt,dMinMonths,dMinBal,todayPath,a};
 }
 
 function balanceChart(r){
@@ -3661,7 +3664,7 @@ function runAnalysis(){ { const n=$("anRateSrc"); if(n){ const t=rateSrcText(cur
       <div class="stat"><div class="v">${pct(r.a.anRate)}</div><div class="l">New rate after consolidating ${money(r.dBal)} of debt</div></div>
       ${r.extra>0?`<div class="stat highlight"><div class="v">${pct(r.pwEff)}</div><div class="l">Effective rate paying what they pay now \u2014 the ${r.a.anTerm}-yr rate that would cost the same total interest</div></div>`:""}
       <div class="stat"><div class="v">${r.debts.length}</div><div class="l">Debt${r.debts.length===1?"":"s"} wiped to zero at closing</div></div>
-      <div class="stat"><div class="v">${money(r.dInt)}</div><div class="l">Interest those debts would cost on their own${r.dMinCards?` \u2014 ${r.dMinCards} card${r.dMinCards>1?"s":""} paying today\u2019s minimum every month: ${yrsMo(r.dMinMonths)} to pay off${r.dStmtMonths>r.dMinMonths+12?` (on the statement\u2019s shrinking minimum: ${yrsMo(r.dStmtMonths)})`:""}`:""}</div></div>
+      <div class="stat"><div class="v">${money(r.dInt)}</div><div class="l">Interest those debts would cost on their own${r.dMinCards?` \u2014 ${r.dMinCards} card${r.dMinCards>1?"s":""} paying today\u2019s minimum every month: ${yrsMo(r.dMinMonths)} to pay off${r.dStmtMonths>r.dMinMonths+12?` (on the statement\u2019s shrinking minimum: ${yrsMo(r.dStmtMonths)})`:""}${r.dMinEst?`<br><span style="color:var(--warn,#8F3223)">Minimum estimated (interest + 1% of the balance) \u2014 at the same APR every card comes out to the same payoff time. Type the statement\u2019s minimum in the debts table for this client\u2019s real figure.</span>`:""}`:""}</div></div>
     </div>`:""}
   </div>
   <div class="panel"><h2>Pay what you pay now</h2>
@@ -3966,7 +3969,7 @@ function proposalSingleHTML(){
   if(r.prog==="va_irrrl"&&!r.second) benefits.push(`<b>VA IRRRL</b> \u2014 typically no appraisal or income re-verification, and the VA funding fee drops to 0.5% (waived for exempt veterans)`);
   if((r.a.anPrepay||"yes")==="yes") benefits.push(`<b>No prepayment penalty</b> \u2014 pay extra, pay it off early, or refinance again whenever it makes sense, with no fee`);
   if(r.roll&&r.debts.length) benefits.push(`Pay off <b>${debtsPhrase(r.debts)} (${money(r.dBal)})</b> \u2014 balances paid to zero at closing`);
-  if(r.roll&&r.dMinCards&&isFinite(r.dMinMonths)&&(r.dMinMonths>r.n||r.dMinInt>r.dMinBal*0.3)) benefits.push(`Paying today\u2019s minimum every month, ${r.dMinCards===1?"that card":"those "+r.dMinCards+" cards"} (${money(r.dMinBal)}) would take <b>${yrsMo(r.dMinMonths)}</b> and cost <b>${money(r.dMinInt)}</b> in interest${r.dStmtMonths>r.dMinMonths+24?` \u2014 and on the statement\u2019s shrinking minimum, <b>${yrsMo(r.dStmtMonths)}</b>`:""}. This loan puts an end date on it`);
+  if(r.roll&&r.dMinCards&&isFinite(r.dMinMonths)&&(r.dMinMonths>r.n||r.dMinInt>r.dMinBal*0.3)) benefits.push(`Paying today\u2019s minimum (${r.dMinEst?"about ":""}${money(r.dMinPay)} a month) every month, ${r.dMinCards===1?"that card":"those "+r.dMinCards+" cards"} (${money(r.dMinBal)}) would take <b>${yrsMo(r.dMinMonths)}</b> and cost <b>${money(r.dMinInt)}</b> in interest${r.dStmtMonths>r.dMinMonths+24?` \u2014 and on the statement\u2019s shrinking minimum, <b>${yrsMo(r.dStmtMonths)}</b>`:""}. This loan puts an end date on it`);
   if(r.roll&&r.debts.length&&r.blended!=null&&r.a.anRate<r.blended) benefits.push(r.second
     ? `Replace a <b>${pct(r.blended)}</b> blended APR on those debts with one <b>${pct(r.a.anRate)}</b> ${r.secName}`
     : `Replace a <b>${pct(r.blended)}</b> blended rate across your mortgage and debts with one <b>${pct(r.a.anRate)}</b> loan`);
@@ -6175,7 +6178,7 @@ function presentEmailParts(c, opts){ opts=opts||{}; if(opts.chart==null) opts.ch
   if(!withChart&&r){ const cash=presentCash(p.d); const bits=[]; if(r.saveMo>0) bits.push(`\u00ab${money(r.saveMo)} stays with you every month\u00bb`); if(cash.total>0) bits.push(`\u00ab${money(cash.total)}\u00bb to you at closing`); if(showDebtsFor(p.d)&&r.dBal>0) bits.push(`${money(r.dBal)} of debt paid off`); if(bits.length) parts.push({t:"p",x:"Bottom line: "+bits.join(", ")+"."}); }
   if((p.goals||"").trim()) parts.push({t:"h",x:"Why this makes sense for you"},{t:"p",x:p.goals.trim()});
   const extraLines=[];
-  if(r&&showDebtsFor(p.d)&&r.dMinCards&&isFinite(r.dMinMonths)&&r.dMinMonths>0) extraLines.push(`Payoffs: on minimum payments ${r.dMinCards===1?"that card takes":"those "+r.dMinCards+" cards take"} ${yrsMo(r.dMinMonths)} and ${money(r.dMinInt)} in interest \u2014 they\u2019re paid off at closing instead`);
+  if(r&&showDebtsFor(p.d)&&r.dMinCards&&isFinite(r.dMinMonths)&&r.dMinMonths>0) extraLines.push(`Payoffs: on minimum payments (${r.dMinEst?"about ":""}${money(r.dMinPay)}/mo) ${r.dMinCards===1?"that card takes":"those "+r.dMinCards+" cards take"} ${yrsMo(r.dMinMonths)} and ${money(r.dMinInt)} in interest \u2014 they\u2019re paid off at closing instead`);
   if(r&&showDebtsFor(p.d)&&r.blended!=null&&r.blended>p.d.rate) extraLines.push(p.d.lien==="second"?`Blended rate: the debts you\u2019re paying today blend to \u00ab${pct(r.blended)}\u00bb \u2014 the new ${p.d.secType==="heloc"?"HELOC":"home equity loan"} replaces them at ${pct(p.d.rate)}`:`Blended rate: today your mortgage and debts blend to \u00ab${pct(r.blended)}\u00bb \u2014 the new loan is ${pct(p.d.rate)} on all of it`);
   if(r&&!(r.extra>0)&&r.pwEff&&p.d.pwCustom>0) extraLines.push(`Effective rate: paying ${money(p.d.pwCustom)} a month works out to \u00ab${pct(r.pwEff)}\u00bb in your pocket`);
   bens.unshift(...extraLines);
@@ -6260,7 +6263,7 @@ function presentChartHTML(c,edit){ const p=presentState(c); const d=p.d; const r
     L+=`</div>`; }
   L+=`<div class="tot"><span>Going out each month</span><b data-tick="pres.today">${money(todayOut)}</b></div>`;
   if(r&&r.pitiNow>0&&!second) L+=`<div class="hint">with taxes &amp; insurance: ${money(r.allInNow)}</div>`;
-  if(r&&showDebts&&r.dMinCards&&isFinite(r.dMinMonths)) L+=`<div class="pw" style="background:#FBECE9"><b>On minimum payments</b> ${r.dMinCards===1?"that card":"those "+r.dMinCards+" cards"} take <b>${yrsMo(r.dMinMonths)}</b> to pay off and cost <b>${money(r.dMinInt)}</b> in interest \u2014 the payment shrinks as the balance does, so it never really ends.</div>`;
+  if(r&&showDebts&&r.dMinCards&&isFinite(r.dMinMonths)) L+=`<div class="pw" style="background:#FBECE9"><b>On minimum payments</b> (${r.dMinEst?"about ":""}${money(r.dMinPay)}/mo) ${r.dMinCards===1?"that card":"those "+r.dMinCards+" cards"} take <b>${yrsMo(r.dMinMonths)}</b> to pay off and cost <b>${money(r.dMinInt)}</b> in interest \u2014 the payment shrinks as the balance does, so it never really ends.</div>`;
   /* ---- right ---- */
   let R=`<h3>New <span class="side good">the good side</span></h3>`;
   if(edit) R+=`<div class="trow" style="grid-template-columns:1fr 1fr;border:0"><span>${sel("pLien","lien",d.lien,[["refi","Refinance (new first mortgage)"],["second","Home equity (second mortgage)"]])}</span>
