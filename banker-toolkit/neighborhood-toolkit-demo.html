@@ -1745,7 +1745,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.28.3";
+const TOOLKIT_VERSION = "1.28.4";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -3366,6 +3366,8 @@ function lqView(x){ const v=Object.assign({},x); if(isRocket(v.lender)&&v.cost<0
   const n=((v.q&&[10,15,20,25,30].includes(+v.q.term))?+v.q.term:30)*12, mi=(v.q&&+v.q.mi>0)?+v.q.mi:0;
   if(v.loanAmount>0&&v.rate>0&&Math.abs(pmt(v.loanAmount,v.rate,n)-(v.payment-mi))>1){ for(const f of [0.005,0.0175,0.0215,0.0125,0.033,0.0365,0.0225,0.01]){
     if(Math.abs(pmt(v.loanAmount*(1+f),v.rate,n)-(v.payment-mi))<=1){ v.finFee=Math.round(v.loanAmount*f); break; } } }
+  /* Rocket: the loan entered in Rocket is the loan — show P&I on it, not Rocket's payment with the funding fee on top */
+  if(v.finFee&&isRocket(v.lender)){ v.rocketPay=v.payment; v.payment=Math.round((pmt(v.loanAmount,v.rate,n)+mi)*100)/100; delete v.finFee; }
   return v; }
 function renderLenderCompare(){ const box=$("anLenderCompare"); if(!box) return; const c=cur(); const L=((c&&c.lenderQuotes)||[]).map(lqView);
   if(!L.length){ box.style.display="none"; box.innerHTML=""; return; } box.style.display="block";
@@ -3377,7 +3379,7 @@ function renderLenderCompare(){ const box=$("anLenderCompare"); if(!box) return;
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="font-size:13px">Lender comparison</b><span class="hint" style="display:inline">for you only \u2014 never on proposals or emails</span></div>
     <div style="overflow:auto"><table class="data" style="margin-top:4px;font-size:12.5px"><thead><tr><th>Lender</th><th>Rate</th><th>P&amp;I</th><th>Loan</th><th>Client cost / credit</th><th>NMC earns</th><th></th></tr></thead><tbody>
     ${L.map(x=>`<tr${isCur(x)?' style="background:#E3F1E7"':""}><td><b>${esc(x.lender)}</b><div class="hint" style="display:block">${esc(x.product||"")}</div></td><td>${pct(x.rate)}${x.price?`<div class="hint" style="display:block">price ${x.price.toFixed(3)}</div>`:""}</td>
-      <td>${money(x.payment)}${x.payment===lowPay&&L.length>1?tag("lowest payment","#E3F1E7","#2E6B4F"):""}</td><td>${money(x.loanAmount)}${x.finFee?`<div class="hint" style="display:block">+ ${money(x.finFee)} funding fee / MIP in the payment</div>`:""}</td>
+      <td>${money(x.payment)}${x.rocketPay?`<div class="hint" style="display:block">Rocket shows ${money(x.rocketPay)} with the funding fee</div>`:""}${x.payment===lowPay&&L.length>1?tag("lowest payment","#E3F1E7","#2E6B4F"):""}</td><td>${money(x.loanAmount)}${x.finFee?`<div class="hint" style="display:block">+ ${money(x.finFee)} funding fee / MIP in the payment</div>`:""}</td>
       <td>${x.cost==null?"\u2014":x.cost<0?"credit "+money(-x.cost):x.cost===0?"$0":"cost "+money(x.cost)}</td>
       <td>${x.comp===0?'<span class="hint" style="display:inline">$0 \u2014 below par</span>':x.comp>0?"<b>"+money(x.comp)+"</b>"+(x.credit>0?`<div class="hint" style="display:block">Rocket\u2019s ${money(x.credit)} credit</div>`:"")+(x.comp===topComp&&withComp.length>1?tag("most for NMC","#F6E7D8","#8F4A12"):""):'<span class="hint" style="display:inline">not shown</span>'}</td>
       <td style="white-space:nowrap">${isCur(x)?'<span class="hint" style="display:inline">in use</span>':`<button class="btn ghost small" onclick="useLenderQuote('${x.id}')">Use this</button>`} <button class="btn ghost small" title="Remove" onclick="dropLenderQuote('${x.id}')">\u2715</button></td></tr>`).join("")}
@@ -3583,11 +3585,14 @@ function computeAnalysis(c){
   let lenderAmt = (a.anReal && a.anLoanAmt>0) ? +a.anLoanAmt : 0, lenderFee = 0;
   /* the lender's payment can include a funding fee / upfront MIP financed ON TOP of the loan amount it shows (Rocket: VA IRRRL 0.5%).
      If one of the standard fees reproduces the lender's payment to within a dollar, the financed amount is the loan. */
+  /* Rocket: the loan amount entered in Rocket IS the loan (Dave) — never add a funding fee on top, even when Rocket's payment has one */
+  const rocketAmt = !!(lenderAmt && a.lenderQuote && isRocket(a.lenderQuote.lender)); let rocketFee=0;
   if(lenderAmt && a.lenderPay>0 && !second){ const target=+a.lenderPay-((a.anMiMo>0)?+a.anMiMo:0), nn=(a.anTerm||30)*12;
-    if(Math.abs(pmt(lenderAmt,a.anRate,nn)-target)>1){ for(const f of [0.005,0.0175,0.0215,0.0125,0.033,0.0365,0.0225,0.01]){ const amt=lenderAmt*(1+f);
+    if(rocketAmt){ if(Math.abs(pmt(lenderAmt,a.anRate,nn)-target)>1) for(const f of [0.005,0.0175,0.0215,0.0125,0.033,0.0365,0.0225,0.01]){ if(Math.abs(pmt(lenderAmt*(1+f),a.anRate,nn)-target)<=1){ rocketFee=Math.round(lenderAmt*f); break; } } }
+    else if(Math.abs(pmt(lenderAmt,a.anRate,nn)-target)>1){ for(const f of [0.005,0.0175,0.0215,0.0125,0.033,0.0365,0.0225,0.01]){ const amt=lenderAmt*(1+f);
         if(Math.abs(pmt(amt,a.anRate,nn)-target)<=1){ lenderFee=Math.round(lenderAmt*f*100)/100; lenderAmt=Math.round(amt*100)/100; break; } } } }
   const newP = lenderAmt || newPcalc;
-  if(lenderAmt && !lenderFee && a.anLoanBase>0 && a.anLoanBase<lenderAmt) lenderFee=Math.round((lenderAmt-a.anLoanBase)*100)/100;   /* the lender gave both amounts */
+  if(lenderAmt && !rocketAmt && !lenderFee && a.anLoanBase>0 && a.anLoanBase<lenderAmt) lenderFee=Math.round((lenderAmt-a.anLoanBase)*100)/100;   /* the lender gave both amounts */
   const LB = lenderAmt - lenderFee;   /* the lender's loan BEFORE a financed funding fee / MIP — that's what pays off the old loan */
   if(LB && Math.abs(LB-(newPcalc-vaFF))>1){   /* the lender's base loan vs payoff + costs (the funding fee sits on top of both) */   /* the proposal follows the lender exactly; the cash to the client is what's left of the lender's loan */
     const base = ((second||fc)?0:c.balance) + costs + mipAmt + (roll?dBal:0);
@@ -3615,9 +3620,10 @@ function computeAnalysis(c){
   const outlayNow = (second?0:curPay) + (roll?dPay:0) + dExtra;
   const miMo = (a.anReal && a.anMiMo>0 && !second) ? +a.anMiMo : 0;   /* monthly MI from the lender's quote */
   const saveMo = outlayNow - newPay - miMo;
+  if(rocketFee>0 && vaIrrrl && vaExempt) warnings.push(`This veteran is marked <b>exempt from the funding fee</b>, but Rocket\u2019s payment includes a ${money(rocketFee)} fee \u2014 set the exemption in Rocket\u2019s scenario and re-send. The proposal uses your ${money(+a.anLoanAmt)} loan either way.`);
   if(lenderFee>0 && vaIrrrl && vaExempt) warnings.push(`This veteran is marked <b>exempt from the funding fee</b>, but the lender\u2019s payment includes ${money(lenderFee)} on top of the loan \u2014 set the exemption in the lender\u2019s scenario and re-price.`);
   if(lenderFee>0) warnings.push(`The lender’s payment includes a ${money(lenderFee)} funding fee / upfront MIP financed on top of its ${money(+a.anLoanAmt)} loan amount \u2014 the proposal shows the full ${money(newP)}.`);
-  if(a.anReal && a.lenderPay>0 && !heloc && Math.abs(newPay+miMo-a.lenderPay)>1) warnings.push(`The lender shows <b>${money(a.lenderPay)}/mo</b>${miMo?" (with MI)":""}; the toolkit figures ${money(newPay+miMo)} for ${money(newP)} at ${pct(a.anRate)} over ${a.anTerm} years \u2014 check the loan amount and term before sending.`);
+  if(a.anReal && a.lenderPay>0 && !heloc && !rocketFee && Math.abs(newPay+miMo-a.lenderPay)>1) warnings.push(`The lender shows <b>${money(a.lenderPay)}/mo</b>${miMo?" (with MI)":""}; the toolkit figures ${money(newPay+miMo)} for ${money(newP)} at ${pct(a.anRate)} over ${a.anTerm} years \u2014 check the loan amount and term before sending.`);
   const known = debts.filter(d=>d.apr!=null && d.apr>0);   /* APR is optional: blend only what we know */
   const kBal = known.reduce((s,d)=>s+d.balance,0), kW = known.reduce((s,d)=>s+d.balance*d.apr,0);
   const dNoApr = debts.length-known.length;
@@ -3667,7 +3673,7 @@ function computeAnalysis(c){
   if(a.anReal && a.anAprTyped>0){ apr=+a.anAprTyped; aprEst=false; aprSrc="typed"; }   /* the real APR from the Loan Estimate wins; it never changes the payment math */
   const intSavedPW = isFinite(pw.interest) ? curPathInterest - pw.interest : 0;
   const intSavedMin = curPathInterest - newSched.interest;
-  return {vaFF,vaExempt:vaIrrrl&&vaExempt,dMinEst,dMinPay,secType,secName,hideFirst,warnings,curMonthsSrc,allInNow,allInNew,intSavedPW,intSavedMin,dNeverOff,dStmtMonths,dStmtInt,apr,aprEst,aprSrc,miMo,lenderAmt,newPcalc,fc,noc,newEscrow,ltv,ladder,cust,escrowEst,escrowIsEst,pitiNow,pitiNew,second,heloc,drawYrs,ioPay,afterDrawPay,curPay,curMonths,curSched,roll,cashOut,streamline,debts,dBal,dPay,dInt,dMonths,dMonthsEst,dMonthsUnknown,dExtra,dNoApr,newP,n,newPay,newSched,outlayNow,saveMo,blended,extra,pw,pwEff,skipCash,skipN,prog,fhaS,mipAmt,escrow,curPathInterest,newPayTyped,dPaths,dPayEst,dMinCards,dMinInt,dMinMonths,dMinBal,todayPath,a};
+  return {rocketFee,vaFF,vaExempt:vaIrrrl&&vaExempt,dMinEst,dMinPay,secType,secName,hideFirst,warnings,curMonthsSrc,allInNow,allInNew,intSavedPW,intSavedMin,dNeverOff,dStmtMonths,dStmtInt,apr,aprEst,aprSrc,miMo,lenderAmt,newPcalc,fc,noc,newEscrow,ltv,ladder,cust,escrowEst,escrowIsEst,pitiNow,pitiNew,second,heloc,drawYrs,ioPay,afterDrawPay,curPay,curMonths,curSched,roll,cashOut,streamline,debts,dBal,dPay,dInt,dMonths,dMonthsEst,dMonthsUnknown,dExtra,dNoApr,newP,n,newPay,newSched,outlayNow,saveMo,blended,extra,pw,pwEff,skipCash,skipN,prog,fhaS,mipAmt,escrow,curPathInterest,newPayTyped,dPaths,dPayEst,dMinCards,dMinInt,dMinMonths,dMinBal,todayPath,a};
 }
 
 function balanceChart(r){
@@ -3689,7 +3695,7 @@ function runAnalysis(){ { const n=$("anRateSrc"); if(n){ const t=rateSrcText(cur
     if(q){ const L=a0.anReal&&a0.lenderQuote; q.style.display=L?"block":"none";
       if(L){ const A=L.adj, base=(A&&A.base)||L.baseRate, adjBy=base&&L.rate&&Math.abs(L.rate-base)>0.0005?L.rate-base:0;
         var rb = adjBy ? `<div style="margin-top:3px">Note rate <b>${pct(L.rate)}</b> = ${esc(L.lender||"lender")} base ${pct(base)} ${adjBy>0?"+":"\u2212"} ${Math.abs(adjBy).toFixed(3)}% adjustments${A&&A.items&&A.items.length?" ("+A.items.map(x=>esc(x.label)+" "+(x.value>0?"+":"")+x.value.toFixed(3)).join(", ")+")":""} <span class="hint" style="display:inline">\u2014 for you; the proposal shows the note rate</span></div>` : ""; }
-      if(L) q.innerHTML=`<b>From ${esc(L.lender||"the lender")}</b> \u00b7 ${esc(L.product||"")}${L.lock?" \u00b7 "+esc(L.lock):""} \u00b7 ${pct(L.rate)} \u00b7 ${money(L.payment)}/mo${L.mi>0?" incl. "+money(L.mi)+" MI":""} \u00b7 loan ${money(L.loanAmount)} \u00b7 fees ${money(L.totalFees)} rolled in${L.cost?" \u00b7 "+(L.cost<0?"lender credit "+money(-L.cost):"cost "+money(L.cost)):""} \u00b7 pulled ${esc(L.when||"")}${rb}`; } }
+      if(L) q.innerHTML=`<b>From ${esc(L.lender||"the lender")}</b> \u00b7 ${esc(L.product||"")}${L.lock?" \u00b7 "+esc(L.lock):""} \u00b7 ${pct(L.rate)} \u00b7 ${money(L.payment)}/mo${L.mi>0?" incl. "+money(L.mi)+" MI":""} \u00b7 loan ${money(L.loanAmount)} \u00b7 fees ${money(L.totalFees)} rolled in${L.cost?" \u00b7 "+(L.cost<0?"lender credit "+money(-L.cost):"cost "+money(L.cost)):""}${(()=>{ try{ const r0=computeAnalysis(c0); return r0&&r0.rocketFee?` \u00b7 <span class="hint" style="display:inline">Rocket\u2019s ${money(L.payment)}/mo has a ${money(r0.rocketFee)} funding fee on top \u2014 the proposal uses your ${money(L.loanAmount)} loan \u2192 ${money(r0.newPay+(r0.miMo||0))}/mo</span>`:""; }catch(e){ return ""; } })()} \u00b7 pulled ${esc(L.when||"")}${rb}`; } }
   renderLenderCompare();
   const c=cur(); const el=$("anResults");
   if(!c){ el.innerHTML=`<div class="panel empty">Pick a client first.</div>`; return; }
