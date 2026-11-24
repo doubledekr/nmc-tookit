@@ -1745,7 +1745,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.28.2";
+const TOOLKIT_VERSION = "1.28.3";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -3357,7 +3357,17 @@ function lenderFinanceCharge(fees){ let fc=0; (fees||[]).forEach(f=>{ const amt=
 /* ---- Lender comparison (banker only) ----
    Every real quote sent for this client (Rocket, Village, taught sites): rate, P&I, the client's cost or credit, and what NMC earns.
    Shown only on the Savings analysis screen — never in proposals, emails, saved options or anything the client sees. */
-function renderLenderCompare(){ const box=$("anLenderCompare"); if(!box) return; const c=cur(); const L=(c&&c.lenderQuotes)||[];
+/* Rocket: when the page shows no "Lender Paid Compensation", a credit in "$ cost to borrower" is the price over par — what NMC
+   earns, not money to the client. It never lowers the client's costs or touches the loan amount. When Rocket DOES show lender-paid
+   comp, that comp is NMC's and the credit really goes to the client. (Older saved rows are read the same way here.) */
+const isRocket=l=>/rocket/i.test(String(l||""));
+function lqView(x){ const v=Object.assign({},x); if(isRocket(v.lender)&&v.cost<0&&v.comp==null){ v.credit=-v.cost; v.comp=Math.round(v.credit*100)/100; v.cost=0; }
+  else if(isRocket(v.lender)&&v.earnCredit>0) v.credit=v.earnCredit;
+  const n=((v.q&&[10,15,20,25,30].includes(+v.q.term))?+v.q.term:30)*12, mi=(v.q&&+v.q.mi>0)?+v.q.mi:0;
+  if(v.loanAmount>0&&v.rate>0&&Math.abs(pmt(v.loanAmount,v.rate,n)-(v.payment-mi))>1){ for(const f of [0.005,0.0175,0.0215,0.0125,0.033,0.0365,0.0225,0.01]){
+    if(Math.abs(pmt(v.loanAmount*(1+f),v.rate,n)-(v.payment-mi))<=1){ v.finFee=Math.round(v.loanAmount*f); break; } } }
+  return v; }
+function renderLenderCompare(){ const box=$("anLenderCompare"); if(!box) return; const c=cur(); const L=((c&&c.lenderQuotes)||[]).map(lqView);
   if(!L.length){ box.style.display="none"; box.innerHTML=""; return; } box.style.display="block";
   const withComp=L.filter(x=>x.comp>0); const topComp=withComp.length?Math.max(...withComp.map(x=>x.comp)):0; const lowPay=Math.min(...L.map(x=>x.payment));
   const cur_=c.analysis&&c.analysis.anReal&&c.analysis.lenderQuote;
@@ -3367,9 +3377,9 @@ function renderLenderCompare(){ const box=$("anLenderCompare"); if(!box) return;
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="font-size:13px">Lender comparison</b><span class="hint" style="display:inline">for you only \u2014 never on proposals or emails</span></div>
     <div style="overflow:auto"><table class="data" style="margin-top:4px;font-size:12.5px"><thead><tr><th>Lender</th><th>Rate</th><th>P&amp;I</th><th>Loan</th><th>Client cost / credit</th><th>NMC earns</th><th></th></tr></thead><tbody>
     ${L.map(x=>`<tr${isCur(x)?' style="background:#E3F1E7"':""}><td><b>${esc(x.lender)}</b><div class="hint" style="display:block">${esc(x.product||"")}</div></td><td>${pct(x.rate)}${x.price?`<div class="hint" style="display:block">price ${x.price.toFixed(3)}</div>`:""}</td>
-      <td>${money(x.payment)}${x.payment===lowPay&&L.length>1?tag("lowest payment","#E3F1E7","#2E6B4F"):""}</td><td>${money(x.loanAmount)}</td>
-      <td>${x.cost==null?"\u2014":x.cost<0?"credit "+money(-x.cost):"cost "+money(x.cost)}</td>
-      <td>${x.comp===0?'<span class="hint" style="display:inline">$0 \u2014 below par</span>':x.comp>0?"<b>"+money(x.comp)+"</b>"+(x.comp===topComp&&withComp.length>1?tag("most for NMC","#F6E7D8","#8F4A12"):""):'<span class="hint" style="display:inline">not shown</span>'}</td>
+      <td>${money(x.payment)}${x.payment===lowPay&&L.length>1?tag("lowest payment","#E3F1E7","#2E6B4F"):""}</td><td>${money(x.loanAmount)}${x.finFee?`<div class="hint" style="display:block">+ ${money(x.finFee)} funding fee / MIP in the payment</div>`:""}</td>
+      <td>${x.cost==null?"\u2014":x.cost<0?"credit "+money(-x.cost):x.cost===0?"$0":"cost "+money(x.cost)}</td>
+      <td>${x.comp===0?'<span class="hint" style="display:inline">$0 \u2014 below par</span>':x.comp>0?"<b>"+money(x.comp)+"</b>"+(x.credit>0?`<div class="hint" style="display:block">Rocket\u2019s ${money(x.credit)} credit</div>`:"")+(x.comp===topComp&&withComp.length>1?tag("most for NMC","#F6E7D8","#8F4A12"):""):'<span class="hint" style="display:inline">not shown</span>'}</td>
       <td style="white-space:nowrap">${isCur(x)?'<span class="hint" style="display:inline">in use</span>':`<button class="btn ghost small" onclick="useLenderQuote('${x.id}')">Use this</button>`} <button class="btn ghost small" title="Remove" onclick="dropLenderQuote('${x.id}')">\u2715</button></td></tr>`).join("")}
     </tbody></table></div></div>`; }
 function useLenderQuote(id){ const c=cur(); const x=c&&(c.lenderQuotes||[]).find(y=>y.id===id); if(!x||!x.q) return; const r=window.nmcRealQuote(Object.assign({},x.q,{__replay:true})); if(r&&!r.ok) toast(r.error||"Couldn\u2019t use that quote"); }
@@ -3379,10 +3389,12 @@ window.nmcRealQuote=function(q){ try{ q=q||{};
   if(!(q && +q.rate>0 && +q.loanAmount>0 && +q.payment>0)) return {ok:false, error:"Couldn\u2019t read the selected rate, payment and loan amount"};
   /* what NMC earns on this rate (Rocket "Lender Paid Compensation", Village "LO Comp") — split off HERE so it never reaches the
      analysis, the proposal, emails or saved options; it lives only in the banker's lender comparison (c.lenderQuotes) */
-  const comp = q.comp && +q.comp.lenderPaid>=0 && q.comp.lenderPaid!=null ? Math.round(+q.comp.lenderPaid*100)/100 : null; const qPrice = +q.price>0 ? +q.price : null; q = Object.assign({}, q); delete q.comp; delete q.price;   /* price reveals the premium — comparison only */
+  let comp = q.comp && +q.comp.lenderPaid>=0 && q.comp.lenderPaid!=null ? Math.round(+q.comp.lenderPaid*100)/100 : null;
+  /* Rocket's "$ cost to borrower" below zero, with no lender-paid comp shown, is NMC's earnings on the rate — move it to the comparison; the client's cost is $0 */
+  let earnCredit=0; if(isRocket(q.lender) && +q.costDollars<0 && comp==null){ earnCredit=Math.round(-(+q.costDollars)*100)/100; comp=earnCredit; } const qPrice = +q.price>0 ? +q.price : null; q = Object.assign({}, q); delete q.comp; delete q.price;   /* price reveals the premium — comparison only */
   if(!q.__replay){ const L=c.lenderQuotes=(c.lenderQuotes||[]).filter(x=>!(x.lender===(q.lender||"")&&Math.abs(x.rate-(+q.rate))<0.0005&&Math.abs(x.loanAmount-(+q.loanAmount))<1));
     L.unshift({id:"lq"+Date.now().toString(36), lender:String(q.lender||"Lender").slice(0,40), product:String(q.product||"").slice(0,80), rate:+q.rate, price:qPrice, payment:+q.payment, loanAmount:+q.loanAmount,
-      cost:(q.costDollars!=null&&isFinite(+q.costDollars))?+q.costDollars:null, apr:(+q.aprTyped>0?+q.aprTyped:null), comp, when:new Date().toISOString(), q:JSON.parse(JSON.stringify(q))});
+      cost:earnCredit?0:(q.costDollars!=null&&isFinite(+q.costDollars))?+q.costDollars:null, earnCredit:earnCredit||undefined, apr:(+q.aprTyped>0?+q.aprTyped:null), comp, when:new Date().toISOString(), q:JSON.parse(JSON.stringify(q))});
     c.lenderQuotes=L.slice(0,12); }
   delete q.__replay;
   const a=c.analysis=c.analysis||{}; const term=+q.term;
@@ -3397,7 +3409,7 @@ window.nmcRealQuote=function(q){ try{ q=q||{};
   a.anAprTyped = (+q.aprTyped>0 && +q.aprTyped<30) ? +q.aprTyped : null; a.anReal=true; a.realWhen=todayStr(); a.realSource="lender"; a.rateSrc={type:"quote", lender:q.lender||"lender", when:todayStr()};
   const ra=q.rateAdjustments&&typeof q.rateAdjustments==="object"?q.rateAdjustments:null;
   a.lenderQuote={lender:q.lender||"", product:String(q.product||"").slice(0,80), lock:String(q.lock||"").slice(0,40), rate:rate, baseRate:+q.rate,
-    adj: ra ? {base:+ra.base||null, adjusted:+ra.adjusted||null, total:+ra.total||null, items:(ra.items||[]).slice(0,12).map(x=>({label:String(x.label||"").slice(0,60), value:+x.value})).filter(x=>isFinite(x.value)&&!/compensation/i.test(x.label))} : null, payment:+q.payment, mi:+q.mi||0, loanAmount:+q.loanAmount, totalFees:+q.totalFees||0, cost:+q.costDollars||0, propertyValue:+q.propertyValue||0, ltv:String(q.ltv||"").slice(0,12), finCharge:a.anFinCharge,
+    adj: ra ? {base:+ra.base||null, adjusted:+ra.adjusted||null, total:+ra.total||null, items:(ra.items||[]).slice(0,12).map(x=>({label:String(x.label||"").slice(0,60), value:+x.value})).filter(x=>isFinite(x.value)&&!/compensation/i.test(x.label))} : null, payment:+q.payment, mi:+q.mi||0, loanAmount:+q.loanAmount, totalFees:+q.totalFees||0, cost:earnCredit?0:(+q.costDollars||0), propertyValue:+q.propertyValue||0, ltv:String(q.ltv||"").slice(0,12), finCharge:a.anFinCharge,
     when:new Date().toLocaleString("en-US",{month:"short",day:"numeric",hour:"numeric",minute:"2-digit"})};
   save(); refreshAll(); try{ fillAnalysisInputs(); runAnalysis(); renderProposalPreview(); }catch(e){}
   const r=computeAnalysis(c); const warn=(r&&r.warnings||[]).filter(w=>/lender/.test(w)).map(w=>w.replace(/<[^>]+>/g,""));
