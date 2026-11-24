@@ -1745,7 +1745,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.28.4";
+const TOOLKIT_VERSION = "1.28.5";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -3734,7 +3734,7 @@ function runAnalysis(){ { const n=$("anRateSrc"); if(n){ const t=rateSrcText(cur
     </div>`:""}
   </div>
   <div class="panel"><h2>Pay what you pay now</h2>
-    <p class="hint" style="margin-bottom:10px">Keep paying the same ${money(r.outlayNow)}/mo ${r.second?"they put at these debts today":"they're used to"} \u2014 the extra ${money(r.extra)} goes straight at principal.</p>
+    <p class="hint" style="margin-bottom:10px">Keep paying the same ${money(r.outlayNow)}/mo ${r.second?"they put at these debts today":"they're used to"} \u2014 the extra ${money(r.extra)} goes straight at principal.${r.pwEff<r.a.anRate-0.0005?` Effective rate paying this way: <b style="color:#2E6B4F">${pct(r.pwEff)}</b> \u2014 the ${r.a.anTerm}-yr rate that would cost the same total interest (rate on paper: ${pct(r.a.anRate)}).`:""}</p>
     <div class="grid4">
       <div class="stat green"><div class="v">${yrsMo(r.pw.months)}</div><div class="l">Loan paid off in (vs ${yrsMo(r.n)} minimum${r.second&&isFinite(r.dMonths)&&r.dMonths>0?"; debts today would take "+yrsMo(r.dMonths):""})</div></div>
       <div class="stat green"><div class="v">${yrsMo(termCut)}</div><div class="l">Term cut</div></div>
