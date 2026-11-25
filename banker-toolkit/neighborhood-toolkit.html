@@ -1747,7 +1747,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.28.6";
+const TOOLKIT_VERSION = "1.28.7";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2612,9 +2612,12 @@ function setPipeView(v){ pipeView=v; if(window.NMC) NMC.enter(1200); renderPipel
 /* sortable columns: click a header to sort, again to flip, a third time to clear */
 let pipeSort={key:null,dir:1};
 /* last contact = the newest entry in the client's contact log (calls, no-answers, appointments, proposals sent) — not a file merge */
-function lastContactMs(c){ const e=(c.log||[]).find(x=>x&&x.outcome!=="Merged"&&x.when); return e?fuqStampMs(e.when):0; }
-function lastContactTxt(c){ const ms=lastContactMs(c); if(!ms) return "never contacted"; const d=new Date(ms), days=Math.floor((new Date().setHours(0,0,0,0)-new Date(ms).setHours(0,0,0,0))/86400000);
-  return "last contact "+(days<=0?"today":days===1?"yesterday":days<7?days+" days ago":d.toLocaleDateString("en-US",{month:"short",day:"numeric"})+(d.getFullYear()!==new Date().getFullYear()?", "+d.getFullYear():"")); }
+function lastLogMs(c){ const e=(c.log||[]).find(x=>x&&x.outcome!=="Merged"&&x.when); return e?fuqStampMs(e.when):0; }
+/* when the file came in: the latest Salesforce import, else when the client was created (the id carries the time) — a fresh import counts as the latest touch */
+function importedMs(c){ const i=c.importedAt?Date.parse(c.importedAt):0; if(i>0) return i; const m=/^c(\d{13})/.exec(String(c.id||"")); const t=m?+m[1]:0; return t>1.5e12&&t<=Date.now()+864e5?t:0; }
+function lastContactMs(c){ return Math.max(lastLogMs(c), importedMs(c)); }
+function lastContactTxt(c){ const ms=lastContactMs(c); if(!ms) return "never contacted"; const imp=importedMs(c)>lastLogMs(c); const d=new Date(ms), days=Math.floor((new Date().setHours(0,0,0,0)-new Date(ms).setHours(0,0,0,0))/86400000);
+  return (imp?"imported ":"last contact ")+(days<=0?"today":days===1?"yesterday":days<7?days+" days ago":d.toLocaleDateString("en-US",{month:"short",day:"numeric"})+(d.getFullYear()!==new Date().getFullYear()?", "+d.getFullYear():"")); }
 const contactSort=()=>{ const v=state.settings&&state.settings.pipeContactSort; return v==="latest"||v==="earliest"?v:""; };
 function setContactSort(v){ state.settings.pipeContactSort=(v==="latest"||v==="earliest")?v:""; pipeSort={key:null,dir:1}; save(); renderPipeline(); }
 function contactCmp(a,b){ const x=lastContactMs(a), y=lastContactMs(b); if(!x||!y) return (x?0:1)-(y?0:1);   /* never contacted always at the bottom */ return contactSort()==="latest" ? y-x : x-y; }
@@ -3056,7 +3059,7 @@ function applySF(asNew,onto){
     if(k==="monthsLeft"){ c.monthsLeftFrom=F.monthsLeftFrom||""; c.monthsLeftAuto=false; } });
   (lastSF.debts||[]).forEach(d=>{ const ex=c.debts.find(x=>x.name===d.name); if(ex){ ex.balance=d.balance; if(d.pay!=null) ex.pay=d.pay; } else c.debts.push(Object.assign({},d)); });
   if(asNew && !F.name) c.name="Pasted client";
-  normalizePayment(c,"paymentTotal");
+  normalizePayment(c,"paymentTotal"); c.importedAt=new Date().toISOString();
   const nd=(lastSF.debts||[]).length; const noBal=!(F.balance>0); sfCancel();
   save(); refreshAll(); go("client"); sfRefresh();
   toast((asNew?"Created ":"Updated ")+c.name+" \u00b7 "+keys.length+" field"+(keys.length===1?"":"s")+" from Salesforce"+(nd?", "+nd+" debt"+(nd===1?"":"s"):"")+(noBal?" \u2014 no mortgage balance on the lead; tick free and clear if the home is paid off":""));
