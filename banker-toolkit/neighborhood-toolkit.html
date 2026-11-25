@@ -116,7 +116,7 @@ body.present-mode #s-present .sub,body.present-mode #s-present .eyebrow{display:
 #propPreview.customize [data-hid]{cursor:pointer;position:relative}
 #propPreview.customize [data-hid]:hover{outline:2px dashed var(--brand);outline-offset:1px;background:#FFF3F0}
 #propPreview.customize tr[data-hid]:hover td{background:#FFF3F0}
-#propPreview.customize [data-hid]:hover::after{content:"\u2715 hide";position:absolute;right:0;top:-10px;background:var(--brand);color:#fff;font-size:10px;padding:1px 6px;border-radius:999px;font-family:system-ui,sans-serif;z-index:5}
+#propPreview.customize [data-hid]:hover::after{content:"&#x2715; hide";position:absolute;right:0;top:-10px;background:var(--brand);color:#fff;font-size:10px;padding:1px 6px;border-radius:999px;font-family:system-ui,sans-serif;z-index:5}
 #propPreview.customize tr[data-hid]:hover::after{display:none}
 .loancheck{border-radius:10px;padding:10px 14px;font-size:12.5px;line-height:1.55;background:#F1F6F1;border:1px solid #CFE0D2}
 .loancheck.warn{background:#FFF8EC;border-color:#E8CFA0}
@@ -1143,7 +1143,7 @@ body.nmc-band.nmc-mac .nmc-tb .l{padding-left:84px}   /* room for the traffic li
           <div class="field" style="display:none"><label>Program</label><select id="anProgram" onchange="programRules(); runAnalysis()">
             <option value="standard" selected>Standard refinance</option><option value="fha_streamline">FHA Streamline</option><option value="va_irrrl">VA IRRRL</option></select></div>
           <div class="field" id="anMipWrap" style="display:none"><label>Upfront MIP % (financed)</label><input type="number" id="anMip" step="0.01" value="1.75" oninput="runAnalysis()"></div>
-          <div class="field" id="anVaWrap" style="display:none"><label>VA funding fee</label><select id="anVaExempt" onchange="runAnalysis()"><option value="no">0.5% \u2014 financed into the loan</option><option value="yes">Exempt (VA disability benefits) \u2014 no fee</option></select></div>
+          <div class="field" id="anVaWrap" style="display:none"><label>VA funding fee</label><select id="anVaExempt" onchange="runAnalysis()"><option value="no">0.5% &mdash; financed into the loan</option><option value="yes">Exempt (VA disability benefits) &mdash; no fee</option></select></div>
           <div class="field m-second"><label>Second mortgage type <span class="hint" style="display:inline">(changes the wording on proposals)</span></label><select id="anSecondType" onchange="runAnalysis();renderProposalPreview()"><option value="hel">Home equity loan (fixed)</option><option value="heloc">HELOC (line of credit)</option></select></div>
           <div class="field m-second"><label style="display:block;cursor:pointer;line-height:1.5;margin-top:22px"><input type="checkbox" id="anHideFirst" style="width:auto;vertical-align:middle;margin-right:6px" onchange="runAnalysis();renderProposalPreview()">Leave the first mortgage out of the proposal <span class="hint" style="display:inline">(client only sees the new loan)</span></label></div>
           <div class="field m-noc" style="grid-column:1/-1"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="anNoCompare" style="width:auto" onchange="runAnalysis()"> <b>Cash-out only</b> — leave the debts alone and skip the comparison; the proposal just shows what the new loan looks like <span class="hint" style="display:inline">(for clients borrowing for savings or a project, not to pay off debt)</span></label></div>
@@ -1470,7 +1470,7 @@ Discover 6,100 190 24.9"></textarea>
           <button class="btn ghost" onclick="addTemplate('email','follow')">+ Follow-up email</button>
         </div>
         <div id="tmplMine"></div>
-        <div class="hint" style="margin-top:8px">Inserts fill in on copy: {client_first} {client} {address} {rate} {banker} {banker_first} {banker_phone} {banker_email} {banker_nmls} \u2014 and $[X] (card debt), $[Y] (balance), [X]% (rate), $[X]/mo (savings) fill when the client has the numbers.</div>
+        <div class="hint" style="margin-top:8px">Inserts fill in on copy: {client_first} {client} {address} {rate} {banker} {banker_first} {banker_phone} {banker_email} {banker_nmls} &#x2014; and $[X] (card debt), $[Y] (balance), [X]% (rate), $[X]/mo (savings) fill when the client has the numbers.</div>
       </div>
       <div class="panel">
         <h2>Playbook order <span class="hint">— move anything up or down inside its panel; the defaults stay, reset any time</span></h2>
@@ -1523,11 +1523,11 @@ Discover 6,100 190 24.9"></textarea>
                   <li>Open any Salesforce lead — a red <b>Send to NMC toolkit</b> button appears bottom-right. Click it; the lead lands at the top of your Pipeline.</li>
                 </ol>
                 <div id="extMove" style="display:none;margin:0 0 10px;padding:10px 12px;border-radius:10px;background:var(--cream-soft);border:1px solid var(--warn)">
-                  <b>Optional tip:</b> Chrome is loading the extension from the toolkit’s install folder, which updates replace \u2014 so an update can switch it off (fix: <b>Reload</b> it in chrome://extensions). To stop that for good, point Chrome at the folder below once:
-                  <ol class="hint" style="margin:6px 0 0 18px;line-height:1.7"><li>In <b>chrome://extensions</b>, click <b>Remove</b> on the NMC extension.</li><li>Click <b>Load unpacked</b> and pick the folder below (<b>Copy path</b>, then paste it in the folder box).</li><li>Sites you allowed with \u201cUse NMC on this site\u201d (Bonzo, lenders) need allowing once more. Your recipes are safe \u2014 they live in the toolkit.</li></ol>
+                  <b>Optional tip:</b> Chrome is loading the extension from the toolkit’s install folder, which updates replace &#x2014; so an update can switch it off (fix: <b>Reload</b> it in chrome://extensions). To stop that for good, point Chrome at the folder below once:
+                  <ol class="hint" style="margin:6px 0 0 18px;line-height:1.7"><li>In <b>chrome://extensions</b>, click <b>Remove</b> on the NMC extension.</li><li>Click <b>Load unpacked</b> and pick the folder below (<b>Copy path</b>, then paste it in the folder box).</li><li>Sites you allowed with &#x201c;Use NMC on this site&#x201d; (Bonzo, lenders) need allowing once more. Your recipes are safe &#x2014; they live in the toolkit.</li></ol>
                   <div style="margin-top:6px"><button class="btn ghost small" onclick="state.settings.extMoveHide=true;save();renderExtStatus()">Don’t show again</button></div></div>
                 <div class="btnrow"><code id="extPath" class="hint" style="flex:1;word-break:break-all"></code><button class="btn ghost small" onclick="navigator.clipboard.writeText($('extPath').textContent).then(()=>toast('Folder path copied'))">Copy path</button><button class="btn ghost small" onclick="DESK.openExtensionFolder()">Open extension folder</button></div>
-                <p class="hint" style="margin:6px 0 0">Updates: the toolkit refreshes this folder in place (it’s never deleted) \u2014 after an update, click <b>Reload</b> on the NMC extension in chrome://extensions or restart Chrome. Nothing leaves this computer; the extension talks to the app on 127.0.0.1 only.</p>
+                <p class="hint" style="margin:6px 0 0">Updates: the toolkit refreshes this folder in place (it’s never deleted) &#x2014; after an update, click <b>Reload</b> on the NMC extension in chrome://extensions or restart Chrome. Nothing leaves this computer; the extension talks to the app on 127.0.0.1 only.</p>
                 <div id="recipeBox" style="margin-top:12px;padding-top:10px;border-top:1px solid var(--line)">
                   <div class="eyebrow" style="font-size:11px">Lender page recipes</div>
                   <p class="hint" style="margin:4px 0 6px">For lender sites other than Rocket Pro: click the NMC toolbar button on the site → <b>Use NMC on this site</b> (Chrome asks once), then <b>Send rate</b> or <b>Fill</b>. The first time, you match the columns and boxes; that “recipe” is kept here. Share it with a teammate as a code — they paste it below and adjust on the page if their screen differs a little.</p>
@@ -1568,7 +1568,7 @@ Discover 6,100 190 24.9"></textarea>
               <div class="grid2">
                 <div class="field"><label>Score unknown → test against tier</label><select id="setRdTier" onchange="saveSettingsFromUI()"><option value="640+">640+</option><option value="620-639">620–639 (default)</option><option value="580-619">580–619</option><option value="<580">Below 580</option></select></div>
                 <div class="field"><label>Minimum rate drop to count as eligible (%)</label><input type="number" id="setRdDrop" step="0.125" placeholder="0.5" onchange="saveSettingsFromUI()"></div>
-                <div class="field" title="Clients already above this rate qualify on any drop — they stay marked eligible but don\u2019t ring the bell as new each time. Blank or 0 turns this off."><label>Don\u2019t flag as new above (%)</label><input type="number" id="setRdExempt" step="0.125" placeholder="6.99" onchange="saveSettingsFromUI()"></div>
+                <div class="field" title="Clients already above this rate qualify on any drop — they stay marked eligible but don&#x2019;t ring the bell as new each time. Blank or 0 turns this off."><label>Don&#x2019;t flag as new above (%)</label><input type="number" id="setRdExempt" step="0.125" placeholder="6.99" onchange="saveSettingsFromUI()"></div>
                 <div class="field"><label>“New this week” window (days)</label><input type="number" id="setRdWindow" min="1" max="30" placeholder="7" onchange="saveSettingsFromUI()"></div>
               </div>
               <label style="display:flex;gap:8px;align-items:center;cursor:pointer;margin:4px 0"><input type="checkbox" id="setRdKeepNA" style="width:auto;min-height:0" onchange="saveSettingsFromUI()"><span>“No answer” keeps a client in New this week (until they answer or the window ends)</span></label>
@@ -1747,7 +1747,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.28.7";
+const TOOLKIT_VERSION = "1.28.8";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2698,8 +2698,8 @@ function clientProduct(c){ const a=c&&c.analysis; if(!a||!(a.anRate>0)) return "
    The product comes from the proposal (first option checked on it), else the savings analysis. Only what the pricing forms need — no phone, email or notes. */
 function lenderAddr(s){ s=String(s||"").replace(/\s+/g," ").trim(); const out={full:s,street:"",city:"",state:"",zip:""}; if(!s) return out;
   const z=s.match(/\b(\d{5})(?:-\d{4})?\s*$/); if(z){ out.zip=z[1]; s=s.slice(0,z.index).trim().replace(/,$/,""); }
-  const st=s.match(/[,\s]([A-Za-z]{2})$/); if(st){ out.state=st[1].toUpperCase(); s=s.slice(0,st.index).trim().replace(/,$/,""); }
-  const parts=s.split(",").map(x=>x.trim()).filter(Boolean); if(parts.length>=2){ out.city=parts.pop(); out.street=parts.join(", "); } else out.street=s;
+  const st=s.match(/(?:^|[,\s])([A-Za-z]{2})$/); if(st){ out.state=st[1].toUpperCase(); s=s.slice(0,st.index).trim().replace(/,$/,""); }
+  const parts=s.split(",").map(x=>x.trim()).filter(Boolean); if(parts.length>=2){ out.city=parts.pop(); out.street=parts.join(", "); } else if(s&&!/\d/.test(s)&&(out.state||out.zip)) out.city=s;   /* "Jackson, MS 39201" — a city, not a street */ else out.street=s;
   return out; }
 function lenderPacket(){ const c=cur(); if(!c) return null;
   const sel=(typeof propSelected==="function")?propSelected(c):[]; const a=Object.assign({}, c.analysis||{}, sel.length?sel[0].inputs:{});
@@ -2995,7 +2995,7 @@ function parseSFText(text, auto){ auto=auto!==false;   /* auto=false: just parse
   const n=v=>v==null||v===""?null:num(v);
   if(!raw.name && (raw.firstName||raw.lastName)) found.name=titleCase(((raw.firstName||"")+" "+(raw.lastName||"")).trim());
   else if(!raw.name && raw.nameAlt) found.name=titleCase(raw.nameAlt.trim());   /* converted loan: the Account name */
-  if(!raw.address && raw.street) found.address=[raw.street, raw.city, [raw.state, raw.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+  if(!raw.address && (raw.street||raw.city||raw.state||raw.zip)) found.address=[raw.street, raw.city, [raw.state, raw.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ");   /* state / ZIP alone still count — lender pricing needs them */
   /* first-mortgage balance: Open Mortgage Balance first, then the 1st-mortgage field, then Total Mortgage(s) (which can include a 2nd lien), then the loan amount */
   found.balance = n(raw.balance) ?? n(raw.balance1st) ?? n(raw.balanceTotal) ?? n(raw.balanceAlt2);
   if(n(raw.balanceAlt2)>0 && found.balance>0 && n(raw.balanceAlt2)>found.balance) found.origAmount=n(raw.balanceAlt2);
@@ -3375,7 +3375,13 @@ function lenderFinanceCharge(fees){ let fc=0; (fees||[]).forEach(f=>{ const amt=
    earns, not money to the client. It never lowers the client's costs or touches the loan amount. When Rocket DOES show lender-paid
    comp, that comp is NMC's and the credit really goes to the client. (Older saved rows are read the same way here.) */
 const isRocket=l=>/rocket/i.test(String(l||""));
-function lqView(x){ const v=Object.assign({},x); if(isRocket(v.lender)&&v.cost<0&&v.comp==null){ v.credit=-v.cost; v.comp=Math.round(v.credit*100)/100; v.cost=0; }
+/* Village: the price over 100 is what Village pays NMC — (price − 100)% of the loan. A negative Discount/Rebate is that same money,
+   so it is NEVER a client credit, however the row reached the toolkit (built-in reader or a taught recipe). */
+const isVillage=l=>/village|optimal ?blue/i.test(String(l||""));
+const villageEarn=(price,loan)=>(price>100&&loan>0)?Math.round((price-100)/100*loan):null;
+function lqView(x){ const v=Object.assign({},x);
+  if(isVillage(v.lender)&&!(v.comp>0)){ const e=villageEarn(v.price,v.loanAmount); if(e!=null){ v.comp=e; if(v.cost<0||v.cost==null) v.cost=0; } else if(v.cost<0){ v.comp=Math.round(-v.cost); v.cost=0; } }
+  if(isRocket(v.lender)&&v.cost<0&&v.comp==null){ v.credit=-v.cost; v.comp=Math.round(v.credit*100)/100; v.cost=0; }
   else if(isRocket(v.lender)&&v.earnCredit>0) v.credit=v.earnCredit;
   const n=((v.q&&[10,15,20,25,30].includes(+v.q.term))?+v.q.term:30)*12, mi=(v.q&&+v.q.mi>0)?+v.q.mi:0;
   if(v.loanAmount>0&&v.rate>0&&Math.abs(pmt(v.loanAmount,v.rate,n)-(v.payment-mi))>1){ for(const f of [0.005,0.0175,0.0215,0.0125,0.033,0.0365,0.0225,0.01]){
@@ -3387,12 +3393,12 @@ function renderLenderCompare(){ const box=$("anLenderCompare"); if(!box) return;
   if(!L.length){ box.style.display="none"; box.innerHTML=""; return; } box.style.display="block";
   const withComp=L.filter(x=>x.comp>0); const topComp=withComp.length?Math.max(...withComp.map(x=>x.comp)):0; const lowPay=Math.min(...L.map(x=>x.payment));
   const cur_=c.analysis&&c.analysis.anReal&&c.analysis.lenderQuote;
-  const isCur=x=>cur_&&cur_.lender===x.lender&&Math.abs(cur_.rate-x.rate)<0.0005&&Math.abs(cur_.loanAmount-x.loanAmount)<1;
+  const isCur=x=>cur_&&cur_.lender===x.lender&&Math.abs(cur_.rate-x.rate)<0.0005&&Math.abs(cur_.loanAmount-x.loanAmount)<1&&(cur_.lock||"")===(x.lock||"");
   const tag=(t,bg,fg)=>`<span style="display:inline-block;background:${bg};color:${fg};border-radius:999px;padding:1px 8px;font-size:10.5px;font-weight:700;margin-left:4px">${t}</span>`;
   box.innerHTML=`<div style="border:1px solid var(--line,#E6E0D4);border-radius:10px;padding:8px 10px;background:var(--cream-soft,#FBF8F2)">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b style="font-size:13px">Lender comparison</b><span class="hint" style="display:inline">for you only \u2014 never on proposals or emails</span></div>
     <div style="overflow:auto"><table class="data" style="margin-top:4px;font-size:12.5px"><thead><tr><th>Lender</th><th>Rate</th><th>P&amp;I</th><th>Loan</th><th>Client cost / credit</th><th>NMC earns</th><th></th></tr></thead><tbody>
-    ${L.map(x=>`<tr${isCur(x)?' style="background:#E3F1E7"':""}><td><b>${esc(x.lender)}</b><div class="hint" style="display:block">${esc(x.product||"")}</div></td><td>${pct(x.rate)}${x.price?`<div class="hint" style="display:block">price ${x.price.toFixed(3)}</div>`:""}</td>
+    ${L.map(x=>`<tr${isCur(x)?' style="background:#E3F1E7"':""}><td><b>${esc(x.lender)}</b><div class="hint" style="display:block">${esc(x.product||"")}</div>${x.lock?`<div class="hint" style="display:block;font-weight:700;color:var(--ink,#23242B)">${esc(x.lock)}</div>`:""}</td><td>${pct(x.rate)}${x.price?`<div class="hint" style="display:block">price ${x.price.toFixed(3)}</div>`:""}</td>
       <td>${money(x.payment)}${x.rocketPay?`<div class="hint" style="display:block">Rocket shows ${money(x.rocketPay)} with the funding fee</div>`:""}${x.payment===lowPay&&L.length>1?tag("lowest payment","#E3F1E7","#2E6B4F"):""}</td><td>${money(x.loanAmount)}${x.finFee?`<div class="hint" style="display:block">+ ${money(x.finFee)} funding fee / MIP in the payment</div>`:""}</td>
       <td>${x.cost==null?"\u2014":x.cost<0?"credit "+money(-x.cost):x.cost===0?"$0":"cost "+money(x.cost)}</td>
       <td>${x.comp===0?'<span class="hint" style="display:inline">$0 \u2014 below par</span>':x.comp>0?"<b>"+money(x.comp)+"</b>"+(x.credit>0?`<div class="hint" style="display:block">Rocket\u2019s ${money(x.credit)} credit</div>`:"")+(x.comp===topComp&&withComp.length>1?tag("most for NMC","#F6E7D8","#8F4A12"):""):'<span class="hint" style="display:inline">not shown</span>'}</td>
@@ -3407,12 +3413,18 @@ window.nmcRealQuote=function(q){ try{ q=q||{};
      analysis, the proposal, emails or saved options; it lives only in the banker's lender comparison (c.lenderQuotes) */
   let comp = q.comp && +q.comp.lenderPaid>=0 && q.comp.lenderPaid!=null ? Math.round(+q.comp.lenderPaid*100)/100 : null;
   /* Rocket's "$ cost to borrower" below zero, with no lender-paid comp shown, is NMC's earnings on the rate — move it to the comparison; the client's cost is $0 */
-  let earnCredit=0; if(isRocket(q.lender) && +q.costDollars<0 && comp==null){ earnCredit=Math.round(-(+q.costDollars)*100)/100; comp=earnCredit; } const qPrice = +q.price>0 ? +q.price : null; q = Object.assign({}, q); delete q.comp; delete q.price;   /* price reveals the premium — comparison only */
-  if(!q.__replay){ const L=c.lenderQuotes=(c.lenderQuotes||[]).filter(x=>!(x.lender===(q.lender||"")&&Math.abs(x.rate-(+q.rate))<0.0005&&Math.abs(x.loanAmount-(+q.loanAmount))<1));
-    L.unshift({id:"lq"+Date.now().toString(36), lender:String(q.lender||"Lender").slice(0,40), product:String(q.product||"").slice(0,80), rate:+q.rate, price:qPrice, payment:+q.payment, loanAmount:+q.loanAmount,
+  let earnCredit=0; if(isRocket(q.lender) && +q.costDollars<0 && comp==null){ earnCredit=Math.round(-(+q.costDollars)*100)/100; comp=earnCredit; } const qPrice = +q.price>0 ? +q.price : null;
+  /* Village: price over 100 (or a negative Discount/Rebate) is NMC's — never a credit to the client */
+  if(isVillage(q.lender)){ const e=villageEarn(qPrice,+q.loanAmount); if(!(comp>0)&&e!=null) comp=e; if(+q.costDollars<0&&!(comp>0)) comp=Math.round(-(+q.costDollars)); }
+  const qLock=String(q.lock||"").slice(0,40), compareOnly=!!q.compareOnly;
+  q = Object.assign({}, q); delete q.comp; delete q.price; delete q.compareOnly; if(isVillage(q.lender)&&+q.costDollars<0){ q.costDollars=0; }   /* price reveals the premium — comparison only */
+  if(!q.__replay){ const L=c.lenderQuotes=(c.lenderQuotes||[]).filter(x=>!(x.lender===(q.lender||"")&&Math.abs(x.rate-(+q.rate))<0.0005&&Math.abs(x.loanAmount-(+q.loanAmount))<1&&(x.lock||"")===qLock));
+    L.unshift({id:"lq"+Date.now().toString(36), lender:String(q.lender||"Lender").slice(0,40), product:String(q.product||"").slice(0,80), rate:+q.rate, price:qPrice, lock:qLock||undefined, payment:+q.payment, loanAmount:+q.loanAmount,
       cost:earnCredit?0:(q.costDollars!=null&&isFinite(+q.costDollars))?+q.costDollars:null, earnCredit:earnCredit||undefined, apr:(+q.aprTyped>0?+q.aprTyped:null), comp, when:new Date().toISOString(), q:JSON.parse(JSON.stringify(q))});
-    c.lenderQuotes=L.slice(0,12); }
+    c.lenderQuotes=L.slice(0,16); }
   delete q.__replay;
+  /* extra rows for the comparison only (Village's other lock periods): the analysis keeps the quote that is in use */
+  if(compareOnly){ save(); try{ renderLenderCompare(); }catch(e){} return {ok:true, client:c.name, compareOnly:true, warnings:[]}; }
   const a=c.analysis=c.analysis||{}; const term=+q.term;
   /* Rocket shows a base "Rate" and, on some products (home equity), an "Adjusted rate" — the real note rate. Use whichever one
      reproduces the lender's payment on the lender's loan amount and term. */

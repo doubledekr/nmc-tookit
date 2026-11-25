@@ -18,7 +18,7 @@ Restart Chrome after a toolkit update and the extension picks up the new code.
 
 ## Lender autofill (Rocket Pro + Village Capital)
 On **Rocket Pro → New Scenario** (app.rocketpro.com) and **Village Capital's quick price** in TPO Connect (the Optimal Blue frame,
-epc.optimalblue.com) a **Fill from NMC Toolkit** button appears bottom-right. It asks the desktop app for the client **selected in the toolkit**,
+epc.optimalblue.com) a **Fill from NMC Toolkit** button appears bottom-right (on Village / Optimal Blue it is the **Fill this page** item in the single **NMC** button's menu). It asks the desktop app for the client **selected in the toolkit**,
 shows what it will fill as (the product from the proposal, else the savings analysis — changeable), then types/selects the fields.
 Filled fields are outlined green, ones it couldn't fill amber. It never clicks Price or Submit.
 

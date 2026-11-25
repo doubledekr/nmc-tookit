@@ -62,6 +62,10 @@
      listed as "needs you"; a step with skip:true is left alone silently (it doesn't apply to this product). */
   const VA = p => p.product === "va_irrrl", FHA = p => p.product === "fha_streamline", CASH = p => p.product === "cashout" || p.product === "fc";
   const rq = sel => () => document.querySelector(sel);
+  /* a dropdown found by the words next to it, for boxes whose internal name isn't known */
+  function byLabel(re){ for (const l of document.querySelectorAll("label, .field-label, [class*=label]")){ const t = norm(l.textContent).replace(/[:*]\s*$/, ""); if (!t || t.length > 40 || !re.test(t)) continue;
+      for (let n = l, i = 0; n && i < 4; n = n.parentElement, i++){ const ps = n.querySelector && n.querySelector("p-select"); if (ps) return ps; const sib = n.nextElementSibling; if (sib){ const s2 = sib.matches && sib.matches("p-select") ? sib : sib.querySelector && sib.querySelector("p-select"); if (s2) return s2; } } }
+    return null; }
   const SITES = {
     rocket: {
       name: "Rocket Pro",
@@ -101,6 +105,7 @@
           { label: "Cash-out amount", find: inp("cashOutAmount"), kind: "number", value: p.cashOut, skip: !CASH(p) || !(p.cashOut > 0) },
           { label: "DTI ratio", find: inp("loanLevelDebtToIncomeRatio"), kind: "number", value: 0, skip: !VA(p) },
           { label: "Lead source", find: sel("leadSource"), kind: "prime", value: ["VA"], skip: !VA(p) },
+          { label: "Business channel", find: () => document.querySelector('p-select[name="businessChannel"], p-select[name="channel"], p-select[name="loanChannel"], p-select[name="businessChannelId"]') || byLabel(/business channel|^channel$/), kind: "prime", value: ["Wholesale"], skip: !VA(p), optional: true },
           { label: "Property address", find: inp("propertyStreetAddress"), kind: "text", value: a.street },
           { label: "Property city", find: inp("city"), kind: "text", value: a.city },
           { label: "Property state", find: sel("state"), kind: "prime", value: a.state ? [STATE_NAMES[a.state] || a.state, a.state] : null },
@@ -141,6 +146,8 @@
     const r = await ask();
     if (!r || !r.ok){ showPanel(`<b style="color:#A53222">Can’t fill yet</b><div style="margin-top:6px">${esc(r && r.error || "The toolkit app isn’t reachable")}</div>${B("x", "Close", true)}`).onclick = e => { if (e.target.dataset.a) closePanel(); }; return; }
     const p = r.client; let prod = PRODUCTS.some(x => x[0] === p.product) ? p.product : (p.product === "fc" ? "cashout" : "refi");
+    /* a VA lead prices as a VA streamline unless the analysis says cash-out */
+    if (prod === "refi" && /^va$/i.test(String(p.currentLoanType || "").trim())) prod = "va_irrrl";
     const pn = showPanel(`<div style="font-weight:700;color:#A53222;font-size:14px">${esc(p.name || "Client")}</div>
       <div style="color:#5C616E;margin:2px 0 8px">Balance ${money(p.balance)} · FICO ${esc(p.fico || "—")} · ${esc(site.name)}</div>
       <label style="font-size:12px;color:#5C616E">Fill as <span style="opacity:.8">(from the ${p.productFrom === "proposal" ? "proposal" : "savings analysis"})</span></label>
@@ -156,11 +163,17 @@
   function ensure(){ if (!alive()){ if (btn){ btn.textContent = "NMC extension updated — reload page"; btn.style.background = "#8F3223"; btn.onclick = () => location.reload(); } return false; }
     const key = Object.keys(SITES).find(k => SITES[k].detect()); const site = key && SITES[key];
     if (!site){ if (btn){ btn.remove(); btn = null; closePanel(); } return true; }
+    if (ONE_BUTTON){ if (btn){ btn.remove(); btn = null; } return true; }   /* Village: the fill sits in the single NMC button's menu */
     if (!btn || !btn.isConnected){ btn = document.createElement("button"); btn.type = "button"; btn.className = "nmc-lf-btn"; btn.textContent = "Fill from NMC Toolkit";
       btn.style.cssText = CSS + ";background:#A53222;color:#fff;border:0;border-radius:999px;padding:10px 16px;font:600 13px system-ui,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer";
       document.body.appendChild(btn); }
     btn.onclick = () => onClick(site); return true; }
   /* single-page apps: the form appears and disappears without a page load, so keep checking */
+  /* On Optimal Blue the page sensor's NMC button is the only button: it offers this fill in its menu and uses these helpers for
+     the page's dropdowns and number boxes (both scripts are this extension's, in the same page world). */
+  const ONE_BUTTON = /(^|\.)optimalblue\.com$/i.test(location.hostname);
+  window.__nmcLF = { site: () => Object.keys(SITES).find(k => SITES[k].detect()) || null, open: () => { const k = window.__nmcLF.site(); if (k) onClick(SITES[k]); },
+    choosePrime, typeNumber, stateName: v => STATE_NAMES[String(v || "").toUpperCase()] || null };
   const tick = () => { if (document.body && ensure() === false) clearInterval(timer); };
   const timer = setInterval(tick, 1500); tick();
   try { chrome.runtime.onMessage.addListener((m, s, reply) => { if (m && m.type === "nmc:fillNow"){ const key = Object.keys(SITES).find(k => SITES[k].detect()); if (key){ onClick(SITES[key]); reply({ ok: true, site: SITES[key].name }); } } }); } catch (e) {}

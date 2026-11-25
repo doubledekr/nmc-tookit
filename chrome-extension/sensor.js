@@ -83,6 +83,11 @@
   const HAND_ONLY = /\bssn\b|social security|tax ?id|\bitin\b|\bein\b|employer|employment|occupation|job title|income|salary|wages/;
   const phoneDigits = v => { let d = String(v || "").replace(/\D/g, ""); if (d.length === 11 && d[0] === "1") d = d.slice(1); return d.length === 10 ? d : null; };
   function fieldLabel(el){
+    if (el.tagName === "P-SELECT"){ const inner = el.querySelector("input, [role=combobox]"), nm = el.getAttribute("name") || "";   /* PrimeNG: the label points at the inner focus box */
+      const a = el.getAttribute("aria-label") || (inner && inner.getAttribute("aria-label")); if (a) return a.trim();
+      for (const id of [el.getAttribute("inputid"), inner && inner.id, el.id]){ if (!id) continue; const l = document.querySelector(`label[for="${(window.CSS && CSS.escape) ? CSS.escape(id) : id}"]`); if (l && T(l)) return T(l); }
+      const lb = inner && inner.getAttribute("aria-labelledby"); if (lb){ const l = document.getElementById(lb.split(/\s+/)[0]); if (l && T(l) && T(l) !== primeText(el)) return T(l); }
+      return nearText(el) || (nm ? nm.replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, c => c.toUpperCase()) : ""); }
     if (el.id){ const l = document.querySelector(`label[for="${(window.CSS && CSS.escape) ? CSS.escape(el.id) : el.id}"]`); if (l && T(l)) return T(l); }
     if (el.getAttribute("aria-label")) return el.getAttribute("aria-label").trim();
     const lb = el.getAttribute("aria-labelledby"); if (lb){ const l = document.getElementById(lb.split(/\s+/)[0]); if (l && T(l)) return T(l); }
@@ -97,16 +102,23 @@
     for (let up = 0; up < 3 && n && n !== document.body; up++, n = n.parentElement){
       let p = n.previousElementSibling;
       for (let k = 0; k < 3 && p; k++, p = p.previousElementSibling){
-        if (p.matches("input, select, textarea") || p.querySelector("input, select, textarea")) return "";
+        if (p.matches("input, select, textarea, p-select") || p.querySelector("input, select, textarea, p-select")) return "";
         const t = T(p); if (t) return t.length < 60 ? t : ""; } }
     return ""; }
+  /* PrimeNG dropdowns (Village / Optimal Blue): a <p-select> is a box too — its value is the label it shows */
+  const LF = () => window.__nmcLF || null;
+  const isPrime = el => !!el && el.tagName === "P-SELECT";
+  const primeText = el => { const l = el.querySelector(".p-select-label"); return l && !/p-placeholder/.test(l.className || "") ? T(l) : ""; };
+  const valOf = el => isPrime(el) ? primeText(el) : el.value;
   function formFields(){
-    return [...document.querySelectorAll("input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]), select, textarea")]
-      .filter(el => visible(el) && !el.disabled && !el.readOnly && !el.closest(".nmc-sn-panel"))
+    return [...document.querySelectorAll("input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=submit]):not([type=button]), select, textarea" + (LF() ? ", p-select" : ""))]
+      .filter(el => visible(el) && !el.disabled && !el.readOnly && !el.closest(".nmc-sn-panel") && !(el.tagName !== "P-SELECT" && el.closest("p-select")) && !(isPrime(el) && /p-disabled/.test(el.className || "")))
       .map((el, i) => ({ el, label: (fieldLabel(el) || (el.id && !/[:\d]{4,}|^:|react|ember/i.test(el.id) ? "box #" + el.id : "") || "unnamed box " + (i + 1)).replace(/[:*]\s*$/, "").slice(0, 60) }))
       .filter(f => !HAND_ONLY.test(norm(f.label)) && !HAND_ONLY.test(norm(f.el.name || f.el.id || "")))
       .map((f, i, all) => { const n = all.slice(0, i).filter(g => norm(g.label) === norm(f.label)).length; return n ? Object.assign(f, { label: f.label + " (" + (n + 1) + ")" }) : f; }); }
-  function setValue(el, v){
+  async function setValue(el, v){
+    if (isPrime(el)){ const lf = LF(); if (!lf) return false; const full = lf.stateName && lf.stateName(v); try { return !!(await lf.choosePrime(el, full ? [full, String(v)] : [String(v)])); } catch (e) { return false; } }
+    if (el.closest && el.closest("p-inputnumber") && LF() && /^-?[\d.,$ ]+$/.test(String(v))){ try { if (await LF().typeNumber(el, num(v))) return true; } catch (e) {} }
     if (el.tagName === "SELECT"){ const want = norm(v); const o = [...el.options].find(o => norm(o.textContent) === want || norm(o.value) === want) || [...el.options].find(o => norm(o.textContent).startsWith(want));
       if (!o) return false; el.value = o.value; el.dispatchEvent(new Event("input", { bubbles: true })); el.dispatchEvent(new Event("change", { bubbles: true })); return true; }
     const proto = el.tagName === "TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
@@ -239,10 +251,66 @@
   async function obSend(){ const y = obRead(); if (!y) return false; if (y.err){ toast(y.err, false); return true; }
     const q = y.q; if (!(q.rate > 0) || !(q.payment > 0) || !(q.loanAmount > 0)) { toast("Couldn’t read the rate, P&I and loan amount — tick a rate (and open its pricing details for the exact amounts).", false); return true; }
     q.pulledAt = new Date().toISOString();
+    { const grp = document.querySelector('p-selectbutton[name="lockPeriod"]'), on = grp && [...grp.querySelectorAll("p-togglebutton, [role=button], button")].find(b => b.getAttribute("aria-pressed") === "true"); const d = on ? +norm(T(on)) : 0; if (d > 0) q.lock = d + "-day lock"; }
     const r = await send({ type: "nmc:quote", quote: q });
     if (!r) { toast("Couldn’t reach the NMC Toolkit app — is it open?", false); return true; }
     if (!r.ok) { toast("Not sent: " + (r.error || "the toolkit said no"), false); return true; }
-    closeAll(); toast(`Sent Village ${q.rate.toFixed(3)}% · ${money(q.payment)}/mo on ${money(q.loanAmount)} to ${r.client}` + (y.drawerOther ? " — the open pricing details were for another rate, so they were skipped" : "") + (y.fromPay ? " (loan amount worked out from the P&I)" : "") + (y.drawer ? "" : " — open this rate’s pricing details (ⓘ) first for the exact APR") + (r.warnings && r.warnings.length ? " · check the analysis" : ""), true); return true; }
+    let more = 0; try { more = await obOtherLocks(q); } catch (e) {}
+    closeAll(); toast(`Sent Village ${q.rate.toFixed(3)}% · ${money(q.payment)}/mo on ${money(q.loanAmount)} to ${r.client}` + (more ? ` — plus ${more} other lock period${more === 1 ? "" : "s"} in your lender comparison (the page is now showing all lock periods)` : "") + (y.drawerOther ? " — the open pricing details were for another rate, so they were skipped" : "") + (y.fromPay ? " (loan amount worked out from the P&I)" : "") + (y.drawer ? "" : " — open this rate’s pricing details (ⓘ) first for the exact APR") + (r.warnings && r.warnings.length ? " · check the analysis" : ""), true); return true; }
+  /* ---- Village with Lock Period "All": one grid, Rate | P&I | 15 Day | 30 Day | 45 Day | 60 Day, a price (and a tick box) per lock.
+     Every lock period of the chosen rate goes to the toolkit as its own comparison row: the price over 100 is what NMC earns,
+     under 100 is the client's cost. The chosen lock (a ticked price, else the product's Lock Days) is the one put in use. */
+  const LOCKH = /^(\d{1,3}) ?day\b/;
+  function obGrid(){ let hid = null;
+    for (const t of document.querySelectorAll("table")){ const hs = ownHeads(t);
+      if (!(hs.includes("rate") && hs.some(h => /p ?& ?i/.test(h)) && hs.filter(h => LOCKH.test(h)).length >= 2)) continue;
+      if (visible(t)) return { t, hs }; hid = hid || { t, hs }; }
+    return hid; }
+  const boxTicked = td => !!td.querySelector(".p-checkbox-checked, .p-highlight, [aria-checked=true], [data-p-checked=true], input[type=checkbox]:checked, input[type=radio]:checked");
+  const loanFromPay = (pay, rate, term) => { const i = rate / 1200, n = term * 12; return Math.round(pay * (1 - Math.pow(1 + i, -n)) / i); };
+  function obProduct(){ const ps = document.querySelector('p-select[name="product"] .p-select-label'); let name = ps ? T(ps) : "", rate = null, lock = null;
+    for (const t of document.querySelectorAll("table")){ const hs = ownHeads(t); if (!(hs.some(h => /^eligible products/.test(h)) && hs.includes("rate"))) continue;
+      const rows = ownRows(t).filter(r => r.children.length >= hs.length - 1); const r = rows.find(r => name && norm(T(r.children[0])) === norm(name)) || rows[0]; if (!r) continue;
+      const cell = re => { const i = hs.findIndex(h => re.test(h)); return i >= 0 && r.children[i] ? T(r.children[i]) : ""; };
+      name = name || T(r.children[0]); rate = num(cell(/^rate$/)); lock = num(cell(/^lock days/)); break; }
+    return { name: String(name || "").slice(0, 80), rate, lock }; }
+  /* → { rows: [{ q, main }] } for the chosen rate(s), or { err } */
+  function obGridRead(want){ const g = obGrid(); if (!g) return null;
+    const iRate = g.hs.indexOf("rate"), iPay = g.hs.findIndex(h => /p ?& ?i/.test(h)), locks = g.hs.map((h, i) => ({ i, d: +((LOCKH.exec(h) || [])[1]) })).filter(x => x.d > 0);
+    const P = obProduct(), term = +((/(\d{2})\s*Yr/i.exec(P.name) || [])[1]) || 30;
+    const rows = ownRows(g.t).map(tr => ({ tr, td: [...tr.children] })).filter(r => r.td.length > Math.max(iRate, iPay) && num(T(r.td[iRate])) > 0);
+    const picks = [];   /* { row, lock } — what the banker ticked */
+    rows.forEach(r => locks.forEach(l => { if (r.td[l.i] && boxTicked(r.td[l.i])) picks.push({ r, d: l.d }); }));
+    let chosen = picks.map(x => x.r).filter((r, i, a) => a.indexOf(r) === i), mainLock = picks.length ? picks[0].d : null;
+    const wantRate = want && want.rate > 0 ? want.rate : P.rate;
+    if (!chosen.length && wantRate > 0){ const r = rows.find(r => Math.abs(num(T(r.td[iRate])) - wantRate) < 0.0005); if (r) chosen = [r]; mainLock = (want && want.lock) || P.lock || null; }
+    if (!chosen.length) return { err: "Tick a price in the Village grid first (any lock period) — all the lock periods for that rate are sent." };
+    if (!locks.some(l => l.d === mainLock)) mainLock = locks.some(l => l.d === 30) ? 30 : locks[0].d;
+    const out = [];
+    chosen.forEach((r, ci) => { const rate = num(T(r.td[iRate])), pay = num(T(r.td[iPay])); if (!(rate > 0) || !(pay > 0)) return; const loan = (want && want.loan > 0 && ci === 0) ? want.loan : loanFromPay(pay, rate, term);
+      locks.forEach(l => { const price = r.td[l.i] ? num(T(r.td[l.i])) : null; if (!(price > 50 && price < 130)) return;
+        const earn = Math.max(0, Math.round((price - 100) / 100 * loan)), cost = Math.max(0, Math.round((100 - price) / 100 * loan));
+        out.push({ main: ci === 0 && l.d === mainLock, q: { lender: "Village", product: P.name, term, lock: l.d + "-day lock", rate, price, payment: pay, loanAmount: loan, costDollars: cost, totalFees: cost,
+          comp: { lenderPaid: earn, basis: "price" }, fees: [], source: "village" } }); }); });
+    return out.length ? { rows: out } : { err: "Couldn’t read the prices in the Village grid." }; }
+  async function obSendRows(rows, note){ const main = rows.find(x => x.main) || rows[0]; let sent = 0, client = "", err = "";
+    for (const x of rows.filter(x => x !== main).concat([main])){ const q = Object.assign({}, x.q, { pulledAt: new Date().toISOString() }); if (x !== main) q.compareOnly = true;
+      const r = await send({ type: "nmc:quote", quote: q }); if (!r) { toast("Couldn’t reach the NMC Toolkit app — is it open?", false); return true; }
+      if (!r.ok) { err = r.error || "the toolkit said no"; continue; } sent++; client = r.client || client; }
+    if (!sent) { toast("Not sent: " + err, false); return true; }
+    const earns = rows.map(x => x.q.lock.replace("-day lock", "d") + " " + (x.q.comp.lenderPaid > 0 ? "$" + x.q.comp.lenderPaid.toLocaleString() : x.q.costDollars > 0 ? "client pays $" + x.q.costDollars.toLocaleString() : "$0")).join(" · ");
+    closeAll(); toast(`Sent Village ${main.q.rate.toFixed(3)}% to ${client} — ${rows.length} lock period${rows.length === 1 ? "" : "s"} in your lender comparison (NMC earns: ${earns}). In use: ${main.q.lock}.` + (note || ""), true); return true; }
+  /* single-lock view: the other lock periods aren't on the page, so switch the page's own Lock Period to "All", read the grid, and
+     send those as extra comparison rows next to the rate just sent */
+  async function obOtherLocks(q){ const grp = document.querySelector('p-selectbutton[name="lockPeriod"]'); if (!grp || obGrid()) return 0;
+    const all = [...grp.querySelectorAll("p-togglebutton, [role=button], button")].find(b => norm(T(b)) === "all"); if (!all) return 0;
+    const cur = [...grp.querySelectorAll("p-togglebutton, [role=button], button")].find(b => b.getAttribute("aria-pressed") === "true"); const curLock = cur ? +norm(T(cur)) || null : null;
+    all.dispatchEvent(new MouseEvent("mousedown", { bubbles: true })); all.click();
+    let g = null; for (let i = 0; i < 30 && !g; i++){ await pause(150); g = obGrid(); } if (!g) return 0; await pause(250);
+    const y = obGridRead({ rate: q.rate, lock: curLock, loan: q.loanAmount }); if (!y || y.err) return 0;
+    let n = 0; for (const x of y.rows){ if (curLock && x.q.lock === curLock + "-day lock") continue;   /* that one was just sent with its exact figures */
+      const r = await send({ type: "nmc:quote", quote: Object.assign({}, x.q, { compareOnly: true, pulledAt: new Date().toISOString() }) }); if (r && r.ok) n++; }
+    return n; }
   async function sendQuote(q, rc){
     q.term = rc.term || q.term || 30; q.lender = rc.name || (OB ? "Village (Optimal Blue)" : HOST); q.fees = []; q.pulledAt = new Date().toISOString(); q.source = "recipe";
     const r = await send({ type: "nmc:quote", quote: q });
@@ -250,7 +318,9 @@
     if (!r.ok) return toast("Not sent: " + (r.error || "the toolkit said no"), false);
     const sv = await send({ type: "nmc:recipe", op: "save", host: HOST, kind: "rate", recipe: rc }); if (sv && sv.ok) recipe = Object.assign({}, recipe, { [rc.mode === "labels" ? "rateDetail" : "rate"]: rc, updated: (recipe && recipe.updated) || "today" });
     closeAll(); toast(`Sent ${q.rate.toFixed(3)}% · ${money(q.payment)}/mo${q.payCalc ? " (P&I worked out from the rate and loan amount — if a funding fee is financed on top, the payment will be a little higher)" : ""} to ${r.client}` + (r.warnings && r.warnings.length ? " — check the analysis: " + r.warnings[0] : "") + (sv && sv.ok ? ` ✓ Recipe saved for ${HOST}.` : " (Recipe not saved.)"), true); }
-  async function quickRate(){ if (OB && obTable() && await obSend()) return;   /* Village results: built-in reader */
+  async function quickRate(){
+    if (OB && obGrid()){ const y = obGridRead(); if (y){ if (y.err) return toast(y.err, false); return obSendRows(y.rows); } }   /* Village, every lock period */
+    if (OB && obTable() && await obSend()) return;   /* Village results: built-in reader */
     await loadRecipe(); const R = recipe && recipe.rate;
     if (!tables().length && labelRate()){ const RD = recipe && recipe.rateDetail; if (RD){ const y = readLabels(RD); if (y.q.rate > 0 && y.q.loanAmount > 0 && y.q.payment > 0) return sendQuote(Object.assign(y.q, { payCalc: y.calc }), RD); } return detailRate(); }
     if (!R || R.mode === "labels") return ratePanel();
@@ -294,8 +364,9 @@
      box at a time and STOPS — with a Finish fill bar — after a box marked ⏸, after a box with a suggestion list, or whenever the page
      pops up a list or changes other boxes on its own. Finish carries on and leaves every box that already has something in it. */
   const isAuto = el => el.getAttribute("role") === "combobox" || !!el.getAttribute("aria-autocomplete") || el.getAttribute("aria-haspopup") === "listbox" || el.hasAttribute("list") || /autocomplete|typeahead|places|pac-target/i.test(el.className || "");
-  const hasValue = el => el.tagName === "SELECT" ? (el.selectedIndex > 0 && el.value !== "") : String(el.value || "").trim() !== "";
-  const sameVal = (el, v) => { if (el.tagName === "SELECT"){ const o = el.options[el.selectedIndex]; return !!o && (norm(o.value) === norm(v) || norm(o.textContent).startsWith(norm(v))); }
+  const hasValue = el => isPrime(el) ? primeText(el) !== "" : el.tagName === "SELECT" ? (el.selectedIndex > 0 && el.value !== "") : String(el.value || "").trim() !== "";
+  const sameVal = (el, v) => { if (isPrime(el)) return norm(primeText(el)) === norm(v) || (norm(primeText(el)).startsWith(norm(v)) && String(v).length > 2);
+    if (el.tagName === "SELECT"){ const o = el.options[el.selectedIndex]; return !!o && (norm(o.value) === norm(v) || norm(o.textContent).startsWith(norm(v))); }
     const s = String(v); if (/^-?\d+(\.\d+)?$/.test(s)) return num(el.value) === +s; return norm(el.value) === norm(s); };
   const pause = ms => new Promise(r => setTimeout(r, ms));
   const POPUP = '[role=listbox], [role=option], .pac-container, [class*="suggest" i], [class*="autocomplete" i] li, [class*="dropdown-menu" i], [class*="menu-list" i]';
@@ -303,7 +374,7 @@
   const floating = el => { for (let n = el, i = 0; n && i < 3; n = n.parentElement, i++){ const pos = getComputedStyle(n).position; if (pos === "absolute" || pos === "fixed") return true; } return false; };
   const popups = () => [...new Set([...document.querySelectorAll(POPUP)].concat([...document.querySelectorAll("ul, ol, [role=menu]")].filter(l => l.querySelector("li, [role=menuitem], [role=option]") && floating(l))))]
     .filter(el => visible(el) && el.getBoundingClientRect().height > 4 && !el.closest(".nmc-sn-panel, .nmc-sn-bar"));
-  const boxValues = () => new Map(formFields().map(f => [f.el, f.el.value]));
+  const boxValues = () => new Map(formFields().map(f => [f.el, valOf(f.el)]));
   const findBox = label => formFields().find(f => norm(f.label) === norm(label));
   let bar = null;
   function endBar(){ if (bar){ bar.remove(); bar = null; } }
@@ -314,7 +385,7 @@
       if (!f){ job.missed.push(j.label); continue; }
       if ((job.keep || job.resumed) && hasValue(f.el)){ job.kept.push(j.label); continue; }
       const before = boxValues(), popBefore = popups().length;
-      if (!setValue(f.el, j.v)){ job.missed.push(j.label); continue; }
+      if (!(await setValue(f.el, j.v))){ job.missed.push(j.label); continue; }
       job.n++; job.done.push(j); f.el.style.outline = "2px solid #2E6B4F";
       if (j.stop){ try { f.el.focus(); f.el.dispatchEvent(new Event("input", { bubbles: true })); f.el.dispatchEvent(new KeyboardEvent("keyup", { key: "a", bubbles: true })); } catch (e) {} }
       await pause(j.stop || j.k === "street" ? 900 : 350);   /* address lookups take a moment to answer */
@@ -324,7 +395,7 @@
       if (!j.stop && !popped) try { f.el.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); } catch (e) {} }
     await pause(700);
     let fixed = 0;   /* put back once whatever the page wiped (not the boxes it was allowed to change from a suggestion) */
-    for (const j of job.done){ const f = findBox(j.label); if (f && !j.stop && !sameVal(f.el, j.v) && !hasValue(f.el)){ if (setValue(f.el, j.v)) fixed++; await pause(90); } }
+    for (const j of job.done){ const f = findBox(j.label); if (f && !j.stop && !sameVal(f.el, j.v) && !hasValue(f.el)){ if (await setValue(f.el, j.v)) fixed++; await pause(90); } }
     const sv = await send({ type: "nmc:recipe", op: "save", host: HOST, kind: "fill", recipe: job.rc }); if (sv && sv.ok) recipe = Object.assign({}, recipe, { fill: job.rc });
     toast(`Filled ${job.n} box${job.n === 1 ? "" : "es"} from ${job.who}.` + (fixed ? ` The page cleared ${fixed} — put back.` : "") + (job.kept.length ? ` Left ${job.kept.length} that already had something.` : "")
       + (job.missed.length ? ` Couldn’t fill: ${job.missed.join(", ")} — drag the value onto the box.` : "")
@@ -346,13 +417,13 @@
     ghost.textContent = (FILL_KEYS.find(x => x[0] === k) || [k, k])[1] + " · " + vals[k];
     ghost.style.cssText = "position:fixed;z-index:2147483647;pointer-events:none;background:#2E6B4F;color:#fff;padding:5px 10px;border-radius:999px;font:600 12px system-ui;box-shadow:0 4px 14px rgba(0,0,0,.3);left:0;top:0";
     document.body.appendChild(ghost); let over = null; const mark = el => { if (over && over !== el) over.style.outline = over.__nmcOl || ""; if (el && el !== over){ el.__nmcOl = el.style.outline; el.style.outline = "3px solid #2E6B4F"; } over = el; };
-    const target = (x, y) => { const el = document.elementFromPoint(x, y); const b = el && el.closest && el.closest("input, select, textarea"); return b && !b.closest(".nmc-sn-panel, .nmc-sn-bar") ? b : null; };
+    const target = (x, y) => { const el = document.elementFromPoint(x, y); const b = el && el.closest && (el.closest("p-select") || el.closest("input, select, textarea")); return b && !b.closest(".nmc-sn-panel, .nmc-sn-bar") ? b : null; };
     const move = ev => { ghost.style.transform = `translate(${ev.clientX + 12}px, ${ev.clientY + 10}px)`; mark(target(ev.clientX, ev.clientY)); };
-    const up = ev => { document.removeEventListener("mousemove", move, true); document.removeEventListener("mouseup", up, true); ghost.remove();
+    const up = async ev => { document.removeEventListener("mousemove", move, true); document.removeEventListener("mouseup", up, true); ghost.remove();
       const el = target(ev.clientX, ev.clientY); mark(null); if (!el) return;
       const f = formFields().find(f => f.el === el);
       if (!f) return toast(HAND_ONLY.test(norm(fieldLabel(el) + " " + (el.name || ""))) ? "That box is hand-filled only (SSN, employer, income)." : "NMC can’t fill that box (it’s read-only or hidden).", false);
-      if (!setValue(el, vals[k])) return toast("That list doesn’t have “" + vals[k] + "” — pick it by hand.", false);
+      if (!(await setValue(el, vals[k]))) return toast("That list doesn’t have “" + vals[k] + "” — pick it by hand.", false);
       el.style.outline = "2px solid #2E6B4F";
       const sel = p.querySelector(`select[data-k="${k}"]`);
       if (sel){ if (![...sel.options].some(o => o.textContent === f.label)){ const o = document.createElement("option"); o.textContent = f.label; sel.appendChild(o); } sel.value = f.label; }
@@ -367,7 +438,7 @@
     document.documentElement.style.cursor = ""; if (picking.b) { picking.b.textContent = "Pick"; picking.b.style.background = "#fff"; picking.b.style.color = ""; } picking = null; }
   function startPick(p, k, b){ const again = picking && picking.k === k; stopPick(); if (again) return;
     b.textContent = "Click a box…"; b.style.background = "#2E6B4F"; b.style.color = "#fff"; document.documentElement.style.cursor = "crosshair";
-    const h = e => { const el = e.target && e.target.closest && e.target.closest("input, select, textarea"); if (e.target.closest && e.target.closest(".nmc-sn-panel")) return;
+    const h = e => { const el = e.target && e.target.closest && (e.target.closest("p-select") || e.target.closest("input, select, textarea")); if (e.target.closest && e.target.closest(".nmc-sn-panel")) return;
       e.preventDefault(); e.stopPropagation();
       if (!el){ toast("That isn’t a box you can type in — click the box itself.", false); return; }
       const f = formFields().find(f => f.el === el);
@@ -507,18 +578,21 @@
   /* the NMC button: shows only when this page has a rate table or a form */
   function ensure(){
     if (!alive()){ if (btn) btn.remove(); return false; }
-    if (window !== window.top && !tables().length && !labelRate()){ if (btn){ btn.remove(); btn = null; } return true; }   /* Optimal Blue frame without rates */
+    /* one NMC button per page: when the lender's pricing runs in an Optimal Blue frame (Village inside TPO Connect), the button lives
+       in that frame — where the form and the rates are — and the page around it shows none */
+    if (window === window.top && !OB && document.querySelector('iframe[src*="optimalblue.com"]')){ if (btn){ btn.remove(); btn = null; closeAll(); } return true; }
+    if (window !== window.top && !tables().length && !labelRate() && !(LF() && LF().site()) && formFields().length < 3){ if (btn){ btn.remove(); btn = null; } return true; }   /* Optimal Blue frame with nothing to read or fill */
     /* on every site the banker allowed: Grab is always there; rate / fill show when the page has a rate table / a form */
     if (!btn || !btn.isConnected){ btn = document.createElement("button"); btn.type = "button"; btn.className = "nmc-sn-btn"; btn.textContent = "NMC";
       btn.title = "NMC Toolkit — grab info from this page, send a rate, or fill a form";
       btn.style.cssText = `position:fixed;${SIDE};bottom:18px;z-index:2147483646;background:#A53222;color:#fff;border:0;border-radius:999px;padding:10px 16px;font:700 13px system-ui,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,.25);cursor:pointer`;
       btn.onclick = () => { if (menu || panel) return closeAll();
-        const r = tables().length > 0 || !!labelRate(), f = !OB && formFields().length >= 3;   /* Village already has its own Fill button */
+        const r = tables().length > 0 || !!labelRate(), lf = !!(LF() && LF().site()), f = formFields().length >= 3;   /* lf: the built-in fill (Village) — same button now */
         menu = document.createElement("div"); menu.className = "nmc-sn-panel";
         menu.style.cssText = `position:fixed;${SIDE};bottom:66px;z-index:2147483647;background:#fff;border:1px solid #D9D3C6;border-radius:10px;padding:6px;box-shadow:0 10px 30px rgba(0,0,0,.2);font:13px system-ui`;
         const it = (a, t) => `<div data-a="${a}" style="padding:8px 12px;cursor:pointer;border-radius:6px" onmouseover="this.style.background='#F4EFE4'" onmouseout="this.style.background=''">${t}</div>`;
-        menu.innerHTML = it("grab", "Grab info from this page…") + (r ? it("rate", "Send the selected rate") : "") + (f ? it("fill", "Fill this form from the toolkit") : "");
-        menu.onclick = e => { const a = e.target.dataset.a; if (a === "grab") { closeAll(); grabPanel(); } if (a === "rate") { closeAll(); quickRate(); } if (a === "fill") { closeAll(); fillPanel(); } };
+        menu.innerHTML = it("grab", "Grab info from this page…") + (r ? it("rate", OB && obGrid() ? "Send this rate — every lock period" : "Send the selected rate") : "") + (lf ? it("lf", "Fill this page from the toolkit") : "") + (f ? it("fill", lf ? "Fill with my own recipe…" : "Fill this form from the toolkit") : "");
+        menu.onclick = e => { const a = e.target.dataset.a; if (a === "grab") { closeAll(); grabPanel(); } if (a === "rate") { closeAll(); quickRate(); } if (a === "fill") { closeAll(); fillPanel(); } if (a === "lf") { closeAll(); LF().open(); } };
         document.body.appendChild(menu); };
       document.body.appendChild(btn); }
     return true; }
