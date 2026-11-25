@@ -419,7 +419,7 @@ nav button{padding:8px 16px 8px 32px;font-size:13.5px;min-height:34px}nav button
 
 </style>
 <style id="nmcTheme">
-/* generated from theme/nmc-theme.css — edit that file, not this block · 44c9eecaa4913f27 */
+/* generated from theme/nmc-theme.css — edit that file, not this block · 2b5b22127e1ffca1 */
 /* ============================================================================
    NMC theme — the shared look for Neighborhood Mortgage tools
    (Toolkit, Rate Desk). Red + glass, quiet tags, drawn icons, and the motion
@@ -704,6 +704,8 @@ body.nmc-enter .atile{animation:nmc-rowin .4s var(--nmc-ease) both .15s}
 #pipeTable tr.grp.now td .g{color:var(--brand)}#pipeTable tr.grp.fresh td .g{color:var(--good)}
 #pipeTable tr.grp td:first-child::before{content:none}
 .dens{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px;background:#fff;vertical-align:middle;margin-right:6px}
+.psort{font-size:11.5px;border:1px solid var(--line);border-radius:999px;padding:3px 8px;background:#fff;color:var(--muted);vertical-align:middle;margin-right:6px;min-height:0;height:auto;width:auto}
+#pipeTable .pf .plc{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap}
 .dens button{all:unset;cursor:pointer;font-size:11.5px;padding:2px 10px;border-radius:999px;color:var(--muted)}.dens button.on{background:var(--cream);color:var(--brand);font-weight:600}
 body.nmc-enter #pipeTable tr.grp{animation:none}
 #pipeTable .pe .gap .new{color:var(--good)}
@@ -1745,7 +1747,7 @@ Discover 6,100 190 24.9"></textarea>
 <script>
 /* ============ Neighborhood Mortgage Banker Toolkit ============ */
 "use strict";
-const TOOLKIT_VERSION = "1.28.5";
+const TOOLKIT_VERSION = "1.28.6";
 const BOOKMARKLET_VERSION = "2";
 /* brand images from neighborhoodmc.com, cached as data URLs in settings so proposals embed them offline */
 const BRAND_ASSETS = {
@@ -2609,6 +2611,13 @@ let pipeView="all";
 function setPipeView(v){ pipeView=v; if(window.NMC) NMC.enter(1200); renderPipeline(); }
 /* sortable columns: click a header to sort, again to flip, a third time to clear */
 let pipeSort={key:null,dir:1};
+/* last contact = the newest entry in the client's contact log (calls, no-answers, appointments, proposals sent) — not a file merge */
+function lastContactMs(c){ const e=(c.log||[]).find(x=>x&&x.outcome!=="Merged"&&x.when); return e?fuqStampMs(e.when):0; }
+function lastContactTxt(c){ const ms=lastContactMs(c); if(!ms) return "never contacted"; const d=new Date(ms), days=Math.floor((new Date().setHours(0,0,0,0)-new Date(ms).setHours(0,0,0,0))/86400000);
+  return "last contact "+(days<=0?"today":days===1?"yesterday":days<7?days+" days ago":d.toLocaleDateString("en-US",{month:"short",day:"numeric"})+(d.getFullYear()!==new Date().getFullYear()?", "+d.getFullYear():"")); }
+const contactSort=()=>{ const v=state.settings&&state.settings.pipeContactSort; return v==="latest"||v==="earliest"?v:""; };
+function setContactSort(v){ state.settings.pipeContactSort=(v==="latest"||v==="earliest")?v:""; pipeSort={key:null,dir:1}; save(); renderPipeline(); }
+function contactCmp(a,b){ const x=lastContactMs(a), y=lastContactMs(b); if(!x||!y) return (x?0:1)-(y?0:1);   /* never contacted always at the bottom */ return contactSort()==="latest" ? y-x : x-y; }
 function setPipeSort(k){ if(pipeSort.key!==k){ pipeSort={key:k,dir:1}; } else if(pipeSort.dir===1){ pipeSort.dir=-1; } else { pipeSort={key:null,dir:1}; } renderPipeline(); }
 function sortVal(c,k){ if(k==="eligible"){ const wi=rdWindowInfo(c); const e=rdEligibleNow(c); return wi ? "0"+String(99999999999999-Date.parse(c.eligibleSince||0)) : e ? "1" : "9"; } if(k==="balance"||k==="rate"||k==="payment") return c[k]==null?(pipeSort.dir===1?1e12:-1):+c[k]; if(k==="followUp") return c.followUp||"9999"; return String(c[k]||"").toLowerCase(); }
 function th(k,label,cls){ const on=pipeSort.key===k; return `<th class="${cls||""}" style="cursor:pointer;user-select:none;white-space:nowrap" title="Sort by ${label.replace(/&amp;/g,"&")}" onclick="setPipeSort('${k}')">${label}${on?(pipeSort.dir===1?" \u25b2":" \u25bc"):""}</th>`; }
@@ -2808,7 +2817,7 @@ function rateGapHTML(c){ if(!(c.rate>0)||c.freeClear||c.quick) return ""; let tr
 function pipeOppHTML(op){ const full=String(op.txt||"").replace(/<[^>]+>/g,""); const short=full.split(/ \u2014 |: /)[0].replace(/^\u23F3\s?/,""); const cls=op.tag==="tag-warn"?"warn":op.tag==="tag-flat"?"flat":""; const icon=/streamline/i.test(full)?"bolt":/waiting/i.test(full)?"hourglass":/follow-up/i.test(full)?"clock":/future|buyer/i.test(full)?"home":"";
   return `<span class="pot ${cls}" title="${esc(full)}">${icon?NMC.icon(icon):""}${esc(short)}</span>`; }
 /* groups, in the order a banker works them; only when the list isn't explicitly sorted or filtered to one kind */
-function pipeGrouped(rows,hs){ if(pipeSort.key||pipeView!=="all") return rows.map(c=>({c})); const today=todayStr(); const g=c=>{ if(isDNC(c)) return 3; if(c.followUp&&!isDone(c)&&c.followUp<=today) return 0; if(rdWindowInfo(c)) return 1; if(hs.has(c.id)||c.hot) return 2; return 3; };
+function pipeGrouped(rows,hs){ if(pipeSort.key||contactSort()||pipeView!=="all") return rows.map(c=>({c})); const today=todayStr(); const g=c=>{ if(isDNC(c)) return 3; if(c.followUp&&!isDone(c)&&c.followUp<=today) return 0; if(rdWindowInfo(c)) return 1; if(hs.has(c.id)||c.hot) return 2; return 3; };
   const L=[["now","Needs you today"],["fresh","Newly eligible"],["hot","Hot leads"],["rest","Everyone else"]]; const buckets=[[],[],[],[]]; rows.forEach(c=>buckets[g(c)].push(c)); const out=[]; const nonEmpty=buckets.filter(b=>b.length).length;
   buckets.forEach((b,i)=>{ if(!b.length) return; if(nonEmpty>1) out.push({group:L[i][0],label:L[i][1],n:b.length}); b.forEach(c=>out.push({c})); }); return out; }
 /* compact pop-out: size the hovered row's backdrop to the widest row and the tallest detail overlay (set once per row per render) */
@@ -2836,7 +2845,7 @@ function renderPipelineCore(){ const today=todayStr(); document.body.classList.t
   const chips=$("pipeChips"); if(chips){
     const chip=(v,l,n)=>`<button class="btn small ${pipeView===v?"":"ghost "}" onclick="setPipeView('${v}')">${l}${n!=null?` <span class="cnt" data-tick="pipe.${v}" data-tick-first="no">${n}</span>`:""}</button>`;
     const sentN=state.clients.filter(c=>!c.quick&&c.proposalSent&&!isDone(c)).length;
-    chips.innerHTML=`<span class="dens"><button type="button" class="${state.settings.pipeDense?"":"on"}" onclick="pipeDensity(false)">Comfortable</button><button type="button" class="${state.settings.pipeDense?"on":""}" onclick="pipeDensity(true)">Compact</button></span>`+chip("all","All")+chip("hot","\uD83D\uDD25 Hot now",al.hot.length)+chip("due","Follow-ups due",al.due.length)+chip("flag","\uD83D\uDD25 Hot leads",al.flagged.length)+chip("ratewatch","\u23F3 Rate watch",al.ratewatch.length)+chip("season","\uD83D\uDCC5 Seasoning",al.season.length)+chip("future","\uD83C\uDFE1 Future buyers",al.future.length)+(al.watch.length?chip("watch","Watching",al.watch.length):"")+chip("sent","Proposal sent",sentN)+(()=>{ const nd=state.clients.filter(c=>!c.quick&&isDNC(c)).length, ni=state.clients.filter(c=>!c.quick&&c.notInt&&c.notInt.at).length; return (nd?chip("dnc","DNC",nd):"")+(ni?chip("notint","Not interested",ni):""); })()+(rdTiers()?chip("elignow","\u2728 Eligible now",rdEligibleIds().length)+chip("eligible","\u2728 New this week",rdWeekIds().length):""); }
+    chips.innerHTML=`<span class="dens"><button type="button" class="${state.settings.pipeDense?"":"on"}" onclick="pipeDensity(false)">Comfortable</button><button type="button" class="${state.settings.pipeDense?"on":""}" onclick="pipeDensity(true)">Compact</button></span><select class="psort" title="Order the pipeline by when you last contacted each client" onchange="setContactSort(this.value)"><option value="">Sort: usual order</option><option value="latest"${contactSort()==="latest"?" selected":""}>Sort: latest contacted</option><option value="earliest"${contactSort()==="earliest"?" selected":""}>Sort: earliest contacted</option></select>`+chip("all","All")+chip("hot","\uD83D\uDD25 Hot now",al.hot.length)+chip("due","Follow-ups due",al.due.length)+chip("flag","\uD83D\uDD25 Hot leads",al.flagged.length)+chip("ratewatch","\u23F3 Rate watch",al.ratewatch.length)+chip("season","\uD83D\uDCC5 Seasoning",al.season.length)+chip("future","\uD83C\uDFE1 Future buyers",al.future.length)+(al.watch.length?chip("watch","Watching",al.watch.length):"")+chip("sent","Proposal sent",sentN)+(()=>{ const nd=state.clients.filter(c=>!c.quick&&isDNC(c)).length, ni=state.clients.filter(c=>!c.quick&&c.notInt&&c.notInt.at).length; return (nd?chip("dnc","DNC",nd):"")+(ni?chip("notint","Not interested",ni):""); })()+(rdTiers()?chip("elignow","\u2728 Eligible now",rdEligibleIds().length)+chip("eligible","\u2728 New this week",rdWeekIds().length):""); }
   const f=filt.value; const pf=$("pipeProduct")?$("pipeProduct").value:"";
   const q=($("pipeSearch")?$("pipeSearch").value:"").trim().toLowerCase(); const qd=q.replace(/\D/g,"");
   const hit=c=>{ if(pf && clientProduct(c)!==pf) return false; if(!q) return true; const hay=[c.name,c.coName,clientEmails(c).join(" "),clientPhones(c).join(" "),c.email,c.address,c.servicer,c.loanType,c.status,c.notes,c.futureProduct,PRODUCT_LABELS[clientProduct(c)]].map(x=>String(x||"").toLowerCase()).join(" \u2022 ");
@@ -2844,6 +2853,7 @@ function renderPipelineCore(){ const today=todayStr(); document.body.classList.t
   const rows=state.clients.filter(c=>!c.quick && (!f||c.status===f) && hit(c) &&
     (pipeView==="all" || (pipeView==="hot"&&hs.has(c.id)) || (pipeView==="due"&&ds.has(c.id)) || (pipeView==="watch"&&ws.has(c.id)) || (pipeView==="ratewatch"&&rs.has(c.id)) || (pipeView==="season"&&ss.has(c.id)) || (pipeView==="sent"&&c.proposalSent&&!isDone(c)) || (pipeView==="dnc"&&isDNC(c)) || (pipeView==="notint"&&c.notInt&&c.notInt.at) || (pipeView==="flag"&&c.hot) || (pipeView==="future"&&fs_.has(c.id)) || (pipeView==="eligible"&&rdWindowInfo(c)) || (pipeView==="elignow"&&rdEligibleNow(c))))
     .sort((a,b)=>{ if(pipeSort.key){ const va=sortVal(a,pipeSort.key), vb=sortVal(b,pipeSort.key); const cmp = typeof va==="number"&&typeof vb==="number" ? va-vb : String(va).localeCompare(String(vb)); return pipeSort.dir*cmp; }
+      if(contactSort()) return contactCmp(a,b);
       if(pipeView==="notint") return String((b.notInt||{}).at||"").localeCompare(String((a.notInt||{}).at||""));   /* most recent "not interested" first */
       return pipeView==="ratewatch" ? (rateDrop(a)??9)-(rateDrop(b)??9) : pipeView==="season" ? seasonDays(a)-seasonDays(b) : (pipeView==="eligible"||pipeView==="elignow") ? String(b.eligibleSince||"").localeCompare(String(a.eligibleSince||"")) : 0; });
   pipeRowsShown=rows;
@@ -2864,8 +2874,8 @@ function renderPipelineCore(){ const today=todayStr(); document.body.classList.t
   const inbox=(state.inbox||[]);
   const ib = inbox.length? `<div style="background:var(--accent-soft);border:1px solid var(--accent);border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13.5px">
     <b>New from Salesforce (${inbox.length})</b>
-    ${inbox.map(it=>`<div class="btnrow" style="margin-top:6px"><span><b>${esc(it.fields.name)}</b>${it.fields.balance?` \u00b7 ${money(num(it.fields.balance))}`:""}${it.fields.rate?` @ ${pct(num(it.fields.rate))}`:""}${it.fields.leadStatus?` \u00b7 ${esc(it.fields.leadStatus)}`:""}${it.converted?` <span class="tag-good" title="The lead was converted in Salesforce \u2014 this is the loan record, the most current numbers">Converted loan</span>`:""}${it.source==="chrome-extension"?` <span class="tag-flat">via Chrome${it.pairs?" \u00b7 "+it.pairs+" fields read, "+Object.keys(it.fields||{}).length+" recognized":""}</span>`:""}</span><span style="flex:1"></span>
-      <button class="btn small" onclick="importInbox('${it.id}')">Import</button><button class="btn ghost small" onclick="ackInbox('${it.id}')">Ignore</button></div>`).join("")}</div>` : "";
+    ${inbox.map(it=>`<div class="btnrow" style="margin-top:6px;flex-wrap:nowrap;align-items:center"><span style="flex:1 1 auto;min-width:0"><b>${esc(it.fields.name)}</b>${it.fields.balance?` \u00b7 ${money(num(it.fields.balance))}`:""}${it.fields.rate?` @ ${pct(num(it.fields.rate))}`:""}${it.fields.leadStatus?` \u00b7 ${esc(it.fields.leadStatus)}`:""}${it.converted?` <span class="tag-good" title="The lead was converted in Salesforce \u2014 this is the loan record, the most current numbers">Converted</span>`:""}${it.source==="chrome-extension"?` <span class="tag-flat" title="Sent from Chrome${it.pairs?" \u2014 "+it.pairs+" fields read, "+Object.keys(it.fields||{}).length+" recognized":""}">Chrome${it.pairs?" \u00b7 "+Object.keys(it.fields||{}).length+"/"+it.pairs:""}</span>`:""}</span>
+      <span style="flex:0 0 auto;display:inline-flex;gap:6px;white-space:nowrap"><button class="btn small" onclick="importInbox('${it.id}')">Import</button><button class="btn ghost small" onclick="ackInbox('${it.id}')">Ignore</button></span></div>`).join("")}</div>` : "";
   $("pipeTable").innerHTML = ib + bar + seasonBar + futBar + rwBar + (!rows.length ? `<div class="empty">${pipeView!=="all"?"Nothing in this view right now \u2014 that can change with the next rate push.":"No pipeline clients yet. Add one, paste a Salesforce record, or load the samples in Settings."}</div>` :
   `<table class="data${state.settings.pipeDense?" dense":""}"><thead><tr>${th("name","Client","pc")}${th("status","Status","ps")}${th("balance","Loan","pl")}${th("followUp","Follow-up","pf")}${rdTiers()?th("eligible","Rate gap","pe"):""}<th class="po">Opportunity</th><th class="pa"></th></tr></thead><tbody>`+
   pipeGrouped(rows,hs).map(item=>{ if(item.group) return `<tr class="grp ${item.group}"><td colspan="7"><div class="g">${item.label}<span class="n">${item.n}</span></div></td></tr>`; const c=item.c; const op=opportunity(c);
@@ -2881,7 +2891,7 @@ function renderPipelineCore(){ const today=todayStr(); document.body.classList.t
     <td class="pc"><span class="pc-name">${c.hot?'<span title="Hot lead">\uD83D\uDD25 </span>':""}${esc(coupleName(c))}</span><div class="pc-meta">${c.phone?`<span class="pc-chip" data-copy="${esc(c.phone)}" title="Click to copy" onclick="copyChip(event)">${NMC.icon("phone")}${esc(c.phone)}</span>`:""}${c.email?`<span class="pc-chip" data-copy="${esc(c.email)}" title="Click to copy" onclick="copyChip(event)">${NMC.icon("mail")}${esc(c.email)}</span>`:""}</div><div class="more">${c.email?`<div class="pc-mail"><span class="pc-chip" data-copy="${esc(c.email)}" title="Click to copy" onclick="copyChip(event)">${NMC.icon("mail")}${esc(c.email)}</span></div>`:""}<div class="ps2">${statusTag}</div>${c.servicer?`<span class="pc-serv">${esc(c.servicer)}</span>`:""}</div></td>
     <td class="ps">${statusTag}${statusMeta.length?`<div class="more">${statusMeta.map(m=>`<div class="psm">${m}</div>`).join("")}</div>`:""}</td>
     <td class="pl">${c.freeClear?`<div class="pl1"><span class="typ">${esc(c.loanType||"")}</span><span class="tag-good">free &amp; clear</span></div>`:`<div class="pl1"><span class="typ">${esc(pipeType(c.loanType))}</span><b>${c.balance>0?money(c.balance):"\u2014"}</b></div><div class="more"><div class="pl2">${c.rate>0?`<em>${pct(c.rate)}</em>`:"rate \u2014"} \u00b7 ${c.payment>0?`<em>${money(c.payment)}</em>/mo`:"P&amp;I \u2014"}</div>${isFuture(c)&&c.futureProduct?`<div class="pl2">\u2192 ${esc(c.futureProduct)}</div>`:""}</div>`}</td>
-    <td class="pf ${fu.k}">${fu.date?`<div class="pfd"><span class="fud">${fu.date}${fu.time?" \u00b7 "+fu.time:""}</span>${cal==="on"?` <span class="pfc" title="On your Outlook calendar">${NMC.icon("calendar")}</span>`:cal==="moved"?` <span class="pfc moved" title="Follow-up moved since it went on your calendar \u2014 re-add it">${NMC.icon("calendar")}</span>`:""}</div><div class="more"><div class="pfr">${fu.rel}</div>${(ds.has(c.id)||(fuPending&&fuPending.id===c.id))?`<div class="pfq${fuPending&&fuPending.id===c.id?" stay":""}">${fuButtons(c,true)}</div>`:""}</div>`:`<span class="hint">\u2014</span>`}</td>
+    <td class="pf ${fu.k}">${fu.date?`<div class="pfd"><span class="fud">${fu.date}${fu.time?" \u00b7 "+fu.time:""}</span>${cal==="on"?` <span class="pfc" title="On your Outlook calendar">${NMC.icon("calendar")}</span>`:cal==="moved"?` <span class="pfc moved" title="Follow-up moved since it went on your calendar \u2014 re-add it">${NMC.icon("calendar")}</span>`:""}</div><div class="more"><div class="pfr">${fu.rel}</div>${(ds.has(c.id)||(fuPending&&fuPending.id===c.id))?`<div class="pfq${fuPending&&fuPending.id===c.id?" stay":""}">${fuButtons(c,true)}</div>`:""}</div>`:`<span class="hint">\u2014</span>`}${contactSort()&&!pipeSort.key?`<div class="plc">${lastContactTxt(c)}</div>`:""}</td>
     ${rdTiers()?`<td class="pe">${gapMain}${(gapTail||oppHTML)?`<div class="more">${gapTail}${oppHTML?`<div class="po2">${oppHTML}</div>`:""}</div>`:""}</td>`:""}
     <td class="po">${oppHTML}</td>
     <td class="pa"><span class="qa">${c.phone?`<button type="button" title="Copy phone" data-copy="${esc(c.phone)}" onclick="copyChip(event)">${NMC.icon("phone")}</button>`:""}<button type="button" title="Follow-up texts & emails" onclick="event.stopPropagation();pickClient('${c.id}');go('client');playOpen('follow')">${NMC.icon("chat")}</button><button type="button" title="Presentation" onclick="event.stopPropagation();pickClient('${c.id}');go('present')">${NMC.icon("present")}</button></span><span class="go" title="Open">\u203A</span></td></tr>`;}).join("")+`</tbody></table>`);
@@ -2916,7 +2926,7 @@ const SF_NMC={ "name":"name","email":"email","phone":"phone","phone +":"phone","
   "appraisal value":"value","ltv":"ltv","equity":"equity",
   "current balance of 2nd mortgage":"secondBal","2nd mortgage interest rate":"secondRate","monthly payment of 2nd mortgage":"secondPay","second mortgage servicer":"secondServicer","2nd mortgage loan type":"secondType",
   "heloc balance":"helocBal","heloc payment":"helocPay","heloc credit limit":"helocLimit","revolving debt payment":"ccPay3","total installment debt":"instBal2",
-  "total monthly debt":"totalDebtPay","dti":"dti","refi or purchase":"purpose","transaction type":"txType","target rate":"rateToBeat","cash out amount":"cashOut",
+  "total monthly debt":"totalDebtPay","dti":"dti","refi or purchase":"purpose","transaction type":"txType","target rate":"targetRate","cash out amount":"cashOut",
   "call back date":"callBack","market watch":"marketWatch","proposed rate":"propRate","proposed pi":"propPI","proposed piti":"propPITI","proposed loan amount":"propAmt","chosen lender":"chosenLender",
   "first name":"firstName","last name":"lastName","mobile phone":"phone","street":"street","city":"city","state":"state","zip":"zip",
   /* a converted lead's Loan (Opportunity) record */
@@ -2986,7 +2996,8 @@ function parseSFText(text, auto){ auto=auto!==false;   /* auto=false: just parse
   /* first-mortgage balance: Open Mortgage Balance first, then the 1st-mortgage field, then Total Mortgage(s) (which can include a 2nd lien), then the loan amount */
   found.balance = n(raw.balance) ?? n(raw.balance1st) ?? n(raw.balanceTotal) ?? n(raw.balanceAlt2);
   if(n(raw.balanceAlt2)>0 && found.balance>0 && n(raw.balanceAlt2)>found.balance) found.origAmount=n(raw.balanceAlt2);
-  found.rate=n(raw.rate); if(found.rate!=null && found.rate>25) found.rate=null;
+  /* current mortgage rate: Salesforce's "Rate to Beat" first when it's filled in (a real rate), otherwise the Interest Rate field */
+  { const okRate=v=>v!=null&&v>0&&v<=25; const rtb=n(raw.rateToBeat), ir=n(raw.rate); found.rate = okRate(rtb) ? rtb : okRate(ir) ? ir : null; found._rateFrom = okRate(rtb) ? "rtb" : null; found._rateOther = okRate(rtb)&&okRate(ir)&&Math.abs(rtb-ir)>0.0005 ? ir : null; }
   found.payment=n(raw.payment); found.paymentTotal=n(raw.paymentTotal) ?? n(raw.paymentTotalAlt); found.value=n(raw.value); found.fico=n(raw.fico);
   if(found.payment>0 && found.paymentTotal>0 && found.payment>=found.paymentTotal) delete found.payment;   /* a "P&I" that equals the total is really the total */
   /* taxes & insurance straight from the record: annual figures for the client, and today's escrow when the pieces are there */
@@ -3006,7 +3017,7 @@ function parseSFText(text, auto){ auto=auto!==false;   /* auto=false: just parse
   if(raw.monthsLeft!=null) found.monthsLeft=n(raw.monthsLeft);
   const noteBits=[]; if(raw.leadStatus) noteBits.push("Lead status: "+raw.leadStatus);
   if(n(raw.balanceTotal)>0 && found.balance>0 && n(raw.balanceTotal)-found.balance>1000) noteBits.push("Total mortgages "+money(n(raw.balanceTotal))+" \u2014 about "+money(n(raw.balanceTotal)-found.balance)+" beyond the first (2nd lien?)"); if(raw.closeDate) noteBits.push("Closed "+raw.closeDate); else if(n(raw.monthsSince)>0) noteBits.push(raw.monthsSince+" months since close");
-  if(raw.purpose) noteBits.push(raw.purpose); if(n(raw.rateToBeat)) noteBits.push("Rate to beat "+raw.rateToBeat);
+  if(raw.purpose) noteBits.push(raw.purpose); if(found._rateFrom==="rtb"){ if(found._rateOther!=null) noteBits.push("Current rate is Salesforce\u2019s Rate to Beat ("+raw.rateToBeat+"); the Interest Rate field says "+raw.rate); } else if(n(raw.rateToBeat)) noteBits.push("Rate to beat "+raw.rateToBeat); delete found._rateFrom; delete found._rateOther; if(n(raw.targetRate)) noteBits.push("Target rate "+raw.targetRate);
   if(n(raw.loanCount)) noteBits.push(raw.loanCount+" loans on credit"+(n(raw.instBal)?", "+money(n(raw.instBal))+" total":""));
   if(/^(yes|true)$/i.test(raw.vaElig||"")||/^(yes|true)$/i.test(raw.military||"")) noteBits.push("VA eligible");
   if(n(raw.cashOut)>0) noteBits.push("Wants "+money(n(raw.cashOut))+" cash out");
